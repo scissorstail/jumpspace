@@ -1,33 +1,17 @@
 <template>
-  <div>
     <Rete></Rete>
-  </div>
 </template>
 
 <script>
-import Rete from "../components/Rete";
+import Rete from '../components/Rete'
 
 export default {
-  name: "About",
+  name: 'Layout',
   components: {
     Rete
   }
-};
+}
 </script>
-
-<style scoped>
-#app {
-  width: 100%;
-  height: 100%;
-}
-
-.help-button {
-  position: absolute;
-  left: 5px;
-  bottom: 5px;
-  z-index: 6;
-}
-</style>
 
 <style>
 .tooltip {
