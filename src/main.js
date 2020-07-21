@@ -1,11 +1,10 @@
 import 'regenerator-runtime/runtime'
 import Vue from 'vue'
 import App from './App.vue'
-import './registerServiceWorker'
 import router from './router'
 import store from './store'
 import VTooltip from 'v-tooltip'
-import 'vue-awesome/icons'
+import 'vue-awesome/icons/cog'
 import Icon from 'vue-awesome/components/Icon'
 
 Vue.config.productionTip = false

@@ -8,6 +8,11 @@
       <template slot="popover">
         <div class="info-list">
           <div class="info-item">
+            <button @click="loadPrevDiagram">이전</button>
+            <input type="text" v-model.trim="selectedDiagramFilename" style="margin: 0 3px;"/>
+            <button @click="loadNextDiagram">다음</button>
+          </div>
+          <div class="info-item">
             <div>Name:</div>
             <input type="text" v-model.trim="name" />
           </div>
@@ -31,10 +36,8 @@
           class="info-diagram"
           width="50%"
           height="50%"
-          src="/img/diagram/AWS/Compute/Amazon-EC2.svg"
+          :src="`/img/diagram/AWS/Compute/${selectedDiagramFilename}`"
         />
-      </div>
-      <div class="info-block">
         <div>{{ name || "noname" }}</div>
         <div>{{ host || "localhost" }}:{{ port || "80" }}</div>
       </div>
@@ -50,14 +53,51 @@ export default {
       default: () => ({})
     }
   },
-  mounted () {
-    this.name = this.data.name || null
-  },
   data () {
     return {
       name: null,
       host: null,
-      port: null
+      port: null,
+      diagramFilenames: [],
+      selectedDiagramFilename: 'Amazon-Application-Auto-Scaling.svg'
+    }
+  },
+  watch: {
+    diagramFilenames () {
+      console.log(this.diagramFilenames)
+    }
+  },
+  mounted () {
+    this.name = this.data.name || null
+
+    window.readDiagramDir('/AWS/Compute', (err, files) => {
+      if (err) {
+        console.error(err)
+        return
+      }
+
+      this.diagramFilenames = files.filter(x => x.endsWith('.svg'))
+      console.log(this.diagramFilenames)
+    })
+  },
+  methods: {
+    loadPrevDiagram () {
+      const foundIndex = this.diagramFilenames.findIndex(x => x === this.selectedDiagramFilename)
+      if (foundIndex !== -1) {
+        const index = (foundIndex - 1 > 0) ? foundIndex - 1 : (this.diagramFilenames.length - 1)
+        this.selectedDiagramFilename = this.diagramFilenames[index]
+      } else {
+        this.selectedDiagramFilename = 'Amazon-Application-Auto-Scaling.svg'
+      }
+    },
+    loadNextDiagram () {
+      const foundIndex = this.diagramFilenames.findIndex(x => x === this.selectedDiagramFilename)
+      if (foundIndex !== -1) {
+        const index = (foundIndex + 1) > (this.diagramFilenames.length - 1) ? 0 : (foundIndex + 1)
+        this.selectedDiagramFilename = this.diagramFilenames[index]
+      } else {
+        this.selectedDiagramFilename = 'Amazon-Application-Auto-Scaling.svg'
+      }
     }
   }
 }
@@ -67,6 +107,13 @@ export default {
 .info-block {
   font-size: 14px;
   font-weight: bold;
+}
+
+.info-diagram {
+  min-width: 75px;
+  min-height: 75px;
+  max-width: 75px;
+  max-height: 75px;
 }
 
 .info-edit {
