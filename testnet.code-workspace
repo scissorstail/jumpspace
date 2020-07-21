@@ -4,9 +4,5 @@
       "path": "."
     }
   ],
-  "settings": {
-    "[vue]": {
-      "editor.defaultFormatter": "dbaeumer.vscode-eslint"
-    }
-  }
+  "settings": {}
 }

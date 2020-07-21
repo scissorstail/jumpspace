@@ -1,6 +1,6 @@
 import Rete from 'rete'
 import ConnectionSocket from '../../sockets/ConnectionSocket'
-// import ConnectionControl from './controls/ConnectionControl'
+import ConnectionControl from './controls/ConnectionControl'
 
 export default class TestNode extends Rete.Component {
   constructor () {
@@ -14,6 +14,7 @@ export default class TestNode extends Rete.Component {
 
   builder (node) {
     /// modify the node
+    node.addControl(new ConnectionControl('info'))
     node.addOutput(new Rete.Output('out', '', ConnectionSocket, true))
     node.addInput(new Rete.Input('in', '', ConnectionSocket, false))
   }

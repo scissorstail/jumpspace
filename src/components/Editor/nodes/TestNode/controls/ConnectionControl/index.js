@@ -2,11 +2,11 @@ import Rete from 'rete'
 import component from './component'
 
 export default class ConnectionControl extends Rete.Control {
-  constructor (emitter, key, readonly) {
+  constructor (key, data) {
     super(key)
     this.render = 'vue'
     this.component = component
-    this.props = { }
+    this.props = { data }
   }
 
   setValue (val) {

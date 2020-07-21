@@ -8,6 +8,7 @@ import ConnectionPlugin from 'rete-connection-plugin'
 import VueRenderPlugin from 'rete-vue-render-plugin'
 import ContextMenuPlugin from 'rete-context-menu-plugin'
 import AreaPlugin from 'rete-area-plugin'
+import ConnectionPathPlugin from 'rete-connection-path-plugin'
 // import AlightRenderPlugin from 'rete-alight-render-plugin'
 // import TaskPlugin from 'rete-task-plugin'
 
@@ -23,12 +24,20 @@ export default {
       new TestNode()
     ]
 
+    const background = document.createElement('div')
+    background.classList = 'background'
+
     // Editor
     const editor = new Rete.NodeEditor('test@0.1.0', document.querySelector('#rete'))
     editor.use(ConnectionPlugin)
     editor.use(VueRenderPlugin)
     editor.use(ContextMenuPlugin)
-    editor.use(AreaPlugin)
+    editor.use(AreaPlugin, { background })
+    editor.use(ConnectionPathPlugin, {
+      type: ConnectionPathPlugin.DEFAULT, // DEFAULT or LINEAR transformer
+      curve: ConnectionPathPlugin.curveStep, // curve identifier
+      arrow: { color: 'steelblue', marker: 'M-5,-10 L-5,10 L20,0 z' }
+    })
     // editor.use(AlightRenderPlugin)
     // editor.use(TaskPlugin)
 
@@ -80,8 +89,8 @@ export default {
 
 #rete .node.site {
   min-width: 180px;
-  background-color: transparent;
-  border: 2px dashed black;
+  background-color: #4682b42b;
+  border: 2px dashed #4682b4;
 }
 
 #rete .node.site .title {
@@ -89,7 +98,7 @@ export default {
 }
 
 #rete .node.site.selected {
-  background-color: transparent;
+  background-color: #e3c0002b;
   border: 2px dashed #e3c000;
 }
 
@@ -100,7 +109,7 @@ export default {
 }
 
 #rete .node.site .socket.input {
-   border: 2px dashed green;
+  border: 2px dashed green;
   margin-left: -32px;
 }
 
@@ -109,11 +118,25 @@ export default {
 }
 
 #rete .node.site .socket.output {
-   border: 2px dashed lightgrey;
+  border: 2px dashed grey;
   margin-right: -32px;
 }
 
 #rete .node.site .output .output-title {
   color: black;
+}
+
+#rete .connection .main-path {
+  stroke-width: 3px;
+}
+
+#rete {
+}
+
+#rete .background {
+  z-index: -5;
+  background-position: 0px 0px, 10px 10px;
+  background-size: 20px 20px;
+  background-image: linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee 100%),linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee 100%);
 }
 </style>
