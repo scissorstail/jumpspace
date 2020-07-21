@@ -1,7 +1,9 @@
 <template>
   <div>
     <v-popover offset="50%" style="text-align: right" placement="top">
-      <button class="info-edit">편집</button>
+      <a class="info-edit">
+        <v-icon name="cog" scale="1.5" />
+      </a>
 
       <template slot="popover">
         <div class="info-list">
@@ -24,7 +26,14 @@
       </template>
     </v-popover>
     <div>
-      <div class="info-block"></div>
+      <div class="info-block">
+        <img
+          class="info-diagram"
+          width="50%"
+          height="50%"
+          src="/img/diagram/AWS/Compute/Amazon-EC2.svg"
+        />
+      </div>
       <div class="info-block">
         <div>{{ name || "noname" }}</div>
         <div>{{ host || "localhost" }}:{{ port || "80" }}</div>
@@ -58,6 +67,10 @@ export default {
 .info-block {
   font-size: 14px;
   font-weight: bold;
+}
+
+.info-edit {
+  margin-bottom: 5px;
 }
 
 .info-item {
