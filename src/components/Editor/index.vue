@@ -78,31 +78,42 @@ export default {
   z-index: 10000;
 }
 
-#rete .node {
-  min-width: 150px;
-  min-height: 150px;
+#rete .node.site {
+  min-width: 180px;
   background-color: transparent;
   border: 2px dashed black;
 }
 
-#rete .node.selected {
+#rete .node.site .title {
+  display: none;
+}
+
+#rete .node.site.selected {
   background-color: transparent;
   border: 2px dashed #e3c000;
 }
 
-#rete .socket {
-  border: 2px dashed lightgrey;
+#rete .node.site .socket {
   background: white;
   height: 24px;
   width: 24px;
-  border-radius: initial;
 }
 
-#rete .socket.input {
+#rete .node.site .socket.input {
+   border: 2px dashed green;
   margin-left: -32px;
 }
 
-#rete .socket.output {
+#rete .node.site .input .input-title {
+  color: black;
+}
+
+#rete .node.site .socket.output {
+   border: 2px dashed lightgrey;
   margin-right: -32px;
+}
+
+#rete .node.site .output .output-title {
+  color: black;
 }
 </style>

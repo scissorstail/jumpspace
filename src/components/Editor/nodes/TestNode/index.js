@@ -4,7 +4,7 @@ import ConnectionSocket from '../../sockets/ConnectionSocket'
 
 export default class TestNode extends Rete.Component {
   constructor () {
-    super('Link') // name
+    super('Site') // name
     /*
     this.task = {
       outputs: {}
@@ -14,8 +14,8 @@ export default class TestNode extends Rete.Component {
 
   builder (node) {
     /// modify the node
-    node.addOutput(new Rete.Output('out', 'Forward', ConnectionSocket, true))
-    node.addInput(new Rete.Input('in', 'Remote', ConnectionSocket, false))
+    node.addOutput(new Rete.Output('out', '', ConnectionSocket, true))
+    node.addInput(new Rete.Input('in', '', ConnectionSocket, false))
   }
 
   worker (node, inputs, outputs) {
