@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-popover offset="50%" style="text-align: right" placement="top">
+    <v-popover offset="50%" style="text-align: right; margin-bottom: 5px" placement="top">
       <a class="info-edit">
         <v-icon name="cog" scale="1.5" />
       </a>
@@ -8,9 +8,13 @@
       <template slot="popover">
         <div class="info-list">
           <div class="info-item">
-            <button @click="loadPrevDiagram">이전</button>
-            <input type="text" v-model.trim="selectedDiagramFilename" style="margin: 0 3px;"/>
-            <button @click="loadNextDiagram">다음</button>
+            <button @click="loadPrevDiagram">
+              <v-icon name="angle-left" scale="1" />
+            </button>
+            <input type="text" v-model.trim="diagram" style="margin: 0 3px;" />
+            <button @click="loadNextDiagram">
+              <v-icon name="angle-right" scale="1" />
+            </button>
           </div>
           <div class="info-item">
             <div>Name:</div>
@@ -24,8 +28,10 @@
             <div>Port:</div>
             <input type="number" v-model.number="port" />
           </div>
-          <div class="info-item">
-            <button v-close-popover>닫기</button>
+          <div class="info-action">
+            <button v-close-popover @click="save">
+              <v-icon v-close-popover name="save" scale="1" />
+            </button>
           </div>
         </div>
       </template>
@@ -36,7 +42,7 @@
           class="info-diagram"
           width="50%"
           height="50%"
-          :src="`/img/diagram/AWS/Compute/${selectedDiagramFilename}`"
+          :src="diagram ? `/img/diagram/AWS/Compute/${diagram}` : null"
         />
         <div>{{ name || "noname" }}</div>
         <div>{{ host || "localhost" }}:{{ port || "80" }}</div>
@@ -48,7 +54,15 @@
 <script>
 export default {
   props: {
-    data: {
+    emitter: {
+      type: Object,
+      default: () => ({})
+    },
+    setValue: {
+      type: Function,
+      default: () => {}
+    },
+    info: {
       type: Object,
       default: () => ({})
     }
@@ -58,46 +72,60 @@ export default {
       name: null,
       host: null,
       port: null,
-      diagramFilenames: [],
-      selectedDiagramFilename: 'Amazon-Application-Auto-Scaling.svg'
-    }
-  },
-  watch: {
-    diagramFilenames () {
-      console.log(this.diagramFilenames)
+      diagram: null,
+      diagramFilenames: []
     }
   },
   mounted () {
-    this.name = this.data.name || null
-
     window.readDiagramDir('/AWS/Compute', (err, files) => {
       if (err) {
         console.error(err)
         return
       }
 
+      this.name = this.info.name || null
+      this.host = this.info.host || null
+      this.port = this.info.port || null
+      this.diagram = this.info.diagram || null
       this.diagramFilenames = files.filter(x => x.endsWith('.svg'))
-      console.log(this.diagramFilenames)
     })
   },
   methods: {
     loadPrevDiagram () {
-      const foundIndex = this.diagramFilenames.findIndex(x => x === this.selectedDiagramFilename)
+      const foundIndex = this.diagramFilenames.findIndex(
+        x => x === this.diagram
+      )
       if (foundIndex !== -1) {
-        const index = (foundIndex - 1 > 0) ? foundIndex - 1 : (this.diagramFilenames.length - 1)
-        this.selectedDiagramFilename = this.diagramFilenames[index]
+        const index =
+          foundIndex - 1 > 0
+            ? foundIndex - 1
+            : this.diagramFilenames.length - 1
+        this.diagram = this.diagramFilenames[index]
       } else {
-        this.selectedDiagramFilename = 'Amazon-Application-Auto-Scaling.svg'
+        this.diagram = 'Amazon-EC2.svg'
       }
     },
     loadNextDiagram () {
-      const foundIndex = this.diagramFilenames.findIndex(x => x === this.selectedDiagramFilename)
+      const foundIndex = this.diagramFilenames.findIndex(
+        x => x === this.diagram
+      )
       if (foundIndex !== -1) {
-        const index = (foundIndex + 1) > (this.diagramFilenames.length - 1) ? 0 : (foundIndex + 1)
-        this.selectedDiagramFilename = this.diagramFilenames[index]
+        const index =
+          foundIndex + 1 > this.diagramFilenames.length - 1
+            ? 0
+            : foundIndex + 1
+        this.diagram = this.diagramFilenames[index]
       } else {
-        this.selectedDiagramFilename = 'Amazon-Application-Auto-Scaling.svg'
+        this.diagram = 'Amazon-EC2.svg'
       }
+    },
+    save () {
+      this.setValue({
+        name: this.name,
+        host: this.host,
+        port: this.port,
+        diagram: this.diagram
+      })
     }
   }
 }
@@ -117,18 +145,27 @@ export default {
 }
 
 .info-edit {
-  margin-bottom: 5px;
+  padding-bottom: 10px;
 }
 
 .info-item {
   display: flex;
   justify-content: space-between;
-  text-align: right;
   padding: 3px;
   font-size: 12px;
 
   & > input {
     margin-left: 5px;
+  }
+}
+
+.info-action {
+  display: flex;
+  justify-content: flex-end;
+  padding: 3px;
+
+  & > button {
+    margin-left: 3px;
   }
 }
 

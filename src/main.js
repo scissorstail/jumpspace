@@ -4,7 +4,8 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import VTooltip from 'v-tooltip'
-import 'vue-awesome/icons/cog'
+
+import 'vue-awesome/icons'
 import Icon from 'vue-awesome/components/Icon'
 
 Vue.config.productionTip = false
