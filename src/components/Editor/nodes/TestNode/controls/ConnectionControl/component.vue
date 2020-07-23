@@ -87,19 +87,17 @@ export default {
       this.host = this.info.host || null
       this.port = this.info.port || null
       this.diagram = this.info.diagram || null
-      this.diagramFilenames = files.filter(x => x.endsWith('.svg'))
+      this.diagramFilenames = files.filter((x) => x.endsWith('.svg'))
     })
   },
   methods: {
     loadPrevDiagram () {
       const foundIndex = this.diagramFilenames.findIndex(
-        x => x === this.diagram
+        (x) => x === this.diagram
       )
       if (foundIndex !== -1) {
         const index =
-          foundIndex - 1 > 0
-            ? foundIndex - 1
-            : this.diagramFilenames.length - 1
+          foundIndex - 1 > 0 ? foundIndex - 1 : this.diagramFilenames.length - 1
         this.diagram = this.diagramFilenames[index]
       } else {
         this.diagram = 'Amazon-EC2.svg'
@@ -107,13 +105,11 @@ export default {
     },
     loadNextDiagram () {
       const foundIndex = this.diagramFilenames.findIndex(
-        x => x === this.diagram
+        (x) => x === this.diagram
       )
       if (foundIndex !== -1) {
         const index =
-          foundIndex + 1 > this.diagramFilenames.length - 1
-            ? 0
-            : foundIndex + 1
+          foundIndex + 1 > this.diagramFilenames.length - 1 ? 0 : foundIndex + 1
         this.diagram = this.diagramFilenames[index]
       } else {
         this.diagram = 'Amazon-EC2.svg'
@@ -126,6 +122,8 @@ export default {
         port: this.port,
         diagram: this.diagram
       })
+
+      this.emitter.trigger('process')
     }
   }
 }

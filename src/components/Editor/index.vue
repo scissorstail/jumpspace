@@ -50,10 +50,11 @@ export default {
 
     async function compile () {
       await engine.abort()
+      console.log(editor.toJSON())
       await engine.process(editor.toJSON())
     }
 
-    editor.on('connectioncreate connectionremove nodecreate noderemove', () => {
+    editor.on('connectioncreate connectionremove nodecreate noderemove process', () => {
       if (editor.silent) { return }
 
       compile()
@@ -137,6 +138,14 @@ export default {
   z-index: -5;
   background-position: 0px 0px, 10px 10px;
   background-size: 20px 20px;
-  background-image: linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee 100%),linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee 100%);
+  background-image: linear-gradient(
+      45deg,
+      #eee 25%,
+      transparent 25%,
+      transparent 75%,
+      #eee 75%,
+      #eee 100%
+    ),
+    linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee 100%);
 }
 </style>
