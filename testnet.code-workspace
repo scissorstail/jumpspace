@@ -4,5 +4,18 @@
       "path": "."
     }
   ],
-  "settings": {}
+  "settings": {
+    "[vue]": {
+      "editor.defaultFormatter": "octref.vetur"
+    },
+    "eslint.format.enable": true,
+    "eslint.lintTask.enable": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": true
+    },
+    "vetur.format.defaultFormatter.js": "none",
+    "vetur.experimental.templateInterpolationService": true
+  }
 }

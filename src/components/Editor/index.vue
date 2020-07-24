@@ -20,16 +20,18 @@ export default {
   },
   mounted () {
     // Node
-    const nodes = [
-      new TestNode()
-    ]
+    const nodes = [new TestNode()]
 
     const background = document.createElement('div')
     background.classList = 'background'
 
     // Editor
-    const editor = new Rete.NodeEditor('test@0.1.0', document.querySelector('#rete'))
+    const editor = new Rete.NodeEditor(
+      'test@0.1.0',
+      document.querySelector('#rete')
+    )
     editor.use(ConnectionPlugin)
+
     editor.use(VueRenderPlugin)
     editor.use(ContextMenuPlugin)
     editor.use(AreaPlugin, { background })
@@ -43,7 +45,7 @@ export default {
 
     const engine = new Rete.Engine('test@0.1.0')
 
-    nodes.map(c => {
+    nodes.map((c) => {
       editor.register(c)
       engine.register(c)
     })
@@ -54,11 +56,16 @@ export default {
       await engine.process(editor.toJSON())
     }
 
-    editor.on('connectioncreate connectionremove nodecreate noderemove process', () => {
-      if (editor.silent) { return }
+    editor.on(
+      'connectioncreate connectionremove nodecreate noderemove process',
+      () => {
+        if (editor.silent) {
+          return
+        }
 
-      compile()
-    })
+        compile()
+      }
+    )
 
     /*
     editor.fromJSON().then(() => {
@@ -131,11 +138,9 @@ export default {
   stroke-width: 3px;
 }
 
-#rete {
-}
-
 #rete .background {
   z-index: -5;
+
   background-position: 0px 0px, 10px 10px;
   background-size: 20px 20px;
   background-image: linear-gradient(
