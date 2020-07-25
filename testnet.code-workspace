@@ -16,6 +16,9 @@
       "source.fixAll.eslint": true
     },
     "vetur.format.defaultFormatter.js": "none",
-    "vetur.experimental.templateInterpolationService": true
+    "vetur.experimental.templateInterpolationService": false,
+    "[javascript]": {
+      "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    }
   }
 }

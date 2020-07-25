@@ -1,52 +1,82 @@
 <template>
   <div>
-    <v-popover offset="50%" style="text-align: right; margin-bottom: 5px" placement="top">
+    <div class="header-menu">
       <a class="info-edit">
-        <v-icon name="cog" scale="1.5" />
+        <v-popover ref="popover" offset="50%" placement="top">
+          <v-icon name="cog" height="24" width="24" scale="1.5" class="info-edit-item" />
+          <template slot="popover">
+            <div class="info-list">
+              <div class="info-item">
+                <button @click="loadPrevDiagram">
+                  <v-icon name="angle-left" scale="1" />
+                </button>
+                <input type="text" v-model.trim="diagram" style="margin: 0 3px;" />
+                <button @click="loadNextDiagram">
+                  <v-icon name="angle-right" scale="1" />
+                </button>
+              </div>
+              <div class="info-item">
+                <div>Name:</div>
+                <input type="text" v-model.trim="name" />
+              </div>
+              <div class="info-item">
+                <div>Host:</div>
+                <input type="text" v-model.trim="host" />
+              </div>
+              <div class="info-item">
+                <div>Port:</div>
+                <input type="number" v-model.number="port" />
+              </div>
+              <div class="info-item">
+                <div>Password:</div>
+                <input type="password" v-model.trim="password" />
+              </div>
+              <div class="info-action">
+                <button v-close-popover @click="save">
+                  <v-icon v-close-popover name="save" scale="1" />
+                </button>
+              </div>
+            </div>
+          </template>
+        </v-popover>
       </a>
-
-      <template slot="popover">
-        <div class="info-list">
-          <div class="info-item">
-            <button @click="loadPrevDiagram">
-              <v-icon name="angle-left" scale="1" />
-            </button>
-            <input type="text" v-model.trim="diagram" style="margin: 0 3px;" />
-            <button @click="loadNextDiagram">
-              <v-icon name="angle-right" scale="1" />
-            </button>
-          </div>
-          <div class="info-item">
-            <div>Name:</div>
-            <input type="text" v-model.trim="name" />
-          </div>
-          <div class="info-item">
-            <div>Host:</div>
-            <input type="text" v-model.trim="host" />
-          </div>
-          <div class="info-item">
-            <div>Port:</div>
-            <input type="number" v-model.number="port" />
-          </div>
-          <div class="info-action">
-            <button v-close-popover @click="save">
-              <v-icon v-close-popover name="save" scale="1" />
-            </button>
-          </div>
-        </div>
-      </template>
-    </v-popover>
-    <div>
-      <div class="info-block">
-        <img
-          class="info-diagram"
-          width="50%"
-          height="50%"
-          :src="diagram ? `/img/diagram/AWS/Compute/${diagram}` : null"
+      <!--
+      <a class="info-edit">
+        <v-icon name="cog" height="24" width="24" scale="1.5" class="info-edit-item" />
+      </a>
+      -->
+    </div>
+    <div class="info-block" :class="{blur: isBlur}">
+      <img
+        class="info-diagram"
+        width="50%"
+        height="50%"
+        :src="diagram ? `/img/diagram/AWS/Compute/${diagram}` : null"
+      />
+      <div>{{ name || "noname" }}</div>
+      <div>{{ host || "localhost" }}:{{ port || "80" }}</div>
+    </div>
+    <div class="footer-menu">
+      <a class="info-edit">
+        <v-icon
+          name="plug"
+          height="24"
+          width="24"
+          scale="1.5"
+          class="info-edit-item"
+          @click="connect"
         />
-        <div>{{ name || "noname" }}</div>
-        <div>{{ host || "localhost" }}:{{ port || "80" }}</div>
-      </div>
+      </a>
+      <a class="info-edit">
+        <v-icon
+          name="eye-slash"
+          height="24"
+          width="24"
+          scale="1.5"
+          class="info-edit-item"
+          @click="blur"
+        />
+      </a>
     </div>
   </div>
 </template>
@@ -69,10 +99,12 @@ export default {
   },
   data () {
     return {
+      isBlur: false,
       name: null,
       host: null,
       port: null,
       diagram: null,
+      password: null,
       diagramFilenames: []
     }
   },
@@ -87,6 +119,7 @@ export default {
       this.host = this.info.host || null
       this.port = this.info.port || null
       this.diagram = this.info.diagram || null
+      this.password = this.info.password || null
       this.diagramFilenames = files.filter((x) => x.endsWith('.svg'))
     })
   },
@@ -120,10 +153,19 @@ export default {
         name: this.name,
         host: this.host,
         port: this.port,
-        diagram: this.diagram
+        diagram: this.diagram,
+        password: this.password
       })
 
       this.emitter.trigger('process')
+    },
+    connect () {
+      // const command = `-ssh ${this.host} ${this.port} -pw ${this.password}`
+      const command = `"%ProgramFiles%\\PuTTY\\putty.exe" -ssh "${this.host}" -pw "${this.password}" -P "${this.port}"`
+      window.executeCommand(command)
+    },
+    blur () {
+      this.isBlur = !this.isBlur
     }
   }
 }
@@ -140,10 +182,6 @@ export default {
   min-height: 75px;
   max-width: 75px;
   max-height: 75px;
-}
-
-.info-edit {
-  padding-bottom: 10px;
 }
 
 .info-item {
@@ -183,5 +221,39 @@ export default {
       border-color: $color;
     }
   }
+}
+
+.header-menu {
+  display: flex;
+  flex-direction: row-reverse;
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  padding: 10px;
+
+  .info-edit {
+    &-item {
+      margin-left: 4px;
+    }
+  }
+}
+
+.footer-menu {
+  display: flex;
+  flex-direction: row-reverse;
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  padding: 10px;
+
+  .info-edit {
+    &-item {
+      margin-left: 4px;
+    }
+  }
+}
+
+.blur {
+  filter: blur(4px);
 }
 </style>

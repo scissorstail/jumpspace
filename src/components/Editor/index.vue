@@ -52,8 +52,11 @@ export default {
 
     async function compile () {
       await engine.abort()
-      console.log(editor.toJSON())
-      await engine.process(editor.toJSON())
+
+      const editorData = editor.toJSON()
+      await engine.process(editorData)
+
+      window.localStorage.editorSaveData = JSON.stringify(editorData)
     }
 
     editor.on(
@@ -67,13 +70,14 @@ export default {
       }
     )
 
-    /*
-    editor.fromJSON().then(() => {
-      editor.view.resize()
+    const editorSaveData = window.localStorage.editorSaveData
+    if (editorSaveData) {
+      editor.fromJSON(JSON.parse(editorSaveData)).then(() => {
+        editor.view.resize()
 
-      compile()
-    })
-    */
+        compile()
+      })
+    }
   }
 }
 </script>
@@ -99,6 +103,7 @@ export default {
   min-width: 180px;
   background-color: #4682b42b;
   border: 2px dashed #4682b4;
+  padding-bottom: initial;
 }
 
 #rete .node.site .title {
