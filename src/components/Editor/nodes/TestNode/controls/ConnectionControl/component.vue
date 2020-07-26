@@ -8,16 +8,20 @@
             <div class="info-list">
               <div class="info-item">
                 <button @click="loadPrevDiagram">
-                  <v-icon name="angle-left" scale="1" />
+                  <v-icon name="angle-left" height="14" width="14" scale="1" />
                 </button>
                 <input type="text" v-model.trim="diagram" style="margin: 0 3px;" />
                 <button @click="loadNextDiagram">
-                  <v-icon name="angle-right" scale="1" />
+                  <v-icon name="angle-right" height="14" width="14" scale="1" />
                 </button>
               </div>
               <div class="info-item">
                 <div>Name:</div>
                 <input type="text" v-model.trim="name" />
+              </div>
+              <div class="info-item">
+                <div>User:</div>
+                <input type="text" v-model.trim="user" />
               </div>
               <div class="info-item">
                 <div>Host:</div>
@@ -30,6 +34,14 @@
               <div class="info-item">
                 <div>Password:</div>
                 <input type="password" v-model.trim="password" />
+              </div>
+              <div class="info-item">
+                <div>Key:</div>
+                <button @click="$refs.file.click()">
+                  <v-icon name="folder-open" height="14" width="14" scale="1" />
+                  <input ref="file" type="file" @change="change" style="display:none" />
+                </button>
+                <input type="text" v-model.trim="keyPath" />
               </div>
               <div class="info-action">
                 <button v-close-popover @click="save">
@@ -53,8 +65,9 @@
         height="50%"
         :src="diagram ? `/img/diagram/AWS/Compute/${diagram}` : null"
       />
-      <div>{{ name || "noname" }}</div>
-      <div>{{ host || "localhost" }}:{{ port || "80" }}</div>
+      <div class="info-text">{{ name || "noname" }}</div>
+      <div class="info-text">{{ host || "localhost" }}</div>
+      <div class="info-text">{{ port || "80" }}</div>
     </div>
     <div class="footer-menu">
       <a class="info-edit">
@@ -82,6 +95,7 @@
 </template>
 
 <script>
+import * as upath from 'upath'
 export default {
   props: {
     emitter: {
@@ -101,10 +115,12 @@ export default {
     return {
       isBlur: false,
       name: null,
+      user: null,
       host: null,
       port: null,
       diagram: null,
       password: null,
+      keyPath: null,
       diagramFilenames: []
     }
   },
@@ -116,10 +132,12 @@ export default {
       }
 
       this.name = this.info.name || null
+      this.user = this.info.user || null
       this.host = this.info.host || null
       this.port = this.info.port || null
       this.diagram = this.info.diagram || null
       this.password = this.info.password || null
+      this.keyPath = this.info.keyPath || null
       this.diagramFilenames = files.filter((x) => x.endsWith('.svg'))
     })
   },
@@ -151,21 +169,31 @@ export default {
     save () {
       this.setValue({
         name: this.name,
+        user: this.user,
         host: this.host,
         port: this.port,
         diagram: this.diagram,
-        password: this.password
+        password: this.password,
+        keyPath: this.keyPath
       })
 
       this.emitter.trigger('process')
     },
     connect () {
       // const command = `-ssh ${this.host} ${this.port} -pw ${this.password}`
-      const command = `"%ProgramFiles%\\PuTTY\\putty.exe" -ssh "${this.host}" -pw "${this.password}" -P "${this.port}"`
+      // const command = `ssh -i "~/.ssh/id_rsa.pem" pi@nameeo.gonetis.com -p 4522`
+      // const command = `"%ProgramFiles%\\PuTTY\\putty.exe" -ssh "${this.host}" -pw "${this.password}" -P "${this.port}"`
+      const command = `"%ProgramFiles%\\Git\\git-bash.exe" -c "ssh -i "${upath.toUnix(this.keyPath)}" "${this.user ? this.user + '@' : ''}${this.host}" -p "${this.port}""`
+      console.log(command)
       window.executeCommand(command)
     },
     blur () {
       this.isBlur = !this.isBlur
+    },
+    change (e) {
+      if (this.$refs.file?.files?.[0].path) {
+        this.keyPath = this.$refs.file.files[0].path
+      }
     }
   }
 }
@@ -184,14 +212,23 @@ export default {
   max-height: 75px;
 }
 
+.info-text {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
 .info-item {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 3px;
   font-size: 12px;
 
   & > input {
     margin-left: 5px;
+  }
+
+  div:nth-child(1) {
+    margin-right: auto;
   }
 }
 

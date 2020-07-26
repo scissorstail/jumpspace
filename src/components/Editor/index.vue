@@ -100,7 +100,8 @@ export default {
 }
 
 #rete .node.site {
-  min-width: 180px;
+  height: 210px;
+  width: 200px;
   background-color: #4682b42b;
   border: 2px dashed #4682b4;
   padding-bottom: initial;
