@@ -52,11 +52,24 @@
           </template>
         </v-popover>
       </a>
-      <!--
-      <a class="info-edit">
-        <v-icon name="cog" height="24" width="24" scale="1.5" class="info-edit-item" />
+      <a class="info-edit left">
+        <v-popover ref="popover2" offset="50%" placement="top">
+          <v-icon name="forward" height="24" width="24" scale="1.5" class="info-edit-item" />
+          <template slot="popover">
+            <div class="info-list">
+              <div class="info-item">
+                <div>Test:</div>
+                <input type="text" v-model.trim="name" />
+              </div>
+              <div class="info-action">
+                <button v-close-popover @click="save">
+                  <v-icon v-close-popover name="save" scale="1" />
+                </button>
+              </div>
+            </div>
+          </template>
+        </v-popover>
       </a>
-      -->
     </div>
     <div class="info-block" :class="{blur: isBlur}">
       <img
@@ -131,15 +144,16 @@ export default {
         return
       }
 
-      this.name = this.info.name || null
-      this.user = this.info.user || null
-      this.host = this.info.host || null
-      this.port = this.info.port || null
-      this.diagram = this.info.diagram || null
-      this.password = this.info.password || null
-      this.keyPath = this.info.keyPath || null
       this.diagramFilenames = files.filter((x) => x.endsWith('.svg'))
     })
+
+    this.name = this.info.name || null
+    this.user = this.info.user || null
+    this.host = this.info.host || null
+    this.port = this.info.port || null
+    this.diagram = this.info.diagram || null
+    this.password = this.info.password || null
+    this.keyPath = this.info.keyPath || null
   },
   methods: {
     loadPrevDiagram () {
@@ -265,11 +279,22 @@ export default {
   flex-direction: row-reverse;
   position: absolute;
   top: 0px;
+  left: 0px;
   right: 0px;
   padding: 10px;
 
   .info-edit {
+    &.left {
+      margin-right: auto;
+    }
+
     &-item {
+      margin-left: 4px;
+    }
+
+    &-text {
+      vertical-align: top;
+      line-height: 24px;
       margin-left: 4px;
     }
   }
@@ -280,12 +305,18 @@ export default {
   flex-direction: row-reverse;
   position: absolute;
   bottom: 0px;
+  left: 0px;
   right: 0px;
   padding: 10px;
 
   .info-edit {
     &-item {
       margin-left: 4px;
+    }
+
+    &-text {
+      vertical-align: top;
+      line-height: 24px;
     }
   }
 }

@@ -13,7 +13,6 @@ export default class TestNode extends Rete.Component {
   }
 
   builder (node) {
-    console.log(node)
     /// modify the node
     node.addControl(new ConnectionControl(this.editor, 'connection', node))
     node.addOutput(new Rete.Output('out', '', ConnectionSocket, true))
@@ -21,7 +20,11 @@ export default class TestNode extends Rete.Component {
   }
 
   worker (node, inputs, outputs) {
+    console.log(node, inputs, outputs)
+    // console.log(node.data)
     /// process data
-    outputs.out = { a: 1 }
+    outputs.out = {
+      connection: { ...node.data.connection }
+    }
   }
 }
