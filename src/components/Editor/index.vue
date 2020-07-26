@@ -37,7 +37,7 @@ export default {
     editor.use(AreaPlugin, { background })
     editor.use(ConnectionPathPlugin, {
       type: ConnectionPathPlugin.DEFAULT, // DEFAULT or LINEAR transformer
-      curve: ConnectionPathPlugin.curveStep, // curve identifier
+      // curve: ConnectionPathPlugin.curveStep, // curve identifier
       arrow: { color: 'steelblue', marker: 'M-5,-10 L-5,10 L20,0 z' }
     })
     // editor.use(AlightRenderPlugin)
