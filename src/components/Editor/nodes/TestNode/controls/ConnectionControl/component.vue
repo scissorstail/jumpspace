@@ -52,7 +52,7 @@
           </template>
         </v-popover>
       </a>
-      <a class="info-edit left">
+      <a v-if="isFowarding" class="info-edit left">
         <v-popover ref="popover2" offset="50%" placement="top">
           <v-icon name="forward" height="24" width="24" scale="1.5" class="info-edit-item" />
           <template slot="popover">
@@ -71,16 +71,16 @@
         </v-popover>
       </a>
     </div>
-    <div class="info-block" :class="{blur: isBlur}">
+    <div class="info-block" :class="{ blur: isBlur }">
       <img
         class="info-diagram"
         width="50%"
         height="50%"
         :src="diagram ? `/img/diagram/AWS/Compute/${diagram}` : null"
       />
-      <div class="info-text">{{ name || "noname" }}</div>
-      <div class="info-text">{{ host || "localhost" }}</div>
-      <div class="info-text">{{ port || "80" }}</div>
+      <div class="info-text">{{ name || 'noname' }}</div>
+      <div class="info-text">{{ host || 'localhost' }}</div>
+      <div class="info-text">{{ port || '80' }}</div>
     </div>
     <div class="footer-menu">
       <a class="info-edit">
@@ -122,10 +122,15 @@ export default {
     info: {
       type: Object,
       default: () => ({})
+    },
+    forwards: {
+      type: Array,
+      default: () => []
     }
   },
   data () {
     return {
+      isFowarding: false,
       isBlur: false,
       name: null,
       user: null,
@@ -147,6 +152,8 @@ export default {
       this.diagramFilenames = files.filter((x) => x.endsWith('.svg'))
     })
 
+    this.isFowarding = this.info.isFowarding || false
+    this.isBlur = this.info.isBlur || false
     this.name = this.info.name || null
     this.user = this.info.user || null
     this.host = this.info.host || null
@@ -182,6 +189,8 @@ export default {
     },
     save () {
       this.setValue({
+        isFowarding: this.isFowarding,
+        isBlur: this.isBlur,
         name: this.name,
         user: this.user,
         host: this.host,
@@ -197,7 +206,9 @@ export default {
       // const command = `-ssh ${this.host} ${this.port} -pw ${this.password}`
       // const command = `ssh -i "~/.ssh/id_rsa.pem" pi@nameeo.gonetis.com -p 4522`
       // const command = `"%ProgramFiles%\\PuTTY\\putty.exe" -ssh "${this.host}" -pw "${this.password}" -P "${this.port}"`
-      const command = `"%ProgramFiles%\\Git\\git-bash.exe" -c "ssh -i "${upath.toUnix(this.keyPath)}" "${this.user ? this.user + '@' : ''}${this.host}" -p "${this.port}""`
+      const command = `"%ProgramFiles%\\Git\\git-bash.exe" -c "ssh -i "${upath.toUnix(
+        this.keyPath
+      )}" "${this.user ? this.user + '@' : ''}${this.host}" -p "${this.port}""`
       console.log(command)
       window.executeCommand(command)
     },

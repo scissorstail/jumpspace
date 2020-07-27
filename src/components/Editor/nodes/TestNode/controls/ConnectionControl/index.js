@@ -13,7 +13,8 @@ export default class ConnectionControl extends Rete.Control {
     this.props = {
       emitter,
       setValue: (val) => this.setValue(val),
-      info: node.data[key]
+      info: node.data[key],
+      forwards: node.inputs?.in?.[key] || []
     }
   }
 
