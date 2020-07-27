@@ -110,24 +110,7 @@
 <script>
 import * as upath from 'upath'
 export default {
-  props: {
-    emitter: {
-      type: Object,
-      default: () => ({})
-    },
-    setValue: {
-      type: Function,
-      default: () => {}
-    },
-    info: {
-      type: Object,
-      default: () => ({})
-    },
-    forwards: {
-      type: Array,
-      default: () => []
-    }
-  },
+  props: ['readonly', 'emitter', 'ikey', 'getData', 'putData'],
   data () {
     return {
       isFowarding: false,
@@ -152,17 +135,18 @@ export default {
       this.diagramFilenames = files.filter((x) => x.endsWith('.svg'))
     })
 
-    this.isFowarding = this.info.isFowarding || false
-    this.isBlur = this.info.isBlur || false
-    this.name = this.info.name || null
-    this.user = this.info.user || null
-    this.host = this.info.host || null
-    this.port = this.info.port || null
-    this.diagram = this.info.diagram || null
-    this.password = this.info.password || null
-    this.keyPath = this.info.keyPath || null
+    const data = this.getData(this.ikey)
+    for (const key in data) {
+      if (key in this.$data) {
+        this[key] = data[key]
+      }
+    }
   },
   methods: {
+    update () {
+      if (this.ikey) { this.putData(this.ikey, { ...this.$data }) }
+      this.emitter.trigger('process')
+    },
     loadPrevDiagram () {
       const foundIndex = this.diagramFilenames.findIndex(
         (x) => x === this.diagram
@@ -187,21 +171,6 @@ export default {
         this.diagram = 'Amazon-EC2.svg'
       }
     },
-    save () {
-      this.setValue({
-        isFowarding: this.isFowarding,
-        isBlur: this.isBlur,
-        name: this.name,
-        user: this.user,
-        host: this.host,
-        port: this.port,
-        diagram: this.diagram,
-        password: this.password,
-        keyPath: this.keyPath
-      })
-
-      this.emitter.trigger('process')
-    },
     connect () {
       // const command = `-ssh ${this.host} ${this.port} -pw ${this.password}`
       // const command = `ssh -i "~/.ssh/id_rsa.pem" pi@nameeo.gonetis.com -p 4522`
@@ -211,6 +180,9 @@ export default {
       )}" "${this.user ? this.user + '@' : ''}${this.host}" -p "${this.port}""`
       console.log(command)
       window.executeCommand(command)
+    },
+    save () {
+      this.update()
     },
     blur () {
       this.isBlur = !this.isBlur
