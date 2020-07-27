@@ -15,7 +15,6 @@
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": true
     },
-    "vetur.format.defaultFormatter.js": "prettier-eslint",
     "vetur.experimental.templateInterpolationService": false,
     "[javascript]": {
       "editor.defaultFormatter": "dbaeumer.vscode-eslint"
