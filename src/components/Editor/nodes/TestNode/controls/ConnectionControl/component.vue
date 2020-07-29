@@ -32,10 +32,6 @@
                 <input type="number" v-model.number="port" />
               </div>
               <div class="info-item">
-                <div>Password:</div>
-                <input type="password" v-model.trim="password" />
-              </div>
-              <div class="info-item">
                 <div>Key:</div>
                 <button @click="$refs.file.click()">
                   <v-icon name="folder-open" height="14" width="14" scale="1" />
@@ -44,7 +40,7 @@
                 <input type="text" v-model.trim="keyPath" />
               </div>
               <div class="info-action">
-                <button v-close-popover @click="save">
+                <button v-close-popover @click="save" style="margin-left: auto">
                   <v-icon v-close-popover name="save" scale="1" />
                 </button>
               </div>
@@ -52,17 +48,27 @@
           </template>
         </v-popover>
       </a>
-      <a v-if="isFowarding" class="info-edit left">
+      <a class="info-edit left">
         <v-popover ref="popover2" offset="50%" placement="top">
-          <v-icon name="forward" height="24" width="24" scale="1.5" class="info-edit-item" />
+          <v-icon name="link" height="24" width="24" scale="1.5" class="info-edit-item" />
           <template slot="popover">
             <div class="info-list">
-              <div class="info-item">
-                <div>Test:</div>
-                <input type="text" v-model.trim="name" />
+              <div v-for="(forward, index) in forwards" :key="index" class="info-item">
+                <input type="checkbox" class="middle" v-model="forward.checked" />
+                <input type="text" class="short" maxlength="5" v-model.trim="forward.from" />
+                <span class="middle">
+                  <v-icon name="forward" height="14" width="14" scale="1" />
+                </span>
+                <input type="text" class="short" maxlength="5" v-model.trim="forward.to" />
               </div>
               <div class="info-action">
-                <button v-close-popover @click="save">
+                <button @click="addForward">
+                  <v-icon name="plus" height="14" width="14" scale="1" />
+                </button>
+                <button @click="removeForward">
+                  <v-icon name="minus" height="14" width="14" scale="1" />
+                </button>
+                <button @click="save" style="margin-left: auto">
                   <v-icon v-close-popover name="save" scale="1" />
                 </button>
               </div>
@@ -103,29 +109,42 @@
           @click="blur"
         />
       </a>
+      <a class="info-edit left">
+        <v-icon
+          v-show="isFowardable"
+          name="forward"
+          height="24"
+          width="24"
+          scale="1.5"
+          class="info-edit-item"
+          @click="forward"
+        />
+      </a>
     </div>
   </div>
 </template>
 
 <script>
 import * as upath from 'upath'
+import _ from 'lodash'
+
 export default {
   props: ['readonly', 'emitter', 'ikey', 'getData', 'putData'],
   data () {
     return {
-      isFowarding: false,
       isBlur: false,
       name: null,
       user: null,
       host: null,
       port: null,
       diagram: null,
-      password: null,
       keyPath: null,
+      forwards: [],
+      inputs: [],
       diagramFilenames: []
     }
   },
-  mounted () {
+  created () {
     window.readDiagramDir('/AWS/Compute', (err, files) => {
       if (err) {
         console.error(err)
@@ -134,7 +153,8 @@ export default {
 
       this.diagramFilenames = files.filter((x) => x.endsWith('.svg'))
     })
-
+  },
+  mounted () {
     const data = this.getData(this.ikey)
     for (const key in data) {
       if (key in this.$data) {
@@ -142,9 +162,40 @@ export default {
       }
     }
   },
+  watch: {
+    inputs () {
+      // console.log(this.inputs)
+    }
+  },
+  computed: {
+    isFowardable () {
+      const prevNodeData = _.last(this.inputs)?.[this.ikey]
+      if (!prevNodeData) {
+        return false
+      }
+
+      // console.log(prevNodeData.host, prevNodeData.user, prevNodeData.port, prevNodeData.keyPath)
+
+      if (prevNodeData.host && prevNodeData.user && prevNodeData.port && prevNodeData.keyPath) {
+        return true
+      }
+
+      return false
+    }
+  },
   methods: {
     update () {
-      if (this.ikey) { this.putData(this.ikey, { ...this.$data }) }
+      const data = _.pick(this.$data, [
+        'isBlur',
+        'name',
+        'user',
+        'host',
+        'port',
+        'diagram',
+        'keyPath',
+        'forwards'
+      ])
+      if (this.ikey) { this.putData(this.ikey, { ...data }) }
       this.emitter.trigger('process')
     },
     loadPrevDiagram () {
@@ -172,13 +223,9 @@ export default {
       }
     },
     connect () {
-      // const command = `-ssh ${this.host} ${this.port} -pw ${this.password}`
-      // const command = `ssh -i "~/.ssh/id_rsa.pem" pi@nameeo.gonetis.com -p 4522`
-      // const command = `"%ProgramFiles%\\PuTTY\\putty.exe" -ssh "${this.host}" -pw "${this.password}" -P "${this.port}"`
       const command = `"%ProgramFiles%\\Git\\git-bash.exe" -c "ssh -i "${upath.toUnix(
         this.keyPath
       )}" "${this.user ? this.user + '@' : ''}${this.host}" -p "${this.port}""`
-      console.log(command)
       window.executeCommand(command)
     },
     save () {
@@ -191,6 +238,36 @@ export default {
       if (this.$refs.file?.files?.[0].path) {
         this.keyPath = this.$refs.file.files[0].path
       }
+    },
+    addForward () {
+      this.forwards.push({
+        checked: false,
+        from: null,
+        to: null
+      })
+    },
+    removeForward () {
+      this.forwards = this.forwards.filter(x => !x.checked)
+    },
+    forward () {
+      const prevNodeData = _.last(this.inputs)?.[this.ikey]
+      if (!prevNodeData) {
+        return false
+      }
+
+      const ctlPathFile = `[${this.name}]L-${prevNodeData.user}@${prevNodeData.host}_${prevNodeData.port}.ctl`
+      const fowardList = this.forwards.filter(x => x.checked).map(x => `-L "localhost:${x.from}:${this.host}:${x.to}"`).join(' ')
+      if (fowardList === '') {
+        return
+      }
+
+      const command = `"%ProgramFiles%\\Git\\git-bash.exe" -c "echo "${ctlPathFile}" && ssh -i "${upath.toUnix(prevNodeData.keyPath)}" "${prevNodeData.user}@${prevNodeData.host}" -p "${prevNodeData.port}" -N -M -S "${ctlPathFile}" ${fowardList}"`
+      /*
+      const command = `"%ProgramFiles%\\Git\\git-bash.exe" -c "ssh -i "${upath.toUnix(
+        this.keyPath
+      )}" "${this.user ? this.user + '@' : ''}${this.host}" -p "${this.port}""`
+      */
+      window.executeCommand(command)
     }
   }
 }
@@ -222,6 +299,15 @@ export default {
 
   & > input {
     margin-left: 5px;
+
+    &.short {
+      width: 40px;
+    }
+  }
+
+  .middle {
+    line-height: 18px;
+    margin-left: 5px;
   }
 
   div:nth-child(1) {
@@ -231,8 +317,9 @@ export default {
 
 .info-action {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding: 3px;
+  min-width: 140px;
 
   & > button {
     margin-left: 3px;
@@ -271,6 +358,10 @@ export default {
       margin-right: auto;
     }
 
+    &.right {
+      margin-left: auto;
+    }
+
     &-item {
       margin-left: 4px;
     }
@@ -293,6 +384,14 @@ export default {
   padding: 10px;
 
   .info-edit {
+    &.left {
+      margin-right: auto;
+    }
+
+    &.right {
+      margin-left: auto;
+    }
+
     &-item {
       margin-left: 4px;
     }

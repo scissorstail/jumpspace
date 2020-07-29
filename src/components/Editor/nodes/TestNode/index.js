@@ -25,11 +25,11 @@ export default class TestNode extends Rete.Component {
   }
 
   worker (node, inputs, outputs) {
-    console.log(node, inputs, outputs)
+    // console.log(node, inputs, outputs)
     // console.log(node.data)
     // console.log(node)
 
-    this.control1.setValue(inputs)
+    this.control1.setValue(inputs.input1)
 
     /// process data
     outputs.output1 = {

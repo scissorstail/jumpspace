@@ -18,6 +18,9 @@ export default {
   data () {
     return {}
   },
+  created () {
+    // window.setupLocalPath()
+  },
   mounted () {
     // Node
     const nodes = [new TestNode()]

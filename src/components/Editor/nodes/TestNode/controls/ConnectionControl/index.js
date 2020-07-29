@@ -13,6 +13,6 @@ export default class ConnectionControl extends Rete.Control {
   }
 
   setValue (val) {
-    console.log(val)
+    this.vueContext.inputs = val
   }
 }
