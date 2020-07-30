@@ -11,11 +11,13 @@ export default class TestNode extends Rete.Component {
       outputs: {}
     }
     */
+
+    this.getControl = (node) => this.editor.nodes.find(n => n.id === node.id).controls
   }
 
   builder (node) {
     /// modify the node
-    const control1 = new ConnectionControl(this.editor, 'connection', node)
+    const control1 = new ConnectionControl(this.editor, 'connection')
     const input1 = new Rete.Input('input1', '', ConnectionSocket, false)
     const output1 = new Rete.Output('output1', '', ConnectionSocket, true)
 
@@ -33,6 +35,7 @@ export default class TestNode extends Rete.Component {
     const nextNodeDataList = prevNodeDataList.concat([node.data.connection])
 
     node.data.prevNodeDataList = prevNodeDataList
+    this.getControl(node).get('connection').vueContext.update()
 
     /// process data
     outputs.output1 = {

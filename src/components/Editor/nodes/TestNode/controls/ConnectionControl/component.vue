@@ -91,6 +91,16 @@
     <div class="footer-menu">
       <a class="info-edit">
         <v-icon
+          v-if="isProxyJump"
+          name="bolt"
+          height="24"
+          width="24"
+          scale="1.5"
+          class="info-edit-item"
+          @click="jump"
+        />
+        <v-icon
+          v-else
           name="plug"
           height="24"
           width="24"
@@ -154,16 +164,6 @@ export default {
       this.diagramFilenames = files.filter((x) => x.endsWith('.svg'))
     })
   },
-  mounted () {
-    const data = this.getData(this.ikey)
-    for (const key in data) {
-      if (key in this.$data) {
-        this[key] = data[key]
-      }
-    }
-
-    this.prevNodeDataList = this.getData('prevNodeDataList')
-  },
   computed: {
     isFowardable () {
       const prevNodeData = _.last(this.prevNodeDataList)
@@ -178,22 +178,21 @@ export default {
       }
 
       return false
+    },
+    isProxyJump () {
+      return this.isFowardable
     }
   },
   methods: {
     update () {
-      const data = _.pick(this.$data, [
-        'isBlur',
-        'name',
-        'user',
-        'host',
-        'port',
-        'diagram',
-        'keyPath',
-        'forwards'
-      ])
-      if (this.ikey) { this.putData(this.ikey, { ...data }) }
-      this.emitter.trigger('process')
+      const data = this.getData(this.ikey)
+      for (const key in data) {
+        if (key in this.$data) {
+          this[key] = data[key]
+        }
+      }
+
+      this.prevNodeDataList = this.getData('prevNodeDataList')
     },
     loadPrevDiagram () {
       const foundIndex = this.diagramFilenames.findIndex(
@@ -226,7 +225,18 @@ export default {
       window.executeCommand(command)
     },
     save () {
-      this.update()
+      const data = _.pick(this.$data, [
+        'isBlur',
+        'name',
+        'user',
+        'host',
+        'port',
+        'diagram',
+        'keyPath',
+        'forwards'
+      ])
+      if (this.ikey) { this.putData(this.ikey, { ...data }) }
+      this.emitter.trigger('process')
     },
     blur () {
       this.isBlur = !this.isBlur
@@ -265,6 +275,9 @@ export default {
       )}" "${this.user ? this.user + '@' : ''}${this.host}" -p "${this.port}""`
       */
       window.executeCommand(command)
+    },
+    jump () {
+      alert('test')
     }
   }
 }
