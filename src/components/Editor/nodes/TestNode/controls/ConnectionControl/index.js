@@ -6,6 +6,7 @@ export default class ConnectionControl extends Rete.Control {
     super(key)
     this.emitter = emitter
     this.key = key
+    this.node = node
     this.readonly = readonly
     this.render = 'vue'
     this.component = component
@@ -13,6 +14,7 @@ export default class ConnectionControl extends Rete.Control {
   }
 
   setValue (val) {
-    this.vueContext.inputs = val
+    // this.vueContext.inputs = val
+    // console.log(this)
   }
 }

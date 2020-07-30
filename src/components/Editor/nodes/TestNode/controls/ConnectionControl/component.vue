@@ -140,8 +140,8 @@ export default {
       diagram: null,
       keyPath: null,
       forwards: [],
-      inputs: [],
-      diagramFilenames: []
+      diagramFilenames: [],
+      prevNodeDataList: []
     }
   },
   created () {
@@ -161,15 +161,12 @@ export default {
         this[key] = data[key]
       }
     }
-  },
-  watch: {
-    inputs () {
-      // console.log(this.inputs)
-    }
+
+    this.prevNodeDataList = this.getData('prevNodeDataList')
   },
   computed: {
     isFowardable () {
-      const prevNodeData = _.last(this.inputs)?.[this.ikey]
+      const prevNodeData = _.last(this.prevNodeDataList)
       if (!prevNodeData) {
         return false
       }
@@ -250,7 +247,7 @@ export default {
       this.forwards = this.forwards.filter(x => !x.checked)
     },
     forward () {
-      const prevNodeData = _.last(this.inputs)?.[this.ikey]
+      const prevNodeData = _.last(this.prevNodeDataList)
       if (!prevNodeData) {
         return false
       }

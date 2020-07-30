@@ -1,6 +1,7 @@
 import Rete from 'rete'
 import ConnectionSocket from '../../sockets/ConnectionSocket'
 import ConnectionControl from './controls/ConnectionControl'
+import _ from 'lodash'
 
 export default class TestNode extends Rete.Component {
   constructor () {
@@ -14,26 +15,28 @@ export default class TestNode extends Rete.Component {
 
   builder (node) {
     /// modify the node
-    this.control1 = new ConnectionControl(this.editor, 'connection', node)
-    this.input1 = new Rete.Input('input1', '', ConnectionSocket, false)
-    this.output1 = new Rete.Output('output1', '', ConnectionSocket, true)
+    const control1 = new ConnectionControl(this.editor, 'connection', node)
+    const input1 = new Rete.Input('input1', '', ConnectionSocket, false)
+    const output1 = new Rete.Output('output1', '', ConnectionSocket, true)
 
     node
-      .addControl(this.control1)
-      .addInput(this.input1)
-      .addOutput(this.output1)
+      .addControl(control1)
+      .addInput(input1)
+      .addOutput(output1)
   }
 
   worker (node, inputs, outputs) {
     // console.log(node, inputs, outputs)
-    // console.log(node.data)
     // console.log(node)
 
-    this.control1.setValue(inputs.input1)
+    const prevNodeDataList = _.first(inputs.input1)?.connection || []
+    const nextNodeDataList = prevNodeDataList.concat([node.data.connection])
+
+    node.data.prevNodeDataList = prevNodeDataList
 
     /// process data
     outputs.output1 = {
-      connection: { ...node.data.connection }
+      connection: nextNodeDataList
     }
   }
 }
