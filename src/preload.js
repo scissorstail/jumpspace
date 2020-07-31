@@ -1,6 +1,7 @@
 const path = require('path')
 const fs = require('graceful-fs')
 const exec = require('child_process').exec
+const crypto = require('crypto')
 // const app = require('electron').remote.app
 
 window.readDiagramDir = function (dirname, callback) {
@@ -20,7 +21,7 @@ window.setupLocalPath = function () {
 }
 */
 
-window.executeCommand = function (command) {
+window.executeCommand = function (command, callback = () => {}) {
   function execute (command, callback) {
     exec(command, (error, stdout, stderr) => {
       if (error) {
@@ -35,8 +36,20 @@ window.executeCommand = function (command) {
 
   // call the function
   execute(`${command}`, output => {
-    console.log(`execute output: ${output}`)
+    callback(output)
   })
+}
+
+window.md5 = function (data) {
+  return crypto.createHash('md5').update(data).digest('hex')
+}
+
+window.writeFileSync = function (filename, data) {
+  fs.writeFileSync(filename, data, 'utf-8')
+}
+
+window.unlinkFile = function (filename) {
+  fs.unlink(filename, () => {})
 }
 
 // const remote = require('electron').remote; window.WriteLog = function (message) { var fs = require('fs'); fs.appendFile('D:/electron.txt', message + '\r\n', function (err) { if (err) throw err; console.log('Saved!') }) }

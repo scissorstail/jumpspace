@@ -277,7 +277,34 @@ export default {
       window.executeCommand(command)
     },
     jump () {
-      alert('test')
+      const nodes = this.prevNodeDataList.concat({ ...this.$data })
+      const jumpHosts = []
+
+      let str = ''
+      for (let i = 0; i < nodes.length; i += 1) {
+        const { host, user, port, keyPath } = nodes[i]
+
+        const hostHash = window.md5(host + user + port)
+        jumpHosts.push(hostHash)
+
+        str += `Host ${hostHash}\r\n`
+        str += `HostName ${host}\r\n`
+        str += `User ${user}\r\n`
+        str += `Port ${port}\r\n`
+        str += `Identityfile ${upath.toUnix(keyPath)}\r\n`
+        str += '\r\n'
+      }
+
+      const configTempFilename = `${window.md5(str)}.jmp`
+
+      window.writeFileSync(configTempFilename, str)
+
+      const destHost = jumpHosts.pop()
+      const command = `"%ProgramFiles%\\Git\\git-bash.exe" -c "echo "${configTempFilename}" && ssh -F "${configTempFilename}" -J ${jumpHosts.join(',')} ${destHost}"`
+
+      window.executeCommand(command, (output) => {
+        setTimeout(() => window.unlinkFile(configTempFilename), 3000)
+      })
     }
   }
 }
