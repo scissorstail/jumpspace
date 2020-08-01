@@ -69,6 +69,8 @@ export default {
           return
         }
 
+        // editor.view.resize()
+
         compile()
       }
     )
