@@ -2,24 +2,25 @@
   <div id="main-navigator" class="p-3">
     <template v-for="(item, index) in items">
       <b-button
+        v-if="!isEditing"
         :key="`${_uid}-button-${index}`"
-        :v-b-toggle="`collapse-${index}`"
+        v-b-toggle="`collapse-${index}`"
         block
         variant="white"
-        class="list-item"
+        class="list-item mt-1"
         squared
-        size="lg"
-      >
-        {{item.title}}
-        <span v-show="isEditing">
-          <b-button @click="remove(item)" variant="danger" size="sm">
-            <v-icon name="trash" height="14" width="14" scale="1" />
-          </b-button>
-        </span>
-      </b-button>
+      >{{item.title || '제목없음'}}</b-button>
+      <!--
       <b-collapse :id="`collapse-${index}`" :key="`${_uid}-collapse-${index}`">
         <b-card>I am collapsible content!</b-card>
       </b-collapse>
+      -->
+      <div v-else class="list-item mt-1" :key="`${_uid}-input-${index}`">
+        <b-form-input v-model="item.title" placeholder="제목"></b-form-input>
+        <b-button @click="remove(item)" variant="danger" class="ml-1">
+          <v-icon name="trash" height="14" width="14" scale="1" />
+        </b-button>
+      </div>
     </template>
     <b-button
       v-show="isEditing"
@@ -84,10 +85,9 @@ export default {
     box-shadow: none;
   }
 
-  .btn.list-item {
+  .list-item {
     display: flex;
     justify-content: space-between;
-    height: 50px;
     align-items: flex-end;
 
     &:hover {

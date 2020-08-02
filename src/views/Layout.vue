@@ -17,12 +17,17 @@
               <v-icon name="times" height="14" width="14" scale="1" />
             </b-button>
             <b-button
-              variant="outline-secondary"
+              :variant="isEditingItemList ? 'warning' : 'light'"
               @click="removeItem"
               class="shadow-sm flex-grow-9"
-              :pressed="isEditingItemList"
             >
-              <v-icon name="pen" height="14" width="14" scale="1" />
+              <v-icon
+                :name="isEditingItemList ? 'save' : 'edit'"
+                height="14"
+                width="14"
+                scale="1"
+                style="width: 16px;"
+              />
             </b-button>
           </div>
           <MainNavigator :is-editing="isEditingItemList"></MainNavigator>
