@@ -6,12 +6,9 @@ import store from './store'
 
 import 'vue-awesome/icons'
 import Icon from 'vue-awesome/components/Icon'
+import VTooltip from 'v-tooltip'
 
 import { BootstrapVue } from 'bootstrap-vue'
-import 'bootstrap/dist/css/bootstrap.css'
-import 'bootstrap-vue/dist/bootstrap-vue.css'
-
-import VTooltip from 'v-tooltip'
 
 Vue.config.productionTip = false
 

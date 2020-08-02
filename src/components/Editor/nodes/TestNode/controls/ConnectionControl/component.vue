@@ -1,48 +1,40 @@
 <template>
-  <div>
+  <div class="component">
     <div class="header-menu">
       <a class="info-edit">
         <v-popover ref="popover" offset="50%" placement="top">
           <v-icon name="cog" height="24" width="24" scale="1.5" class="info-edit-item" />
           <template slot="popover">
             <div class="info-list">
-              <div class="info-item">
-                <button @click="loadPrevDiagram">
+              <div class="info-item mb-3">
+                <b-button size="sm" @click="loadPrevDiagram">
                   <v-icon name="angle-left" height="14" width="14" scale="1" />
-                </button>
-                <input type="text" v-model.trim="diagram" style="margin: 0 3px;" />
-                <button @click="loadNextDiagram">
+                </b-button>
+                <b-form-input size="sm" v-model.trim="diagram" style="margin: 0 3px;" />
+                <b-button size="sm" @click="loadNextDiagram">
                   <v-icon name="angle-right" height="14" width="14" scale="1" />
-                </button>
+                </b-button>
               </div>
-              <div class="info-item">
-                <div>Name:</div>
-                <input type="text" v-model.trim="name" />
-              </div>
-              <div class="info-item">
-                <div>User:</div>
-                <input type="text" v-model.trim="user" />
-              </div>
-              <div class="info-item">
-                <div>Host:</div>
-                <input type="text" v-model.trim="host" />
-              </div>
-              <div class="info-item">
-                <div>Port:</div>
-                <input type="number" v-model.number="port" />
-              </div>
-              <div class="info-item">
-                <div>Key:</div>
-                <button @click="$refs.file.click()">
-                  <v-icon name="folder-open" height="14" width="14" scale="1" />
-                  <input ref="file" type="file" @change="change" style="display:none" />
-                </button>
-                <input type="text" v-model.trim="keyPath" />
-              </div>
+              <b-form-group label-cols-sm="3" label="Name" label-align="left" class="mb-0">
+                <b-form-input size="sm" v-model.trim="name" />
+              </b-form-group>
+              <b-form-group label-cols-sm="3" label="User" label-align="left" class="mb-0">
+                <b-form-input size="sm" v-model.trim="user" />
+              </b-form-group>
+              <b-form-group label-cols-sm="3" label="Host" label-align="left" class="mb-0">
+                <b-form-input size="sm" v-model.trim="host" />
+              </b-form-group>
+              <b-form-group label-cols-sm="3" label="Port" label-align="left" class="mb-0">
+                <b-form-input size="sm" v-model.trim="port" />
+              </b-form-group>
+              <b-form-group label="Key" label-cols-sm="3" label-align="left" class="mb-0">
+                <b-form-file size="sm" @change="change" placeholder></b-form-file>
+              </b-form-group>
+
               <div class="info-action">
-                <button v-close-popover @click="save" style="margin-left: auto">
+                <b-button size="sm" v-close-popover @click="save" style="margin-left: auto">
                   <v-icon v-close-popover name="save" scale="1" />
-                </button>
+                </b-button>
               </div>
             </div>
           </template>
@@ -54,23 +46,24 @@
           <template slot="popover">
             <div class="info-list">
               <div v-for="(forward, index) in forwards" :key="index" class="info-item">
-                <input type="checkbox" class="middle" v-model="forward.checked" />
-                <input type="text" class="short" maxlength="5" v-model.trim="forward.from" />
-                <span class="middle">
+                <b-form-checkbox class="middle" v-model="forward.checked" /><b-form-inputclass="short" maxlength="5" v-model.trim="forward.from" />
+                <span
+                  class="middle"
+                >
                   <v-icon name="forward" height="14" width="14" scale="1" />
                 </span>
-                <input type="text" class="short" maxlength="5" v-model.trim="forward.to" />
+                <b-form-input class="short" maxlength="5" v-model.trim="forward.to" />
               </div>
               <div class="info-action">
-                <button @click="addForward">
+                <b-button size="sm" @click="addForward">
                   <v-icon name="plus" height="14" width="14" scale="1" />
-                </button>
-                <button @click="removeForward">
+                </b-button>
+                <b-button size="sm" @click="removeForward">
                   <v-icon name="minus" height="14" width="14" scale="1" />
-                </button>
-                <button @click="save" style="margin-left: auto">
+                </b-button>
+                <b-button size="sm" @click="save" style="margin-left: auto">
                   <v-icon v-close-popover name="save" scale="1" />
-                </button>
+                </b-button>
               </div>
             </div>
           </template>
@@ -330,26 +323,7 @@ export default {
 
 .info-item {
   display: flex;
-  justify-content: flex-end;
-  padding: 3px;
-  font-size: 12px;
-
-  & > input {
-    margin-left: 5px;
-
-    &.short {
-      width: 40px;
-    }
-  }
-
-  .middle {
-    line-height: 18px;
-    margin-left: 5px;
-  }
-
-  div:nth-child(1) {
-    margin-right: auto;
-  }
+  align-items: center;
 }
 
 .info-action {
@@ -358,7 +332,7 @@ export default {
   padding: 3px;
   min-width: 140px;
 
-  & > button {
+  & > b-button {
     margin-left: 3px;
   }
 }
@@ -379,6 +353,40 @@ export default {
       border-color: $color;
     }
   }
+}
+
+.tooltip {
+  display: block !important;
+  padding: 4px;
+  z-index: 10000;
+}
+
+.popover {
+  max-width: initial !important;
+}
+
+.tooltip .tooltip-inner {
+  max-width: initial;
+  background: black;
+  color: white;
+  border-radius: 16px;
+  padding: 5px 10px 4px;
+}
+
+.tooltip tooltip-arrow{
+  display: none;
+}
+
+.tooltip[aria-hidden='true'] {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity .15s, visibility .15s;
+}
+
+.tooltip[aria-hidden='false'] {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity .15s;
 }
 
 .header-menu {

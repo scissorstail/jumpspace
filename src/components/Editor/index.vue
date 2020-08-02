@@ -15,11 +15,16 @@ import ConnectionPathPlugin from 'rete-connection-path-plugin'
 import TestNode from './nodes/TestNode'
 
 export default {
+  props: {
+    editorData: null
+  },
   data () {
     return {}
   },
   created () {
     // window.setupLocalPath()
+    this.editor = null
+    this.engine = null
   },
   mounted () {
     // Node
@@ -29,16 +34,16 @@ export default {
     background.classList = 'background'
 
     // Editor
-    const editor = new Rete.NodeEditor(
+    this.editor = new Rete.NodeEditor(
       'test@0.1.0',
       document.querySelector('#rete')
     )
-    editor.use(ConnectionPlugin)
+    this.editor.use(ConnectionPlugin)
 
-    editor.use(VueRenderPlugin)
-    editor.use(ContextMenuPlugin)
-    editor.use(AreaPlugin, { background })
-    editor.use(ConnectionPathPlugin, {
+    this.editor.use(VueRenderPlugin)
+    this.editor.use(ContextMenuPlugin)
+    this.editor.use(AreaPlugin, { background })
+    this.editor.use(ConnectionPathPlugin, {
       type: ConnectionPathPlugin.DEFAULT, // DEFAULT or LINEAR transformer
       // curve: ConnectionPathPlugin.curveStep, // curve identifier
       arrow: { color: 'steelblue', marker: 'M-5,-10 L-5,10 L20,0 z' }
@@ -46,48 +51,62 @@ export default {
     // editor.use(AlightRenderPlugin)
     // editor.use(TaskPlugin)
 
-    const engine = new Rete.Engine('test@0.1.0')
+    this.engine = new Rete.Engine('test@0.1.0')
 
     nodes.map((c) => {
-      editor.register(c)
-      engine.register(c)
+      this.editor.register(c)
+      this.engine.register(c)
     })
 
-    async function compile () {
-      await engine.abort()
-
-      const editorData = editor.toJSON()
-      await engine.process(editorData)
-
-      window.localStorage.editorSaveData = JSON.stringify(editorData)
-    }
-
-    editor.on(
+    this.editor.on(
       'connectioncreate connectionremove nodecreate noderemove process',
       () => {
-        if (editor.silent) {
+        if (this.editor.silent) {
           return
         }
 
-        // editor.view.resize()
-
-        compile()
+        this.compile()
       }
     )
 
+    /*
     const editorSaveData = window.localStorage.editorSaveData
     if (editorSaveData) {
-      editor.fromJSON(JSON.parse(editorSaveData)).then(() => {
-        editor.view.resize()
+      this.load(editorSaveData)
+    }
+    */
+  },
+  watch: {
+    editorData () {
+      if (this.editorData) {
+        this.load(this.editorData)
+      }
+    }
+  },
+  methods: {
+    async compile () {
+      await this.engine.abort()
 
-        compile()
+      const editorData = this.editor.toJSON()
+      await this.engine.process(editorData)
+
+      this.save(editorData)
+    },
+    save (editorData) {
+      window.localStorage.editorSaveData = JSON.stringify(editorData)
+    },
+    load (editorSaveData) {
+      this.editor.fromJSON(JSON.parse(editorSaveData)).then(() => {
+        this.editor.view.resize()
+
+        this.compile()
       })
     }
   }
 }
 </script>
 
-<style>
+<style lang="scss">
 #rete {
   height: 100%;
   width: 100%;
@@ -102,6 +121,7 @@ export default {
   border-radius: 6px;
   color: white;
   z-index: 10000;
+  opacity: 1;
 }
 
 #rete .node.site {

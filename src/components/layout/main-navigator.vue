@@ -47,11 +47,7 @@ export default {
   },
   data () {
     return {
-      items: [
-        {
-          title: '테스트1'
-        }
-      ],
+      items: [],
       selectedItem: null
     }
   },
@@ -59,12 +55,14 @@ export default {
     add () {
       this.items.push(
         {
-          title: '테스트1'
+          title: ''
         }
       )
     },
     select (item) {
+      console.log(0)
       this.selectedItem = item
+      this.$emit('selected', { ...item })
     },
     remove (item) {
       // if (confirm('remove?')) {

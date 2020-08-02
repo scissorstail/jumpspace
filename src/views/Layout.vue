@@ -30,10 +30,10 @@
               />
             </b-button>
           </div>
-          <MainNavigator :is-editing="isEditingItemList"></MainNavigator>
+          <MainNavigator @selected="loadItem" :is-editing="isEditingItemList"></MainNavigator>
         </template>
       </b-sidebar>
-      <!--<Editor></Editor>-->
+      <Editor :editor-data="editorData"></Editor>
     </div>
     <!--
     <MainFooter id="main-footer"></MainFooter>
@@ -45,30 +45,38 @@
 import MainHeader from '../components/layout/main-header'
 import MainNavigator from '../components/layout/main-navigator'
 // import MainFooter from '../components/layout/main-footer'
-// import Editor from '../components/editor/index'
+import Editor from '../components/editor/index'
 
 export default {
   name: 'Layout',
   components: {
     MainHeader,
-    MainNavigator
+    MainNavigator,
+    Editor
     // MainFooter,
-    // Editor
   },
   data () {
     return {
-      isEditingItemList: false
+      isEditingItemList: false,
+      editorData: null
     }
   },
   methods: {
     removeItem () {
       this.isEditingItemList = !this.isEditingItemList
+    },
+    loadItem (item) {
+      console.log(item)
+      this.editorData = window.localStorage.editorSaveData
     }
   }
 }
 </script>
 
 <style lang="scss">
+@import '../../node_modules/bootstrap/dist/css/bootstrap.css';
+@import '../../node_modules/bootstrap-vue/dist/bootstrap-vue.css';
+
 #layout {
   display: flex;
   flex-direction: column;
