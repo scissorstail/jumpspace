@@ -9,6 +9,8 @@
         variant="white"
         class="list-item mt-1"
         squared
+        :pressed="item === selectedItem"
+        @click="select(item)"
       >{{item.title || '제목없음'}}</b-button>
       <!--
       <b-collapse :id="`collapse-${index}`" :key="`${_uid}-collapse-${index}`">
@@ -49,7 +51,8 @@ export default {
         {
           title: '테스트1'
         }
-      ]
+      ],
+      selectedItem: null
     }
   },
   methods: {
@@ -59,6 +62,9 @@ export default {
           title: '테스트1'
         }
       )
+    },
+    select (item) {
+      this.selectedItem = item
     },
     remove (item) {
       // if (confirm('remove?')) {
@@ -77,7 +83,7 @@ export default {
   }
 
   .active {
-    background-color: #e6f0ff
+    background-color: lightgrey
   }
 
   .btn:focus, .btn:active:focus {
