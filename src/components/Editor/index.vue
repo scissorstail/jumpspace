@@ -93,7 +93,7 @@ export default {
       this.save(editorData)
     },
     save (editorData) {
-      window.localStorage.editorSaveData = JSON.stringify(editorData)
+      // window.localStorage.editorSaveData = JSON.stringify(editorData)
     },
     load (editorSaveData) {
       this.editor.fromJSON(JSON.parse(editorSaveData)).then(() => {

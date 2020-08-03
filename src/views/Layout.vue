@@ -1,6 +1,6 @@
 <template>
   <div id="layout">
-    <MainHeader>
+    <MainHeader :header-info="headerInfo">
       <!-- sidebar-navigator toggle button -->
       <template #main-navigation-toggle>
         <b-button class="header-button shadow-sm" v-b-toggle.main-sidebar variant="info">
@@ -30,7 +30,11 @@
               />
             </b-button>
           </div>
-          <MainNavigator @selected="loadItem" :is-editing="isEditingItemList"></MainNavigator>
+          <MainNavigator
+            @selected="loadItem"
+            :project-data="projectData"
+            :is-editing="isEditingItemList"
+          ></MainNavigator>
         </template>
       </b-sidebar>
       <Editor :editor-data="editorData"></Editor>
@@ -58,16 +62,31 @@ export default {
   data () {
     return {
       isEditingItemList: false,
-      editorData: null
+      projectData: null,
+      editorData: null,
+      headerInfo: {
+        name: null
+      }
+    }
+  },
+  mounted () {
+    const projectSaveData = window.localStorage.projectSaveData
+    if (projectSaveData) {
+      this.projectData = JSON.parse(window.localStorage.projectSaveData)
+    } else {
+      this.projectData = []
     }
   },
   methods: {
+    loadItem (item) {
+      this.editorData = JSON.stringify(item.data)
+      this.headerInfo.name = item.name
+    },
     removeItem () {
       this.isEditingItemList = !this.isEditingItemList
     },
-    loadItem (item) {
-      console.log(item)
-      this.editorData = window.localStorage.editorSaveData
+    saveProject () {
+      window.localStorage.projectSaveData = JSON.stringify(this.projectData)
     }
   }
 }
