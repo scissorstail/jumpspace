@@ -2,7 +2,11 @@
   <div id="main-header" class="p-3">
     <slot name="main-navigation-toggle"></slot>
     <div class="ml-auto align-self-center">
-      <span>{{headerInfo.name || ''}}</span>
+      <span class="mr-3">{{headerInfo.name || ''}}</span>
+
+      <b-button class="header-button shadow-sm" variant="light" @click="$emit('save')">
+        <v-icon name="save" height="14" width="14" scale="1" />
+      </b-button>
     </div>
   </div>
 </template>

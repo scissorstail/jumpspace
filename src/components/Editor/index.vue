@@ -90,10 +90,7 @@ export default {
       const editorData = this.editor.toJSON()
       await this.engine.process(editorData)
 
-      this.save(editorData)
-    },
-    save (editorData) {
-      // window.localStorage.editorSaveData = JSON.stringify(editorData)
+      return editorData
     },
     load (editorSaveData) {
       this.editor.fromJSON(JSON.parse(editorSaveData)).then(() => {

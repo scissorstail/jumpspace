@@ -1,6 +1,6 @@
 <template>
   <div id="layout">
-    <MainHeader :header-info="headerInfo">
+    <MainHeader :header-info="headerInfo" @save="saveProject">
       <!-- sidebar-navigator toggle button -->
       <template #main-navigation-toggle>
         <b-button class="header-button shadow-sm" v-b-toggle.main-sidebar variant="info">
@@ -18,7 +18,7 @@
             </b-button>
             <b-button
               :variant="isEditingItemList ? 'warning' : 'light'"
-              @click="removeItem"
+              @click="toggleEdit"
               class="shadow-sm flex-grow-9"
             >
               <v-icon
@@ -31,13 +31,14 @@
             </b-button>
           </div>
           <MainNavigator
+            ref="mainNavigator"
             @selected="loadItem"
             :project-data="projectData"
             :is-editing="isEditingItemList"
           ></MainNavigator>
         </template>
       </b-sidebar>
-      <Editor :editor-data="editorData"></Editor>
+      <Editor ref="editorRef" :editor-data="editorData"></Editor>
     </div>
     <!--
     <MainFooter id="main-footer"></MainFooter>
@@ -64,6 +65,7 @@ export default {
       isEditingItemList: false,
       projectData: null,
       editorData: null,
+      selectedIndex: null,
       headerInfo: {
         name: null
       }
@@ -78,14 +80,26 @@ export default {
     }
   },
   methods: {
-    loadItem (item) {
+    loadItem ({ item, index }) {
       this.editorData = JSON.stringify(item.data)
+      this.selectedIndex = index
       this.headerInfo.name = item.name
     },
-    removeItem () {
+    async toggleEdit () {
+      if (this.isEditingItemList) {
+        this.projectData = this.$refs.mainNavigator.items
+        this.saveProject()
+      }
       this.isEditingItemList = !this.isEditingItemList
     },
-    saveProject () {
+    async saveProject () {
+      if (this.selectedIndex !== null) {
+        this.$refs.editorRef.editor.nodes.forEach(x => x.controls.get('connection').save())
+        this.projectData[this.selectedIndex] = {
+          name: this.headerInfo.name,
+          data: await this.$refs.editorRef.compile()
+        }
+      }
       window.localStorage.projectSaveData = JSON.stringify(this.projectData)
     }
   }

@@ -10,7 +10,7 @@
         class="list-item mt-1"
         squared
         :pressed="item === selectedItem"
-        @click="select(item)"
+        @click="select(item, index)"
       >{{item.name || '제목없음'}}</b-button>
       <!--
       <b-collapse :id="`collapse-${index}`" :key="`${_uid}-collapse-${index}`">
@@ -58,7 +58,6 @@ export default {
   watch: {
     projectData () {
       this.items = this.projectData
-      console.log(this.items)
     }
   },
   methods: {
@@ -70,9 +69,9 @@ export default {
         }
       )
     },
-    select (item) {
+    select (item, index) {
       this.selectedItem = item
-      this.$emit('selected', { ...item })
+      this.$emit('selected', { item, index })
     },
     remove (item) {
       // if (confirm('remove?')) {

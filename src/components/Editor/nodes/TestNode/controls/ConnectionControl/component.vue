@@ -5,7 +5,7 @@
         <v-popover ref="popover" offset="50%" placement="top">
           <v-icon name="cog" height="24" width="24" scale="1.5" class="info-edit-item" />
           <template slot="popover">
-            <div class="info-list">
+            <div class="info-list" style="width: 280px;">
               <div class="info-item mb-3">
                 <b-button size="sm" @click="loadPrevDiagram">
                   <v-icon name="angle-left" height="14" width="14" scale="1" />
@@ -30,12 +30,6 @@
               <b-form-group label="Key" label-cols-sm="3" label-align="left" class="mb-0">
                 <b-form-file size="sm" @change="change" placeholder></b-form-file>
               </b-form-group>
-
-              <div class="info-action">
-                <b-button size="sm" v-close-popover @click="save" style="margin-left: auto">
-                  <v-icon v-close-popover name="save" scale="1" />
-                </b-button>
-              </div>
             </div>
           </template>
         </v-popover>
@@ -44,27 +38,23 @@
         <v-popover ref="popover2" offset="50%" placement="top">
           <v-icon name="link" height="24" width="24" scale="1.5" class="info-edit-item" />
           <template slot="popover">
-            <div class="info-list">
-              <div v-for="(forward, index) in forwards" :key="index" class="info-item">
-                <b-form-checkbox class="middle" v-model="forward.checked" /><b-form-inputclass="short" maxlength="5" v-model.trim="forward.from" />
-                <span
-                  class="middle"
-                >
+            <div class="info-list" style="width: 225px;">
+              <div v-for="(forward, index) in forwards" :key="index" class="info-item mb-1">
+                <b-form-checkbox size="lg" class="middle" v-model="forward.checked" />
+                <b-form-input size="sm" class="mr-2" maxlength="5" v-model.trim="forward.from" />
+                <span class="middle" :style="{opacity:forward.checked ? 1.0 : 0.1}">
                   <v-icon name="forward" height="14" width="14" scale="1" />
                 </span>
-                <b-form-input class="short" maxlength="5" v-model.trim="forward.to" />
-              </div>
-              <div class="info-action">
-                <b-button size="sm" @click="addForward">
-                  <v-icon name="plus" height="14" width="14" scale="1" />
-                </b-button>
-                <b-button size="sm" @click="removeForward">
+                <b-form-input size="sm" class="ml-2" maxlength="5" v-model.trim="forward.to" />
+                <b-button class="ml-2" size="sm" @click="removeForward(forward)">
                   <v-icon name="minus" height="14" width="14" scale="1" />
                 </b-button>
-                <b-button size="sm" @click="save" style="margin-left: auto">
-                  <v-icon v-close-popover name="save" scale="1" />
-                </b-button>
               </div>
+            </div>
+            <div class="info-action" :class="[forwards.length > 0 ? 'mt-2' : '']">
+              <b-button size="sm" @click="addForward" class="mr-1">
+                <v-icon name="plus" height="14" width="14" scale="1" />
+              </b-button>
             </div>
           </template>
         </v-popover>
@@ -246,8 +236,8 @@ export default {
         to: null
       })
     },
-    removeForward () {
-      this.forwards = this.forwards.filter(x => !x.checked)
+    removeForward (forward) {
+      this.forwards = this.forwards.filter(x => x !== forward)
     },
     forward () {
       const prevNodeData = _.last(this.prevNodeDataList)
@@ -256,7 +246,7 @@ export default {
       }
 
       const ctlPathFile = `[${this.name}]L-${prevNodeData.user}@${prevNodeData.host}_${prevNodeData.port}.ctl`
-      const fowardList = this.forwards.filter(x => x.checked).map(x => `-L "localhost:${x.from}:${this.host}:${x.to}"`).join(' ')
+      const fowardList = this.forwards.filter(x => x.checked && x.from && x.to).map(x => `-L "localhost:${x.from}:${this.host}:${x.to}"`).join(' ')
       if (fowardList === '') {
         return
       }
@@ -329,12 +319,7 @@ export default {
 .info-action {
   display: flex;
   justify-content: flex-start;
-  padding: 3px;
   min-width: 140px;
-
-  & > b-button {
-    margin-left: 3px;
-  }
 }
 
 .tooltip {

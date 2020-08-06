@@ -11,4 +11,8 @@ export default class ConnectionControl extends Rete.Control {
     this.component = component
     this.props = { emitter, ikey: key, readonly }
   }
+
+  save () {
+    this.vueContext.save()
+  }
 }
