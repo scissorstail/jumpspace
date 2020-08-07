@@ -11,14 +11,14 @@
         squared
         :pressed="item === selectedItem"
         @click="select(item, index)"
-      >{{item.name || '제목없음'}}</b-button>
+      >{{item.name || 'untitled'}}</b-button>
       <!--
       <b-collapse :id="`collapse-${index}`" :key="`${_uid}-collapse-${index}`">
         <b-card>I am collapsible content!</b-card>
       </b-collapse>
       -->
       <div v-else class="list-item mt-1" :key="`${_uid}-input-${index}`">
-        <b-form-input v-model="item.name" placeholder="제목"></b-form-input>
+        <b-form-input v-model="item.name" placeholder="untitled"></b-form-input>
         <b-button @click="remove(item)" variant="danger" class="ml-1">
           <v-icon name="trash" height="14" width="14" scale="1" />
         </b-button>
@@ -57,6 +57,7 @@ export default {
   },
   watch: {
     projectData () {
+      this.selectedItem = null
       this.items = this.projectData
     }
   },
@@ -74,9 +75,12 @@ export default {
       this.$emit('selected', { item, index })
     },
     remove (item) {
-      // if (confirm('remove?')) {
-      this.items = this.items.filter(x => x !== item)
-      // }
+      if (confirm('remove?')) {
+        const foundIndex = this.items.findIndex(x => x === item)
+        if (foundIndex >= 0) {
+          this.items.splice(foundIndex, 1)
+        }
+      }
     }
   }
 }

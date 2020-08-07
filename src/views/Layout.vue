@@ -1,6 +1,11 @@
 <template>
   <div id="layout">
-    <MainHeader :header-info="headerInfo" @save="saveProject">
+    <MainHeader
+      :header-info="headerInfo"
+      @save="saveProject"
+      @export="exportProject"
+      @import="importProject"
+    >
       <!-- sidebar-navigator toggle button -->
       <template #main-navigation-toggle>
         <b-button class="header-button shadow-sm" v-b-toggle.main-sidebar variant="info">
@@ -32,9 +37,9 @@
           </div>
           <MainNavigator
             ref="mainNavigator"
-            @selected="loadItem"
             :project-data="projectData"
             :is-editing="isEditingItemList"
+            @selected="loadItem"
           ></MainNavigator>
         </template>
       </b-sidebar>
@@ -72,11 +77,9 @@ export default {
     }
   },
   mounted () {
-    const projectSaveData = window.localStorage.projectSaveData
-    if (projectSaveData) {
-      this.projectData = JSON.parse(window.localStorage.projectSaveData)
-    } else {
-      this.projectData = []
+    const localSave = window.localStorage.projectSaveData
+    if (localSave) {
+      this.loadProject(localSave)
     }
   },
   methods: {
@@ -87,10 +90,19 @@ export default {
     },
     async toggleEdit () {
       if (this.isEditingItemList) {
-        this.projectData = this.$refs.mainNavigator.items
+        this.projectData = [...this.$refs.mainNavigator.items]
         this.saveProject()
+      } else {
+        this.clearEditor()
       }
       this.isEditingItemList = !this.isEditingItemList
+    },
+    async loadProject (projectSaveData) {
+      if (projectSaveData) {
+        this.projectData = JSON.parse(projectSaveData)
+      } else {
+        this.projectData = []
+      }
     },
     async saveProject () {
       if (this.selectedIndex !== null) {
@@ -101,6 +113,22 @@ export default {
         }
       }
       window.localStorage.projectSaveData = JSON.stringify(this.projectData)
+    },
+    async exportProject () {
+      await this.saveProject()
+      window.saveProjectDataAsJSON(window.localStorage.projectSaveData)
+    },
+    async importProject () {
+      const projectData = window.loadProjectDataFromJSON()
+      if (projectData) {
+        this.clearEditor()
+        this.loadProject(projectData)
+      }
+    },
+    clearEditor () {
+      this.editorData = null
+      this.selectedIndex = null
+      this.headerInfo.name = null
     }
   }
 }
@@ -125,6 +153,7 @@ export default {
   background-color: #f1faee;
 
   #main-sidebar {
+    opacity: 0.9;
 
     .main-sidebar-list {
       display: flex;

@@ -2,24 +2,11 @@ const path = require('path')
 const fs = require('graceful-fs')
 const exec = require('child_process').exec
 const crypto = require('crypto')
-// const app = require('electron').remote.app
+const { dialog } = require('electron').remote
 
 window.readDiagramDir = function (dirname, callback) {
   fs.readdir(path.join(__dirname, '../public/img/diagram', dirname), callback)
 }
-
-/*
-window.setupLocalPath = function () {
-  const dir = path.join(app.getAppPath(), 'temp')
-  !fs.existsSync(dir) && fs.mkdirSync(dir)
-
-  const dir2 = path.join(app.getAppPath(), 'temp_ctl')
-  !fs.existsSync(dir2) && fs.mkdirSync(dir2)
-
-  const dir3 = path.join(app.getAppPath(), 'temp_config')
-  !fs.existsSync(dir3) && fs.mkdirSync(dir3)
-}
-*/
 
 window.executeCommand = function (command, callback = () => {}) {
   function execute (command, callback) {
@@ -52,4 +39,31 @@ window.unlinkFile = function (filename) {
   fs.unlink(filename, () => {})
 }
 
-// const remote = require('electron').remote; window.WriteLog = function (message) { var fs = require('fs'); fs.appendFile('D:/electron.txt', message + '\r\n', function (err) { if (err) throw err; console.log('Saved!') }) }
+window.saveProjectDataAsJSON = function (jsonData) {
+  const filename = dialog.showSaveDialogSync({
+    defaultPath: '~/untitled.json',
+    filters: [{
+      name: 'JSON file',
+      extensions: ['json']
+    }]
+  })
+
+  if (filename) {
+    fs.writeFileSync(filename, jsonData, 'utf-8')
+  }
+}
+
+window.loadProjectDataFromJSON = function () {
+  const filenames = dialog.showOpenDialogSync({
+    filters: [{
+      name: 'JSON file',
+      extensions: ['json']
+    }]
+  })
+
+  if (filenames?.length > 0) {
+    return fs.readFileSync(filenames[0], 'utf-8')
+  }
+
+  return null
+}

@@ -4,6 +4,18 @@
     <div class="ml-auto align-self-center">
       <span class="mr-3">{{headerInfo.name || ''}}</span>
 
+      <b-button class="mr-1" variant="outline-danger" @click="reload">
+        <v-icon name="fire-extinguisher" height="14" width="14" scale="1" />
+      </b-button>
+
+      <b-button class="mr-1" variant="outline-info" @click="$emit('export')">
+        <v-icon name="file-export" height="14" width="14" scale="1" />
+      </b-button>
+
+      <b-button class="mr-1" variant="outline-info" @click="$emit('import')">
+        <v-icon name="file-import" height="14" width="14" scale="1" />
+      </b-button>
+
       <b-button class="header-button shadow-sm" variant="light" @click="$emit('save')">
         <v-icon name="save" height="14" width="14" scale="1" />
       </b-button>
@@ -20,6 +32,11 @@ export default {
       default: () => ({
         name: null
       })
+    }
+  },
+  methods: {
+    reload () {
+      window.location.reload()
     }
   }
 }

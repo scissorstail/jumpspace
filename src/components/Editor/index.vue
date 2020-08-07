@@ -68,23 +68,21 @@ export default {
         this.compile()
       }
     )
-
-    /*
-    const editorSaveData = window.localStorage.editorSaveData
-    if (editorSaveData) {
-      this.load(editorSaveData)
-    }
-    */
   },
   watch: {
-    editorData () {
+    async editorData () {
       if (this.editorData) {
         this.load(this.editorData)
+      } else {
+        await this.engine.abort()
+        this.load(JSON.stringify({ id: 'test@0.1.0', nodes: {} }))
       }
     }
   },
   methods: {
     async compile () {
+      if (this.editor.silent) return
+
       await this.engine.abort()
 
       const editorData = this.editor.toJSON()
