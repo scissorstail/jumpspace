@@ -2,6 +2,11 @@ export default {
   state: {
     diagram: []
   },
+  getters: {
+    diagram (state) {
+      return state.diagram
+    }
+  },
   mutations: {
     diagramUpdate (state, payload) {
       state.diagram = payload
