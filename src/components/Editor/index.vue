@@ -22,7 +22,6 @@ export default {
     return {}
   },
   created () {
-    // window.setupLocalPath()
     this.editor = null
     this.engine = null
   },

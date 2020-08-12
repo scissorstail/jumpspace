@@ -62,10 +62,10 @@
     </div>
     <div class="info-block" :class="{ blur: isBlur }">
       <img
-        class="info-diagram"
-        width="50%"
-        height="50%"
-        :src="diagram ? `/img/diagram/AWS/Compute/${diagram}` : null"
+        class="info-diagram mb-1"
+        width="40%"
+        height="40%"
+        :src="diagram ? `/img/diagram/servers/${diagram}` : null"
       />
       <div class="info-text">{{ name || 'noname' }}</div>
       <div class="info-text">{{ host || 'localhost' }}</div>
@@ -120,9 +120,11 @@
 <script>
 import * as upath from 'upath'
 import _ from 'lodash'
+import store from '../../../../../../store'
 
 export default {
   props: ['readonly', 'emitter', 'ikey', 'getData', 'putData'],
+  store,
   data () {
     return {
       isBlur: false,
@@ -136,6 +138,10 @@ export default {
       diagramFilenames: [],
       prevNodeDataList: []
     }
+  },
+  created () {
+    console.log(this)
+    this.diagramFilenames = this.$store.getters.diagram
   },
   computed: {
     isFowardable () {
@@ -176,7 +182,7 @@ export default {
           foundIndex - 1 > 0 ? foundIndex - 1 : this.diagramFilenames.length - 1
         this.diagram = this.diagramFilenames[index]
       } else {
-        this.diagram = 'Amazon-EC2.svg'
+        this.diagram = _.head(this.diagramFilenames)
       }
     },
     loadNextDiagram () {
@@ -188,7 +194,7 @@ export default {
           foundIndex + 1 > this.diagramFilenames.length - 1 ? 0 : foundIndex + 1
         this.diagram = this.diagramFilenames[index]
       } else {
-        this.diagram = 'Amazon-EC2.svg'
+        this.diagram = _.head(this.diagramFilenames)
       }
     },
     connect () {
@@ -290,10 +296,10 @@ export default {
 }
 
 .info-diagram {
-  min-width: 75px;
-  min-height: 75px;
-  max-width: 75px;
-  max-height: 75px;
+  min-width: 68px;
+  min-height: 68px;
+  max-width: 68px;
+  max-height: 68px;
 }
 
 .info-text {
