@@ -16,8 +16,12 @@ Vue.component('v-icon', Icon)
 Vue.use(BootstrapVue)
 Vue.use(VTooltip)
 
-new Vue({
-  router,
-  store,
-  render: h => h(App)
-}).$mount('#app')
+;(async () => {
+  await store.dispatch('diagramLoad')
+
+  new Vue({
+    router,
+    store,
+    render: h => h(App)
+  }).$mount('#app')
+})()

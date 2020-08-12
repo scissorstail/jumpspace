@@ -4,8 +4,8 @@ const exec = require('child_process').exec
 const crypto = require('crypto')
 const { dialog } = require('electron').remote
 
-window.readDiagramDir = function (dirname, callback) {
-  fs.readdir(path.join(__dirname, '../public/img/diagram', dirname), callback)
+window.readDiagramDirSync = async function (dirname) {
+  return fs.readdirSync(path.join(__dirname, '../public/img/diagram', dirname))
 }
 
 window.executeCommand = function (command, callback = () => {}) {

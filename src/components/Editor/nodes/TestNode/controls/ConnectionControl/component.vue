@@ -137,16 +137,6 @@ export default {
       prevNodeDataList: []
     }
   },
-  created () {
-    window.readDiagramDir('/AWS/Compute', (err, files) => {
-      if (err) {
-        console.error(err)
-        return
-      }
-
-      this.diagramFilenames = files.filter((x) => x.endsWith('.svg'))
-    })
-  },
   computed: {
     isFowardable () {
       const prevNodeData = _.last(this.prevNodeDataList)
