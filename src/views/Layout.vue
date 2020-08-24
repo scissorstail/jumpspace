@@ -55,7 +55,7 @@
 import MainHeader from '../components/layout/main-header'
 import MainNavigator from '../components/layout/main-navigator'
 // import MainFooter from '../components/layout/main-footer'
-import Editor from '../components/editor/index'
+import Editor from '../components/Editor/index'
 
 export default {
   name: 'Layout',

@@ -140,7 +140,6 @@ export default {
     }
   },
   created () {
-    console.log(this)
     this.diagramFilenames = this.$store.getters.diagram
   },
   computed: {
@@ -221,8 +220,8 @@ export default {
       this.isBlur = !this.isBlur
     },
     change (e) {
-      if (this.$refs.file?.files?.[0].path) {
-        this.keyPath = this.$refs.file.files[0].path
+      if (e.target.files?.[0].path) {
+        this.keyPath = e.target.files[0].path
       }
     },
     addForward () {
@@ -366,7 +365,7 @@ export default {
 
 .tooltip[aria-hidden='false'] {
   visibility: visible;
-  opacity: 1;
+  opacity: 0.9;
   transition: opacity .15s;
 }
 

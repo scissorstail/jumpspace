@@ -75,11 +75,9 @@ export default {
       this.$emit('selected', { item, index })
     },
     remove (item) {
-      if (confirm('remove?')) {
-        const foundIndex = this.items.findIndex(x => x === item)
-        if (foundIndex >= 0) {
-          this.items.splice(foundIndex, 1)
-        }
+      const foundIndex = this.items.findIndex(x => x === item)
+      if (foundIndex >= 0) {
+        this.items.splice(foundIndex, 1)
       }
     }
   }
