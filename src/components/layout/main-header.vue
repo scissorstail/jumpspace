@@ -8,6 +8,10 @@
         <v-icon name="fire-extinguisher" height="14" width="14" scale="1" />
       </b-button>
 
+      <b-button class="mr-1" variant="outline-warning" @click="toggleDevTools">
+        <v-icon name="bug" height="14" width="14" scale="1" />
+      </b-button>
+
       <b-button class="mr-1" variant="outline-info" @click="$emit('export')">
         <v-icon name="file-export" height="14" width="14" scale="1" />
       </b-button>
@@ -36,7 +40,10 @@ export default {
   },
   methods: {
     reload () {
-      window.location.reload()
+      window.reloadApp()
+    },
+    toggleDevTools () {
+      window.toggleDevTools()
     }
   }
 }

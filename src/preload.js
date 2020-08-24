@@ -2,10 +2,23 @@ const path = require('path')
 const fs = require('graceful-fs')
 const exec = require('child_process').exec
 const crypto = require('crypto')
-const { dialog } = require('electron').remote
+const { dialog, getCurrentWebContents, getCurrentWindow } = require('electron').remote
+
+window.toggleDevTools = function () {
+  getCurrentWebContents().toggleDevTools()
+}
+
+window.reloadApp = function () {
+  if (process.env.WEBPACK_DEV_SERVER_URL) {
+    getCurrentWindow().loadURL(process.env.WEBPACK_DEV_SERVER_URL)
+  } else {
+    getCurrentWindow().loadURL('app://./index.html')
+  }
+}
 
 window.readDiagramDirSync = async function (dirname) {
-  return fs.readdirSync(path.join(__dirname, '../public/img/diagram', dirname))
+  // eslint-disable-next-line no-undef
+  return fs.readdirSync(path.join(__static, 'img', 'diagram', dirname))
 }
 
 window.executeCommand = function (command, callback = () => {}) {
@@ -61,7 +74,7 @@ window.loadProjectDataFromJSON = function () {
     }]
   })
 
-  if (filenames?.length > 0) {
+  if (filenames && filenames.length > 0) {
     return fs.readFileSync(filenames[0], 'utf-8')
   }
 

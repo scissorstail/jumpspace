@@ -24,4 +24,6 @@ Vue.use(VTooltip)
     store,
     render: h => h(App)
   }).$mount('#app')
+
+  router.replace('/')
 })()

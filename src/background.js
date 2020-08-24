@@ -24,11 +24,11 @@ async function createWindow () {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-      preload: path.join(__dirname, '../src/preload.js'),
+      preload: path.join(__dirname, 'preload.js'),
       enableRemoteModule: true
     }
   })
-  win.removeMenu()
+  // win.removeMenu()
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
