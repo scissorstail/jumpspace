@@ -104,13 +104,14 @@
       </a>
       <a class="info-edit left">
         <v-icon
+          :style="{opacity: isFowardable && forwards.some(x => x.checked) ? 1.0 : 0.5}"
           v-show="isFowardable"
           name="forward"
           height="24"
           width="24"
           scale="1.5"
           class="info-edit-item"
-          @click="forward"
+          @click="isFowardable && forwards.some(x => x.checked) ? forward() : ''"
         />
       </a>
     </div>
