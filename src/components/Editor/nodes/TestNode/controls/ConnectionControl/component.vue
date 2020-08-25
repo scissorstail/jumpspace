@@ -2,7 +2,7 @@
   <div class="component">
     <div class="header-menu">
       <a class="info-edit">
-        <v-popover ref="popover" placement="auto" container="#rete">
+        <v-popover ref="popover" placement="auto" container="#rete" @hide="save">
           <v-icon name="cog" height="24" width="24" scale="1.5" class="info-edit-item" />
           <template slot="popover">
             <div class="info-list" style="width: 280px;">
@@ -35,7 +35,7 @@
         </v-popover>
       </a>
       <a class="info-edit left">
-        <v-popover ref="popover2" placement="auto" container="#rete">
+        <v-popover ref="popover2" placement="auto" container="#rete" @hide="save">
           <v-icon name="link" height="24" width="24" scale="1.5" class="info-edit-item" />
           <template slot="popover">
             <div class="info-list" style="width: 225px;">

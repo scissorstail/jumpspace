@@ -3,6 +3,7 @@
 </template>
 
 <script>
+import _ from 'lodash'
 import Rete from 'rete'
 import ConnectionPlugin from 'rete-connection-plugin'
 import VueRenderPlugin from 'rete-vue-render-plugin'
@@ -40,7 +41,21 @@ export default {
     )
     this.editor.use(ConnectionPlugin)
     this.editor.use(VueRenderPlugin)
-    this.editor.use(ContextMenuPlugin)
+    this.editor.use(ContextMenuPlugin, {
+      nodeItems: {
+        Copy: async (args) => {
+          const { name, position: [x, y], ...params } = args.node
+          const component = this.editor.components.get(name)
+          const node = await component.createNode(_.cloneDeep(params.data))
+
+          node.position[0] = x + 25
+          node.position[1] = y + 25
+
+          this.editor.addNode(node)
+        },
+        Clone: false // or Clone item
+      }
+    })
     this.editor.use(AreaPlugin, { background })
     this.editor.use(ConnectionPathPlugin, {
       type: ConnectionPathPlugin.DEFAULT, // DEFAULT or LINEAR transformer

@@ -5,7 +5,6 @@ export default class ConnectionControl extends Rete.Control {
   constructor (emitter, key, readonly = false) {
     super(key)
     this.emitter = emitter
-    this.key = key
     this.readonly = readonly
     this.render = 'vue'
     this.component = component

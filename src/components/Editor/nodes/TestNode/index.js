@@ -35,6 +35,7 @@ export default class TestNode extends Rete.Component {
     const nextNodeDataList = prevNodeDataList.concat([node.data.connection])
 
     node.data.prevNodeDataList = prevNodeDataList
+
     this.getControl(node).get('connection').vueContext.update()
 
     /// process data
