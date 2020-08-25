@@ -9,6 +9,7 @@ import VueRenderPlugin from 'rete-vue-render-plugin'
 import ContextMenuPlugin from 'rete-context-menu-plugin'
 import AreaPlugin from 'rete-area-plugin'
 import ConnectionPathPlugin from 'rete-connection-path-plugin'
+import CommentPlugin from 'rete-comment-plugin'
 // import AlightRenderPlugin from 'rete-alight-render-plugin'
 // import TaskPlugin from 'rete-task-plugin'
 
@@ -38,7 +39,6 @@ export default {
       document.querySelector('#rete')
     )
     this.editor.use(ConnectionPlugin)
-
     this.editor.use(VueRenderPlugin)
     this.editor.use(ContextMenuPlugin)
     this.editor.use(AreaPlugin, { background })
@@ -47,7 +47,10 @@ export default {
       // curve: ConnectionPathPlugin.curveStep, // curve identifier
       arrow: { color: 'steelblue', marker: 'M-5,-10 L-5,10 L20,0 z' }
     })
-    // editor.use(AlightRenderPlugin)
+    this.editor.use(CommentPlugin, {
+      margin: 20 // indent for new frame comments by default 30 (px)
+    })
+    // editor.use(AlightRenderPlugin) // VueRenderPlugin과 같이 사용하면 오작동함
     // editor.use(TaskPlugin)
 
     this.engine = new Rete.Engine('test@0.1.0')
@@ -67,6 +70,8 @@ export default {
         this.compile()
       }
     )
+
+    this.editor.view.area.zoom(0.85, 0, 0)
   },
   watch: {
     async editorData () {
