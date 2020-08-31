@@ -28,7 +28,18 @@
                 <b-form-input size="sm" v-model.trim="port" />
               </b-form-group>
               <b-form-group label="Key" label-cols-sm="3" label-align="left" class="mb-0">
-                <b-form-file size="sm" @change="change" placeholder></b-form-file>
+                <b-input-group size="sm">
+                  <template v-slot:append>
+                    <b-button v-if="keyPath" size="sm" @click="keyPath = ''">
+                      <v-icon name="trash-alt" height="14" width="14" scale="1" />
+                    </b-button>
+                    <b-button v-else size="sm" @click="$refs.file.click()">
+                      <v-icon name="folder-open" height="14" width="14" scale="1" />
+                    </b-button>
+                  </template>
+                  <b-form-input size="sm" :value="keyPath" readonly />
+                  <input ref="file" type="file" @change="change" style="display:none" />
+                </b-input-group>
               </b-form-group>
             </div>
           </template>
