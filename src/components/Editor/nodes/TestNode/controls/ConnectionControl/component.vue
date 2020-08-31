@@ -83,7 +83,7 @@
           @click="jump"
         />
         <v-icon
-          v-else
+          v-if="isConnectable && !isProxyJump"
           name="plug"
           height="24"
           width="24"
@@ -144,13 +144,14 @@ export default {
     this.diagramFilenames = this.$store.getters.diagram
   },
   computed: {
+    isConnectable () {
+      return this.user && this.host && this.port && this.keyPath
+    },
     isFowardable () {
       const prevNodeData = _.last(this.prevNodeDataList)
       if (!prevNodeData) {
         return false
       }
-
-      // console.log(prevNodeData.host, prevNodeData.user, prevNodeData.port, prevNodeData.keyPath)
 
       if (prevNodeData.host && prevNodeData.user && prevNodeData.port && prevNodeData.keyPath) {
         return true
@@ -159,7 +160,7 @@ export default {
       return false
     },
     isProxyJump () {
-      return this.isFowardable && this.keyPath
+      return this.isConnectable && this.isFowardable
     }
   },
   methods: {
