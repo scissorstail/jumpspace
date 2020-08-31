@@ -1,6 +1,9 @@
 <template>
   <div id="main-header" class="p-3">
     <slot name="main-navigation-toggle"></slot>
+    <div class="align-self-center">
+      <!-- left button -->
+    </div>
     <div class="ml-auto align-self-center">
       <span class="mr-3">{{headerInfo.name || ''}}</span>
 
@@ -14,10 +17,6 @@
 
       <b-button class="mr-1" variant="outline-info" @click="$emit('export')">
         <v-icon name="file-export" height="14" width="14" scale="1" />
-      </b-button>
-
-      <b-button class="mr-1" variant="outline-info" @click="$emit('import')">
-        <v-icon name="file-import" height="14" width="14" scale="1" />
       </b-button>
 
       <b-button class="header-button shadow-sm" variant="light" @click="$emit('save')">

@@ -1,11 +1,6 @@
 <template>
   <div id="layout">
-    <MainHeader
-      :header-info="headerInfo"
-      @save="saveProject"
-      @export="exportProject"
-      @import="importProject"
-    >
+    <MainHeader :header-info="headerInfo" @save="saveProject" @export="exportProject">
       <!-- sidebar-navigator toggle button -->
       <template #main-navigation-toggle>
         <b-button class="header-button shadow-sm" v-b-toggle.main-sidebar variant="info">
@@ -20,6 +15,9 @@
           <div class="main-sidebar-header p-3 shadow">
             <b-button variant="light" @click="hide" class="shadow-sm flex-grow-1 mr-1">
               <v-icon name="times" height="14" width="14" scale="1" />
+            </b-button>
+            <b-button class="mr-1" variant="outline-info" @click="importProject">
+              <v-icon name="file-export" height="14" width="14" scale="1" />
             </b-button>
             <b-button
               :variant="isEditingItemList ? 'warning' : 'light'"
@@ -163,6 +161,7 @@ export default {
     .main-sidebar-header {
       display: flex;
       flex-direction: row;
+      background-color: #1d3557f0;
     }
   }
 }
