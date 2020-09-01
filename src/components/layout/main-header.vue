@@ -19,8 +19,12 @@
         <v-icon name="file-export" height="14" width="14" scale="1" />
       </b-button>
 
-      <b-button class="header-button shadow-sm" variant="light" @click="$emit('save')">
+      <b-button class="mr-3" variant="light" @click="$emit('save')">
         <v-icon name="save" height="14" width="14" scale="1" />
+      </b-button>
+
+      <b-button class variant="info" @click="$emit('info')">
+        <v-icon name="info-circle" height="14" width="14" scale="1" />
       </b-button>
     </div>
   </div>

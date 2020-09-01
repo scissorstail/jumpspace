@@ -1,6 +1,84 @@
 <template>
   <div id="layout">
-    <MainHeader :header-info="headerInfo" @save="saveProject" @export="exportProject">
+    <b-overlay
+      :show="isShowInfoPopup"
+      no-wrap
+      rounded="sm"
+      opacity="0.6"
+      variant="dark"
+      blur="3px"
+      z-index="1050"
+    >
+      <template v-slot:overlay>
+        <b-card-group deck>
+          <b-card bg-variant="light" header="testnet v0.0.1" class="text-center">
+            <b-card-body>
+              <b-card-text class="mb-3">
+                <b-row class="mb-3">
+                  <b-col>
+                    <b-img
+                      fluid
+                      center
+                      rounded
+                      src="https://picsum.photos/250/250/?image=54"
+                      alt="Image 1"
+                    ></b-img>
+                  </b-col>
+                </b-row>
+                <b-row>
+                  <b-col>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</b-col>
+                </b-row>
+              </b-card-text>
+
+              <b-card-text>
+                <div>
+                  Icons made by
+                  <a
+                    href="https://www.flaticon.com/authors/pixel-perfect"
+                    title="Pixel perfect"
+                    target="_blank"
+                  >Pixel perfect</a> from
+                  <a
+                    href="https://www.flaticon.com/"
+                    title="Flaticon"
+                    target="_blank"
+                  >www.flaticon.com</a>
+                </div>
+              </b-card-text>
+
+              <b-card-text>
+                <div>
+                  Font Awesome Free 5.14.0 by @fontawesome -
+                  <a
+                    href="https://fontawesome.com"
+                    title="fontawesome"
+                    target="_blank"
+                  >https://fontawesome.com</a>
+                </div>
+              </b-card-text>
+            </b-card-body>
+
+            <template v-slot:footer>
+              <b-button
+                block
+                variant="light"
+                @click="isShowInfoPopup = false"
+                class="shadow-sm flex-grow-1 mr-1"
+              >
+                <v-icon name="times" height="14" width="14" scale="1" />
+              </b-button>
+            </template>
+          </b-card>
+        </b-card-group>
+      </template>
+    </b-overlay>
+
+    <MainHeader
+      :header-info="headerInfo"
+      @save="saveProject"
+      @export="exportProject"
+      @info="isShowInfoPopup = true"
+    >
       <!-- sidebar-navigator toggle button -->
       <template #main-navigation-toggle>
         <b-button class="header-button shadow-sm" v-b-toggle.main-sidebar variant="info">
@@ -33,6 +111,7 @@
               />
             </b-button>
           </div>
+
           <MainNavigator
             ref="mainNavigator"
             :project-data="projectData"
@@ -41,7 +120,8 @@
           ></MainNavigator>
         </template>
       </b-sidebar>
-      <Editor ref="editorRef" :editor-data="editorData"></Editor>
+
+      <Editor v-show="editorData" ref="editorRef" :editor-data="editorData"></Editor>
     </div>
     <!--
     <MainFooter id="main-footer"></MainFooter>
@@ -66,6 +146,7 @@ export default {
   data () {
     return {
       isEditingItemList: false,
+      isShowInfoPopup: false,
       projectData: null,
       editorData: null,
       selectedIndex: null,
