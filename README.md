@@ -1,24 +1,27 @@
-# testnet
+# testnet(임시)
 
-## Project setup
-```
-npm install
-```
+## 프로젝트 설명
+준비중
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+## status
+테스트용 버전
 
-### Compiles and minifies for production
-```
-npm run build
-```
+## usage
+준비중
 
-### Lints and fixes files
-```
-npm run lint
-```
+## TODO
+- [x] 일단 돌아는가게 구현
+- [ ] 프로그램 이름 짓기, 로고 추가
+- [ ] 사용법 문서 작성
+- [ ] 프로젝트 구조 리팩토링
+- [ ] 구성 요소 컴포넌트화
+- [ ] 설명 툴팁 추가
+- [ ] 그룹 기능 추가
+- [ ] 에디터 사용성 개선
+- [ ] Linux 지원
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+## NOT TODO
+- [ ] Mac 지원
+- [ ] 테스트 작성
+
+## 
