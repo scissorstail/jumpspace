@@ -3,6 +3,7 @@ import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
+import mixin from './mixin'
 
 import 'vue-awesome/icons'
 import Icon from 'vue-awesome/components/Icon'
@@ -22,6 +23,7 @@ Vue.use(VTooltip)
   new Vue({
     router,
     store,
+    mixins: [mixin],
     render: h => h(App)
   }).$mount('#app')
 

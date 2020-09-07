@@ -11,22 +11,32 @@
     >
       <template v-slot:overlay>
         <b-card-group deck>
-          <b-card bg-variant="light" header="testnet v0.0.1" class="text-center">
+          <b-card bg-variant="light" :header="`testnet v${appVersion}`" class="text-center">
             <b-card-body>
               <b-card-text class="mb-3">
                 <b-row class="mb-3">
                   <b-col>
                     <b-img
                       fluid
-                      center
                       rounded
-                      src="https://picsum.photos/250/250/?image=54"
+                      src="/img/icons/256px-Electron_Software_Framework_Logo.svg.png"
                       alt="Image 1"
+                      width="150"
+                      :block="false"
+                    ></b-img>
+                    <b-img
+                      fluid
+                      rounded
+                      src="/img/icons/msapplication-icon-144x144.png"
+                      alt="Image 1"
+                      width="150"
                     ></b-img>
                   </b-col>
                 </b-row>
                 <b-row>
-                  <b-col>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</b-col>
+                  <b-col>
+                    <b>테스트 버전</b>
+                  </b-col>
                 </b-row>
               </b-card-text>
 

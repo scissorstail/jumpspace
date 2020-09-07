@@ -133,10 +133,12 @@
 import * as upath from 'upath'
 import _ from 'lodash'
 import store from '../../../../../../store'
+import mixin from '../../../../../../mixin'
 
 export default {
   props: ['readonly', 'emitter', 'ikey', 'getData', 'putData'],
   store,
+  mixins: [mixin],
   data () {
     return {
       isBlur: false,
