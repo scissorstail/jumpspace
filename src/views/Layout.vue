@@ -250,8 +250,9 @@ export default {
     async toggleEdit () {
       if (this.isEditingItemList) {
         this.projectData = [...this.$refs.mainNavigator.items]
-        this.saveProject()
+        await this.saveProject()
       } else {
+        await this.saveProject()
         this.clearEditor()
       }
       this.isEditingItemList = !this.isEditingItemList
