@@ -237,6 +237,7 @@ export default {
     change (e) {
       if (e.target.files?.[0].path) {
         this.keyPath = e.target.files[0].path
+        this.$refs.file.value = ''
       }
     },
     addForward () {
