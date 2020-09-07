@@ -1,5 +1,6 @@
 <template>
   <div id="layout">
+    <!-- info popup -->
     <b-overlay
       :show="isShowInfoPopup"
       no-wrap
@@ -10,76 +11,129 @@
       z-index="1050"
     >
       <template v-slot:overlay>
-        <b-card-group deck>
-          <b-card bg-variant="light" :header="`testnet v${appVersion}`" class="text-center">
-            <b-card-body>
-              <b-card-text class="mb-3">
-                <b-row class="mb-3">
-                  <b-col>
-                    <b-img
-                      fluid
-                      rounded
-                      src="/img/icons/256px-Electron_Software_Framework_Logo.svg.png"
-                      alt="Image 1"
-                      width="150"
-                      :block="false"
-                    ></b-img>
-                    <b-img
-                      fluid
-                      rounded
-                      src="/img/icons/msapplication-icon-144x144.png"
-                      alt="Image 1"
-                      width="150"
-                    ></b-img>
-                  </b-col>
-                </b-row>
-                <b-row>
-                  <b-col>
-                    <b>테스트 버전</b>
-                  </b-col>
-                </b-row>
-              </b-card-text>
+        <b-card bg-variant="light" :header="`testnet v${appVersion}`" class="text-center">
+          <b-card-body>
+            <b-card-text class="mb-3">
+              <b-row class="mb-3">
+                <b-col>
+                  <b-img
+                    fluid
+                    rounded
+                    src="/img/icons/256px-Electron_Software_Framework_Logo.svg.png"
+                    alt="Image 1"
+                    width="150"
+                    :block="false"
+                  ></b-img>
+                  <b-img
+                    fluid
+                    rounded
+                    src="/img/icons/msapplication-icon-144x144.png"
+                    alt="Image 1"
+                    width="150"
+                  ></b-img>
+                </b-col>
+              </b-row>
+              <b-row>
+                <b-col>
+                  <b>테스트 버전</b>
+                </b-col>
+              </b-row>
+            </b-card-text>
 
-              <b-card-text>
-                <div>
-                  Icons made by
-                  <a
-                    href="https://www.flaticon.com/authors/pixel-perfect"
-                    title="Pixel perfect"
-                    target="_blank"
-                  >Pixel perfect</a> from
-                  <a
-                    href="https://www.flaticon.com/"
-                    title="Flaticon"
-                    target="_blank"
-                  >www.flaticon.com</a>
-                </div>
-              </b-card-text>
+            <b-card-text>
+              <div>
+                Icons made by
+                <a
+                  href="https://www.flaticon.com/authors/pixel-perfect"
+                  title="Pixel perfect"
+                  target="_blank"
+                >Pixel perfect</a> from
+                <a
+                  href="https://www.flaticon.com/"
+                  title="Flaticon"
+                  target="_blank"
+                >www.flaticon.com</a>
+              </div>
+            </b-card-text>
 
-              <b-card-text>
-                <div>
-                  Font Awesome Free 5.14.0 by @fontawesome -
-                  <a
-                    href="https://fontawesome.com"
-                    title="fontawesome"
-                    target="_blank"
-                  >https://fontawesome.com</a>
-                </div>
-              </b-card-text>
-            </b-card-body>
+            <b-card-text>
+              <div>
+                Font Awesome Free 5.14.0 by @fontawesome -
+                <a
+                  href="https://fontawesome.com"
+                  title="fontawesome"
+                  target="_blank"
+                >https://fontawesome.com</a>
+              </div>
+            </b-card-text>
+          </b-card-body>
 
-            <template v-slot:footer>
+          <template v-slot:footer>
+            <b-button
+              block
+              variant="light"
+              @click="isShowInfoPopup = false"
+              class="shadow-sm flex-grow-1 mr-1"
+            >
+              <v-icon name="times" height="14" width="14" scale="1" />
+            </b-button>
+          </template>
+        </b-card>
+      </template>
+    </b-overlay>
+
+    <!-- setting popup -->
+    <b-overlay
+      :show="isShowSettingPopup"
+      no-wrap
+      rounded="sm"
+      opacity="0.6"
+      variant="dark"
+      blur="3px"
+      z-index="1050"
+    >
+      <template v-slot:overlay>
+        <b-card
+          bg-variant="light"
+          :header="`testnet settings`"
+          class="text-center"
+          style="width: 90vw"
+        >
+          <b-card-body>
+            <b-card-text class="mb-3">
+              <b-row class="mb-3">
+                <b-col>
+                  <div>
+                    <b-form-group
+                      label-cols-sm="3"
+                      label="Git Bash Path: "
+                      label-align="left"
+                      class="mb-0"
+                    >
+                      <b-form-input size="sm" v-model="gitBashPath" />
+                    </b-form-group>
+                  </div>
+                </b-col>
+              </b-row>
+            </b-card-text>
+          </b-card-body>
+
+          <template v-slot:footer>
+            <div class="d-flex">
               <b-button
                 block
                 variant="light"
-                @click="isShowInfoPopup = false"
-                class="shadow-sm flex-grow-1 mr-1"
+                @click="isShowSettingPopup = false"
+                class="shadow-sm mr-1"
               >
                 <v-icon name="times" height="14" width="14" scale="1" />
               </b-button>
-            </template>
-          </b-card>
-        </b-card-group>
+              <b-button variant="light" @click="saveSetting" class="shadow-sm">
+                <v-icon name="save" height="14" width="14" scale="1" />
+              </b-button>
+            </div>
+          </template>
+        </b-card>
       </template>
     </b-overlay>
 
@@ -88,6 +142,7 @@
       @save="saveProject"
       @export="exportProject"
       @info="isShowInfoPopup = true"
+      @setting="openSettingPopup"
     >
       <!-- sidebar-navigator toggle button -->
       <template #main-navigation-toggle>
@@ -96,15 +151,26 @@
         </b-button>
       </template>
     </MainHeader>
+
     <div id="main-content">
       <!-- sidebar-navigator -->
       <b-sidebar id="main-sidebar" body-class="main-sidebar-list" shadow no-header>
         <template v-slot:default="{ hide }">
           <div class="main-sidebar-header p-3 shadow">
-            <b-button variant="light" @click="hide" class="shadow-sm flex-grow-1 mr-1">
+            <b-button
+              variant="light"
+              @click="hide"
+              class="shadow-sm flex-grow-1 mr-1"
+              :disabled="isEditingItemList"
+            >
               <v-icon name="times" height="14" width="14" scale="1" />
             </b-button>
-            <b-button class="mr-1" variant="outline-info" @click="importProject">
+            <b-button
+              class="mr-1"
+              variant="outline-info"
+              @click="importProject"
+              :disabled="isEditingItemList"
+            >
               <v-icon name="file-export" height="14" width="14" scale="1" />
             </b-button>
             <b-button
@@ -157,12 +223,14 @@ export default {
     return {
       isEditingItemList: false,
       isShowInfoPopup: false,
+      isShowSettingPopup: false,
       projectData: null,
       editorData: null,
       selectedIndex: null,
       headerInfo: {
         name: null
-      }
+      },
+      gitBashPath: null
     }
   },
   mounted () {
@@ -170,6 +238,8 @@ export default {
     if (localSave) {
       this.loadProject(localSave)
     }
+
+    this.gitBashPath = this.setting.gitBashPath
   },
   methods: {
     loadItem ({ item, index }) {
@@ -185,6 +255,11 @@ export default {
         this.clearEditor()
       }
       this.isEditingItemList = !this.isEditingItemList
+    },
+    clearEditor () {
+      this.editorData = null
+      this.selectedIndex = null
+      this.headerInfo.name = null
     },
     async loadProject (projectSaveData) {
       if (projectSaveData) {
@@ -214,10 +289,14 @@ export default {
         this.loadProject(projectData)
       }
     },
-    clearEditor () {
-      this.editorData = null
-      this.selectedIndex = null
-      this.headerInfo.name = null
+    openSettingPopup () {
+      this.isShowSettingPopup = true
+    },
+    saveSetting () {
+      this.isShowSettingPopup = false
+      this.settingUpdate({
+        gitBashPath: this.gitBashPath
+      })
     }
   }
 }

@@ -212,7 +212,7 @@ export default {
       }
     },
     connect () {
-      const command = `"%ProgramFiles%\\Git\\git-bash.exe" -c "ssh -i "${upath.toUnix(
+      const command = `"${this.setting.gitBashPath}" -c "ssh -i "${upath.toUnix(
         this.keyPath
       )}" "${this.user ? this.user + '@' : ''}${this.host}" -p "${this.port}""`
       window.executeCommand(command)
@@ -261,9 +261,9 @@ export default {
         return
       }
 
-      const command = `"%ProgramFiles%\\Git\\git-bash.exe" -c "echo "${ctlPathFile}" && ssh -i "${upath.toUnix(prevNodeData.keyPath)}" "${prevNodeData.user}@${prevNodeData.host}" -p "${prevNodeData.port}" -N -M -S "${ctlPathFile}" ${fowardList}"`
+      const command = `"${this.setting.gitBashPath}" -c "echo "${ctlPathFile}" && ssh -i "${upath.toUnix(prevNodeData.keyPath)}" "${prevNodeData.user}@${prevNodeData.host}" -p "${prevNodeData.port}" -N -M -S "${ctlPathFile}" ${fowardList}"`
       /*
-      const command = `"%ProgramFiles%\\Git\\git-bash.exe" -c "ssh -i "${upath.toUnix(
+      const command = `"${this.setting.gitBashPath}" -c "ssh -i "${upath.toUnix(
         this.keyPath
       )}" "${this.user ? this.user + '@' : ''}${this.host}" -p "${this.port}""`
       */
@@ -293,7 +293,7 @@ export default {
       window.writeFileSync(configTempFilename, str)
 
       const destHost = jumpHosts.pop()
-      const command = `"%ProgramFiles%\\Git\\git-bash.exe" -c "echo "${configTempFilename}" && ssh -F "${configTempFilename}" -J ${jumpHosts.join(',')} ${destHost}"`
+      const command = `"${this.setting.gitBashPath}" -c "echo "${configTempFilename}" && ssh -F "${configTempFilename}" -J ${jumpHosts.join(',')} ${destHost}"`
 
       window.executeCommand(command, (output) => {
         setTimeout(() => window.unlinkFile(configTempFilename), 3000)
