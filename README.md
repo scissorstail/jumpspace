@@ -25,4 +25,6 @@
 - [ ] Mac 지원
 - [ ] 테스트 작성
 
-## 
+## 요구사항
+1. Windows에서 Git bash설치 (보통 Git for Windows로 Git 설치 시 같이 설치됨)
+2. Git bash에서 OpenSSH 7.3이상 필요 (보통 Git bash 설치 시 7.3이상 버전으로 설치됨)
