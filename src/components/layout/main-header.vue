@@ -1,9 +1,11 @@
 <template>
   <div id="main-header" class="p-3">
     <slot name="main-navigation-toggle"></slot>
+
     <div class="align-self-center">
       <!-- left button -->
     </div>
+
     <div class="ml-auto align-self-center">
       <span class="mr-3">{{headerInfo.name || ''}}</span>
 
@@ -57,11 +59,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-#main-header {
-  display: flex;
-  background-color: #1d3557;
-  padding: 10px;
-  color: white;
-  font-size: large;
-}
+  #main-header {
+    display: flex;
+    background-color: #1d3557;
+    padding: 10px;
+    color: white;
+    font-size: large;
+  }
 </style>

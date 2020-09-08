@@ -14,7 +14,7 @@ import CommentPlugin from 'rete-comment-plugin'
 // import AlightRenderPlugin from 'rete-alight-render-plugin'
 // import TaskPlugin from 'rete-task-plugin'
 
-import TestNode from './nodes/TestNode'
+import SiteNode from './nodes/site-node'
 
 export default {
   props: {
@@ -29,7 +29,7 @@ export default {
   },
   mounted () {
     // Node
-    const nodes = [new TestNode()]
+    const nodes = [new SiteNode()]
 
     const background = document.createElement('div')
     background.classList = 'background'

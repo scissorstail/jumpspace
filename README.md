@@ -24,6 +24,7 @@
 ## NOT TODO
 - [ ] Mac 지원
 - [ ] 테스트 작성
+- [ ] Code Signing
 
 ## 요구사항
 1. Windows에서 Git bash설치 (보통 Git for Windows로 Git 설치 시 같이 설치됨)

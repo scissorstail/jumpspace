@@ -1,9 +1,9 @@
 import Rete from 'rete'
-import ConnectionSocket from '../../sockets/ConnectionSocket'
-import ConnectionControl from './controls/ConnectionControl'
+import ConnectionSocket from '../../sockets/connection-socket'
+import ConnectionControl from './controls/connection-control'
 import _ from 'lodash'
 
-export default class TestNode extends Rete.Component {
+export default class SiteNode extends Rete.Component {
   constructor () {
     super('Site') // name
     /*
