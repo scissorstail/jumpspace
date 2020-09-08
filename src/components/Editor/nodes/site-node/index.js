@@ -29,7 +29,6 @@ export default class SiteNode extends Rete.Component {
 
   worker (node, inputs, outputs) {
     // console.log(node, inputs, outputs)
-    // console.log(node)
 
     const prevNodeDataList = _.first(inputs.input1)?.connection || []
     const nextNodeDataList = prevNodeDataList.concat([node.data.connection])

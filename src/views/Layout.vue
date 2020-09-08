@@ -53,6 +53,18 @@ import Editor from '../components/editor'
 import InfoPopup from '../components/layout/popup/info-popup'
 import SettingPopup from '../components/layout/popup/setting-popup'
 
+/*
+
+[구조 요약]
+
+1. project는 여러개의 item을 가질 수 있다.
+2. editor는 하나의 item을 표시할 수 있다.
+3. item은 여러개의 node를 가질 수 있다.
+4. node는 여러개의 control을 가질 수 있다. (현재는 ConnectionControl 1개만 사용)
+5. control은 내부에 renderer를 가진다.
+
+*/
+
 export default {
   name: 'Layout',
   components: {
@@ -70,7 +82,7 @@ export default {
       isShowSettingPopup: false,
       projectData: null,
       editorData: null,
-      selectedIndex: null,
+      selectedItemIndex: null,
       headerInfo: {
         name: null
       }
@@ -85,12 +97,12 @@ export default {
   methods: {
     loadEditor ({ item, index }) {
       this.editorData = JSON.stringify(item.data)
-      this.selectedIndex = index
+      this.selectedItemIndex = index
       this.headerInfo.name = item.name
     },
     clearEditor () {
       this.editorData = null
-      this.selectedIndex = null
+      this.selectedItemIndex = null
       this.headerInfo.name = null
     },
     async toggleEdit () {
@@ -111,14 +123,19 @@ export default {
       }
     },
     async saveProject () {
-      if (this.selectedIndex !== null) {
+      if (this.selectedItemIndex !== null) {
+        // editor가 표시중인 item이 가진 각 node의 control(ConnectionControl)의 내부 renderer가 가진 정보를 node에 저장
         this.$refs.editorRef.editor.nodes.forEach(x => x.controls.get('connection').save())
-        this.projectData[this.selectedIndex] = {
+
+        // editor가 표시중인 item이 가진 내용을 project의 해당 item에 저장
+        this.projectData[this.selectedItemIndex] = {
           name: this.headerInfo.name,
           data: await this.$refs.editorRef.compile()
         }
+
+        // project를 JSON 형식으로 변환하여 localStorage에 저장
+        window.localStorage.projectSaveData = JSON.stringify(this.projectData)
       }
-      window.localStorage.projectSaveData = JSON.stringify(this.projectData)
     },
     async exportProject () {
       await this.saveProject()

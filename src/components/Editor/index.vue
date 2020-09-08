@@ -76,13 +76,11 @@ export default {
     })
 
     this.editor.on(
-      'connectioncreate connectionremove nodecreate noderemove process',
-      () => {
-        if (this.editor.silent) {
-          return
-        }
+      ['connectioncreate', 'connectionremove', 'nodecreate', 'noderemove', 'process'],
+      async () => {
+        if (this.editor.silent) return
 
-        this.compile()
+        await this.compile()
       }
     )
 
@@ -100,14 +98,10 @@ export default {
   },
   methods: {
     async compile () {
-      if (this.editor.silent) return
-
       await this.engine.abort()
+      await this.engine.process(this.editor.toJSON())
 
-      const editorData = this.editor.toJSON()
-      await this.engine.process(editorData)
-
-      return editorData
+      return this.editor.toJSON()
     },
     load (editorSaveData) {
       this.editor.fromJSON(JSON.parse(editorSaveData)).then(() => {
