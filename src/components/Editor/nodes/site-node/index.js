@@ -5,12 +5,7 @@ import _ from 'lodash'
 
 export default class SiteNode extends Rete.Component {
   constructor () {
-    super('Site') // name
-    /*
-    this.task = {
-      outputs: {}
-    }
-    */
+    super('Site') // 컨텍스트 메뉴에 표시되는 이름 설정
 
     this.getControl = (node) => this.editor.nodes.find(n => n.id === node.id).controls
   }

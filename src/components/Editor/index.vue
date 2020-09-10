@@ -121,6 +121,71 @@ export default {
   position: relative;
   margin: 0;
   padding: 0;
+
+  .background {
+    z-index: -5;
+
+    background-position: 0px 0px, 10px 10px;
+    background-size: 20px 20px;
+    background-image: linear-gradient(
+        45deg,
+        #eee 25%,
+        transparent 25%,
+        transparent 75%,
+        #eee 75%,
+        #eee 100%
+      ),
+      linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee 100%);
+  }
+
+  .node.site {
+    height: 210px;
+    width: 200px;
+    background-color: #4682b42b;
+    border: 2px dashed #4682b4;
+    padding-bottom: initial;
+
+    .title {
+      display: none;
+    }
+
+    &.selected {
+      background-color: #e3c0002b;
+      border: 2px dashed #e3c000;
+    }
+
+    .socket {
+      background: white;
+      height: 24px;
+      width: 24px;
+
+      &.input {
+        border: 2px dashed gray;
+        margin-left: -32px;
+      }
+
+      &.output {
+        border: 2px dashed green;
+        margin-right: -32px;
+      }
+    }
+
+    .input .input-title {
+      color: black;
+    }
+
+    .output .output-title {
+      color: black;
+    }
+
+    .control {
+      padding: 2px 20px;
+    }
+  }
+
+  .connection .main-path {
+    stroke-width: 3px;
+  }
 }
 
 .tooltip {
@@ -130,66 +195,5 @@ export default {
   color: white;
   z-index: 10000;
   opacity: 1;
-}
-
-#rete .node.site {
-  height: 210px;
-  width: 200px;
-  background-color: #4682b42b;
-  border: 2px dashed #4682b4;
-  padding-bottom: initial;
-}
-
-#rete .node.site .title {
-  display: none;
-}
-
-#rete .node.site.selected {
-  background-color: #e3c0002b;
-  border: 2px dashed #e3c000;
-}
-
-#rete .node.site .socket {
-  background: white;
-  height: 24px;
-  width: 24px;
-}
-
-#rete .node.site .socket.input {
-  border: 2px dashed green;
-  margin-left: -32px;
-}
-
-#rete .node.site .input .input-title {
-  color: black;
-}
-
-#rete .node.site .socket.output {
-  border: 2px dashed grey;
-  margin-right: -32px;
-}
-
-#rete .node.site .output .output-title {
-  color: black;
-}
-
-#rete .connection .main-path {
-  stroke-width: 3px;
-}
-
-#rete .background {
-  z-index: -5;
-
-  background-position: 0px 0px, 10px 10px;
-  background-size: 20px 20px;
-  background-image: linear-gradient(
-      45deg,
-      #eee 25%,
-      transparent 25%,
-      transparent 75%,
-      #eee 75%,
-      #eee 100%
-    ),
-    linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee 100%);
 }
 </style>

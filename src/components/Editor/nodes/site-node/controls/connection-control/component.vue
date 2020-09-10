@@ -2,6 +2,7 @@
   <div class="component">
     <div class="header-menu">
       <a class="info-edit">
+        <!-- setting popover -->
         <v-popover ref="popover" placement="auto-end" @hide="save">
           <v-icon name="cog" height="24" width="24" scale="1.5" class="info-edit-item" />
           <template slot="popover">
@@ -46,6 +47,7 @@
         </v-popover>
       </a>
       <a class="info-edit left">
+        <!-- forward popover-->
         <v-popover ref="popover2" placement="auto-end" @hide="save">
           <v-icon name="link" height="24" width="24" scale="1.5" class="info-edit-item" />
           <template slot="popover">
@@ -71,6 +73,7 @@
         </v-popover>
       </a>
     </div>
+
     <div class="info-block" :class="{ blur: isBlur }">
       <img
         class="info-diagram mb-1"
@@ -78,23 +81,24 @@
         height="40%"
         :src="diagram ? `/img/diagram/servers/${diagram}` : null"
       />
-      <div class="info-text">{{ name || 'noname' }}</div>
-      <div class="info-text">{{ host || 'localhost' }}</div>
-      <div class="info-text">{{ port || '80' }}</div>
+      <div class="info-text">{{ name || '-' }}</div>
+      <div class="info-text">{{ host || '-' }}</div>
+      <div class="info-text">{{ port || '-' }}</div>
     </div>
+
     <div class="footer-menu">
       <a class="info-edit">
         <v-icon
-          v-if="isProxyJump"
+          v-if="isProxyJumpReady"
           name="bolt"
           height="24"
           width="24"
           scale="1.5"
           class="info-edit-item"
-          @click="jump"
+          @click="proxyJump"
         />
         <v-icon
-          v-if="isConnectable && !isProxyJump"
+          v-if="isConnectable && !isProxyJumpReady"
           name="plug"
           height="24"
           width="24"
@@ -172,7 +176,7 @@ export default {
 
       return false
     },
-    isProxyJump () {
+    isProxyJumpReady () {
       return this.isConnectable && this.isFowardable
     }
   },
@@ -263,14 +267,10 @@ export default {
       }
 
       const command = `"${this.setting.gitBashPath}" -c "echo "${ctlPathFile}" && ssh -i "${upath.toUnix(prevNodeData.keyPath)}" "${prevNodeData.user}@${prevNodeData.host}" -p "${prevNodeData.port}" -N -M -S "${ctlPathFile}" ${fowardList}"`
-      /*
-      const command = `"${this.setting.gitBashPath}" -c "ssh -i "${upath.toUnix(
-        this.keyPath
-      )}" "${this.user ? this.user + '@' : ''}${this.host}" -p "${this.port}""`
-      */
+
       window.executeCommand(command)
     },
-    jump () {
+    proxyJump () {
       const nodes = this.prevNodeDataList.concat({ ...this.$data })
       const jumpHosts = []
 
