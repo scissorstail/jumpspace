@@ -118,6 +118,7 @@ export default {
     async loadProject (projectSaveData) {
       if (projectSaveData) {
         this.projectData = JSON.parse(projectSaveData)
+        window.localStorage.projectSaveData = projectSaveData
       } else {
         this.projectData = []
       }
