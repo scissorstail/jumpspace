@@ -81,9 +81,9 @@
         height="40%"
         :src="diagram ? `/img/diagram/servers/${diagram}` : null"
       />
-      <div class="info-text">{{ name || '-' }}</div>
-      <div class="info-text">{{ host || '-' }}</div>
-      <div class="info-text">{{ port || '-' }}</div>
+      <div class="info-text">{{ name || 'noname' }}</div>
+      <div class="info-text">{{ host || '---' }}</div>
+      <div class="info-text">{{ port || '---' }}</div>
     </div>
 
     <div class="footer-menu">
@@ -261,12 +261,12 @@ export default {
       }
 
       const ctlPathFile = `[${this.name}]L-${prevNodeData.user}@${prevNodeData.host}_${prevNodeData.port}.ctl`
-      const fowardList = this.forwards.filter(x => x.checked && x.from && x.to).map(x => `-L "localhost:${x.from}:${this.host}:${x.to}"`).join(' ')
-      if (fowardList === '') {
+      const forwardList = this.forwards.filter(x => x.checked && x.from && x.to)
+      if (forwardList.length === 0) {
         return
       }
 
-      const command = `"${this.setting.gitBashPath}" -c "echo "${ctlPathFile}" && ssh -i "${upath.toUnix(prevNodeData.keyPath)}" "${prevNodeData.user}@${prevNodeData.host}" -p "${prevNodeData.port}" -N -M -S "${ctlPathFile}" ${fowardList}"`
+      const command = `"${this.setting.gitBashPath}" -c "echo 'Fowarding...' && ${forwardList.map((x, i) => `echo 'localhost:${x.from} >> [${prevNodeData.name}]${prevNodeData.host}:${prevNodeData.port} >> [${this.name}]${this.host}:${x.to}'`).join('&&')} && ssh -i "${upath.toUnix(prevNodeData.keyPath)}" "${prevNodeData.user}@${prevNodeData.host}" -p "${prevNodeData.port}" -N -M -S "${ctlPathFile}" ${forwardList.map(x => `-L "localhost:${x.from}:${this.host}:${x.to}"`).join(' ')}"`
 
       window.executeCommand(command)
     },
