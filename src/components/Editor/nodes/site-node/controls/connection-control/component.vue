@@ -266,7 +266,7 @@ export default {
         return
       }
 
-      const command = `"${this.setting.gitBashPath}" -c "echo 'Fowarding...' && ${forwardList.map((x, i) => `echo 'localhost:${x.from} >> [${prevNodeData.name}]${prevNodeData.host}:${prevNodeData.port} >> [${this.name}]${this.host}:${x.to}'`).join('&&')} && ssh -i "${upath.toUnix(prevNodeData.keyPath)}" "${prevNodeData.user}@${prevNodeData.host}" -p "${prevNodeData.port}" -N -M -S "${ctlPathFile}" ${forwardList.map(x => `-L "localhost:${x.from}:${this.host}:${x.to}"`).join(' ')}"`
+      const command = `"${this.setting.gitBashPath}" -c "echo 'Foward...' && ${forwardList.map((x, i) => `echo 'localhost:${x.from} >> [${prevNodeData.name}]${prevNodeData.host}:${prevNodeData.port} >> [${this.name}]${this.host}:${x.to}'`).join('&&')} && ssh -i "${upath.toUnix(prevNodeData.keyPath)}" "${prevNodeData.user}@${prevNodeData.host}" -p "${prevNodeData.port}" -N -M -S "${ctlPathFile}" ${forwardList.map(x => `-L "localhost:${x.from}:${this.host}:${x.to}"`).join(' ')}"`
 
       window.executeCommand(command)
     },
@@ -294,7 +294,7 @@ export default {
       window.writeFileSync(configTempFilename, str)
 
       const destHost = jumpHosts.pop()
-      const command = `"${this.setting.gitBashPath}" -c "echo "${configTempFilename}" && ssh -F "${configTempFilename}" -J ${jumpHosts.join(',')} ${destHost}"`
+      const command = `"${this.setting.gitBashPath}" -c "echo 'ProxyJump...' && ${nodes.map((x, i) => `echo '>>> [${x.name}]${x.host}:${x.port}'`).join('&&')} && ssh -F "${configTempFilename}" -J ${jumpHosts.join(',')} ${destHost}"`
 
       window.executeCommand(command, (output) => {
         setTimeout(() => window.unlinkFile(configTempFilename), 3000)
