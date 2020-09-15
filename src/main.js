@@ -13,7 +13,13 @@ import { BootstrapVue } from 'bootstrap-vue'
 Vue.config.productionTip = false
 
 Vue.component('v-icon', Icon)
-Vue.use(VTooltip)
+Vue.use(VTooltip, {
+  popover: { // bootstrap-vue와 v-tooltip 클래스 충돌 방지
+    defaultBaseClass: 'vt-tooltip vt-popover',
+    defaultInnerClass: 'vt-tooltip-inner vt-popover-inner',
+    defaultArrowClass: 'vt-tooltip-arrow vt-popover-arrow'
+  }
+})
 Vue.use(BootstrapVue)
 
 ;(async () => {

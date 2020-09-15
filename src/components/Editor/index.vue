@@ -135,7 +135,14 @@ export default {
         #eee 75%,
         #eee 100%
       ),
-      linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee 100%);
+      linear-gradient(
+        45deg,
+        #eee 25%,
+        white 25%,
+        white 75%,
+        #eee 75%,
+        #eee 100%
+      );
   }
 
   .node.site {
@@ -186,14 +193,5 @@ export default {
   .connection .main-path {
     stroke-width: 3px;
   }
-}
-
-.tooltip {
-  background: rgba(0, 0, 0, 0.7);
-  padding: 8px;
-  border-radius: 6px;
-  color: white;
-  z-index: 10000;
-  opacity: 1;
 }
 </style>
