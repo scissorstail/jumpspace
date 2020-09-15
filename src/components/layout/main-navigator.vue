@@ -15,6 +15,8 @@
         variant="outline-info"
         @click="$emit('import-project')"
         :disabled="isEditing"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        title="불러오기"
       >
         <v-icon name="file-export" height="14" width="14" scale="1" />
       </b-button>
@@ -22,6 +24,8 @@
         :variant="isEditing ? 'warning' : 'light'"
         @click="$emit('toggle-edit')"
         class="shadow-sm flex-grow-9"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        :title="isEditing ? '저장' : '편집'"
       >
         <v-icon
           :name="isEditing ? 'save' : 'edit'"
@@ -121,62 +125,63 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  #main-navigator {
-    overflow-y: hidden;
-    scrollbar-width: thin;
-    flex: 1;
+#main-navigator {
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  flex: 1;
 
-    .main-navigator {
-      &-header {
-        height: 70px;
+  .main-navigator {
+    &-header {
+      height: 70px;
+      display: flex;
+      flex-direction: row;
+      background-color: #1d3557f0;
+    }
+
+    &-content {
+      height: calc(100% - 70px);
+      overflow-y: auto;
+
+      .list-item {
         display: flex;
-        flex-direction: row;
-        background-color: #1d3557f0;
-      }
+        justify-content: space-between;
+        align-items: flex-end;
 
-      &-content {
-        height: calc(100% - 70px);
-        overflow-y: auto;
-
-        .list-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-end;
-
-          &:hover {
-            background-color: lightgrey;
-          }
+        &:hover {
+          background-color: lightgrey;
         }
       }
     }
   }
+}
 
-  .active {
-    background-color: lightgrey
-  }
+.active {
+  background-color: lightgrey;
+}
 
-  .btn:focus, .btn:active:focus {
-    outline: none;
-    box-shadow: none;
-  }
+.btn:focus,
+.btn:active:focus {
+  outline: none;
+  box-shadow: none;
+}
 
-  /* width */
-  ::-webkit-scrollbar {
-    width: 10px;
-  }
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+}
 
-  /* Track */
-  ::-webkit-scrollbar-track {
-    background: #f1f1f1;
-  }
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
 
-  /* Handle */
-  ::-webkit-scrollbar-thumb {
-    background: #888;
-  }
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
 
-  /* Handle on hover */
-  ::-webkit-scrollbar-thumb:hover {
-    background: #555;
-  }
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
 </style>

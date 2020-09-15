@@ -9,27 +9,63 @@
     <div class="ml-auto align-self-center">
       <span class="mr-3">{{headerInfo.name || ''}}</span>
 
-      <b-button class="mr-1" variant="outline-danger" @click="reload">
+      <b-button
+        class="mr-1"
+        variant="outline-danger"
+        @click="reload"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        title="새로고침"
+      >
         <v-icon name="fire-extinguisher" height="14" width="14" scale="1" />
       </b-button>
 
-      <b-button class="mr-1" variant="outline-warning" @click="toggleDevTools">
+      <b-button
+        class="mr-1"
+        variant="outline-warning"
+        @click="toggleDevTools"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        title="디버그 콘솔"
+      >
         <v-icon name="bug" height="14" width="14" scale="1" />
       </b-button>
 
-      <b-button class="mr-1" variant="outline-info" @click="$emit('export')">
+      <b-button
+        class="mr-1"
+        variant="outline-info"
+        @click="$emit('export')"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        title="내보내기"
+      >
         <v-icon name="file-export" height="14" width="14" scale="1" />
       </b-button>
 
-      <b-button class="mr-3" variant="light" @click="$emit('save')">
+      <b-button
+        class="mr-3"
+        variant="light"
+        @click="$emit('save')"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        title="저장"
+      >
         <v-icon name="save" height="14" width="14" scale="1" />
       </b-button>
 
-      <b-button class="mr-1" variant="primary" @click="$emit('setting')">
+      <b-button
+        class="mr-1"
+        variant="primary"
+        @click="$emit('setting')"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        title="설정"
+      >
         <v-icon name="cog" height="14" width="14" scale="1" />
       </b-button>
 
-      <b-button class variant="info" @click="$emit('info')">
+      <b-button
+        class
+        variant="info"
+        @click="$emit('info')"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        title="정보"
+      >
         <v-icon name="info-circle" height="14" width="14" scale="1" />
       </b-button>
     </div>
@@ -59,11 +95,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  #main-header {
-    display: flex;
-    background-color: #1d3557;
-    padding: 10px;
-    color: white;
-    font-size: large;
-  }
+#main-header {
+  display: flex;
+  background-color: #1d3557;
+  padding: 10px;
+  color: white;
+  font-size: large;
+}
 </style>

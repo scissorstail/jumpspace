@@ -44,7 +44,13 @@
             >
               <v-icon name="times" height="14" width="14" scale="1" />
             </b-button>
-            <b-button variant="light" @click="saveSetting" class="shadow-sm">
+            <b-button
+              variant="light"
+              @click="saveSetting"
+              class="shadow-sm"
+              v-b-tooltip.hover.v-light.dh0.noninteractive
+              title="저장"
+            >
               <v-icon name="save" height="14" width="14" scale="1" />
             </b-button>
           </div>
@@ -88,5 +94,4 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-
 </style>

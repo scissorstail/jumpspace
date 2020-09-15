@@ -154,31 +154,31 @@ export default {
 </script>
 
 <style lang="scss">
-  @import '../../node_modules/bootstrap/dist/css/bootstrap.css';
-  @import '../../node_modules/bootstrap-vue/dist/bootstrap-vue.css';
+@import '../../node_modules/bootstrap/dist/css/bootstrap.css';
+@import '../../node_modules/bootstrap-vue/dist/bootstrap-vue.css';
 
-  #layout {
+#layout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+#main-content {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  overflow: hidden;
+  background-color: #f1faee;
+}
+
+#main-sidebar {
+  opacity: 0.9;
+
+  .main-sidebar-list {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
-    margin: 0;
   }
-
-  #main-content {
-    display: flex;
-    flex-direction: row;
-    flex: 1;
-    overflow: hidden;
-    background-color: #f1faee;
-  }
-
-  #main-sidebar {
-    opacity: 0.9;
-
-    .main-sidebar-list {
-      display: flex;
-      flex-direction: column;
-    }
-  }
+}
 </style>
