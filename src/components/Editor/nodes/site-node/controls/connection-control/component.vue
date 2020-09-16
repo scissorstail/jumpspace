@@ -286,7 +286,7 @@ export default {
       }" -c "echo 'Foward...' && ${forwardList
         .map(
           (x, i) =>
-            `echo 'localhost:${x.from} >> [${prevNodeData.name}]:${prevNodeData.port} >> [${this.name}]:${x.to}'`
+            `echo ':${x.from} >> [${prevNodeData.host}]:${prevNodeData.port} -> :${x.to}'`
         )
         .join('&&')} && ssh -i "${upath.toUnix(prevNodeData.keyPath)}" "${
         prevNodeData.user
@@ -325,7 +325,7 @@ export default {
       const command = `"${
         this.setting.gitBashPath
       }" -c "echo 'ProxyJump...' && ${nodes
-        .map((x, i) => `echo '>>> [${x.name}]${x.host}:${x.port}'`)
+        .map((x, i) => `echo '>>> [${x.host}]:${x.port}'`)
         .join('&&')} && ssh -F "${configTempFilename}" -J ${jumpHosts.join(
         ','
       )} ${destHost}; read -n 1 -s -r -p 'Press any key to continue'"`
