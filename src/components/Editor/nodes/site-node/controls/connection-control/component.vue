@@ -174,7 +174,12 @@ export default {
         return false
       }
 
-      if (prevNodeData.host && prevNodeData.user && prevNodeData.port && prevNodeData.keyPath) {
+      if (
+        prevNodeData.host &&
+        prevNodeData.user &&
+        prevNodeData.port &&
+        prevNodeData.keyPath
+      ) {
         return true
       }
 
@@ -220,9 +225,11 @@ export default {
       }
     },
     connect () {
-      const command = `"${this.setting.gitBashPath}" -c "ssh -i "${upath.toUnix(
+      const command = `"${this.setting.gitBashPath}" -c "ssh -i '${upath.toUnix(
         this.keyPath
-      )}" "${this.user ? this.user + '@' : ''}${this.host}" -p "${this.port}""`
+      )}' '${this.user ? this.user + '@' : ''}${this.host}' -p '${
+        this.port
+      }'; read -n 1 -s -r -p 'Press any key to continue'"`
       window.executeCommand(command)
     },
     save () {
@@ -236,7 +243,9 @@ export default {
         'keyPath',
         'forwards'
       ])
-      if (this.ikey) { this.putData(this.ikey, { ...data }) }
+      if (this.ikey) {
+        this.putData(this.ikey, { ...data })
+      }
       this.emitter.trigger('process')
     },
     blur () {
@@ -256,7 +265,7 @@ export default {
       })
     },
     removeForward (forward) {
-      this.forwards = this.forwards.filter(x => x !== forward)
+      this.forwards = this.forwards.filter((x) => x !== forward)
     },
     forward () {
       const prevNodeData = _.last(this.prevNodeDataList)
@@ -265,12 +274,27 @@ export default {
       }
 
       const ctlPathFile = `[${this.name}]L-${prevNodeData.user}@${prevNodeData.host}_${prevNodeData.port}.ctl`
-      const forwardList = this.forwards.filter(x => x.checked && x.from && x.to)
+      const forwardList = this.forwards.filter(
+        (x) => x.checked && x.from && x.to
+      )
       if (forwardList.length === 0) {
         return
       }
 
-      const command = `"${this.setting.gitBashPath}" -c "echo 'Foward...' && ${forwardList.map((x, i) => `echo 'localhost:${x.from} >> [${prevNodeData.name}]${prevNodeData.host}:${prevNodeData.port} >> [${this.name}]${this.host}:${x.to}'`).join('&&')} && ssh -i "${upath.toUnix(prevNodeData.keyPath)}" "${prevNodeData.user}@${prevNodeData.host}" -p "${prevNodeData.port}" -N -M -S "${ctlPathFile}" ${forwardList.map(x => `-L "localhost:${x.from}:${this.host}:${x.to}"`).join(' ')}"`
+      const command = `"${
+        this.setting.gitBashPath
+      }" -c "echo 'Foward...' && ${forwardList
+        .map(
+          (x, i) =>
+            `echo 'localhost:${x.from} >> [${prevNodeData.name}]:${prevNodeData.port} >> [${this.name}]:${x.to}'`
+        )
+        .join('&&')} && ssh -i "${upath.toUnix(prevNodeData.keyPath)}" "${
+        prevNodeData.user
+      }@${prevNodeData.host}" -p "${
+        prevNodeData.port
+      }" -N -M -S "${ctlPathFile}" ${forwardList
+        .map((x) => `-L "localhost:${x.from}:${this.host}:${x.to}"`)
+        .join(' ')}; read -n 1 -s -r -p 'Press any key to continue'"`
 
       window.executeCommand(command)
     },
@@ -298,7 +322,13 @@ export default {
       window.writeFileSync(configTempFilename, str)
 
       const destHost = jumpHosts.pop()
-      const command = `"${this.setting.gitBashPath}" -c "echo 'ProxyJump...' && ${nodes.map((x, i) => `echo '>>> [${x.name}]${x.host}:${x.port}'`).join('&&')} && ssh -F "${configTempFilename}" -J ${jumpHosts.join(',')} ${destHost}"`
+      const command = `"${
+        this.setting.gitBashPath
+      }" -c "echo 'ProxyJump...' && ${nodes
+        .map((x, i) => `echo '>>> [${x.name}]${x.host}:${x.port}'`)
+        .join('&&')} && ssh -F "${configTempFilename}" -J ${jumpHosts.join(
+        ','
+      )} ${destHost}; read -n 1 -s -r -p 'Press any key to continue'"`
 
       window.executeCommand(command, (output) => {
         setTimeout(() => window.unlinkFile(configTempFilename), 3000)
