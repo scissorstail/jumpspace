@@ -3,44 +3,44 @@
     <div class="header-menu">
       <a class="info-edit">
         <!-- setting popover -->
-        <v-popover ref="popover" placement="auto-end" @hide="save">
-          <v-icon name="cog" height="24" width="24" scale="1.5" class="info-edit-item" />
+        <v-popover @hide="save" placement="auto-end" ref="popover">
+          <v-icon class="info-edit-item" height="24" name="cog" scale="1.5" width="24" />
           <template slot="popover">
             <div class="p-3">
               <div class="info-list" style="width: 280px;">
                 <div class="info-item mb-3">
-                  <b-button size="sm" @click="loadPrevDiagram">
-                    <v-icon name="angle-left" height="14" width="14" scale="1" />
+                  <b-button @click="loadPrevDiagram" size="sm">
+                    <v-icon height="14" name="angle-left" scale="1" width="14" />
                   </b-button>
-                  <b-form-input size="sm" v-model.trim="diagram" style="margin: 0 3px;" />
-                  <b-button size="sm" @click="loadNextDiagram">
-                    <v-icon name="angle-right" height="14" width="14" scale="1" />
+                  <b-form-input size="sm" style="margin: 0 3px;" v-model.trim="diagram" />
+                  <b-button @click="loadNextDiagram" size="sm">
+                    <v-icon height="14" name="angle-right" scale="1" width="14" />
                   </b-button>
                 </div>
-                <b-form-group label-cols-sm="3" label="Name" label-align="left" class="mb-0">
+                <b-form-group class="mb-0" label="Name" label-align="left" label-cols-sm="3">
                   <b-form-input size="sm" v-model.trim="name" />
                 </b-form-group>
-                <b-form-group label-cols-sm="3" label="User" label-align="left" class="mb-0">
+                <b-form-group class="mb-0" label="User" label-align="left" label-cols-sm="3">
                   <b-form-input size="sm" v-model.trim="user" />
                 </b-form-group>
-                <b-form-group label-cols-sm="3" label="Host" label-align="left" class="mb-0">
+                <b-form-group class="mb-0" label="Host" label-align="left" label-cols-sm="3">
                   <b-form-input size="sm" v-model.trim="host" />
                 </b-form-group>
-                <b-form-group label-cols-sm="3" label="Port" label-align="left" class="mb-0">
+                <b-form-group class="mb-0" label="Port" label-align="left" label-cols-sm="3">
                   <b-form-input size="sm" v-model.trim="port" />
                 </b-form-group>
-                <b-form-group label="Key" label-cols-sm="3" label-align="left" class="mb-0">
+                <b-form-group class="mb-0" label="Key" label-align="left" label-cols-sm="3">
                   <b-input-group size="sm">
                     <template v-slot:append>
-                      <b-button v-if="keyPath" size="sm" @click="keyPath = ''">
-                        <v-icon name="trash-alt" height="14" width="14" scale="1" />
+                      <b-button @click="keyPath = ''" size="sm" v-if="keyPath">
+                        <v-icon height="14" name="trash-alt" scale="1" width="14" />
                       </b-button>
-                      <b-button v-else size="sm" @click="$refs.file.click()">
-                        <v-icon name="folder-open" height="14" width="14" scale="1" />
+                      <b-button @click="$refs.file.click()" size="sm" v-else>
+                        <v-icon height="14" name="folder-open" scale="1" width="14" />
                       </b-button>
                     </template>
-                    <b-form-input size="sm" :value="keyPath" readonly />
-                    <input ref="file" type="file" @change="change" style="display:none" />
+                    <b-form-input :value="keyPath" readonly size="sm" />
+                    <input @change="change" ref="file" style="display:none" type="file" />
                   </b-input-group>
                 </b-form-group>
               </div>
@@ -50,26 +50,26 @@
       </a>
       <a class="info-edit left">
         <!-- forward popover-->
-        <v-popover ref="popover2" placement="auto-end" @hide="save">
-          <v-icon name="link" height="24" width="24" scale="1.5" class="info-edit-item" />
+        <v-popover @hide="save" placement="auto-end" ref="popover2">
+          <v-icon class="info-edit-item" height="24" name="link" scale="1.5" width="24" />
           <template slot="popover">
             <div class="p-3">
               <div class="info-list" style="width: 225px;">
-                <div v-for="(forward, index) in forwards" :key="index" class="info-item mb-1">
-                  <b-form-checkbox size="lg" class="middle" v-model="forward.checked" />
-                  <b-form-input size="sm" class="mr-2" maxlength="5" v-model.trim="forward.from" />
-                  <span class="middle" :style="{opacity:forward.checked ? 1.0 : 0.1}">
-                    <v-icon name="forward" height="14" width="14" scale="1" />
+                <div :key="index" class="info-item mb-1" v-for="(forward, index) in forwards">
+                  <b-form-checkbox class="middle" size="lg" v-model="forward.checked" />
+                  <b-form-input class="mr-2" maxlength="5" size="sm" v-model.trim="forward.from" />
+                  <span :style="{ opacity: forward.checked ? 1.0 : 0.1 }" class="middle">
+                    <v-icon height="14" name="forward" scale="1" width="14" />
                   </span>
-                  <b-form-input size="sm" class="ml-2" maxlength="5" v-model.trim="forward.to" />
-                  <b-button class="ml-2" size="sm" @click="removeForward(forward)">
-                    <v-icon name="minus" height="14" width="14" scale="1" />
+                  <b-form-input class="ml-2" maxlength="5" size="sm" v-model.trim="forward.to" />
+                  <b-button @click="removeForward(forward)" class="ml-2" size="sm">
+                    <v-icon height="14" name="minus" scale="1" width="14" />
                   </b-button>
                 </div>
               </div>
-              <div class="info-action" :class="[forwards.length > 0 ? 'mt-2' : '']">
-                <b-button size="sm" @click="addForward" class="mr-1">
-                  <v-icon name="plus" height="14" width="14" scale="1" />
+              <div :class="[forwards.length > 0 ? 'mt-2' : '']" class="info-action">
+                <b-button @click="addForward" class="mr-1" size="sm">
+                  <v-icon height="14" name="plus" scale="1" width="14" />
                 </b-button>
               </div>
             </div>
@@ -78,13 +78,8 @@
       </a>
     </div>
 
-    <div class="info-block" :class="{ blur: isBlur }">
-      <img
-        class="info-diagram mb-1"
-        width="40%"
-        height="40%"
-        :src="diagram ? `/img/diagram/servers/${diagram}` : null"
-      />
+    <div :class="{ blur: isBlur }" class="info-block">
+      <img :src="diagram ? `/img/diagram/servers/${diagram}` : null" class="info-diagram mb-1" height="40%" width="40%" />
       <div class="info-text">{{ name || 'noname' }}</div>
       <div class="info-text">{{ host || '---' }}</div>
       <div class="info-text">{{ port || '---' }}</div>
@@ -93,44 +88,41 @@
     <div class="footer-menu">
       <a class="info-edit">
         <v-icon
-          v-if="isProxyJumpReady"
-          name="bolt"
-          height="24"
-          width="24"
-          scale="1.5"
-          class="info-edit-item"
           @click="proxyJump"
+          class="info-edit-item"
+          height="24"
+          name="bolt"
+          scale="1.5"
+          v-if="isProxyJumpReady"
+          width="24"
         />
         <v-icon
-          v-if="isConnectable && !isProxyJumpReady"
-          name="plug"
-          height="24"
-          width="24"
-          scale="1.5"
-          class="info-edit-item"
           @click="connect"
+          class="info-edit-item"
+          height="24"
+          name="plug"
+          scale="1.5"
+          v-if="isConnectable && !isProxyJumpReady"
+          width="24"
         />
       </a>
       <a class="info-edit">
-        <v-icon
-          name="eye-slash"
-          height="24"
-          width="24"
-          scale="1.5"
-          class="info-edit-item"
-          @click="blur"
-        />
+        <v-icon @click="blur" class="info-edit-item" height="24" name="eye-slash" scale="1.5" width="24" />
       </a>
       <a class="info-edit left">
         <v-icon
-          :style="{opacity: isFowardable && forwards.some(x => x.checked) ? 1.0 : 0.5}"
-          v-show="isFowardable"
-          name="forward"
-          height="24"
-          width="24"
-          scale="1.5"
+          :style="{
+            opacity: isFowardable && forwards.some(x => x.checked) ? 1.0 : 0.5
+          }"
+          @click="
+            isFowardable && forwards.some(x => x.checked) ? forward() : ''
+          "
           class="info-edit-item"
-          @click="isFowardable && forwards.some(x => x.checked) ? forward() : ''"
+          height="24"
+          name="forward"
+          scale="1.5"
+          v-show="isFowardable"
+          width="24"
         />
       </a>
     </div>
@@ -374,13 +366,13 @@ export default {
     outline: 1px dashed #e3c000;
   }
 
-  &[aria-hidden='true'] {
+  &[aria-hidden="true"] {
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.15s, visibility 0.15s;
   }
 
-  &[aria-hidden='false'] {
+  &[aria-hidden="false"] {
     visibility: visible;
     opacity: 0.9;
     transition: opacity 0.15s;
