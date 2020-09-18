@@ -9,21 +9,14 @@ The visual SSH connection editor. **Quick Open 'Git bash' with SSH commands**
 
 ## status
 
----
-
 alpha
 테스트중
 
 ## usage
 
----
-
 (empty)
-준비중
 
 ## TODO
-
----
 
 - [x] 일단 돌아는가게 구현
 - ~~[ ] 구성 요소 컴포넌트화~~
