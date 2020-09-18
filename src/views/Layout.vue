@@ -135,10 +135,10 @@ export default {
           name: this.headerInfo.name,
           data: await this.$refs.editorRef.compile()
         }
-
-        // project를 JSON 형식으로 변환하여 localStorage에 저장
-        window.localStorage.projectSaveData = JSON.stringify(this.projectData)
       }
+
+      // project를 JSON 형식으로 변환하여 localStorage에 저장
+      window.localStorage.projectSaveData = JSON.stringify(this.projectData)
     },
     async exportProject() {
       await this.saveProject()
