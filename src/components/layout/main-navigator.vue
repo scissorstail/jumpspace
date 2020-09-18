@@ -2,38 +2,27 @@
   <div id="main-navigator">
     <!-- navigator-header -->
     <div class="main-navigator-header p-3 shadow">
-      <b-button
-        variant="light"
-        @click="$emit('hide')"
-        class="shadow-sm flex-grow-1 mr-1"
-        :disabled="isEditing"
-      >
-        <v-icon name="times" height="14" width="14" scale="1" />
+      <b-button :disabled="isEditing" @click="$emit('hide')" class="shadow-sm flex-grow-1 mr-1" variant="light">
+        <v-icon height="14" name="times" scale="1" width="14" />
       </b-button>
       <b-button
-        class="mr-1"
-        variant="outline-info"
+        :disabled="isEditing"
         @click="$emit('import-project')"
-        :disabled="isEditing"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
+        class="mr-1"
         title="불러오기"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        variant="outline-info"
       >
-        <v-icon name="file-export" height="14" width="14" scale="1" />
+        <v-icon height="14" name="file-export" scale="1" width="14" />
       </b-button>
       <b-button
+        :title="isEditing ? '저장' : '편집'"
         :variant="isEditing ? 'warning' : 'light'"
         @click="$emit('toggle-edit')"
         class="shadow-sm flex-grow-9"
         v-b-tooltip.hover.v-light.dh0.noninteractive
-        :title="isEditing ? '저장' : '편집'"
       >
-        <v-icon
-          :name="isEditing ? 'save' : 'edit'"
-          height="14"
-          width="14"
-          scale="1"
-          style="width: 16px;"
-        />
+        <v-icon :name="isEditing ? 'save' : 'edit'" height="14" scale="1" style="width: 16px;" width="14" />
       </b-button>
     </div>
 
@@ -41,36 +30,30 @@
     <div class="p-3 main-navigator-content">
       <template v-for="(item, index) in items">
         <b-button
-          v-if="!isEditing"
           :key="`${_uid}-button-${index}`"
-          v-b-toggle="`collapse-${index}`"
-          block
-          variant="white"
-          class="list-item mt-1"
-          squared
           :pressed="item === selectedItem"
           @click="select(item, index)"
-        >{{item.name || 'untitled'}}</b-button>
+          block
+          class="list-item mt-1"
+          squared
+          v-b-toggle="`collapse-${index}`"
+          v-if="!isEditing"
+          variant="white"
+        >{{ item.name || 'untitled' }}</b-button>
         <!--
         <b-collapse :id="`collapse-${index}`" :key="`${_uid}-collapse-${index}`">
           <b-card>I am collapsible content!</b-card>
         </b-collapse>
         -->
-        <div v-else class="list-item mt-1" :key="`${_uid}-input-${index}`">
-          <b-form-input v-model="item.name" placeholder="untitled"></b-form-input>
-          <b-button @click="remove(item)" variant="danger" class="ml-1">
-            <v-icon name="trash" height="14" width="14" scale="1" />
+        <div :key="`${_uid}-input-${index}`" class="list-item mt-1" v-else>
+          <b-form-input placeholder="untitled" v-model="item.name"></b-form-input>
+          <b-button @click="remove(item)" class="ml-1" variant="danger">
+            <v-icon height="14" name="trash" scale="1" width="14" />
           </b-button>
         </div>
       </template>
-      <b-button
-        v-show="isEditing"
-        @click="add"
-        variant="primary"
-        block
-        class="shadow-sm flex-grow-1 mt-1"
-      >
-        <v-icon name="plus" height="14" width="14" scale="1" />
+      <b-button @click="add" block class="shadow-sm flex-grow-1 mt-1" v-show="isEditing" variant="primary">
+        <v-icon height="14" name="plus" scale="1" width="14" />
       </b-button>
     </div>
   </div>
@@ -89,33 +72,31 @@ export default {
       default: false
     }
   },
-  data () {
+  data() {
     return {
       items: [],
       selectedItem: null
     }
   },
   watch: {
-    projectData () {
+    projectData() {
       this.selectedItem = null
       this.items = this.projectData
     }
   },
   methods: {
-    add () {
-      this.items.push(
-        {
-          name: '',
-          data: { id: 'test@0.1.0', nodes: {} }
-        }
-      )
+    add() {
+      this.items.push({
+        name: '',
+        data: { id: 'test@0.1.0', nodes: {} }
+      })
     },
-    select (item, index) {
+    select(item, index) {
       this.selectedItem = item
       this.$emit('selected', { item, index })
     },
-    remove (item) {
-      const foundIndex = this.items.findIndex(x => x === item)
+    remove(item) {
+      const foundIndex = this.items.findIndex((x) => x === item)
       if (foundIndex >= 0) {
         this.items.splice(foundIndex, 1)
       }

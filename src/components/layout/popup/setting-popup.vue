@@ -1,31 +1,13 @@
 <template>
-  <b-overlay
-    :show="show"
-    no-wrap
-    rounded="sm"
-    opacity="0.6"
-    variant="dark"
-    blur="3px"
-    z-index="1050"
-  >
+  <b-overlay :show="show" blur="3px" no-wrap opacity="0.6" rounded="sm" variant="dark" z-index="1050">
     <template v-slot:overlay>
-      <b-card
-        bg-variant="light"
-        :header="`testnet settings`"
-        class="text-center"
-        style="width: 90vw"
-      >
+      <b-card :header="`testnet settings`" bg-variant="light" class="text-center" style="width: 90vw">
         <b-card-body>
           <b-card-text class="mb-3">
             <b-row class="mb-3">
               <b-col>
                 <div>
-                  <b-form-group
-                    label-cols-sm="3"
-                    label="Git Bash Path: "
-                    label-align="left"
-                    class="mb-0"
-                  >
+                  <b-form-group class="mb-0" label="Git Bash Path: " label-align="left" label-cols-sm="3">
                     <b-form-input size="sm" v-model="gitBashPath" />
                   </b-form-group>
                 </div>
@@ -36,22 +18,17 @@
 
         <template v-slot:footer>
           <div class="d-flex">
-            <b-button
-              block
-              variant="light"
-              @click="$emit('update:show', false)"
-              class="shadow-sm mr-1"
-            >
-              <v-icon name="times" height="14" width="14" scale="1" />
+            <b-button @click="$emit('update:show', false)" block class="shadow-sm mr-1" variant="light">
+              <v-icon height="14" name="times" scale="1" width="14" />
             </b-button>
             <b-button
-              variant="light"
               @click="saveSetting"
               class="shadow-sm"
-              v-b-tooltip.hover.v-light.dh0.noninteractive
               title="저장"
+              v-b-tooltip.hover.v-light.dh0.noninteractive
+              variant="light"
             >
-              <v-icon name="save" height="14" width="14" scale="1" />
+              <v-icon height="14" name="save" scale="1" width="14" />
             </b-button>
           </div>
         </template>
@@ -69,21 +46,21 @@ export default {
       default: false
     }
   },
-  data () {
+  data() {
     return {
       gitBashPath: null
     }
   },
   watch: {
-    show () {
+    show() {
       this.init()
     }
   },
   methods: {
-    init () {
+    init() {
       this.gitBashPath = this.setting.gitBashPath
     },
-    saveSetting () {
+    saveSetting() {
       this.settingUpdate({
         gitBashPath: this.gitBashPath
       })
@@ -93,5 +70,4 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

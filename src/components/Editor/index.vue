@@ -20,14 +20,14 @@ export default {
   props: {
     editorData: null
   },
-  data () {
+  data() {
     return {}
   },
-  created () {
+  created() {
     this.editor = null
     this.engine = null
   },
-  mounted () {
+  mounted() {
     // Node
     const nodes = [new SiteNode()]
 
@@ -44,7 +44,11 @@ export default {
     this.editor.use(ContextMenuPlugin, {
       nodeItems: {
         Copy: async (args) => {
-          const { name, position: [x, y], ...params } = args.node
+          const {
+            name,
+            position: [x, y],
+            ...params
+          } = args.node
           const component = this.editor.components.get(name)
           const node = await component.createNode(_.cloneDeep(params.data))
 
@@ -76,7 +80,13 @@ export default {
     })
 
     this.editor.on(
-      ['connectioncreate', 'connectionremove', 'nodecreate', 'noderemove', 'process'],
+      [
+        'connectioncreate',
+        'connectionremove',
+        'nodecreate',
+        'noderemove',
+        'process'
+      ],
       async () => {
         if (this.editor.silent) return
 
@@ -87,7 +97,7 @@ export default {
     this.editor.view.area.zoom(0.85, 0, 0)
   },
   watch: {
-    async editorData () {
+    async editorData() {
       if (this.editorData) {
         this.load(this.editorData)
       } else {
@@ -97,13 +107,13 @@ export default {
     }
   },
   methods: {
-    async compile () {
+    async compile() {
       await this.engine.abort()
       await this.engine.process(this.editor.toJSON())
 
       return this.editor.toJSON()
     },
-    load (editorSaveData) {
+    load(editorSaveData) {
       this.editor.fromJSON(JSON.parse(editorSaveData)).then(() => {
         this.editor.view.resize()
 

@@ -2,37 +2,37 @@
   <div id="layout">
     <MainHeader
       :header-info="headerInfo"
-      @save="saveProject"
       @export="exportProject"
       @info="isShowInfoPopup = true"
+      @save="saveProject"
       @setting="isShowSettingPopup = true"
     >
       <!-- sidebar toggle -->
       <template #main-navigation-toggle>
         <b-button class="header-button shadow-sm" v-b-toggle.main-sidebar variant="info">
-          <v-icon name="bars" height="14" width="14" scale="1" />
+          <v-icon height="14" name="bars" scale="1" width="14" />
         </b-button>
       </template>
     </MainHeader>
 
     <div id="main-content">
       <!-- sidebar -->
-      <b-sidebar id="main-sidebar" body-class="main-sidebar-list" shadow no-header>
+      <b-sidebar body-class="main-sidebar-list" id="main-sidebar" no-header shadow>
         <template v-slot:default="{ hide }">
           <MainNavigator
-            ref="mainNavigator"
-            :project-data="projectData"
             :is-editing="isEditingItemList"
+            :project-data="projectData"
             @hide="hide"
+            @import-project="importProject"
             @selected="loadEditor"
             @toggle-edit="toggleEdit"
-            @import-project="importProject"
+            ref="mainNavigator"
           ></MainNavigator>
         </template>
       </b-sidebar>
 
       <!-- editor -->
-      <Editor v-show="editorData" ref="editorRef" :editor-data="editorData"></Editor>
+      <Editor :editor-data="editorData" ref="editorRef" v-show="editorData"></Editor>
     </div>
 
     <!--
@@ -75,7 +75,7 @@ export default {
     InfoPopup,
     SettingPopup
   },
-  data () {
+  data() {
     return {
       isEditingItemList: false,
       isShowInfoPopup: false,
@@ -88,24 +88,24 @@ export default {
       }
     }
   },
-  mounted () {
+  mounted() {
     const localSave = window.localStorage.projectSaveData
     if (localSave) {
       this.loadProject(localSave)
     }
   },
   methods: {
-    loadEditor ({ item, index }) {
+    loadEditor({ item, index }) {
       this.editorData = JSON.stringify(item.data)
       this.selectedItemIndex = index
       this.headerInfo.name = item.name
     },
-    clearEditor () {
+    clearEditor() {
       this.editorData = null
       this.selectedItemIndex = null
       this.headerInfo.name = null
     },
-    async toggleEdit () {
+    async toggleEdit() {
       if (this.isEditingItemList) {
         this.projectData = [...this.$refs.mainNavigator.items]
         await this.saveProject()
@@ -115,7 +115,7 @@ export default {
       }
       this.isEditingItemList = !this.isEditingItemList
     },
-    async loadProject (projectSaveData) {
+    async loadProject(projectSaveData) {
       if (projectSaveData) {
         this.projectData = JSON.parse(projectSaveData)
         window.localStorage.projectSaveData = projectSaveData
@@ -123,10 +123,12 @@ export default {
         this.projectData = []
       }
     },
-    async saveProject () {
+    async saveProject() {
       if (this.selectedItemIndex !== null) {
         // editor가 표시중인 item이 가진 각 node의 control(ConnectionControl)의 내부 renderer가 가진 정보를 node에 저장
-        this.$refs.editorRef.editor.nodes.forEach(x => x.controls.get('connection').save())
+        this.$refs.editorRef.editor.nodes.forEach((x) =>
+          x.controls.get('connection').save()
+        )
 
         // editor가 표시중인 item이 가진 내용을 project의 해당 item에 저장
         this.projectData[this.selectedItemIndex] = {
@@ -138,11 +140,11 @@ export default {
         window.localStorage.projectSaveData = JSON.stringify(this.projectData)
       }
     },
-    async exportProject () {
+    async exportProject() {
       await this.saveProject()
       window.saveProjectDataAsJSON(window.localStorage.projectSaveData)
     },
-    async importProject () {
+    async importProject() {
       const projectData = window.loadProjectDataFromJSON()
       if (projectData) {
         this.clearEditor()

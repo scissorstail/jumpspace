@@ -9,9 +9,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  #main-footer {
-    display: flex;
-    min-height: 70px;
-    background-color: green;
-  }
+#main-footer {
+  display: flex;
+  min-height: 70px;
+  background-color: green;
+}
 </style>

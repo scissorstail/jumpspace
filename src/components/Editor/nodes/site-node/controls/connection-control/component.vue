@@ -139,7 +139,7 @@ export default {
   props: ['readonly', 'emitter', 'ikey', 'getData', 'putData'],
   store,
   mixins: [mixin],
-  data () {
+  data() {
     return {
       isBlur: false,
       name: null,
@@ -153,14 +153,14 @@ export default {
       prevNodeDataList: []
     }
   },
-  created () {
+  created() {
     this.diagramFilenames = this.$store.getters.diagram
   },
   computed: {
-    isConnectable () {
+    isConnectable() {
       return this.user && this.host && this.port && this.keyPath
     },
-    isFowardable () {
+    isFowardable() {
       const prevNodeData = _.last(this.prevNodeDataList)
       if (!prevNodeData) {
         return false
@@ -177,12 +177,12 @@ export default {
 
       return false
     },
-    isProxyJumpReady () {
+    isProxyJumpReady() {
       return this.isConnectable && this.isFowardable
     }
   },
   methods: {
-    update () {
+    update() {
       const data = this.getData(this.ikey)
       for (const key in data) {
         if (key in this.$data) {
@@ -192,7 +192,7 @@ export default {
 
       this.prevNodeDataList = this.getData('prevNodeDataList')
     },
-    loadPrevDiagram () {
+    loadPrevDiagram() {
       const foundIndex = this.diagramFilenames.findIndex(
         (x) => x === this.diagram
       )
@@ -204,7 +204,7 @@ export default {
         this.diagram = _.head(this.diagramFilenames)
       }
     },
-    loadNextDiagram () {
+    loadNextDiagram() {
       const foundIndex = this.diagramFilenames.findIndex(
         (x) => x === this.diagram
       )
@@ -216,7 +216,7 @@ export default {
         this.diagram = _.head(this.diagramFilenames)
       }
     },
-    connect () {
+    connect() {
       const command = `"${this.setting.gitBashPath}" -c "ssh -i '${upath.toUnix(
         this.keyPath
       )}' '${this.user ? this.user + '@' : ''}${this.host}' -p '${
@@ -224,7 +224,7 @@ export default {
       }'; read -n 1 -s -r -p 'Press any key to continue'"`
       window.executeCommand(command)
     },
-    save () {
+    save() {
       const data = _.pick(this.$data, [
         'isBlur',
         'name',
@@ -240,26 +240,26 @@ export default {
       }
       this.emitter.trigger('process')
     },
-    blur () {
+    blur() {
       this.isBlur = !this.isBlur
     },
-    change (e) {
+    change(e) {
       if (e.target.files?.[0].path) {
         this.keyPath = e.target.files[0].path
         this.$refs.file.value = ''
       }
     },
-    addForward () {
+    addForward() {
       this.forwards.push({
         checked: false,
         from: null,
         to: null
       })
     },
-    removeForward (forward) {
+    removeForward(forward) {
       this.forwards = this.forwards.filter((x) => x !== forward)
     },
-    forward () {
+    forward() {
       const prevNodeData = _.last(this.prevNodeDataList)
       if (!prevNodeData) {
         return false
@@ -290,7 +290,7 @@ export default {
 
       window.executeCommand(command)
     },
-    proxyJump () {
+    proxyJump() {
       const nodes = this.prevNodeDataList.concat({ ...this.$data })
       const jumpHosts = []
 
@@ -366,13 +366,13 @@ export default {
     outline: 1px dashed #e3c000;
   }
 
-  &[aria-hidden="true"] {
+  &[aria-hidden='true'] {
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.15s, visibility 0.15s;
   }
 
-  &[aria-hidden="false"] {
+  &[aria-hidden='false'] {
     visibility: visible;
     opacity: 0.9;
     transition: opacity 0.15s;

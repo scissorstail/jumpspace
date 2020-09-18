@@ -2,13 +2,17 @@ const path = require('path')
 const fs = require('graceful-fs')
 const exec = require('child_process').exec
 const crypto = require('crypto')
-const { dialog, getCurrentWebContents, getCurrentWindow } = require('electron').remote
+const {
+  dialog,
+  getCurrentWebContents,
+  getCurrentWindow
+} = require('electron').remote
 
-window.toggleDevTools = function () {
+window.toggleDevTools = function() {
   getCurrentWebContents().toggleDevTools()
 }
 
-window.reloadApp = function () {
+window.reloadApp = function() {
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     getCurrentWindow().loadURL(process.env.WEBPACK_DEV_SERVER_URL)
   } else {
@@ -16,13 +20,13 @@ window.reloadApp = function () {
   }
 }
 
-window.readDiagramDirSync = async function (dirname) {
+window.readDiagramDirSync = async function(dirname) {
   // eslint-disable-next-line no-undef
   return fs.readdirSync(path.join(__static, 'img', 'diagram', dirname))
 }
 
-window.executeCommand = function (command, callback = () => {}) {
-  function execute (command, callback) {
+window.executeCommand = function(command, callback = () => {}) {
+  function execute(command, callback) {
     exec(command, (error, stdout, stderr) => {
       if (error) {
         console.error(error)
@@ -40,25 +44,30 @@ window.executeCommand = function (command, callback = () => {}) {
   })
 }
 
-window.md5 = function (data) {
-  return crypto.createHash('md5').update(data).digest('hex')
+window.md5 = function(data) {
+  return crypto
+    .createHash('md5')
+    .update(data)
+    .digest('hex')
 }
 
-window.writeFileSync = function (filename, data) {
+window.writeFileSync = function(filename, data) {
   fs.writeFileSync(filename, data, 'utf-8')
 }
 
-window.unlinkFile = function (filename) {
+window.unlinkFile = function(filename) {
   fs.unlink(filename, () => {})
 }
 
-window.saveProjectDataAsJSON = function (jsonData) {
+window.saveProjectDataAsJSON = function(jsonData) {
   const filename = dialog.showSaveDialogSync({
     defaultPath: '~/untitled.json',
-    filters: [{
-      name: 'JSON file',
-      extensions: ['json']
-    }]
+    filters: [
+      {
+        name: 'JSON file',
+        extensions: ['json']
+      }
+    ]
   })
 
   if (filename) {
@@ -66,12 +75,14 @@ window.saveProjectDataAsJSON = function (jsonData) {
   }
 }
 
-window.loadProjectDataFromJSON = function () {
+window.loadProjectDataFromJSON = function() {
   const filenames = dialog.showOpenDialogSync({
-    filters: [{
-      name: 'JSON file',
-      extensions: ['json']
-    }]
+    filters: [
+      {
+        name: 'JSON file',
+        extensions: ['json']
+      }
+    ]
   })
 
   if (filenames && filenames.length > 0) {

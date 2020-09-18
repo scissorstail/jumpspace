@@ -12,29 +12,29 @@ import AlightRenderPlugin from 'rete-alight-render-plugin'
 import TaskPlugin from 'rete-task-plugin'
 
 export default {
-  data () {
+  data() {
     return {}
   },
-  mounted () {
+  mounted() {
     var actionSocket = new Rete.Socket('Action')
     var dataSocket = new Rete.Socket('Data')
 
     var eventHandlers = {
       list: [],
-      clear () {
-        this.list.forEach(handler => {
+      clear() {
+        this.list.forEach((handler) => {
           document.removeEventListener('keydown', handler)
         })
         this.list = []
       },
-      add (name, handler) {
+      add(name, handler) {
         document.addEventListener(name, handler, false)
         this.list.push(handler)
       }
     }
 
     class MessageControl extends Rete.Control {
-      constructor (emitter, msg) {
+      constructor(emitter, msg) {
         super(emitter, msg)
         this.emitter = emitter
         this.template = '<input :value="msg" @input="change($event)"/>'
@@ -45,34 +45,34 @@ export default {
         }
       }
 
-      change (e) {
+      change(e) {
         this.scope.value = +e.target.value
         this.update()
       }
 
-      update () {
+      update() {
         this.putData('msg', this.scope.value)
         this.emitter.trigger('process')
         this._alight.scan()
       }
 
-      mounted () {
+      mounted() {
         this.scope.value = this.getData('msg') || 0
         this.update()
       }
 
-      setValue (val) {
+      setValue(val) {
         this.scope.value = val
         this._alight.scan()
       }
     }
 
     class KeydownComponent extends Rete.Component {
-      constructor () {
+      constructor() {
         super('Keydown event')
         this.task = {
           outputs: { act: 'option', key: 'output' },
-          init (task, node) {
+          init(task, node) {
             eventHandlers.add('keydown', function (e) {
               task.run(e.keyCode)
               task.reset()
@@ -81,26 +81,26 @@ export default {
         }
       }
 
-      builder (node) {
+      builder(node) {
         node.addOutput(new Rete.Output('act', '', actionSocket))
         node.addOutput(new Rete.Output('key', 'Key code', dataSocket))
       }
 
-      worker (node, inputs, data) {
+      worker(node, inputs, data) {
         console.log('Keydown event', node.id, data)
         return { key: data }
       }
     }
 
     class EnterPressComponent extends Rete.Component {
-      constructor () {
+      constructor() {
         super('Enter pressed')
         this.task = {
           outputs: { then: 'option', else: 'option' }
         }
       }
 
-      builder (node) {
+      builder(node) {
         node
           .addInput(new Rete.Input('act', '', actionSocket))
           .addInput(new Rete.Input('key', 'Key code', dataSocket))
@@ -108,7 +108,7 @@ export default {
           .addOutput(new Rete.Output('else', 'Else', actionSocket))
       }
 
-      worker (node, inputs, outputs) {
+      worker(node, inputs, outputs) {
         if (inputs.key[0] === 13) {
           this.closed = ['else']
         } else {
@@ -120,20 +120,20 @@ export default {
     }
 
     class AlertComponent extends Rete.Component {
-      constructor () {
+      constructor() {
         super('Alert')
         this.task = {
           outputs: {}
         }
       }
 
-      builder (node) {
+      builder(node) {
         var ctrl = new MessageControl(this.editor, node.data.msg)
 
         node.addControl(ctrl).addInput(new Rete.Input('act', '', actionSocket))
       }
 
-      worker (node, inputs) {
+      worker(node, inputs) {
         console.log('Alert', node.id, node.data)
         alert(node.data.msg)
       }
@@ -156,7 +156,7 @@ export default {
 
     var engine = new Rete.Engine('tasksample@0.1.0')
 
-    components.map(c => {
+    components.map((c) => {
       editor.register(c)
       engine.register(c)
     })
@@ -168,7 +168,7 @@ export default {
       compile()
     })
 
-    async function compile () {
+    async function compile() {
       await engine.abort()
       await engine.process(editor.toJSON())
     }

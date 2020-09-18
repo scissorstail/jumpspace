@@ -1,5 +1,5 @@
 <template>
-  <div id="main-header" class="p-3">
+  <div class="p-3" id="main-header">
     <slot name="main-navigation-toggle"></slot>
 
     <div class="align-self-center">
@@ -7,66 +7,60 @@
     </div>
 
     <div class="ml-auto align-self-center">
-      <span class="mr-3">{{headerInfo.name || ''}}</span>
+      <span class="mr-3">{{ headerInfo.name || '' }}</span>
 
       <b-button
-        class="mr-1"
-        variant="outline-danger"
         @click="reload"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
+        class="mr-1"
         title="새로고침"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        variant="outline-danger"
       >
-        <v-icon name="fire-extinguisher" height="14" width="14" scale="1" />
+        <v-icon height="14" name="fire-extinguisher" scale="1" width="14" />
       </b-button>
 
       <b-button
-        class="mr-1"
-        variant="outline-warning"
         @click="toggleDevTools"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
+        class="mr-1"
         title="디버그 콘솔"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        variant="outline-warning"
       >
-        <v-icon name="bug" height="14" width="14" scale="1" />
+        <v-icon height="14" name="bug" scale="1" width="14" />
       </b-button>
 
       <b-button
-        class="mr-1"
-        variant="outline-info"
         @click="$emit('export')"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        title="내보내기"
-      >
-        <v-icon name="file-export" height="14" width="14" scale="1" />
-      </b-button>
-
-      <b-button
-        class="mr-3"
-        variant="light"
-        @click="$emit('save')"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        title="저장"
-      >
-        <v-icon name="save" height="14" width="14" scale="1" />
-      </b-button>
-
-      <b-button
         class="mr-1"
-        variant="primary"
-        @click="$emit('setting')"
+        title="내보내기"
         v-b-tooltip.hover.v-light.dh0.noninteractive
-        title="설정"
+        variant="outline-info"
       >
-        <v-icon name="cog" height="14" width="14" scale="1" />
+        <v-icon height="14" name="file-export" scale="1" width="14" />
       </b-button>
 
       <b-button
-        class
-        variant="info"
-        @click="$emit('info')"
+        @click="$emit('save')"
+        class="mr-3"
+        title="저장"
         v-b-tooltip.hover.v-light.dh0.noninteractive
-        title="정보"
+        variant="light"
       >
-        <v-icon name="info-circle" height="14" width="14" scale="1" />
+        <v-icon height="14" name="save" scale="1" width="14" />
+      </b-button>
+
+      <b-button
+        @click="$emit('setting')"
+        class="mr-1"
+        title="설정"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        variant="primary"
+      >
+        <v-icon height="14" name="cog" scale="1" width="14" />
+      </b-button>
+
+      <b-button @click="$emit('info')" class title="정보" v-b-tooltip.hover.v-light.dh0.noninteractive variant="info">
+        <v-icon height="14" name="info-circle" scale="1" width="14" />
       </b-button>
     </div>
   </div>
@@ -84,10 +78,10 @@ export default {
     }
   },
   methods: {
-    reload () {
+    reload() {
       window.reloadApp()
     },
-    toggleDevTools () {
+    toggleDevTools() {
       window.toggleDevTools()
     }
   }

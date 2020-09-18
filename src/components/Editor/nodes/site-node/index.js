@@ -4,13 +4,14 @@ import ConnectionControl from './controls/connection-control'
 import _ from 'lodash'
 
 export default class SiteNode extends Rete.Component {
-  constructor () {
+  constructor() {
     super('Site') // 컨텍스트 메뉴에 표시되는 이름 설정
 
-    this.getControl = (node) => this.editor.nodes.find(n => n.id === node.id).controls
+    this.getControl = node =>
+      this.editor.nodes.find(n => n.id === node.id).controls
   }
 
-  builder (node) {
+  builder(node) {
     /// modify the node
     const control1 = new ConnectionControl(this.editor, 'connection')
     const input1 = new Rete.Input('input1', '', ConnectionSocket, false)
@@ -22,7 +23,7 @@ export default class SiteNode extends Rete.Component {
       .addOutput(output1)
   }
 
-  worker (node, inputs, outputs) {
+  worker(node, inputs, outputs) {
     // console.log(node, inputs, outputs)
 
     const prevNodeDataList = _.first(inputs.input1)?.connection || []
@@ -30,7 +31,9 @@ export default class SiteNode extends Rete.Component {
 
     node.data.prevNodeDataList = prevNodeDataList
 
-    this.getControl(node).get('connection').vueContext.update()
+    this.getControl(node)
+      .get('connection')
+      .vueContext.update()
 
     /// process data
     outputs.output1 = {

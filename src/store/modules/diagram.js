@@ -3,21 +3,20 @@ export default {
     diagram: []
   },
   getters: {
-    diagram (state) {
+    diagram(state) {
       return state.diagram
     }
   },
   mutations: {
-    diagramUpdate (state, payload) {
+    diagramUpdate(state, payload) {
       state.diagram = payload
     }
   },
   actions: {
-    async diagramLoad ({ commit }) {
+    async diagramLoad({ commit }) {
       const diagramNames = await window.readDiagramDirSync('/servers')
       commit('diagramUpdate', diagramNames)
     }
   },
-  modules: {
-  }
+  modules: {}
 }

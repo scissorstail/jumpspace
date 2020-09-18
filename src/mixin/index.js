@@ -2,18 +2,14 @@ import Vue from 'vue'
 import { mapGetters, mapMutations } from 'vuex'
 
 const mixin = {
-  created () {
+  created() {
     this.appVersion = process.env.VUE_APP_VERSION
   },
   computed: {
-    ...mapGetters([
-      'setting'
-    ])
+    ...mapGetters(['setting'])
   },
   methods: {
-    ...mapMutations([
-      'settingUpdate'
-    ])
+    ...mapMutations(['settingUpdate'])
   }
 }
 

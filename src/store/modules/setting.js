@@ -1,16 +1,17 @@
 export default {
   state: {
     setting: {
-      gitBashPath: localStorage.gitBashPath || '%ProgramFiles%\\Git\\git-bash.exe'
+      gitBashPath:
+        localStorage.gitBashPath || '%ProgramFiles%\\Git\\git-bash.exe'
     }
   },
   getters: {
-    setting (state) {
+    setting(state) {
       return state.setting
     }
   },
   mutations: {
-    settingUpdate (state, payload) {
+    settingUpdate(state, payload) {
       state.setting = { ...payload }
 
       for (const key in state.setting) {
@@ -18,8 +19,6 @@ export default {
       }
     }
   },
-  actions: {
-  },
-  modules: {
-  }
+  actions: {},
+  modules: {}
 }
