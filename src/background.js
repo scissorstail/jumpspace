@@ -1,4 +1,5 @@
 'use strict'
+/* global __static */
 
 import { app, protocol, BrowserWindow } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
@@ -26,7 +27,8 @@ async function createWindow() {
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
       preload: path.join(__dirname, 'preload.js'),
       enableRemoteModule: true
-    }
+    },
+    icon: path.join(__static, 'icon.png')
   })
   win.removeMenu()
 

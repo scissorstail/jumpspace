@@ -1,7 +1,7 @@
 <template>
   <b-overlay :show="show" blur="3px" no-wrap opacity="0.6" rounded="sm" variant="dark" z-index="1050">
     <template v-slot:overlay>
-      <b-card :header="`testnet v${appVersion}`" bg-variant="light" class="text-center">
+      <b-card :header="`jumpspace v${appVersion}`" bg-variant="light" class="text-center">
         <b-card-body>
           <b-card-text class="mb-3">
             <b-row class="mb-3">
