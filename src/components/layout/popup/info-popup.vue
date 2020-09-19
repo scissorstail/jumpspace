@@ -6,20 +6,12 @@
           <b-card-text class="mb-3">
             <b-row class="mb-3">
               <b-col>
-                <b-img
-                  :block="false"
-                  alt="Image 1"
-                  fluid
-                  rounded
-                  src="/img/icons/256px-Electron_Software_Framework_Logo.svg.png"
-                  width="150"
-                ></b-img>
-                <b-img alt="Image 1" fluid rounded src="/img/icons/msapplication-icon-144x144.png" width="150"></b-img>
+                <b-img alt="Image 1" fluid rounded src="/img/icons/256x256.png" width="150"></b-img>
               </b-col>
             </b-row>
             <b-row>
               <b-col>
-                <b>테스트 버전</b>
+                <b>alpha</b>
               </b-col>
             </b-row>
           </b-card-text>
