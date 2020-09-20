@@ -9,30 +9,48 @@
     >
       <!-- sidebar toggle -->
       <template #main-navigation-toggle>
-        <b-button class="header-button shadow-sm" v-b-toggle.main-sidebar variant="info">
-          <v-icon height="14" name="bars" scale="1" width="14" />
+        <b-button
+          v-b-toggle.main-sidebar
+          class="header-button shadow-sm"
+          variant="info"
+        >
+          <v-icon
+            height="14"
+            name="bars"
+            scale="1"
+            width="14"
+          />
         </b-button>
       </template>
     </MainHeader>
 
     <div id="main-content">
       <!-- sidebar -->
-      <b-sidebar body-class="main-sidebar-list" id="main-sidebar" no-header shadow>
+      <b-sidebar
+        id="main-sidebar"
+        body-class="main-sidebar-list"
+        no-header
+        shadow
+      >
         <template v-slot:default="{ hide }">
           <MainNavigator
+            ref="mainNavigator"
             :is-editing="isEditingItemList"
             :project-data="projectData"
             @hide="hide"
             @import-project="importProject"
             @selected="loadEditor"
             @toggle-edit="toggleEdit"
-            ref="mainNavigator"
-          ></MainNavigator>
+          />
         </template>
       </b-sidebar>
 
       <!-- editor -->
-      <Editor :editor-data="editorData" ref="editorRef" v-show="editorData"></Editor>
+      <Editor
+        v-show="editorData"
+        ref="editorRef"
+        :editor-data="editorData"
+      />
     </div>
 
     <!--

@@ -1,5 +1,8 @@
 <template>
-  <div id="rete" ref="rete"></div>
+  <div
+    id="rete"
+    ref="rete"
+  />
 </template>
 
 <script>

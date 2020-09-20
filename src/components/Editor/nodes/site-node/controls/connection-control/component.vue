@@ -3,44 +3,141 @@
     <div class="header-menu">
       <a class="info-edit">
         <!-- setting popover -->
-        <v-popover @hide="save" placement="auto-end" ref="popover">
-          <v-icon class="info-edit-item" height="24" name="cog" scale="1.5" width="24" />
+        <v-popover
+          ref="popover"
+          placement="auto-end"
+          @hide="save"
+        >
+          <v-icon
+            class="info-edit-item"
+            height="24"
+            name="cog"
+            scale="1.5"
+            width="24"
+          />
           <template slot="popover">
             <div class="p-3">
-              <div class="info-list" style="width: 280px;">
+              <div
+                class="info-list"
+                style="width: 280px;"
+              >
                 <div class="info-item mb-3">
-                  <b-button @click="loadPrevDiagram" size="sm">
-                    <v-icon height="14" name="angle-left" scale="1" width="14" />
+                  <b-button
+                    size="sm"
+                    @click="loadPrevDiagram"
+                  >
+                    <v-icon
+                      height="14"
+                      name="angle-left"
+                      scale="1"
+                      width="14"
+                    />
                   </b-button>
-                  <b-form-input size="sm" style="margin: 0 3px;" v-model.trim="diagram" />
-                  <b-button @click="loadNextDiagram" size="sm">
-                    <v-icon height="14" name="angle-right" scale="1" width="14" />
+                  <b-form-input
+                    v-model.trim="diagram"
+                    size="sm"
+                    style="margin: 0 3px;"
+                  />
+                  <b-button
+                    size="sm"
+                    @click="loadNextDiagram"
+                  >
+                    <v-icon
+                      height="14"
+                      name="angle-right"
+                      scale="1"
+                      width="14"
+                    />
                   </b-button>
                 </div>
-                <b-form-group class="mb-0" label="Name" label-align="left" label-cols-sm="3">
-                  <b-form-input size="sm" v-model.trim="name" />
+                <b-form-group
+                  class="mb-0"
+                  label="Name"
+                  label-align="left"
+                  label-cols-sm="3"
+                >
+                  <b-form-input
+                    v-model.trim="name"
+                    size="sm"
+                  />
                 </b-form-group>
-                <b-form-group class="mb-0" label="User" label-align="left" label-cols-sm="3">
-                  <b-form-input size="sm" v-model.trim="user" />
+                <b-form-group
+                  class="mb-0"
+                  label="User"
+                  label-align="left"
+                  label-cols-sm="3"
+                >
+                  <b-form-input
+                    v-model.trim="user"
+                    size="sm"
+                  />
                 </b-form-group>
-                <b-form-group class="mb-0" label="Host" label-align="left" label-cols-sm="3">
-                  <b-form-input size="sm" v-model.trim="host" />
+                <b-form-group
+                  class="mb-0"
+                  label="Host"
+                  label-align="left"
+                  label-cols-sm="3"
+                >
+                  <b-form-input
+                    v-model.trim="host"
+                    size="sm"
+                  />
                 </b-form-group>
-                <b-form-group class="mb-0" label="Port" label-align="left" label-cols-sm="3">
-                  <b-form-input size="sm" v-model.trim="port" />
+                <b-form-group
+                  class="mb-0"
+                  label="Port"
+                  label-align="left"
+                  label-cols-sm="3"
+                >
+                  <b-form-input
+                    v-model.trim="port"
+                    size="sm"
+                  />
                 </b-form-group>
-                <b-form-group class="mb-0" label="Key" label-align="left" label-cols-sm="3">
+                <b-form-group
+                  class="mb-0"
+                  label="Key"
+                  label-align="left"
+                  label-cols-sm="3"
+                >
                   <b-input-group size="sm">
                     <template v-slot:append>
-                      <b-button @click="keyPath = ''" size="sm" v-if="keyPath">
-                        <v-icon height="14" name="trash-alt" scale="1" width="14" />
+                      <b-button
+                        v-if="keyPath"
+                        size="sm"
+                        @click="keyPath = ''"
+                      >
+                        <v-icon
+                          height="14"
+                          name="trash-alt"
+                          scale="1"
+                          width="14"
+                        />
                       </b-button>
-                      <b-button @click="$refs.file.click()" size="sm" v-else>
-                        <v-icon height="14" name="folder-open" scale="1" width="14" />
+                      <b-button
+                        v-else
+                        size="sm"
+                        @click="$refs.file.click()"
+                      >
+                        <v-icon
+                          height="14"
+                          name="folder-open"
+                          scale="1"
+                          width="14"
+                        />
                       </b-button>
                     </template>
-                    <b-form-input :value="keyPath" readonly size="sm" />
-                    <input @change="change" ref="file" style="display:none" type="file" />
+                    <b-form-input
+                      :value="keyPath"
+                      readonly
+                      size="sm"
+                    />
+                    <input
+                      ref="file"
+                      style="display:none"
+                      type="file"
+                      @change="change"
+                    >
                   </b-input-group>
                 </b-form-group>
               </div>
@@ -50,26 +147,86 @@
       </a>
       <a class="info-edit left">
         <!-- forward popover-->
-        <v-popover @hide="save" placement="auto-end" ref="popover2">
-          <v-icon class="info-edit-item" height="24" name="link" scale="1.5" width="24" />
+        <v-popover
+          ref="popover2"
+          placement="auto-end"
+          @hide="save"
+        >
+          <v-icon
+            class="info-edit-item"
+            height="24"
+            name="link"
+            scale="1.5"
+            width="24"
+          />
           <template slot="popover">
             <div class="p-3">
-              <div class="info-list" style="width: 225px;">
-                <div :key="index" class="info-item mb-1" v-for="(forward, index) in forwards">
-                  <b-form-checkbox class="middle" size="lg" v-model="forward.checked" />
-                  <b-form-input class="mr-2" maxlength="5" size="sm" v-model.trim="forward.from" />
-                  <span :style="{ opacity: forward.checked ? 1.0 : 0.1 }" class="middle">
-                    <v-icon height="14" name="forward" scale="1" width="14" />
+              <div
+                class="info-list"
+                style="width: 225px;"
+              >
+                <div
+                  v-for="(forward, index) in forwards"
+                  :key="index"
+                  class="info-item mb-1"
+                >
+                  <b-form-checkbox
+                    v-model="forward.checked"
+                    class="middle"
+                    size="lg"
+                  />
+                  <b-form-input
+                    v-model.trim="forward.from"
+                    class="mr-2"
+                    maxlength="5"
+                    size="sm"
+                  />
+                  <span
+                    :style="{ opacity: forward.checked ? 1.0 : 0.1 }"
+                    class="middle"
+                  >
+                    <v-icon
+                      height="14"
+                      name="forward"
+                      scale="1"
+                      width="14"
+                    />
                   </span>
-                  <b-form-input class="ml-2" maxlength="5" size="sm" v-model.trim="forward.to" />
-                  <b-button @click="removeForward(forward)" class="ml-2" size="sm">
-                    <v-icon height="14" name="minus" scale="1" width="14" />
+                  <b-form-input
+                    v-model.trim="forward.to"
+                    class="ml-2"
+                    maxlength="5"
+                    size="sm"
+                  />
+                  <b-button
+                    class="ml-2"
+                    size="sm"
+                    @click="removeForward(forward)"
+                  >
+                    <v-icon
+                      height="14"
+                      name="minus"
+                      scale="1"
+                      width="14"
+                    />
                   </b-button>
                 </div>
               </div>
-              <div :class="[forwards.length > 0 ? 'mt-2' : '']" class="info-action">
-                <b-button @click="addForward" class="mr-1" size="sm">
-                  <v-icon height="14" name="plus" scale="1" width="14" />
+              <div
+                :class="[forwards.length > 0 ? 'mt-2' : '']"
+                class="info-action"
+              >
+                <b-button
+                  class="mr-1"
+                  size="sm"
+                  @click="addForward"
+                >
+                  <v-icon
+                    height="14"
+                    name="plus"
+                    scale="1"
+                    width="14"
+                  />
                 </b-button>
               </div>
             </div>
@@ -78,51 +235,72 @@
       </a>
     </div>
 
-    <div :class="{ blur: isBlur }" class="info-block">
-      <img :src="diagram ? `/img/diagram/servers/${diagram}` : null" class="info-diagram mb-1" height="40%" width="40%" />
-      <div class="info-text">{{ name || 'noname' }}</div>
-      <div class="info-text">{{ host || '---' }}</div>
-      <div class="info-text">{{ port || '---' }}</div>
+    <div
+      :class="{ blur: isBlur }"
+      class="info-block"
+    >
+      <img
+        :src="diagram ? `/img/diagram/servers/${diagram}` : null"
+        class="info-diagram mb-1"
+        height="40%"
+        width="40%"
+      >
+      <div class="info-text">
+        {{ name || 'noname' }}
+      </div>
+      <div class="info-text">
+        {{ host || '---' }}
+      </div>
+      <div class="info-text">
+        {{ port || '---' }}
+      </div>
     </div>
 
     <div class="footer-menu">
       <a class="info-edit">
         <v-icon
-          @click="proxyJump"
+          v-if="isProxyJumpReady"
           class="info-edit-item"
           height="24"
           name="bolt"
           scale="1.5"
-          v-if="isProxyJumpReady"
           width="24"
+          @click="proxyJump"
         />
         <v-icon
-          @click="connect"
+          v-if="isConnectable && !isProxyJumpReady"
           class="info-edit-item"
           height="24"
           name="plug"
           scale="1.5"
-          v-if="isConnectable && !isProxyJumpReady"
           width="24"
+          @click="connect"
         />
       </a>
       <a class="info-edit">
-        <v-icon @click="blur" class="info-edit-item" height="24" name="eye-slash" scale="1.5" width="24" />
+        <v-icon
+          class="info-edit-item"
+          height="24"
+          name="eye-slash"
+          scale="1.5"
+          width="24"
+          @click="blur"
+        />
       </a>
       <a class="info-edit left">
         <v-icon
+          v-show="isFowardable"
           :style="{
             opacity: isFowardable && forwards.some(x => x.checked) ? 1.0 : 0.5
           }"
-          @click="
-            isFowardable && forwards.some(x => x.checked) ? forward() : ''
-          "
           class="info-edit-item"
           height="24"
           name="forward"
           scale="1.5"
-          v-show="isFowardable"
           width="24"
+          @click="
+            isFowardable && forwards.some(x => x.checked) ? openForward() : ''
+          "
         />
       </a>
     </div>
@@ -136,9 +314,30 @@ import store from '../../../../../../store'
 import mixin from '../../../../../../mixin'
 
 export default {
-  props: ['readonly', 'emitter', 'ikey', 'getData', 'putData'],
-  store,
   mixins: [mixin],
+  props: {
+    readonly: {
+      type: Boolean,
+      default: false
+    },
+    emitter: {
+      type: Object,
+      default: () => ({})
+    },
+    ikey: {
+      type: String,
+      default: ''
+    },
+    getData: {
+      type: Function,
+      default: () => {}
+    },
+    putData: {
+      type: Function,
+      default: () => {}
+    }
+  },
+  store,
   data() {
     return {
       isBlur: false,
@@ -152,9 +351,6 @@ export default {
       diagramFilenames: [],
       prevNodeDataList: []
     }
-  },
-  created() {
-    this.diagramFilenames = this.$store.getters.diagram
   },
   computed: {
     isConnectable() {
@@ -180,6 +376,9 @@ export default {
     isProxyJumpReady() {
       return this.isConnectable && this.isFowardable
     }
+  },
+  created() {
+    this.diagramFilenames = this.$store.getters.diagram
   },
   methods: {
     update() {
@@ -259,7 +458,7 @@ export default {
     removeForward(forward) {
       this.forwards = this.forwards.filter((x) => x !== forward)
     },
-    forward() {
+    openForward() {
       const prevNodeData = _.last(this.prevNodeDataList)
       if (!prevNodeData) {
         return false

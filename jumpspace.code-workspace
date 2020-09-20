@@ -7,21 +7,15 @@
   "settings": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "eslint.validate": ["javascript", "javascriptreact", "vue"],
-    "vetur.format.enable": true,
-    "[vue]": {
-      "editor.defaultFormatter": "octref.vetur"
-    },
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": true
     },
-    "vetur.format.defaultFormatterOptions": {
-      "prettyhtml": {
-        "printWidth": 120,
-        "singleQuote": false,
-        "wrapAttributes": false,
-        "sortAttributes": true
-      }
-    }
+    "[vue]": {
+      "editor.defaultFormatter": "octref.vetur"
+    },
+    "vetur.format.enable": true,
+    "vetur.format.defaultFormatter.html": "none",
+    "vetur.format.defaultFormatter.js": "none",
+    "eslint.validate": ["javascript", "vue"]
   }
 }

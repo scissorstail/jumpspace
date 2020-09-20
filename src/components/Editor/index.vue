@@ -1,5 +1,8 @@
 <template>
-  <div id="rete" ref="rete"></div>
+  <div
+    id="rete"
+    ref="rete"
+  />
 </template>
 
 <script>
@@ -18,10 +21,23 @@ import SiteNode from './nodes/site-node'
 
 export default {
   props: {
-    editorData: null
+    editorData: {
+      type: Object,
+      default: null
+    }
   },
   data() {
     return {}
+  },
+  watch: {
+    async editorData() {
+      if (this.editorData) {
+        this.load(this.editorData)
+      } else {
+        await this.engine.abort()
+        this.load(JSON.stringify({ id: 'test@0.1.0', nodes: {} }))
+      }
+    }
   },
   created() {
     this.editor = null
@@ -95,16 +111,6 @@ export default {
     )
 
     this.editor.view.area.zoom(0.85, 0, 0)
-  },
-  watch: {
-    async editorData() {
-      if (this.editorData) {
-        this.load(this.editorData)
-      } else {
-        await this.engine.abort()
-        this.load(JSON.stringify({ id: 'test@0.1.0', nodes: {} }))
-      }
-    }
   },
   methods: {
     async compile() {

@@ -2,27 +2,48 @@
   <div id="main-navigator">
     <!-- navigator-header -->
     <div class="main-navigator-header p-3 shadow">
-      <b-button :disabled="isEditing" @click="$emit('hide')" class="shadow-sm flex-grow-1 mr-1" variant="light">
-        <v-icon height="14" name="times" scale="1" width="14" />
-      </b-button>
       <b-button
         :disabled="isEditing"
-        @click="$emit('import-project')"
-        class="mr-1"
-        title="불러오기"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        variant="outline-info"
+        class="shadow-sm flex-grow-1 mr-1"
+        variant="light"
+        @click="$emit('hide')"
       >
-        <v-icon height="14" name="file-export" scale="1" width="14" />
+        <v-icon
+          height="14"
+          name="times"
+          scale="1"
+          width="14"
+        />
       </b-button>
       <b-button
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        :disabled="isEditing"
+        class="mr-1"
+        title="불러오기"
+        variant="outline-info"
+        @click="$emit('import-project')"
+      >
+        <v-icon
+          height="14"
+          name="file-export"
+          scale="1"
+          width="14"
+        />
+      </b-button>
+      <b-button
+        v-b-tooltip.hover.v-light.dh0.noninteractive
         :title="isEditing ? '저장' : '편집'"
         :variant="isEditing ? 'warning' : 'light'"
-        @click="$emit('toggle-edit')"
         class="shadow-sm flex-grow-9"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
+        @click="$emit('toggle-edit')"
       >
-        <v-icon :name="isEditing ? 'save' : 'edit'" height="14" scale="1" style="width: 16px;" width="14" />
+        <v-icon
+          :name="isEditing ? 'save' : 'edit'"
+          height="14"
+          scale="1"
+          style="width: 16px;"
+          width="14"
+        />
       </b-button>
     </div>
 
@@ -30,30 +51,59 @@
     <div class="p-3 main-navigator-content">
       <template v-for="(item, index) in items">
         <b-button
+          v-if="!isEditing"
           :key="`${_uid}-button-${index}`"
+          v-b-toggle="`collapse-${index}`"
           :pressed="item === selectedItem"
-          @click="select(item, index)"
           block
           class="list-item mt-1"
           squared
-          v-b-toggle="`collapse-${index}`"
-          v-if="!isEditing"
           variant="white"
-        >{{ item.name || 'untitled' }}</b-button>
+          @click="select(item, index)"
+        >
+          {{ item.name || 'untitled' }}
+        </b-button>
         <!--
         <b-collapse :id="`collapse-${index}`" :key="`${_uid}-collapse-${index}`">
           <b-card>I am collapsible content!</b-card>
         </b-collapse>
         -->
-        <div :key="`${_uid}-input-${index}`" class="list-item mt-1" v-else>
-          <b-form-input placeholder="untitled" v-model="item.name"></b-form-input>
-          <b-button @click="remove(item)" class="ml-1" variant="danger">
-            <v-icon height="14" name="trash" scale="1" width="14" />
+        <div
+          v-else
+          :key="`${_uid}-input-${index}`"
+          class="list-item mt-1"
+        >
+          <b-form-input
+            v-model="item.name"
+            placeholder="untitled"
+          />
+          <b-button
+            class="ml-1"
+            variant="danger"
+            @click="remove(item)"
+          >
+            <v-icon
+              height="14"
+              name="trash"
+              scale="1"
+              width="14"
+            />
           </b-button>
         </div>
       </template>
-      <b-button @click="add" block class="shadow-sm flex-grow-1 mt-1" v-show="isEditing" variant="primary">
-        <v-icon height="14" name="plus" scale="1" width="14" />
+      <b-button
+        v-show="isEditing"
+        block
+        class="shadow-sm flex-grow-1 mt-1"
+        variant="primary"
+        @click="add"
+      >
+        <v-icon
+          height="14"
+          name="plus"
+          scale="1"
+          width="14"
+        />
       </b-button>
     </div>
   </div>

@@ -1,12 +1,30 @@
 <template>
-  <b-overlay :show="show" blur="3px" no-wrap opacity="0.6" rounded="sm" variant="dark" z-index="1050">
+  <b-overlay
+    :show="show"
+    blur="3px"
+    no-wrap
+    opacity="0.6"
+    rounded="sm"
+    variant="dark"
+    z-index="1050"
+  >
     <template v-slot:overlay>
-      <b-card :header="`jumpspace v${appVersion}`" bg-variant="light" class="text-center">
+      <b-card
+        :header="`jumpspace v${appVersion}`"
+        bg-variant="light"
+        class="text-center"
+      >
         <b-card-body>
           <b-card-text class="mb-3">
             <b-row class="mb-3">
               <b-col>
-                <b-img alt="Image 1" fluid rounded src="/img/icons/256x256.png" width="150"></b-img>
+                <b-img
+                  alt="Image 1"
+                  fluid
+                  rounded
+                  src="/img/icons/256x256.png"
+                  width="150"
+                />
               </b-col>
             </b-row>
             <b-row>
@@ -25,7 +43,11 @@
                 title="Pixel perfect"
               >Pixel perfect</a>
               from
-              <a href="https://www.flaticon.com/" target="_blank" title="Flaticon">www.flaticon.com</a>
+              <a
+                href="https://www.flaticon.com/"
+                target="_blank"
+                title="Flaticon"
+              >www.flaticon.com</a>
             </div>
           </b-card-text>
 
@@ -42,8 +64,18 @@
         </b-card-body>
 
         <template v-slot:footer>
-          <b-button @click="$emit('update:show', false)" block class="shadow-sm flex-grow-1 mr-1" variant="light">
-            <v-icon height="14" name="times" scale="1" width="14" />
+          <b-button
+            block
+            class="shadow-sm flex-grow-1 mr-1"
+            variant="light"
+            @click="$emit('update:show', false)"
+          >
+            <v-icon
+              height="14"
+              name="times"
+              scale="1"
+              width="14"
+            />
           </b-button>
         </template>
       </b-card>
