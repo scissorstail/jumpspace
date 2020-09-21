@@ -38,9 +38,9 @@
             :is-editing="isEditingItemList"
             :project-data="projectData"
             @hide="hide"
-            @import-project="importProject"
             @selected="loadEditor"
             @toggle-edit="toggleEdit"
+            @open-project="openProject"
           />
         </template>
       </b-sidebar>
@@ -162,7 +162,7 @@ export default {
       await this.saveProject()
       window.saveProjectDataAsJSON(window.localStorage.projectSaveData)
     },
-    async importProject() {
+    async openProject() {
       const projectData = window.loadProjectDataFromJSON()
       if (projectData) {
         this.clearEditor()

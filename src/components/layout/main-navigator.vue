@@ -1,9 +1,55 @@
 <template>
   <div id="main-navigator">
     <!-- navigator-header -->
-    <div class="main-navigator-header p-3 shadow">
+    <div class="main-navigator-header p-3 shadow justify-content-end">
       <b-button
-        :disabled="isEditing"
+        v-show="isEditing"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        title="아이템 내보내기(준비중)"
+        class="mr-auto"
+        variant="outline-info"
+        :disabled="checkedItems.length === 0"
+      >
+        <v-icon
+          height="14"
+          name="file-export"
+          scale="1"
+          width="14"
+        />
+      </b-button>
+
+      <b-button
+        v-show="isEditing"
+        v-b-tooltip.hover.v-light.dh0.noninteractive
+        class="shadow-sm mr-1"
+        title="아이템 가져오기(준비중)"
+        variant="outline-primary"
+      >
+        <v-icon
+          height="14"
+          name="file-import"
+          scale="1"
+          width="14"
+        />
+      </b-button>
+
+      <b-button
+        v-show="isEditing"
+
+        class="shadow-sm mr-1"
+        variant="primary"
+        @click="add"
+      >
+        <v-icon
+          height="14"
+          name="plus"
+          scale="1"
+          width="14"
+        />
+      </b-button>
+
+      <b-button
+        v-show="!isEditing"
         class="shadow-sm flex-grow-1 mr-1"
         variant="light"
         @click="$emit('hide')"
@@ -15,21 +61,23 @@
           width="14"
         />
       </b-button>
+
       <b-button
+        v-show="!isEditing"
         v-b-tooltip.hover.v-light.dh0.noninteractive
-        :disabled="isEditing"
-        class="mr-1"
-        title="불러오기"
-        variant="outline-info"
-        @click="$emit('import-project')"
+        class="shadow-sm mr-1"
+        title="열기"
+        variant="primary"
+        @click="$emit('open-project')"
       >
         <v-icon
           height="14"
-          name="file-export"
+          name="folder-open"
           scale="1"
           width="14"
         />
       </b-button>
+
       <b-button
         v-b-tooltip.hover.v-light.dh0.noninteractive
         :title="isEditing ? '저장' : '편집'"
@@ -71,8 +119,13 @@
         <div
           v-else
           :key="`${_uid}-input-${index}`"
-          class="list-item mt-1"
+          class="list-item mt-1 editing"
         >
+          <b-form-checkbox
+            size="lg"
+            class="align-self-center ml-2"
+            @change="check(item, $event)"
+          />
           <b-form-input
             v-model="item.name"
             placeholder="untitled"
@@ -91,20 +144,6 @@
           </b-button>
         </div>
       </template>
-      <b-button
-        v-show="isEditing"
-        block
-        class="shadow-sm flex-grow-1 mt-1"
-        variant="primary"
-        @click="add"
-      >
-        <v-icon
-          height="14"
-          name="plus"
-          scale="1"
-          width="14"
-        />
-      </b-button>
     </div>
   </div>
 </template>
@@ -125,6 +164,7 @@ export default {
   data() {
     return {
       items: [],
+      checkedItems: [],
       selectedItem: null
     }
   },
@@ -132,18 +172,28 @@ export default {
     projectData() {
       this.selectedItem = null
       this.items = this.projectData
+    },
+    isEditing() {
+      this.checkedItems = []
     }
   },
   methods: {
+    select(item, index) {
+      this.selectedItem = item
+      this.$emit('selected', { item, index })
+    },
+    check(item, checked) {
+      if (checked) {
+        this.checkedItems.push(item)
+      } else {
+        this.checkedItems = this.checkedItems.filter(x => x !== item)
+      }
+    },
     add() {
       this.items.push({
         name: '',
         data: { id: 'test@0.1.0', nodes: {} }
       })
-    },
-    select(item, index) {
-      this.selectedItem = item
-      this.$emit('selected', { item, index })
     },
     remove(item) {
       const foundIndex = this.items.findIndex((x) => x === item)
@@ -178,7 +228,7 @@ export default {
         justify-content: space-between;
         align-items: flex-end;
 
-        &:hover {
+        &:hover:not(.editing) {
           background-color: lightgrey;
         }
       }

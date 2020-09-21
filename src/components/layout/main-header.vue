@@ -30,7 +30,7 @@
       <b-button
         v-b-tooltip.hover.v-light.dh0.noninteractive
         class="mr-1"
-        title="디버그 콘솔"
+        title="디버깅"
         variant="outline-warning"
         @click="toggleDevTools"
       >
@@ -44,14 +44,29 @@
 
       <b-button
         v-b-tooltip.hover.v-light.dh0.noninteractive
+        class
+        title="정보"
+        variant="outline-primary mr-1"
+        @click="$emit('info')"
+      >
+        <v-icon
+          height="14"
+          name="info-circle"
+          scale="1"
+          width="14"
+        />
+      </b-button>
+
+      <b-button
+        v-b-tooltip.hover.v-light.dh0.noninteractive
         class="mr-1"
         title="내보내기"
-        variant="outline-info"
+        variant="outline-info mr-3"
         @click="$emit('export')"
       >
         <v-icon
           height="14"
-          name="file-export"
+          name="archive"
           scale="1"
           width="14"
         />
@@ -82,21 +97,6 @@
         <v-icon
           height="14"
           name="cog"
-          scale="1"
-          width="14"
-        />
-      </b-button>
-
-      <b-button
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        class
-        title="정보"
-        variant="info"
-        @click="$emit('info')"
-      >
-        <v-icon
-          height="14"
-          name="info-circle"
           scale="1"
           width="14"
         />
