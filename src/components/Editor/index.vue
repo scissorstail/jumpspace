@@ -22,7 +22,7 @@ import SiteNode from './nodes/site-node'
 export default {
   props: {
     editorData: {
-      type: Object,
+      type: String,
       default: null
     }
   },
