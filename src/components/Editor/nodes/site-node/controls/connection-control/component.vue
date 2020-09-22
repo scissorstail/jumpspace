@@ -406,11 +406,12 @@ export default {
       }
     },
     connect() {
-      const command = `"${this.setting.gitBashPath}" -c "ssh -i '${upath.toUnix(
+      const command = `"${this.setting.gitBashPath}" -c "ssh -o 'StrictHostKeyChecking=accept-new' -i '${upath.toUnix(
         this.keyPath
       )}' '${this.user ? this.user + '@' : ''}${this.host}' -p '${
         this.port
-      }'`
+      }'"`
+      console.log(command)
       window.executeCommand(command)
     },
     openForward() {
@@ -419,7 +420,7 @@ export default {
         return false
       }
 
-      const ctlPathFile = `[${this.name}]L-${prevNodeData.user}@${prevNodeData.host}_${prevNodeData.port}.ctl`
+      const ctlPathTempFilename = `${window.md5(`${prevNodeData.user}${prevNodeData.host}${prevNodeData.port}` + Date.now())}.ctl`
       const forwardList = this.forwards.filter(
         (x) => x.checked && x.from && x.to
       )
@@ -434,11 +435,11 @@ export default {
           (x, i) =>
             `echo ':${x.from} >> [${prevNodeData.host}]:${prevNodeData.port} -> :${x.to}'`
         )
-        .join('&&')} && ssh -i "${upath.toUnix(prevNodeData.keyPath)}" "${
+        .join('&&')} && ssh -o 'StrictHostKeyChecking=accept-new' -i "${upath.toUnix(prevNodeData.keyPath)}" "${
         prevNodeData.user
       }@${prevNodeData.host}" -p "${
         prevNodeData.port
-      }" -N -M -S "${ctlPathFile}" ${forwardList
+      }" -N -M -S "${ctlPathTempFilename}" ${forwardList
         .map((x) => `-L "localhost:${x.from}:${this.host}:${x.to}"`)
         .join(' ')}"`
 
@@ -473,7 +474,7 @@ export default {
         str += '\r\n'
       }
 
-      const configTempFilename = `${window.md5(str)}.jmp`
+      const configTempFilename = `${window.md5(str + Date.now())}.jmp`
 
       window.writeFileSync(configTempFilename, str)
 
@@ -482,7 +483,7 @@ export default {
         this.setting.gitBashPath
       }" -c "echo 'ProxyJump...' && ${nodes
         .map((x, i) => `echo '>>> [${x.host}]:${x.port}'`)
-        .join('&&')} && ssh -F "${configTempFilename}" -J ${jumpHosts.join(
+        .join('&&')} && ssh -o 'StrictHostKeyChecking=accept-new' -F "${configTempFilename}" -J ${jumpHosts.join(
         ','
       )} ${destHost}"`
 

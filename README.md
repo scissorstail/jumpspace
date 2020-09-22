@@ -17,4 +17,4 @@ note: This currently only works on Windows
 ## requirements
 
 1. [Git for Windows](https://gitforwindows.org/) (To install Git Bash)
-2. OpenSSH >= 7.3 (Installed together with Git Bash)
+2. OpenSSH >= 7.6 (Installed together with Git Bash)
