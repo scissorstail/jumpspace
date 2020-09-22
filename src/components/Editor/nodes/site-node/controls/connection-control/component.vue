@@ -420,7 +420,7 @@ export default {
         this.keyPath
       )}' '${this.user ? this.user + '@' : ''}${this.host}' -p '${
         this.port
-      }'; read -n 1 -s -r -p 'Press any key to continue'"`
+      }'`
       window.executeCommand(command)
     },
     save() {
@@ -485,7 +485,7 @@ export default {
         prevNodeData.port
       }" -N -M -S "${ctlPathFile}" ${forwardList
         .map((x) => `-L "localhost:${x.from}:${this.host}:${x.to}"`)
-        .join(' ')}; read -n 1 -s -r -p 'Press any key to continue'"`
+        .join(' ')}"`
 
       window.executeCommand(command)
     },
@@ -519,7 +519,7 @@ export default {
         .map((x, i) => `echo '>>> [${x.host}]:${x.port}'`)
         .join('&&')} && ssh -F "${configTempFilename}" -J ${jumpHosts.join(
         ','
-      )} ${destHost}; read -n 1 -s -r -p 'Press any key to continue'"`
+      )} ${destHost}"`
 
       window.executeCommand(command, (output) => {
         setTimeout(() => window.unlinkFile(configTempFilename), 3000)

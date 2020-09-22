@@ -27,7 +27,7 @@ window.readDiagramDirSync = async function(dirname) {
 
 window.executeCommand = function(command, callback = () => {}) {
   function execute(command, callback) {
-    exec(command, (error, stdout, stderr) => {
+    return exec(command, (error, stdout, stderr) => {
       if (error) {
         console.error(error)
         alert('executeCommand Error!')
