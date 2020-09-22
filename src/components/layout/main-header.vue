@@ -15,7 +15,7 @@
       <b-button
         v-b-tooltip.hover.v-light.dh0.noninteractive
         class="mr-1"
-        title="새로고침"
+        title="refresh"
         variant="outline-danger"
         @click="reload"
       >
@@ -30,7 +30,7 @@
       <b-button
         v-b-tooltip.hover.v-light.dh0.noninteractive
         class="mr-1"
-        title="디버깅"
+        title="devtools"
         variant="outline-warning"
         @click="toggleDevTools"
       >
@@ -45,7 +45,7 @@
       <b-button
         v-b-tooltip.hover.v-light.dh0.noninteractive
         class
-        title="정보"
+        title="info"
         variant="outline-primary mr-1"
         @click="$emit('info')"
       >
@@ -60,7 +60,7 @@
       <b-button
         v-b-tooltip.hover.v-light.dh0.noninteractive
         class="mr-1"
-        title="내보내기"
+        title="export"
         variant="outline-info mr-3"
         @click="$emit('export')"
       >
@@ -75,7 +75,7 @@
       <b-button
         v-b-tooltip.hover.v-light.dh0.noninteractive
         class="mr-3"
-        title="저장"
+        title="save"
         variant="light"
         @click="$emit('save')"
       >
@@ -90,7 +90,7 @@
       <b-button
         v-b-tooltip.hover.v-light.dh0.noninteractive
         class="mr-1"
-        title="설정"
+        title="setting"
         variant="primary"
         @click="$emit('setting')"
       >

@@ -10,7 +10,7 @@
   >
     <template v-slot:overlay>
       <b-card
-        :header="`Settings`"
+        :header="`Setting`"
         bg-variant="light"
         class="text-center"
         style="width: 90vw"
@@ -55,7 +55,7 @@
             <b-button
               v-b-tooltip.hover.v-light.dh0.noninteractive
               class="shadow-sm"
-              title="저장"
+              title="save"
               variant="light"
               @click="saveSetting"
             >

@@ -5,7 +5,7 @@
       <b-button
         v-show="isEditing"
         v-b-tooltip.hover.v-light.dh0.noninteractive
-        title="아이템 내보내기(준비중)"
+        title="export items"
         class="mr-auto"
         variant="outline-info"
         :disabled="checkedItems.length === 0"
@@ -23,7 +23,7 @@
         v-show="isEditing"
         v-b-tooltip.hover.v-light.dh0.noninteractive
         class="shadow-sm mr-1"
-        title="아이템 가져오기(준비중)"
+        title="import items"
         variant="outline-primary"
         @click="$emit('import-items')"
       >
@@ -37,8 +37,9 @@
 
       <b-button
         v-show="isEditing"
-
+        v-b-tooltip.hover.v-light.dh0.noninteractive
         class="shadow-sm mr-1"
+        title="add"
         variant="primary"
         @click="add"
       >
@@ -68,7 +69,7 @@
         v-show="!isEditing"
         v-b-tooltip.hover.v-light.dh0.noninteractive
         class="shadow-sm mr-1"
-        title="열기"
+        title="open"
         variant="primary"
         @click="$emit('open-project')"
       >
@@ -82,7 +83,7 @@
 
       <b-button
         v-b-tooltip.hover.v-light.dh0.noninteractive
-        :title="isEditing ? '저장' : '편집'"
+        :title="isEditing ? 'save' : 'edit'"
         :variant="isEditing ? 'warning' : 'light'"
         class="shadow-sm flex-grow-9"
         @click="toggleEditing"
