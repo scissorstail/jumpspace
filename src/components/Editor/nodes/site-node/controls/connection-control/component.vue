@@ -381,16 +381,6 @@ export default {
     this.diagramFilenames = this.$store.getters.diagram
   },
   methods: {
-    update() {
-      const data = this.getData(this.ikey)
-      for (const key in data) {
-        if (key in this.$data) {
-          this[key] = data[key]
-        }
-      }
-
-      this.prevNodeDataList = this.getData('prevNodeDataList')
-    },
     loadPrevDiagram() {
       const foundIndex = this.diagramFilenames.findIndex(
         (x) => x === this.diagram
@@ -423,41 +413,6 @@ export default {
       }'`
       window.executeCommand(command)
     },
-    save() {
-      const data = _.pick(this.$data, [
-        'isBlur',
-        'name',
-        'user',
-        'host',
-        'port',
-        'diagram',
-        'keyPath',
-        'forwards'
-      ])
-      if (this.ikey) {
-        this.putData(this.ikey, { ...data })
-      }
-      this.emitter.trigger('process')
-    },
-    blur() {
-      this.isBlur = !this.isBlur
-    },
-    change(e) {
-      if (e.target.files?.[0].path) {
-        this.keyPath = e.target.files[0].path
-        this.$refs.file.value = ''
-      }
-    },
-    addForward() {
-      this.forwards.push({
-        checked: false,
-        from: null,
-        to: null
-      })
-    },
-    removeForward(forward) {
-      this.forwards = this.forwards.filter((x) => x !== forward)
-    },
     openForward() {
       const prevNodeData = _.last(this.prevNodeDataList)
       if (!prevNodeData) {
@@ -488,6 +443,16 @@ export default {
         .join(' ')}"`
 
       window.executeCommand(command)
+    },
+    addForward() {
+      this.forwards.push({
+        checked: false,
+        from: null,
+        to: null
+      })
+    },
+    removeForward(forward) {
+      this.forwards = this.forwards.filter((x) => x !== forward)
     },
     proxyJump() {
       const nodes = this.prevNodeDataList.concat({ ...this.$data })
@@ -524,6 +489,41 @@ export default {
       window.executeCommand(command, (output) => {
         setTimeout(() => window.unlinkFile(configTempFilename), 3000)
       })
+    },
+    update() {
+      const data = this.getData(this.ikey)
+      for (const key in data) {
+        if (key in this.$data) {
+          this[key] = data[key]
+        }
+      }
+
+      this.prevNodeDataList = this.getData('prevNodeDataList')
+    },
+    change(e) {
+      if (e.target.files?.[0].path) {
+        this.keyPath = e.target.files[0].path
+        this.$refs.file.value = ''
+      }
+    },
+    save() {
+      const data = _.pick(this.$data, [
+        'isBlur',
+        'name',
+        'user',
+        'host',
+        'port',
+        'diagram',
+        'keyPath',
+        'forwards'
+      ])
+      if (this.ikey) {
+        this.putData(this.ikey, { ...data })
+      }
+      this.emitter.trigger('process')
+    },
+    blur() {
+      this.isBlur = !this.isBlur
     }
   }
 }
