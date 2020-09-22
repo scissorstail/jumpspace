@@ -41,6 +41,8 @@
             @deselected="clearEditor"
             @updated="updateProject"
             @open-project="openProject"
+            @export-items="exportItems"
+            @import-items="importItems"
           />
         </template>
       </b-sidebar>
@@ -160,6 +162,23 @@ export default {
       if (projectData) {
         this.clearEditor()
         this.loadProject(projectData)
+      }
+    },
+    exportItems(items) {
+      try {
+        window.saveProjectDataAsJSON(JSON.stringify(items), '~/export.json')
+      } catch (e) {
+        console.error(e)
+      }
+    },
+    importItems() {
+      try {
+        const projectData = JSON.parse(window.loadProjectDataFromJSON())
+        if (projectData) {
+          this.projectData = this.projectData.concat(projectData)
+        }
+      } catch (e) {
+        console.error(e)
       }
     }
   }

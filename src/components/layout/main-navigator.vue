@@ -9,6 +9,7 @@
         class="mr-auto"
         variant="outline-info"
         :disabled="checkedItems.length === 0"
+        @click="exportSelectedItems"
       >
         <v-icon
           height="14"
@@ -24,6 +25,7 @@
         class="shadow-sm mr-1"
         title="아이템 가져오기(준비중)"
         variant="outline-primary"
+        @click="$emit('import-items')"
       >
         <v-icon
           height="14"
@@ -203,6 +205,9 @@ export default {
       if (foundIndex >= 0) {
         this.items.splice(foundIndex, 1)
       }
+    },
+    exportSelectedItems() {
+      this.$emit('export-items', [...this.checkedItems])
     }
   }
 }

@@ -59,9 +59,12 @@ window.unlinkFile = function(filename) {
   fs.unlink(filename, () => {})
 }
 
-window.saveProjectDataAsJSON = function(jsonData) {
+window.saveProjectDataAsJSON = function(
+  jsonData,
+  defaultPath = '~/untitled.json'
+) {
   const filename = dialog.showSaveDialogSync({
-    defaultPath: '~/untitled.json',
+    defaultPath,
     filters: [
       {
         name: 'JSON file',
