@@ -83,7 +83,7 @@
         :title="isEditing ? '저장' : '편집'"
         :variant="isEditing ? 'warning' : 'light'"
         class="shadow-sm flex-grow-9"
-        @click="$emit('toggle-edit')"
+        @click="toggleEditing"
       >
         <v-icon
           :name="isEditing ? 'save' : 'edit'"
@@ -155,14 +155,11 @@ export default {
     projectData: {
       type: Array,
       default: () => []
-    },
-    isEditing: {
-      type: Boolean,
-      default: false
     }
   },
   data() {
     return {
+      isEditing: false,
       items: [],
       checkedItems: [],
       selectedItem: null
@@ -172,12 +169,18 @@ export default {
     projectData() {
       this.selectedItem = null
       this.items = this.projectData
-    },
-    isEditing() {
-      this.checkedItems = []
     }
   },
   methods: {
+    toggleEditing() {
+      this.$emit('deselected')
+      this.isEditing = !this.isEditing
+      if (this.isEditing) {
+        this.checkedItems = []
+      } else {
+        this.$emit('updated')
+      }
+    },
     select(item, index) {
       this.selectedItem = item
       this.$emit('selected', { item, index })

@@ -35,11 +35,11 @@
         <template v-slot:default="{ hide }">
           <MainNavigator
             ref="mainNavigator"
-            :is-editing="isEditingItemList"
             :project-data="projectData"
             @hide="hide"
             @selected="loadEditor"
-            @toggle-edit="toggleEdit"
+            @deselected="clearEditor"
+            @updated="updateProject"
             @open-project="openProject"
           />
         </template>
@@ -95,7 +95,6 @@ export default {
   },
   data() {
     return {
-      isEditingItemList: false,
       isShowInfoPopup: false,
       isShowSettingPopup: false,
       projectData: null,
@@ -123,15 +122,9 @@ export default {
       this.selectedItemIndex = null
       this.headerInfo.name = null
     },
-    async toggleEdit() {
-      if (this.isEditingItemList) {
-        this.projectData = [...this.$refs.mainNavigator.items]
-        await this.saveProject()
-      } else {
-        await this.saveProject()
-        this.clearEditor()
-      }
-      this.isEditingItemList = !this.isEditingItemList
+    async updateProject() {
+      this.projectData = [...this.$refs.mainNavigator.items]
+      await this.saveProject()
     },
     async loadProject(projectSaveData) {
       if (projectSaveData) {
