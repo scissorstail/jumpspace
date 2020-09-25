@@ -14,6 +14,10 @@ note: This currently only works on Windows
 
 (empty)
 
+## workflow
+
+feature(local only) => develop(merge features) => master(release only)
+
 ## requirements
 
 1. [Git for Windows](https://gitforwindows.org/) (To install Git Bash)
