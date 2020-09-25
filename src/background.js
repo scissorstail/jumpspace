@@ -1,7 +1,7 @@
 'use strict'
 /* global __static */
-
-import { app, protocol, BrowserWindow } from 'electron'
+import info from '../package.json'
+import { app, protocol, BrowserWindow, Menu, Tray } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path'
@@ -10,6 +10,10 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win
+let tray
+
+// 종료 제어용
+let isQuitting = false
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -41,6 +45,22 @@ async function createWindow() {
     // Load the index.html when not in development
     await win.loadURL('app://./index.html')
   }
+
+  win.on('show', async () => {
+    win.setSkipTaskbar(false)
+  })
+
+  win.on('close', event => {
+    if (!isQuitting) {
+      event.preventDefault()
+      if (!win.isMinimized()) {
+        win.setSkipTaskbar(true)
+        win.hide()
+      }
+    } else {
+      win = null
+    }
+  })
 
   win.on('closed', () => {
     win = null
@@ -76,6 +96,29 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
+
+  tray = new Tray(path.join(__static, 'icon.png'))
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Quit',
+      type: 'normal',
+      click: () => {
+        isQuitting = true
+        app.quit()
+      }
+    }
+  ])
+  tray.setContextMenu(contextMenu)
+  tray.setToolTip(info.name)
+
+  tray.on('double-click', () => {
+    if (!win.isVisible()) {
+      win.show()
+    } else if (win.isMinimized()) {
+      win.restore()
+    }
+  })
+
   createWindow()
 })
 
