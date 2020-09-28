@@ -1,6 +1,6 @@
 {
   "name": "jumpspace",
-  "version": "0.0.4-alpha",
+  "version": "0.0.5-alpha",
   "author": "@nameEO",
   "description": "The visual SSH connection editor",
   "scripts": {
@@ -35,7 +35,7 @@
     "v-tooltip": "^2.0.3",
     "vue": "^2.6.12",
     "vue-awesome": "^4.1.0",
-    "vue-router": "^3.4.3",
+    "vue-router": "^3.4.5",
     "vuex": "^3.4.0"
   },
   "devDependencies": {
@@ -50,8 +50,8 @@
     "electron": "^10.1.2",
     "electron-devtools-installer": "^3.1.0",
     "electron-icon-builder": "^1.0.2",
-    "eslint": "^7.9.0",
-    "eslint-plugin-import": "^2.20.2",
+    "eslint": "^7.10.0",
+    "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.0",
