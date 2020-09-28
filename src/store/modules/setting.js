@@ -1,7 +1,8 @@
 export default {
   state: {
     setting: {
-      gitBashPath: null
+      gitBashPath: null,
+      isHideToTrayOnClose: null
     }
   },
   getters: {
@@ -17,7 +18,8 @@ export default {
   actions: {
     async settingLoad({ commit }) {
       const defaultSetting = {
-        gitBashPath: '%ProgramFiles%\\Git\\git-bash.exe'
+        gitBashPath: '%ProgramFiles%\\Git\\git-bash.exe',
+        isHideToTrayOnClose: false
       }
 
       const setting = await window.ipcRenderer.sendSync('getStore')
