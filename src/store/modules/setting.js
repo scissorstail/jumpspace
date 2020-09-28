@@ -1,8 +1,7 @@
 export default {
   state: {
     setting: {
-      gitBashPath:
-        localStorage.gitBashPath || '%ProgramFiles%\\Git\\git-bash.exe'
+      gitBashPath: null
     }
   },
   getters: {
@@ -13,12 +12,25 @@ export default {
   mutations: {
     settingUpdate(state, payload) {
       state.setting = { ...payload }
-
-      for (const key in state.setting) {
-        localStorage[key] = state.setting[key]
-      }
     }
   },
-  actions: {},
+  actions: {
+    async settingLoad({ commit }) {
+      const defaultSetting = {
+        gitBashPath: '%ProgramFiles%\\Git\\git-bash.exe'
+      }
+
+      const setting = await window.ipcRenderer.sendSync('getStore')
+      commit(
+        'settingUpdate',
+        JSON.parse(setting || JSON.stringify(defaultSetting))
+      )
+    },
+    async settingSave({ state, commit }, payload) {
+      commit('settingUpdate', payload)
+
+      window.ipcRenderer.send('setStore', JSON.stringify(state.setting))
+    }
+  },
   modules: {}
 }

@@ -96,8 +96,8 @@ export default {
     init() {
       this.gitBashPath = this.setting.gitBashPath
     },
-    saveSetting() {
-      this.settingUpdate({
+    async saveSetting() {
+      await this.settingSave({
         gitBashPath: this.gitBashPath
       })
       this.$emit('update:show', false)
