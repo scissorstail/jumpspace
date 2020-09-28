@@ -7,7 +7,7 @@ module.exports = {
     electronBuilder: {
       preload: { preload: 'src/preload.js' },
       appId: `com.electron.${info.name}`,
-      productName: `${info.name}`
+      productName: `${info.name} v${info.version}`
     }
   }
 }

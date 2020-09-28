@@ -12,26 +12,38 @@
       <b-card
         :header="`Setting`"
         bg-variant="light"
-        class="text-center"
         style="width: 90vw"
       >
         <b-card-body>
           <b-card-text class="mb-3">
             <b-row class="mb-3">
               <b-col>
-                <div>
-                  <b-form-group
-                    class="mb-0"
-                    label="Git Bash Path: "
-                    label-align="left"
-                    label-cols-sm="3"
+                <b-form-group
+                  class="mb-0"
+                  label="Git Bash path"
+                  label-align="left"
+                  label-cols-sm="3"
+                >
+                  <b-form-input
+                    v-model="gitBashPath"
+                    size="sm"
+                  />
+                </b-form-group>
+              </b-col>
+            </b-row>
+            <b-row>
+              <b-col>
+                <b-form-group
+                  label-align="left"
+                  class="text-left"
+                >
+                  <b-form-checkbox
+                    v-model="isHideToTrayOnClose"
+                    switch
                   >
-                    <b-form-input
-                      v-model="gitBashPath"
-                      size="sm"
-                    />
-                  </b-form-group>
-                </div>
+                    Close to system tray
+                  </b-form-checkbox>
+                </b-form-group>
               </b-col>
             </b-row>
           </b-card-text>
@@ -84,7 +96,8 @@ export default {
   },
   data() {
     return {
-      gitBashPath: null
+      gitBashPath: null,
+      isHideToTrayOnClose: false
     }
   },
   watch: {
@@ -95,10 +108,12 @@ export default {
   methods: {
     init() {
       this.gitBashPath = this.setting.gitBashPath
+      this.isHideToTrayOnClose = this.setting.isHideToTrayOnClose
     },
-    saveSetting() {
-      this.settingUpdate({
-        gitBashPath: this.gitBashPath
+    async saveSetting() {
+      await this.settingSave({
+        gitBashPath: this.gitBashPath,
+        isHideToTrayOnClose: this.isHideToTrayOnClose
       })
       this.$emit('update:show', false)
     }
