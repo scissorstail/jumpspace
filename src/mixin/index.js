@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import { mapGetters, mapMutations } from 'vuex'
+import { mapGetters, mapActions } from 'vuex'
 
 const mixin = {
   created() {
@@ -9,7 +9,7 @@ const mixin = {
     ...mapGetters(['setting'])
   },
   methods: {
-    ...mapMutations(['settingUpdate'])
+    ...mapActions(['settingSave'])
   }
 }
 

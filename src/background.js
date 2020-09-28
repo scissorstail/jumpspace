@@ -1,11 +1,24 @@
 'use strict'
 /* global __static */
 import info from '../package.json'
-import { app, protocol, BrowserWindow, Menu, Tray } from 'electron'
+import { app, protocol, ipcMain, BrowserWindow, Menu, Tray } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path'
+import Store from 'electron-store'
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
+
+// 세팅 값 저장
+const store = new Store()
+
+ipcMain.on('getStore', event => {
+  event.returnValue = store.get('setting')
+})
+
+ipcMain.on('setStore', (event, data) => {
+  store.set('setting', data)
+})
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.

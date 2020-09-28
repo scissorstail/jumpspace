@@ -24,6 +24,7 @@ Vue.use(VTooltip, {
 Vue.use(BootstrapVue)
 ;(async () => {
   await store.dispatch('diagramLoad')
+  await store.dispatch('settingLoad')
 
   new Vue({
     router,

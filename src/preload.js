@@ -2,11 +2,14 @@ const path = require('path')
 const fs = require('graceful-fs')
 const exec = require('child_process').exec
 const crypto = require('crypto')
+const { ipcRenderer } = require('electron')
 const {
   dialog,
   getCurrentWebContents,
   getCurrentWindow
 } = require('electron').remote
+
+window.ipcRenderer = ipcRenderer
 
 window.toggleDevTools = function() {
   getCurrentWebContents().toggleDevTools()
