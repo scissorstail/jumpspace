@@ -99,10 +99,69 @@
     </div>
 
     <!-- navigator-content -->
-    <div class="p-3 main-navigator-content">
-      <template v-for="(item, index) in items">
+    <div
+      class="p-3 main-navigator-content"
+    >
+      <!-- 편집 모드 -->
+      <draggable
+        v-if="isEditing"
+        v-model="items"
+        v-bind="dragOptions"
+        @start="drag = true"
+        @end="drag = false"
+      >
+        <transition-group
+          type="transition"
+          :name="!drag ? 'flip-list' : null"
+        >
+          <div
+            v-for="(item, index) in items"
+            :key="`${_uid}-input-${index}`"
+            class="list-item mt-1 editing"
+          >
+            <b-button
+              variant="white"
+              class="handle"
+            >
+              <v-icon
+                class="handle-icon text-secondary"
+                height="14"
+                name="grip-vertical"
+                scale="1"
+                width="14"
+              />
+            </b-button>
+            <b-form-checkbox
+              size="lg"
+              class="align-self-center"
+              @change="check(item, $event)"
+            />
+            <b-form-input
+              v-model="item.name"
+              placeholder="untitled"
+            />
+            <b-button
+              class="ml-1"
+              variant="danger"
+              @click="remove(item)"
+            >
+              <v-icon
+                height="14"
+                name="trash"
+                scale="1"
+                width="14"
+              />
+            </b-button>
+          </div>
+        </transition-group>
+      </draggable>
+
+      <!-- 기본 모드 -->
+      <template
+        v-for="(item, index) in items"
+        v-else
+      >
         <b-button
-          v-if="!isEditing"
           :key="`${_uid}-button-${index}`"
           v-b-toggle="`collapse-${index}`"
           :pressed="item === selectedItem"
@@ -119,41 +178,19 @@
           <b-card>I am collapsible content!</b-card>
         </b-collapse>
         -->
-        <div
-          v-else
-          :key="`${_uid}-input-${index}`"
-          class="list-item mt-1 editing"
-        >
-          <b-form-checkbox
-            size="lg"
-            class="align-self-center ml-2"
-            @change="check(item, $event)"
-          />
-          <b-form-input
-            v-model="item.name"
-            placeholder="untitled"
-          />
-          <b-button
-            class="ml-1"
-            variant="danger"
-            @click="remove(item)"
-          >
-            <v-icon
-              height="14"
-              name="trash"
-              scale="1"
-              width="14"
-            />
-          </b-button>
-        </div>
       </template>
     </div>
   </div>
 </template>
 
 <script>
+import draggable from 'vuedraggable'
+
 export default {
   name: 'MainNavigator',
+  components: {
+    draggable
+  },
   props: {
     projectData: {
       type: Array,
@@ -162,10 +199,22 @@ export default {
   },
   data() {
     return {
+      drag: false,
       isEditing: false,
       items: [],
       checkedItems: [],
       selectedItem: null
+    }
+  },
+  computed: {
+    dragOptions() {
+      return {
+        animation: 200,
+        group: 'description',
+        disabled: false,
+        ghostClass: 'ghost',
+        handle: '.handle'
+      }
     }
   },
   watch: {
@@ -253,6 +302,14 @@ export default {
 .btn:active:focus {
   outline: none;
   box-shadow: none;
+}
+
+.sortable-chosen > .handle > .handle-icon {
+  color: initial !important;
+}
+
+.ghost {
+  opacity: 0;
 }
 
 /* width */

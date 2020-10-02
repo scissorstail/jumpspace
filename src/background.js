@@ -9,6 +9,26 @@ import Store from 'electron-store'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
+// Keep a global reference of the window object, if you don't, the window will
+// be closed automatically when the JavaScript object is garbage collected.
+let win
+let tray
+
+// 종료 제어용
+let isQuitting = false
+
+// Single instance lock. package.json의 name으로 구분
+const singleInstanceLock = app.requestSingleInstanceLock()
+
+if (!singleInstanceLock) {
+  app.quit()
+}
+
+// Scheme must be registered before the app is ready
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'app', privileges: { secure: true, standard: true } }
+])
+
 // 세팅 값 저장
 const store = new Store()
 
@@ -19,19 +39,6 @@ ipcMain.on('getStore', event => {
 ipcMain.on('setStore', (event, data) => {
   store.set('setting', data)
 })
-
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let win
-let tray
-
-// 종료 제어용
-let isQuitting = false
-
-// Scheme must be registered before the app is ready
-protocol.registerSchemesAsPrivileged([
-  { scheme: 'app', privileges: { secure: true, standard: true } }
-])
 
 async function createWindow() {
   // Create the browser window.
@@ -80,6 +87,17 @@ async function createWindow() {
     win = null
   })
 }
+
+// Singleton instance
+app.on('second-instance', () => {
+  if (!win.isVisible()) {
+    win.show()
+  } else if (win.isMinimized()) {
+    win.restore()
+  }
+
+  win.focus()
+})
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
