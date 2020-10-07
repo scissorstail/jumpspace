@@ -4,15 +4,12 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import mixin from './mixin'
-
-import 'vue-awesome/icons'
-import Icon from 'vue-awesome/components/Icon'
 import VTooltip from 'v-tooltip'
 import { BootstrapVue } from 'bootstrap-vue'
+import './assets/icons'
 
 Vue.config.productionTip = false
 
-Vue.component('v-icon', Icon)
 Vue.use(VTooltip, {
   popover: {
     // bootstrap-vue와 v-tooltip 클래스 충돌 방지

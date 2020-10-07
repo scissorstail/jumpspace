@@ -1,7 +1,7 @@
 import Rete from 'rete'
 import ConnectionSocket from '../../sockets/connection-socket'
 import ConnectionControl from './controls/connection-control'
-import _ from 'lodash'
+import head from 'lodash/head'
 
 export default class SiteNode extends Rete.Component {
   constructor() {
@@ -26,7 +26,7 @@ export default class SiteNode extends Rete.Component {
   worker(node, inputs, outputs) {
     // console.log(node, inputs, outputs)
 
-    const prevNodeDataList = _.first(inputs.input1)?.connection || []
+    const prevNodeDataList = head(inputs.input1)?.connection || []
     const nextNodeDataList = prevNodeDataList.concat([node.data.connection])
 
     node.data.prevNodeDataList = prevNodeDataList
