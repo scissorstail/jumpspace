@@ -309,7 +309,9 @@
 
 <script>
 import * as upath from 'upath'
-import _ from 'lodash'
+import head from 'lodash/head'
+import last from 'lodash/last'
+import pick from 'lodash/pick'
 import store from '../../../../../../store'
 import mixin from '../../../../../../mixin'
 
@@ -357,7 +359,7 @@ export default {
       return this.user && this.host && this.port && this.keyPath
     },
     isFowardable() {
-      const prevNodeData = _.last(this.prevNodeDataList)
+      const prevNodeData = last(this.prevNodeDataList)
       if (!prevNodeData) {
         return false
       }
@@ -390,7 +392,7 @@ export default {
           foundIndex - 1 > 0 ? foundIndex - 1 : this.diagramFilenames.length - 1
         this.diagram = this.diagramFilenames[index]
       } else {
-        this.diagram = _.head(this.diagramFilenames)
+        this.diagram = head(this.diagramFilenames)
       }
     },
     loadNextDiagram() {
@@ -402,7 +404,7 @@ export default {
           foundIndex + 1 > this.diagramFilenames.length - 1 ? 0 : foundIndex + 1
         this.diagram = this.diagramFilenames[index]
       } else {
-        this.diagram = _.head(this.diagramFilenames)
+        this.diagram = head(this.diagramFilenames)
       }
     },
     connect() {
@@ -415,7 +417,7 @@ export default {
       window.executeCommand(command)
     },
     openForward() {
-      const prevNodeData = _.last(this.prevNodeDataList)
+      const prevNodeData = last(this.prevNodeDataList)
       if (!prevNodeData) {
         return false
       }
@@ -508,7 +510,7 @@ export default {
       }
     },
     save() {
-      const data = _.pick(this.$data, [
+      const data = pick(this.$data, [
         'isBlur',
         'name',
         'user',

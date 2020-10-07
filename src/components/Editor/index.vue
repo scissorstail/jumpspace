@@ -6,7 +6,7 @@
 </template>
 
 <script>
-import _ from 'lodash'
+import cloneDeep from 'lodash/cloneDeep'
 import Rete from 'rete'
 import ConnectionPlugin from 'rete-connection-plugin'
 import VueRenderPlugin from 'rete-vue-render-plugin'
@@ -66,7 +66,7 @@ export default {
             ...params
           } = args.node
           const component = this.editor.components.get(name)
-          const node = await component.createNode(_.cloneDeep(params.data))
+          const node = await component.createNode(cloneDeep(params.data))
 
           node.position[0] = x + 25
           node.position[1] = y + 25
