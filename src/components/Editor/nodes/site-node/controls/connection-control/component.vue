@@ -101,7 +101,7 @@
                   label-cols-sm="3"
                 >
                   <b-input-group size="sm">
-                    <template v-slot:append>
+                    <template #append>
                       <b-button
                         v-if="keyPath"
                         size="sm"
