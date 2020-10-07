@@ -356,7 +356,7 @@ export default {
   },
   computed: {
     isConnectable() {
-      return this.user && this.host && this.port && this.keyPath
+      return this.user && this.host && this.port
     },
     isFowardable() {
       const prevNodeData = last(this.prevNodeDataList)
@@ -408,12 +408,12 @@ export default {
       }
     },
     connect() {
-      const command = `"${this.setting.gitBashPath}" -c "ssh -o 'StrictHostKeyChecking=accept-new' -i '${upath.toUnix(
+      const command = `"${this.setting.gitBashPath}" -c "ssh -o 'StrictHostKeyChecking=accept-new' ${
         this.keyPath
-      )}' '${this.user ? this.user + '@' : ''}${this.host}' -p '${
-        this.port
-      }'"`
-      console.log(command)
+          ? `-i '${upath.toUnix(this.keyPath)}' `
+          : ''
+      }${this.user ? this.user + '@' : ''}${this.host} -p '${this.port}'"`
+      // console.log(command)
       window.executeCommand(command)
     },
     openForward() {
@@ -432,18 +432,15 @@ export default {
 
       const command = `"${
         this.setting.gitBashPath
-      }" -c "echo 'Foward...' && ${forwardList
-        .map(
-          (x, i) =>
-            `echo ':${x.from} >> [${prevNodeData.host}]:${prevNodeData.port} -> :${x.to}'`
-        )
-        .join('&&')} && ssh -o 'StrictHostKeyChecking=accept-new' -i "${upath.toUnix(prevNodeData.keyPath)}" "${
-        prevNodeData.user
-      }@${prevNodeData.host}" -p "${
-        prevNodeData.port
-      }" -N -M -S "${ctlPathTempFilename}" ${forwardList
-        .map((x) => `-L "localhost:${x.from}:${this.host}:${x.to}"`)
-        .join(' ')}"`
+      }" -c "echo 'Foward...' && ${
+        forwardList
+          .map((x, i) => `echo ':${x.from} >> [${prevNodeData.host}]:${prevNodeData.port} -> :${x.to}'`)
+          .join('&&')
+      } && ssh -o 'StrictHostKeyChecking=accept-new' -i "${upath.toUnix(prevNodeData.keyPath)}" "${prevNodeData.user}@${prevNodeData.host}" -p "${prevNodeData.port}" -N -M -S "${ctlPathTempFilename}" ${
+        forwardList
+          .map((x) => `-L "localhost:${x.from}:${this.host}:${x.to}"`)
+          .join(' ')
+      }"`
 
       window.executeCommand(command)
     },
@@ -483,11 +480,11 @@ export default {
       const destHost = jumpHosts.pop()
       const command = `"${
         this.setting.gitBashPath
-      }" -c "echo 'ProxyJump...' && ${nodes
-        .map((x, i) => `echo '>>> [${x.host}]:${x.port}'`)
-        .join('&&')} && ssh -o 'StrictHostKeyChecking=accept-new' -F "${configTempFilename}" -J ${jumpHosts.join(
-        ','
-      )} ${destHost}"`
+      }" -c "echo 'ProxyJump...' && ${
+        nodes
+          .map((x, i) => `echo '>>> [${x.host}]:${x.port}'`)
+          .join('&&')
+      } && ssh -o 'StrictHostKeyChecking=accept-new' -F "${configTempFilename}" -J ${jumpHosts.join(',')} ${destHost}"`
 
       window.executeCommand(command, (output) => {
         setTimeout(() => window.unlinkFile(configTempFilename), 3000)
