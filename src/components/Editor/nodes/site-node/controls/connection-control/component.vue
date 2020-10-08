@@ -9,6 +9,7 @@
           @hide="save"
         >
           <v-icon
+            title="Info"
             class="info-edit-item"
             height="24"
             name="cog"
@@ -91,6 +92,7 @@
                 >
                   <b-form-input
                     v-model.trim="port"
+                    placeholder="(To blank when Forwarding)"
                     size="sm"
                   />
                 </b-form-group>
@@ -153,6 +155,7 @@
           @hide="save"
         >
           <v-icon
+            title="Forward list"
             class="info-edit-item"
             height="24"
             name="link"
@@ -201,6 +204,7 @@
                   <b-button
                     class="ml-2"
                     size="sm"
+                    title="Remove Forward"
                     @click="removeForward(forward)"
                   >
                     <v-icon
@@ -219,6 +223,7 @@
                 <b-button
                   class="mr-1"
                   size="sm"
+                  title="Add Forward"
                   @click="addForward"
                 >
                   <v-icon
@@ -245,14 +250,20 @@
         height="40%"
         width="40%"
       >
-      <div class="info-text">
-        {{ name || 'noname' }}
+      <div
+        class="info-text"
+        :title="name || '(noname)'"
+      >
+        {{ name || '(noname)' }}
+      </div>
+      <div
+        class="info-text"
+        :title="host || '-'"
+      >
+        {{ host || '-' }}
       </div>
       <div class="info-text">
-        {{ host || '---' }}
-      </div>
-      <div class="info-text">
-        {{ port || '---' }}
+        {{ port || '-' }}
       </div>
     </div>
 
@@ -260,6 +271,7 @@
       <a class="info-edit">
         <v-icon
           v-if="isProxyJumpReady"
+          title="ProxyJump"
           class="info-edit-item"
           height="24"
           name="bolt"
@@ -269,6 +281,7 @@
         />
         <v-icon
           v-if="isConnectable && !isProxyJumpReady"
+          title="Connect"
           class="info-edit-item"
           height="24"
           name="plug"
@@ -279,6 +292,7 @@
       </a>
       <a class="info-edit">
         <v-icon
+          title="Blur"
           class="info-edit-item"
           height="24"
           name="eye-slash"
@@ -290,6 +304,7 @@
       <a class="info-edit left">
         <v-icon
           v-show="isFowardable"
+          title="Forward"
           :style="{
             opacity: isFowardable && forwards.some(x => x.checked) ? 1.0 : 0.5
           }"
@@ -545,6 +560,7 @@ export default {
 .info-text {
   text-overflow: ellipsis;
   overflow: hidden;
+  white-space: nowrap;
 }
 
 .info-item {
