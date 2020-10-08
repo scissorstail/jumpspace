@@ -133,9 +133,14 @@ async function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       enableRemoteModule: true
     },
-    icon: path.join(__static, 'icon.png')
+    icon: path.join(__static, 'icon.png'),
+    show: false
   })
   win.removeMenu()
+
+  win.once('ready-to-show', () => {
+    win.show()
+  })
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
