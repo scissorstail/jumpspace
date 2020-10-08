@@ -17,13 +17,6 @@ let tray
 // 종료 제어용
 let isQuitting = false
 
-// Single instance lock. package.json의 name으로 구분
-const singleInstanceLock = app.requestSingleInstanceLock()
-
-if (!singleInstanceLock) {
-  app.quit()
-}
-
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
@@ -32,13 +25,101 @@ protocol.registerSchemesAsPrivileged([
 // 세팅 값 저장
 const store = new Store()
 
-ipcMain.on('getStore', event => {
-  event.returnValue = store.get('setting')
-})
+// Single instance lock. package.json의 name으로 구분
+const singleInstanceLock = app.requestSingleInstanceLock()
 
-ipcMain.on('setStore', (event, data) => {
-  store.set('setting', data)
-})
+if (!singleInstanceLock) {
+  app.quit()
+} else {
+  ipcMain.on('getStore', event => {
+    event.returnValue = store.get('setting')
+  })
+
+  ipcMain.on('setStore', (event, data) => {
+    store.set('setting', data)
+  })
+
+  // Singleton instance
+  app.on('second-instance', () => {
+    if (!win.isVisible()) {
+      win.show()
+    } else if (win.isMinimized()) {
+      win.restore()
+    }
+
+    win.focus()
+  })
+
+  // Quit when all windows are closed.
+  app.on('window-all-closed', () => {
+    // On macOS it is common for applications and their menu bar
+    // to stay active until the user quits explicitly with Cmd + Q
+    if (process.platform !== 'darwin') {
+      app.quit()
+    }
+  })
+
+  app.on('activate', () => {
+    // On macOS it's common to re-create a window in the app when the
+    // dock icon is clicked and there are no other windows open.
+    if (win === null) {
+      createWindow()
+    }
+  })
+
+  // This method will be called when Electron has finished
+  // initialization and is ready to create browser windows.
+  // Some APIs can only be used after this event occurs.
+  app.on('ready', async () => {
+    if (isDevelopment && !process.env.IS_TEST) {
+      // Install Vue Devtools
+      try {
+        await installExtension(VUEJS_DEVTOOLS)
+      } catch (e) {
+        console.error('Vue Devtools failed to install:', e.toString())
+      }
+    }
+
+    tray = new Tray(path.join(__static, 'icon.png'))
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'Quit',
+        type: 'normal',
+        click: () => {
+          isQuitting = true
+          app.quit()
+        }
+      }
+    ])
+    tray.setContextMenu(contextMenu)
+    tray.setToolTip(info.name)
+
+    tray.on('double-click', () => {
+      if (!win.isVisible()) {
+        win.show()
+      } else if (win.isMinimized()) {
+        win.restore()
+      }
+    })
+
+    createWindow()
+  })
+
+  // Exit cleanly on request from parent process in development mode.
+  if (isDevelopment) {
+    if (process.platform === 'win32') {
+      process.on('message', data => {
+        if (data === 'graceful-exit') {
+          app.quit()
+        }
+      })
+    } else {
+      process.on('SIGTERM', () => {
+        app.quit()
+      })
+    }
+  }
+}
 
 async function createWindow() {
   // Create the browser window.
@@ -52,9 +133,14 @@ async function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       enableRemoteModule: true
     },
-    icon: path.join(__static, 'icon.png')
+    icon: path.join(__static, 'icon.png'),
+    show: false
   })
   win.removeMenu()
+
+  win.once('ready-to-show', () => {
+    win.show()
+  })
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
@@ -86,85 +172,4 @@ async function createWindow() {
   win.on('closed', () => {
     win = null
   })
-}
-
-// Singleton instance
-app.on('second-instance', () => {
-  if (!win.isVisible()) {
-    win.show()
-  } else if (win.isMinimized()) {
-    win.restore()
-  }
-
-  win.focus()
-})
-
-// Quit when all windows are closed.
-app.on('window-all-closed', () => {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
-
-app.on('activate', () => {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (win === null) {
-    createWindow()
-  }
-})
-
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', async () => {
-  if (isDevelopment && !process.env.IS_TEST) {
-    // Install Vue Devtools
-    try {
-      await installExtension(VUEJS_DEVTOOLS)
-    } catch (e) {
-      console.error('Vue Devtools failed to install:', e.toString())
-    }
-  }
-
-  tray = new Tray(path.join(__static, 'icon.png'))
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Quit',
-      type: 'normal',
-      click: () => {
-        isQuitting = true
-        app.quit()
-      }
-    }
-  ])
-  tray.setContextMenu(contextMenu)
-  tray.setToolTip(info.name)
-
-  tray.on('double-click', () => {
-    if (!win.isVisible()) {
-      win.show()
-    } else if (win.isMinimized()) {
-      win.restore()
-    }
-  })
-
-  createWindow()
-})
-
-// Exit cleanly on request from parent process in development mode.
-if (isDevelopment) {
-  if (process.platform === 'win32') {
-    process.on('message', data => {
-      if (data === 'graceful-exit') {
-        app.quit()
-      }
-    })
-  } else {
-    process.on('SIGTERM', () => {
-      app.quit()
-    })
-  }
 }
