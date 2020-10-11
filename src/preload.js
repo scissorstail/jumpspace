@@ -16,7 +16,11 @@ window.toggleDevTools = function() {
 }
 
 window.reloadApp = function() {
-  getCurrentWindow().reload()
+  if (process.env.WEBPACK_DEV_SERVER_URL) {
+    getCurrentWebContents().reload()
+  } else {
+    getCurrentWindow().loadURL('app://./index.html')
+  }
 }
 
 window.readDiagramDirSync = async function(dirname) {
