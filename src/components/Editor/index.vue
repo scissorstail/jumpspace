@@ -6,7 +6,7 @@
 </template>
 
 <script>
-import _ from 'lodash'
+import cloneDeep from 'lodash/cloneDeep'
 import Rete from 'rete'
 import ConnectionPlugin from 'rete-connection-plugin'
 import VueRenderPlugin from 'rete-vue-render-plugin'
@@ -66,7 +66,7 @@ export default {
             ...params
           } = args.node
           const component = this.editor.components.get(name)
-          const node = await component.createNode(_.cloneDeep(params.data))
+          const node = await component.createNode(cloneDeep(params.data))
 
           node.position[0] = x + 25
           node.position[1] = y + 25
@@ -85,6 +85,10 @@ export default {
     this.editor.use(CommentPlugin, {
       margin: 20 // indent for new frame comments by default 30 (px)
     })
+
+    // this.editor.trigger('addcomment', ({ type, text, nodes, position }) => {
+    //  TODO: CommentPlugin 기본 추가동작 오버라이드
+    // })
     // editor.use(AlightRenderPlugin) // VueRenderPlugin과 같이 사용하면 오작동함
     // editor.use(TaskPlugin)
 
@@ -208,6 +212,15 @@ export default {
 
   .connection .main-path {
     stroke-width: 3px;
+  }
+
+  .frame-comment {
+    z-index: -5;
+    background: rgba(15, 80, 255, 0.1);
+
+    &:focus {
+      border: 3px dashed #ffd92c;
+    }
   }
 }
 </style>

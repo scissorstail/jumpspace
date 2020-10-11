@@ -27,11 +27,6 @@
                 />
               </b-col>
             </b-row>
-            <b-row>
-              <b-col>
-                <b>alpha</b>
-              </b-col>
-            </b-row>
           </b-card-text>
 
           <b-card-text>

@@ -9,6 +9,7 @@
           @hide="save"
         >
           <v-icon
+            title="Info"
             class="info-edit-item"
             height="24"
             name="cog"
@@ -91,6 +92,7 @@
                 >
                   <b-form-input
                     v-model.trim="port"
+                    placeholder="(To blank when Forwarding)"
                     size="sm"
                   />
                 </b-form-group>
@@ -101,7 +103,7 @@
                   label-cols-sm="3"
                 >
                   <b-input-group size="sm">
-                    <template v-slot:append>
+                    <template #append>
                       <b-button
                         v-if="keyPath"
                         size="sm"
@@ -153,6 +155,7 @@
           @hide="save"
         >
           <v-icon
+            title="Forward list"
             class="info-edit-item"
             height="24"
             name="link"
@@ -201,6 +204,7 @@
                   <b-button
                     class="ml-2"
                     size="sm"
+                    title="Remove Forward"
                     @click="removeForward(forward)"
                   >
                     <v-icon
@@ -219,6 +223,7 @@
                 <b-button
                   class="mr-1"
                   size="sm"
+                  title="Add Forward"
                   @click="addForward"
                 >
                   <v-icon
@@ -245,14 +250,20 @@
         height="40%"
         width="40%"
       >
-      <div class="info-text">
-        {{ name || 'noname' }}
+      <div
+        class="info-text"
+        :title="name || '(noname)'"
+      >
+        {{ name || '(noname)' }}
+      </div>
+      <div
+        class="info-text"
+        :title="host || '-'"
+      >
+        {{ host || '-' }}
       </div>
       <div class="info-text">
-        {{ host || '---' }}
-      </div>
-      <div class="info-text">
-        {{ port || '---' }}
+        {{ port || '-' }}
       </div>
     </div>
 
@@ -260,6 +271,7 @@
       <a class="info-edit">
         <v-icon
           v-if="isProxyJumpReady"
+          title="ProxyJump"
           class="info-edit-item"
           height="24"
           name="bolt"
@@ -269,6 +281,7 @@
         />
         <v-icon
           v-if="isConnectable && !isProxyJumpReady"
+          title="Connect"
           class="info-edit-item"
           height="24"
           name="plug"
@@ -279,6 +292,7 @@
       </a>
       <a class="info-edit">
         <v-icon
+          title="Blur"
           class="info-edit-item"
           height="24"
           name="eye-slash"
@@ -290,6 +304,7 @@
       <a class="info-edit left">
         <v-icon
           v-show="isFowardable"
+          title="Forward"
           :style="{
             opacity: isFowardable && forwards.some(x => x.checked) ? 1.0 : 0.5
           }"
@@ -309,7 +324,9 @@
 
 <script>
 import * as upath from 'upath'
-import _ from 'lodash'
+import head from 'lodash/head'
+import last from 'lodash/last'
+import pick from 'lodash/pick'
 import store from '../../../../../../store'
 import mixin from '../../../../../../mixin'
 
@@ -354,10 +371,10 @@ export default {
   },
   computed: {
     isConnectable() {
-      return this.user && this.host && this.port && this.keyPath
+      return this.user && this.host && this.port
     },
     isFowardable() {
-      const prevNodeData = _.last(this.prevNodeDataList)
+      const prevNodeData = last(this.prevNodeDataList)
       if (!prevNodeData) {
         return false
       }
@@ -390,7 +407,7 @@ export default {
           foundIndex - 1 > 0 ? foundIndex - 1 : this.diagramFilenames.length - 1
         this.diagram = this.diagramFilenames[index]
       } else {
-        this.diagram = _.head(this.diagramFilenames)
+        this.diagram = head(this.diagramFilenames)
       }
     },
     loadNextDiagram() {
@@ -402,20 +419,20 @@ export default {
           foundIndex + 1 > this.diagramFilenames.length - 1 ? 0 : foundIndex + 1
         this.diagram = this.diagramFilenames[index]
       } else {
-        this.diagram = _.head(this.diagramFilenames)
+        this.diagram = head(this.diagramFilenames)
       }
     },
     connect() {
-      const command = `"${this.setting.gitBashPath}" -c "ssh -o 'StrictHostKeyChecking=accept-new' -i '${upath.toUnix(
+      const command = `"${this.setting.gitBashPath}" -c "ssh -o 'StrictHostKeyChecking=accept-new' ${
         this.keyPath
-      )}' '${this.user ? this.user + '@' : ''}${this.host}' -p '${
-        this.port
-      }'"`
-      console.log(command)
+          ? `-i '${upath.toUnix(this.keyPath)}' `
+          : ''
+      }${this.user ? this.user + '@' : ''}${this.host} -p '${this.port}'"`
+      // console.log(command)
       window.executeCommand(command)
     },
     openForward() {
-      const prevNodeData = _.last(this.prevNodeDataList)
+      const prevNodeData = last(this.prevNodeDataList)
       if (!prevNodeData) {
         return false
       }
@@ -430,18 +447,15 @@ export default {
 
       const command = `"${
         this.setting.gitBashPath
-      }" -c "echo 'Foward...' && ${forwardList
-        .map(
-          (x, i) =>
-            `echo ':${x.from} >> [${prevNodeData.host}]:${prevNodeData.port} -> :${x.to}'`
-        )
-        .join('&&')} && ssh -o 'StrictHostKeyChecking=accept-new' -i "${upath.toUnix(prevNodeData.keyPath)}" "${
-        prevNodeData.user
-      }@${prevNodeData.host}" -p "${
-        prevNodeData.port
-      }" -N -M -S "${ctlPathTempFilename}" ${forwardList
-        .map((x) => `-L "localhost:${x.from}:${this.host}:${x.to}"`)
-        .join(' ')}"`
+      }" -c "echo 'Foward...' && ${
+        forwardList
+          .map((x, i) => `echo ':${x.from} >> [${prevNodeData.host}]:${prevNodeData.port} -> :${x.to}'`)
+          .join('&&')
+      } && ssh -o 'StrictHostKeyChecking=accept-new' -i "${upath.toUnix(prevNodeData.keyPath)}" "${prevNodeData.user}@${prevNodeData.host}" -p "${prevNodeData.port}" -N -M -S "${ctlPathTempFilename}" ${
+        forwardList
+          .map((x) => `-L "localhost:${x.from}:${this.host}:${x.to}"`)
+          .join(' ')
+      }"`
 
       window.executeCommand(command)
     },
@@ -481,11 +495,11 @@ export default {
       const destHost = jumpHosts.pop()
       const command = `"${
         this.setting.gitBashPath
-      }" -c "echo 'ProxyJump...' && ${nodes
-        .map((x, i) => `echo '>>> [${x.host}]:${x.port}'`)
-        .join('&&')} && ssh -o 'StrictHostKeyChecking=accept-new' -F "${configTempFilename}" -J ${jumpHosts.join(
-        ','
-      )} ${destHost}"`
+      }" -c "echo 'ProxyJump...' && ${
+        nodes
+          .map((x, i) => `echo '>>> [${x.host}]:${x.port}'`)
+          .join('&&')
+      } && ssh -o 'StrictHostKeyChecking=accept-new' -F "${configTempFilename}" -J ${jumpHosts.join(',')} ${destHost}"`
 
       window.executeCommand(command, (output) => {
         setTimeout(() => window.unlinkFile(configTempFilename), 3000)
@@ -508,7 +522,7 @@ export default {
       }
     },
     save() {
-      const data = _.pick(this.$data, [
+      const data = pick(this.$data, [
         'isBlur',
         'name',
         'user',
@@ -546,6 +560,7 @@ export default {
 .info-text {
   text-overflow: ellipsis;
   overflow: hidden;
+  white-space: nowrap;
 }
 
 .info-item {

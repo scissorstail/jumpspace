@@ -8,7 +8,7 @@
     variant="dark"
     z-index="1050"
   >
-    <template v-slot:overlay>
+    <template #overlay>
       <b-card
         :header="`Setting`"
         bg-variant="light"
@@ -49,7 +49,7 @@
           </b-card-text>
         </b-card-body>
 
-        <template v-slot:footer>
+        <template #footer>
           <div class="d-flex">
             <b-button
               block
