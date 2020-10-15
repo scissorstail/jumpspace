@@ -1,7 +1,15 @@
 'use strict'
 /* global __static */
 import info from '../package.json'
-import { app, protocol, ipcMain, BrowserWindow, Menu, Tray } from 'electron'
+import {
+  app,
+  protocol,
+  ipcMain,
+  BrowserWindow,
+  Menu,
+  Tray,
+  shell
+} from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path'
@@ -140,6 +148,11 @@ async function createWindow() {
 
   win.once('ready-to-show', () => {
     win.show()
+  })
+
+  win.webContents.on('new-window', function(event, url) {
+    event.preventDefault()
+    shell.openExternal(url)
   })
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
