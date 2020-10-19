@@ -8,7 +8,8 @@ import {
   BrowserWindow,
   Menu,
   Tray,
-  shell
+  shell,
+  dialog
 } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
@@ -37,6 +38,13 @@ const store = new Store()
 const singleInstanceLock = app.requestSingleInstanceLock()
 
 if (!singleInstanceLock) {
+  if (isDevelopment && !process.env.IS_TEST) {
+    dialog.showErrorBox(
+      'singleInstanceLock',
+      'Another instance is already running'
+    )
+  }
+
   app.quit()
 } else {
   ipcMain.on('getStore', event => {

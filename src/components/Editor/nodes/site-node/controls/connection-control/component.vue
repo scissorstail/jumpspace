@@ -482,6 +482,8 @@ export default {
 
         str += `Host ${hostHash}\r\n`
         str += `HostName ${host}\r\n`
+        str += `HostKeyAlias ${hostHash}\r\n`
+        str += 'StrictHostKeyChecking=accept-new\r\n'
         str += `User ${user}\r\n`
         str += `Port ${port}\r\n`
         str += `Identityfile ${upath.toUnix(keyPath)}\r\n`
