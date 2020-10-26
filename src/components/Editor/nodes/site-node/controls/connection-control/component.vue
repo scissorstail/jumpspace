@@ -295,6 +295,7 @@
           v-if="isConnectable && !isProxyJumpReady"
           title="Connect"
           class="info-edit-item"
+          :class="{'danger': Boolean(exec)}"
           height="24"
           name="plug"
           scale="1.5"
