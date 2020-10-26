@@ -142,6 +142,17 @@
                     >
                   </b-input-group>
                 </b-form-group>
+                <b-form-group
+                  class="mb-0"
+                  label="Exec"
+                  label-align="left"
+                  label-cols-sm="3"
+                >
+                  <b-form-input
+                    v-model.trim="exec"
+                    size="sm"
+                  />
+                </b-form-group>
               </div>
             </div>
           </template>
@@ -273,6 +284,7 @@
           v-if="isProxyJumpReady"
           title="ProxyJump"
           class="info-edit-item"
+          :class="{'danger': Boolean(exec)}"
           height="24"
           name="bolt"
           scale="1.5"
@@ -283,6 +295,7 @@
           v-if="isConnectable && !isProxyJumpReady"
           title="Connect"
           class="info-edit-item"
+          :class="{'danger': Boolean(exec)}"
           height="24"
           name="plug"
           scale="1.5"
@@ -362,6 +375,7 @@ export default {
       user: null,
       host: null,
       port: null,
+      exec: null,
       diagram: null,
       keyPath: null,
       forwards: [],
@@ -427,8 +441,12 @@ export default {
         this.keyPath
           ? `-i '${upath.toUnix(this.keyPath)}' `
           : ''
-      }${this.user ? this.user + '@' : ''}${this.host} -p '${this.port}'"`
-      // console.log(command)
+      }${this.user ? this.user + '@' : ''}${this.host} -p '${this.port}' ${
+        this.exec
+        ? `-tt '${this.exec}; exec $SHELL'`
+        : ''
+      }"`
+      console.log(command)
       window.executeCommand(command)
     },
     openForward() {
@@ -482,6 +500,8 @@ export default {
 
         str += `Host ${hostHash}\r\n`
         str += `HostName ${host}\r\n`
+        str += `HostKeyAlias ${hostHash}\r\n`
+        str += 'StrictHostKeyChecking=accept-new\r\n'
         str += `User ${user}\r\n`
         str += `Port ${port}\r\n`
         str += `Identityfile ${upath.toUnix(keyPath)}\r\n`
@@ -499,7 +519,11 @@ export default {
         nodes
           .map((x, i) => `echo '>>> [${x.host}]:${x.port}'`)
           .join('&&')
-      } && ssh -o 'StrictHostKeyChecking=accept-new' -F "${configTempFilename}" -J ${jumpHosts.join(',')} ${destHost}"`
+      } && ssh -o 'StrictHostKeyChecking=accept-new' -F "${configTempFilename}" -J ${jumpHosts.join(',')} ${destHost} ${
+        this.exec
+        ? `-tt '${this.exec}; exec $SHELL'`
+        : ''
+      }"`
 
       window.executeCommand(command, (output) => {
         setTimeout(() => window.unlinkFile(configTempFilename), 3000)
@@ -621,6 +645,14 @@ export default {
 
     &-item {
       margin-left: 4px;
+
+      &.warning {
+        color: #e3c000;
+      }
+
+      &.danger {
+        color: #dc3545;
+      }
     }
 
     &-text {
@@ -651,6 +683,14 @@ export default {
 
     &-item {
       margin-left: 4px;
+
+      &.warning {
+        color: #e3c000;
+      }
+
+      &.danger {
+        color: #dc3545;
+      }
     }
 
     &-text {

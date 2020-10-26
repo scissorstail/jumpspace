@@ -1,7 +1,16 @@
 'use strict'
 /* global __static */
 import info from '../package.json'
-import { app, protocol, ipcMain, BrowserWindow, Menu, Tray } from 'electron'
+import {
+  app,
+  protocol,
+  ipcMain,
+  BrowserWindow,
+  Menu,
+  Tray,
+  shell,
+  dialog
+} from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path'
@@ -29,6 +38,13 @@ const store = new Store()
 const singleInstanceLock = app.requestSingleInstanceLock()
 
 if (!singleInstanceLock) {
+  if (isDevelopment && !process.env.IS_TEST) {
+    dialog.showErrorBox(
+      'singleInstanceLock',
+      'Another instance is already running'
+    )
+  }
+
   app.quit()
 } else {
   ipcMain.on('getStore', event => {
@@ -140,6 +156,11 @@ async function createWindow() {
 
   win.once('ready-to-show', () => {
     win.show()
+  })
+
+  win.webContents.on('new-window', function(event, url) {
+    event.preventDefault()
+    shell.openExternal(url)
   })
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
