@@ -16,17 +16,17 @@ export default {
     }
   },
   actions: {
-    async settingLoad({ commit }) {
+    async settingLoad({ state, commit }) {
       const defaultSetting = {
         gitBashPath: '%ProgramFiles%\\Git\\git-bash.exe',
         isHideToTrayOnClose: false
       }
 
       const setting = await window.ipcRenderer.sendSync('getStore')
-      commit(
-        'settingUpdate',
-        JSON.parse(setting || JSON.stringify(defaultSetting))
-      )
+
+      commit('settingUpdate', setting ? JSON.parse(setting) : defaultSetting)
+
+      window.ipcRenderer.send('setStore', JSON.stringify(state.setting))
     },
     async settingSave({ state, commit }, payload) {
       commit('settingUpdate', payload)
