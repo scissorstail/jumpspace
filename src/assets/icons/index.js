@@ -23,6 +23,8 @@ import 'vue-awesome/icons/grip-vertical'
 import 'vue-awesome/icons/trash'
 import 'vue-awesome/icons/bars'
 import 'vue-awesome/icons/file-export'
+import 'vue-awesome/icons/search'
+import 'vue-awesome/icons/arrow-up'
 import Icon from 'vue-awesome/components/Icon'
 
 // eslint-disable-next-line vue/component-definition-name-casing

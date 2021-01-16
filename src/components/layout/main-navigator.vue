@@ -138,7 +138,7 @@
             />
             <b-form-input
               v-model="item.name"
-              placeholder="untitled"
+              placeholder="(untitled)"
             />
             <b-button
               class="ml-1"
@@ -157,28 +157,60 @@
       </draggable>
 
       <!-- 기본 모드 -->
-      <template
-        v-for="(item, index) in items"
-        v-else
-      >
-        <b-button
-          :key="`${_uid}-button-${index}`"
-          v-b-toggle="`collapse-${index}`"
-          :pressed="item === selectedItem"
-          block
-          class="list-item mt-1"
-          squared
-          variant="white"
-          @click="select(item, index)"
+      <div v-else>
+        <b-input-group
+          size="sm"
+          class="mb-2"
         >
-          {{ item.name || 'untitled' }}
-        </b-button>
+          <b-input-group-prepend is-text>
+            <v-icon name="search" />
+          </b-input-group-prepend>
+          <b-form-input
+            v-model="keyword"
+            type="search"
+          />
+        </b-input-group>
+
+        <template
+          v-for="(item, index) in items"
+        >
+          <b-button
+            v-show="!keyword || item.name.includes(keyword)"
+            :key="`${_uid}-button-${index}`"
+            v-b-toggle="`collapse-${index}`"
+            :pressed="item === selectedItem"
+            block
+            class="list-item mt-1"
+            squared
+            variant="white"
+            @click="select(item, index)"
+          >
+            {{ item.name || '(untitled)' }}
+          </b-button>
         <!--
         <b-collapse :id="`collapse-${index}`" :key="`${_uid}-collapse-${index}`">
           <b-card>I am collapsible content!</b-card>
         </b-collapse>
         -->
-      </template>
+        </template>
+
+        <b-button
+          v-b-tooltip.hover.v-light.dh0.noninteractive
+          class="position-absolute shadow-sm mr-1 opacity-3"
+          title="top"
+          variant="light"
+          style="bottom: 14px; right: 14px"
+          @click="scrollToTop"
+        >
+          <v-icon
+            height="14"
+            name="arrow-up"
+            scale="1"
+            width="14"
+            color="gray"
+          />
+        </b-button>
+      </div>
     </div>
   </div>
 </template>
@@ -201,6 +233,7 @@ export default {
     return {
       drag: false,
       isEditing: false,
+      keyword: '',
       items: [],
       checkedItems: [],
       selectedItem: null
@@ -260,6 +293,12 @@ export default {
       if (foundIndex >= 0) {
         this.items.splice(foundIndex, 1)
       }
+    },
+    scrollToTop() {
+      setTimeout(() => {
+        const element = document.querySelector('#main-navigator .main-navigator-content')
+        element.scroll({ top: 0, behavior: 'smooth' })
+      }, 0)
     },
     exportSelectedItems() {
       this.$emit('export-items', [...this.checkedItems])
