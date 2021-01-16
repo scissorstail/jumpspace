@@ -130,8 +130,7 @@
                       </b-button>
                     </template>
                     <b-form-input
-                      :value="keyPath"
-                      readonly
+                      v-model.trim="keyPath"
                       size="sm"
                     />
                     <input
@@ -554,7 +553,8 @@ export default {
         'port',
         'diagram',
         'keyPath',
-        'forwards'
+        'forwards',
+        'exec'
       ])
       if (this.ikey) {
         this.putData(this.ikey, { ...data })
