@@ -249,6 +249,11 @@ export default {
         name: '',
         data: { id: 'test@0.1.0', nodes: {} }
       })
+
+      setTimeout(() => {
+        const element = document.querySelector('#main-navigator .main-navigator-content')
+        element.scroll({ top: element.scrollHeight, behavior: 'smooth' })
+      }, 0)
     },
     remove(item) {
       const foundIndex = this.items.findIndex((x) => x === item)
