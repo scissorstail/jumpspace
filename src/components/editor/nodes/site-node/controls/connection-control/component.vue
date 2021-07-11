@@ -315,10 +315,10 @@
       </a>
       <a class="info-edit left">
         <v-icon
-          v-show="isFowardable"
+          v-show="isForwardable"
           title="Forward"
           :style="{
-            opacity: isFowardable && forwards.some(x => x.checked) ? 1.0 : 0.5
+            opacity: isForwardable && forwards.some(x => x.checked) ? 1.0 : 0.5
           }"
           class="info-edit-item"
           height="24"
@@ -326,7 +326,7 @@
           scale="1.5"
           width="24"
           @click="
-            isFowardable && forwards.some(x => x.checked) ? openForward() : ''
+            isForwardable && forwards.some(x => x.checked) ? openForward() : ''
           "
         />
       </a>
@@ -386,7 +386,7 @@ export default {
     isConnectable() {
       return this.user && this.host && this.port
     },
-    isFowardable() {
+    isForwardable() {
       const prevNodeData = last(this.prevNodeDataList)
       if (!prevNodeData) {
         return false
@@ -404,7 +404,7 @@ export default {
       return false
     },
     isProxyJumpReady() {
-      return this.isConnectable && this.isFowardable
+      return this.isConnectable && this.isForwardable
     }
   },
   created() {
@@ -464,7 +464,7 @@ export default {
 
       const command = `"${
         this.setting.gitBashPath
-      }" -c "echo 'Foward...' && ${
+      }" -c "echo 'Forward...' && ${
         forwardList
           .map((x, i) => `echo ':${x.from} >> [${prevNodeData.host}]:${prevNodeData.port} -> :${x.to}'`)
           .join('&&')
