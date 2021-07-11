@@ -47,12 +47,33 @@ if (!singleInstanceLock) {
 
   app.quit()
 } else {
-  ipcMain.on('getStore', event => {
-    event.returnValue = store.get('setting')
+  // ipc
+  ipcMain.handle('getStore', event => {
+    return store.get('setting')
   })
 
   ipcMain.on('setStore', (event, data) => {
     store.set('setting', data)
+  })
+
+  ipcMain.on('toggleDevTools', event => {
+    win.webContents.toggleDevTools()
+  })
+
+  ipcMain.on('reload', event => {
+    win.webContents.reload()
+  })
+
+  ipcMain.on('loadURL', (event, data) => {
+    win.webContents.loadURL(data)
+  })
+
+  ipcMain.handle('showSaveDialogSync', (event, data) => {
+    return dialog.showSaveDialogSync(data)
+  })
+
+  ipcMain.handle('showOpenDialogSync', (event, data) => {
+    return dialog.showOpenDialogSync(data)
   })
 
   // Singleton instance
@@ -158,9 +179,10 @@ async function createWindow() {
     win.show()
   })
 
-  win.webContents.on('new-window', function(event, url) {
-    event.preventDefault()
+  // https://www.electronjs.org/docs/api/window-open#native-window-example
+  win.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)
+    return { action: 'deny' }
   })
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {

@@ -118,10 +118,10 @@ export default {
   },
   methods: {
     reload() {
-      window.reloadApp()
+      window.preload.reloadApp()
     },
     toggleDevTools() {
-      window.toggleDevTools()
+      window.preload.toggleDevTools()
     }
   }
 }

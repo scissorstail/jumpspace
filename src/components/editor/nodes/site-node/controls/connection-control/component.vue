@@ -446,7 +446,7 @@ export default {
         : ''
       }"`
       console.log(command)
-      window.executeCommand(command)
+      window.preload.executeCommand(command)
     },
     openForward() {
       const prevNodeData = last(this.prevNodeDataList)
@@ -454,7 +454,7 @@ export default {
         return false
       }
 
-      const ctlPathTempFilename = `${window.md5(`${prevNodeData.user}${prevNodeData.host}${prevNodeData.port}` + Date.now())}.ctl`
+      const ctlPathTempFilename = `${window.preload.md5(`${prevNodeData.user}${prevNodeData.host}${prevNodeData.port}` + Date.now())}.ctl`
       const forwardList = this.forwards.filter(
         (x) => x.checked && x.from && x.to
       )
@@ -474,7 +474,7 @@ export default {
           .join(' ')
       }"`
 
-      window.executeCommand(command)
+      window.preload.executeCommand(command)
     },
     addForward() {
       this.forwards.push({
@@ -494,7 +494,7 @@ export default {
       for (let i = 0; i < nodes.length; i += 1) {
         const { host, user, port, keyPath } = nodes[i]
 
-        const hostHash = window.md5(host + user + port)
+        const hostHash = window.preload.md5(host + user + port)
         jumpHosts.push(hostHash)
 
         str += `Host ${hostHash}\r\n`
@@ -507,9 +507,9 @@ export default {
         str += '\r\n'
       }
 
-      const configTempFilename = `${window.md5(str + Date.now())}.jmp`
+      const configTempFilename = `${window.preload.md5(str + Date.now())}.jmp`
 
-      window.writeFileSync(configTempFilename, str)
+      window.preload.writeFileSync(configTempFilename, str)
 
       const destHost = jumpHosts.pop()
       const command = `"${
@@ -524,8 +524,8 @@ export default {
         : ''
       }"`
 
-      window.executeCommand(command, (output) => {
-        setTimeout(() => window.unlinkFile(configTempFilename), 3000)
+      window.preload.executeCommand(command, (output) => {
+        setTimeout(() => window.preload.unlinkFile(configTempFilename), 3000)
       })
     },
     update() {

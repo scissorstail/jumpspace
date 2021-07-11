@@ -14,7 +14,7 @@ export default {
   },
   actions: {
     async diagramLoad({ commit }) {
-      const diagramNames = await window.readDiagramDirSync('/servers')
+      const diagramNames = await window.preload.readDiagramDirSync('/servers')
       commit('diagramUpdate', diagramNames)
     }
   },

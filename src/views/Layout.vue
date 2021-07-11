@@ -155,10 +155,10 @@ export default {
     },
     async exportProject() {
       await this.saveProject()
-      window.saveProjectDataAsJSON(window.localStorage.projectSaveData)
+      window.preload.saveProjectDataAsJSON(window.localStorage.projectSaveData)
     },
     async openProject() {
-      const projectData = window.loadProjectDataFromJSON()
+      const projectData = window.preload.loadProjectDataFromJSON()
       if (projectData) {
         this.clearEditor()
         this.loadProject(projectData)
@@ -166,14 +166,14 @@ export default {
     },
     exportItems(items) {
       try {
-        window.saveProjectDataAsJSON(JSON.stringify(items), '~/export.json')
+        window.preload.saveProjectDataAsJSON(JSON.stringify(items), '~/export.json')
       } catch (e) {
         console.error(e)
       }
     },
     importItems() {
       try {
-        const projectData = JSON.parse(window.loadProjectDataFromJSON())
+        const projectData = JSON.parse(window.preload.loadProjectDataFromJSON())
         if (projectData) {
           this.projectData = this.projectData.concat(projectData)
         }

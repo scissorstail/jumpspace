@@ -22,16 +22,16 @@ export default {
         isHideToTrayOnClose: false
       }
 
-      const setting = await window.ipcRenderer.sendSync('getStore')
+      const setting = await window.preload.getStore()
 
       commit('settingUpdate', setting ? JSON.parse(setting) : defaultSetting)
 
-      window.ipcRenderer.send('setStore', JSON.stringify(state.setting))
+      window.preload.setStore(JSON.stringify(state.setting))
     },
     async settingSave({ state, commit }, payload) {
       commit('settingUpdate', payload)
 
-      window.ipcRenderer.send('setStore', JSON.stringify(state.setting))
+      window.preload.setStore(JSON.stringify(state.setting))
     }
   },
   modules: {}
