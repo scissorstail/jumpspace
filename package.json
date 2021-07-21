@@ -41,6 +41,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",
+    "@babel/eslint-parser": "^7.14.7",
     "@babel/plugin-proposal-optional-chaining": "^7.14.5",
     "@vue/cli-plugin-babel": "^4.5.13",
     "@vue/cli-plugin-eslint": "^4.5.13",
@@ -49,7 +50,6 @@
     "@vue/cli-plugin-vuex": "^4.5.13",
     "@vue/cli-service": "^4.5.13",
     "@vue/eslint-config-standard": "^5.1.2",
-    "babel-eslint": "^10.1.0",
     "babel-loader": "^8.2.2",
     "electron": "^13.1.6",
     "electron-devtools-installer": "^3.2.0",
