@@ -203,10 +203,8 @@ async function createWindow() {
     const setting = JSON.parse(store.get('setting'))
     if (!isQuitting && setting.isHideToTrayOnClose) {
       event.preventDefault()
-      if (!win.isMinimized()) {
-        win.setSkipTaskbar(true)
-        win.hide()
-      }
+      win.setSkipTaskbar(true)
+      win.hide()
     } else {
       win = null
     }
