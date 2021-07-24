@@ -28,10 +28,10 @@
                     @click="loadPrevDiagram"
                   >
                     <v-icon
-                      height="14"
+                      height="15"
                       name="angle-left"
                       scale="1"
-                      width="14"
+                      width="15"
                     />
                   </b-button>
                   <b-form-input
@@ -44,10 +44,10 @@
                     @click="loadNextDiagram"
                   >
                     <v-icon
-                      height="14"
+                      height="15"
                       name="angle-right"
                       scale="1"
-                      width="14"
+                      width="15"
                     />
                   </b-button>
                 </div>
@@ -110,10 +110,10 @@
                         @click="keyPath = ''"
                       >
                         <v-icon
-                          height="14"
+                          height="15"
                           name="trash-alt"
                           scale="1"
-                          width="14"
+                          width="15"
                         />
                       </b-button>
                       <b-button
@@ -122,10 +122,10 @@
                         @click="$refs.file.click()"
                       >
                         <v-icon
-                          height="14"
+                          height="15"
                           name="folder-open"
                           scale="1"
-                          width="14"
+                          width="15"
                         />
                       </b-button>
                     </template>
@@ -199,10 +199,10 @@
                     class="middle"
                   >
                     <v-icon
-                      height="14"
+                      height="15"
                       name="forward"
                       scale="1"
-                      width="14"
+                      width="15"
                     />
                   </span>
                   <b-form-input
@@ -218,10 +218,10 @@
                     @click="removeForward(forward)"
                   >
                     <v-icon
-                      height="14"
+                      height="15"
                       name="minus"
                       scale="1"
-                      width="14"
+                      width="15"
                     />
                   </b-button>
                 </div>
@@ -237,10 +237,10 @@
                   @click="addForward"
                 >
                   <v-icon
-                    height="14"
+                    height="15"
                     name="plus"
                     scale="1"
-                    width="14"
+                    width="15"
                   />
                 </b-button>
               </div>
@@ -572,6 +572,8 @@ export default {
 .info-block {
   font-size: 14px;
   font-weight: bold;
+  text-align: center;
+  color: #2c3e50;
 }
 
 .info-diagram {

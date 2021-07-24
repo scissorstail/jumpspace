@@ -12,10 +12,10 @@
         @click="exportSelectedItems"
       >
         <v-icon
-          height="14"
+          height="15"
           name="file-export"
           scale="1"
-          width="14"
+          width="15"
         />
       </b-button>
 
@@ -28,10 +28,10 @@
         @click="$emit('import-items')"
       >
         <v-icon
-          height="14"
+          height="15"
           name="file-import"
           scale="1"
-          width="14"
+          width="15"
         />
       </b-button>
 
@@ -44,10 +44,10 @@
         @click="add"
       >
         <v-icon
-          height="14"
+          height="15"
           name="plus"
           scale="1"
-          width="14"
+          width="15"
         />
       </b-button>
 
@@ -58,10 +58,10 @@
         @click="$emit('hide')"
       >
         <v-icon
-          height="14"
+          height="15"
           name="times"
           scale="1"
-          width="14"
+          width="15"
         />
       </b-button>
 
@@ -74,10 +74,10 @@
         @click="$emit('open-project')"
       >
         <v-icon
-          height="14"
+          height="15"
           name="folder-open"
           scale="1"
-          width="14"
+          width="15"
         />
       </b-button>
 
@@ -90,10 +90,10 @@
       >
         <v-icon
           :name="isEditing ? 'save' : 'edit'"
-          height="14"
+          height="15"
           scale="1"
           style="width: 16px;"
-          width="14"
+          width="15"
         />
       </b-button>
     </div>
@@ -125,10 +125,10 @@
             >
               <v-icon
                 class="handle-icon text-secondary"
-                height="14"
+                height="15"
                 name="grip-vertical"
                 scale="1"
-                width="14"
+                width="15"
               />
             </b-button>
             <b-form-checkbox
@@ -146,10 +146,10 @@
               @click="remove(item)"
             >
               <v-icon
-                height="14"
+                height="15"
                 name="trash"
                 scale="1"
-                width="14"
+                width="15"
               />
             </b-button>
           </div>
@@ -203,10 +203,10 @@
           @click="scrollToTop"
         >
           <v-icon
-            height="14"
+            height="15"
             name="arrow-up"
             scale="1"
-            width="14"
+            width="15"
             color="gray"
           />
         </b-button>

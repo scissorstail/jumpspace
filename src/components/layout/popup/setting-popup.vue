@@ -58,10 +58,10 @@
               @click="$emit('update:show', false)"
             >
               <v-icon
-                height="14"
+                height="15"
                 name="times"
                 scale="1"
-                width="14"
+                width="15"
               />
             </b-button>
             <b-button
@@ -72,10 +72,10 @@
               @click="saveSetting"
             >
               <v-icon
-                height="14"
+                height="15"
                 name="save"
                 scale="1"
-                width="14"
+                width="15"
               />
             </b-button>
           </div>
