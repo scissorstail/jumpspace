@@ -18,6 +18,7 @@ Vue.use(VTooltip, {
     defaultArrowClass: 'vt-tooltip-arrow vt-popover-arrow'
   }
 })
+
 Vue.use(BootstrapVue)
 ;(async () => {
   await Promise.all([

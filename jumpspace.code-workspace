@@ -16,6 +16,9 @@
     "vetur.format.enable": true,
     "vetur.format.defaultFormatter.html": "none",
     "vetur.format.defaultFormatter.js": "none",
-    "eslint.validate": ["javascript", "vue"]
+    "eslint.validate": ["javascript", "vue"],
+    "[javascript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    }
   }
 }

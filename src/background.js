@@ -173,7 +173,7 @@ async function createWindow() {
     icon: path.join(__static, 'icon.png'),
     show: false
   })
-  win.removeMenu()
+  // win.removeMenu()
 
   win.once('ready-to-show', () => {
     win.show()
