@@ -11,14 +11,11 @@
       <template #main-navigation-toggle>
         <b-button
           v-b-toggle.main-sidebar
-          class="header-button shadow-sm"
-          variant="info"
+          class=""
+          variant="light"
         >
-          <v-icon
-            height="14"
-            name="bars"
-            scale="1"
-            width="14"
+          <b-icon
+            icon="list"
           />
         </b-button>
       </template>
@@ -186,9 +183,6 @@ export default {
 </script>
 
 <style lang="scss">
-@import '../../node_modules/bootstrap/dist/css/bootstrap.css';
-@import '../../node_modules/bootstrap-vue/dist/bootstrap-vue.css';
-
 #layout {
   display: flex;
   flex-direction: column;

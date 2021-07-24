@@ -26,8 +26,13 @@ import 'vue-awesome/icons/file-export'
 import 'vue-awesome/icons/search'
 import 'vue-awesome/icons/arrow-up'
 import Icon from 'vue-awesome/components/Icon'
+// import { BIcon, BIconGear } from 'bootstrap-vue'
+import { BootstrapVueIcons } from 'bootstrap-vue'
 
-// eslint-disable-next-line vue/component-definition-name-casing
 Vue.component('v-icon', Icon)
 
+// Vue.component('BIcon', BIcon)
+// Vue.component('BIconGear', BIconGear)
+
+Vue.use(BootstrapVueIcons)
 export default Icon
