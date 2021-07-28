@@ -17,6 +17,7 @@ import path from 'path'
 import Store from 'electron-store'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
+const isMac = process.platform === 'darwin'
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -91,7 +92,7 @@ if (!singleInstanceLock) {
   app.on('window-all-closed', () => {
     // On macOS it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
-    if (process.platform !== 'darwin') {
+    if (!isMac) {
       app.quit()
     }
   })
@@ -173,7 +174,8 @@ async function createWindow() {
     icon: path.join(__static, 'icon.png'),
     show: false
   })
-  // win.removeMenu()
+
+  win.removeMenu()
 
   win.once('ready-to-show', () => {
     win.show()
