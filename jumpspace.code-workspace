@@ -13,12 +13,15 @@
     "[vue]": {
       "editor.defaultFormatter": "octref.vetur"
     },
+    "[javascript]": {
+      "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    },
     "vetur.format.enable": true,
     "vetur.format.defaultFormatter.html": "none",
     "vetur.format.defaultFormatter.js": "none",
     "eslint.validate": ["javascript", "vue"],
-    "[javascript]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
-    }
+    "eslint.alwaysShowStatus": true,
+    "eslint.lintTask.enable": true,
+    "eslint.format.enable": true
   }
 }
