@@ -6,6 +6,9 @@ const { ipcRenderer, contextBridge } = require('electron')
 
 // https://www.electronjs.org/docs/tutorial/context-isolation#context-isolation
 contextBridge.exposeInMainWorld('preload', {
+  setWindowTitle: (data) => {
+    ipcRenderer.send('setWindowTitle', data)
+  },
   getStore: () => {
     return ipcRenderer.invoke('getStore')
   },

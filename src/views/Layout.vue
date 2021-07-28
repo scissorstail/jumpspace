@@ -11,6 +11,7 @@
       <template #main-navigation-toggle>
         <b-button
           v-b-toggle.main-sidebar
+          size="sm"
           class=""
           variant="light"
         >

@@ -49,6 +49,10 @@ if (!singleInstanceLock) {
   app.quit()
 } else {
   // ipc
+  ipcMain.on('setWindowTitle', (event, data = '') => {
+    win.title = (data ? `${data} - ` : '') + 'jumpspace'
+  })
+
   ipcMain.handle('getStore', event => {
     return store.get('setting')
   })
