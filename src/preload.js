@@ -9,6 +9,9 @@ contextBridge.exposeInMainWorld('preload', {
   setWindowTitle: (data) => {
     ipcRenderer.send('setWindowTitle', data)
   },
+  requestWindowMouseMoveEvent: (data) => {
+    ipcRenderer.send('requestWindowMouseMoveEvent', data)
+  },
   getStore: () => {
     return ipcRenderer.invoke('getStore')
   },

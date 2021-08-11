@@ -53,6 +53,10 @@ if (!singleInstanceLock) {
     win.title = (data ? `${data} - ` : '') + 'jumpspace'
   })
 
+  ipcMain.on('requestWindowMouseMoveEvent', (event, data = { x: 0, y: 0 }) => {
+    win.webContents.sendInputEvent({ type: 'mouseMove', x: data.x, y: data.y })
+  })
+
   ipcMain.handle('getStore', event => {
     return store.get('setting')
   })

@@ -1,7 +1,53 @@
 <template>
-  <div id="main-navigator">
+  <div
+    id="main-navigator"
+    class="shadow"
+  >
     <!-- navigator-header -->
-    <div class="main-navigator-header p-3 shadow justify-content-end">
+    <div class="main-navigator-header p-1 px-2 layout-divider ">
+      <b-button
+        v-show="!isEditing"
+        size="sm"
+        variant="light"
+        @click="$emit('hide')"
+      >
+        <b-icon
+          icon="x"
+        />
+      </b-button>
+
+      <hr
+        class="btn-divider my-0 mx-1 p-0"
+      >
+
+      <hr
+        class="btn-divider my-0 mx-1 p-0 ml-auto"
+      >
+
+      <b-dropdown
+        size="sm"
+        variant="light"
+        toggle-class="text-decoration-none"
+        no-caret
+        right
+      >
+        <template #button-content>
+          <b-icon
+            icon="three-dots-vertical"
+          />
+        </template>
+        <b-dropdown-item @click="newItem">
+          <small>New Item</small>
+        </b-dropdown-item>
+        <b-dropdown-divider />
+        <b-dropdown-item
+          @click="$emit('import-items')"
+        >
+          <small>Add Item...</small>
+        </b-dropdown-item>
+      </b-dropdown>
+
+      <!--
       <b-button
         v-show="isEditing"
         v-b-tooltip.hover.v-light.dh0.noninteractive
@@ -53,20 +99,6 @@
 
       <b-button
         v-show="!isEditing"
-        class="shadow-sm flex-grow-1 mr-1"
-        variant="light"
-        @click="$emit('hide')"
-      >
-        <v-icon
-          height="15"
-          name="times"
-          scale="1"
-          width="15"
-        />
-      </b-button>
-
-      <b-button
-        v-show="!isEditing"
         v-b-tooltip.hover.v-light.dh0.noninteractive
         class="shadow-sm mr-1"
         title="open"
@@ -96,122 +128,90 @@
           width="15"
         />
       </b-button>
+      -->
+    </div>
+
+    <!-- navigator-tool -->
+    <div class="main-navigator-header p-1 px-2 layout-divider">
+      <b-input-group
+        size="sm"
+        class="list-search py-1"
+      >
+        <b-input-group-prepend is-text>
+          <v-icon name="search" />
+        </b-input-group-prepend>
+        <b-form-input
+          v-model="keyword"
+          type="search"
+        />
+      </b-input-group>
     </div>
 
     <!-- navigator-content -->
     <div
-      class="p-3 main-navigator-content"
+      class="main-navigator-content layout-divider bg-white"
+      :class="{dragging: isDrag}"
     >
-      <!-- 편집 모드 -->
-      <draggable
-        v-if="isEditing"
-        v-model="items"
-        v-bind="dragOptions"
-        @start="drag = true"
-        @end="drag = false"
+      <b-button-toolbar
+        key-nav
+        class="px-2 py-1"
       >
-        <transition-group
-          type="transition"
-          :name="!drag ? 'flip-list' : null"
-        >
-          <div
-            v-for="(item, index) in items"
-            :key="`${_uid}-input-${index}`"
-            class="list-item mt-1 editing"
-          >
-            <b-button
-              variant="white"
-              class="handle"
-            >
-              <v-icon
-                class="handle-icon text-secondary"
-                height="15"
-                name="grip-vertical"
-                scale="1"
-                width="15"
-              />
-            </b-button>
-            <b-form-checkbox
-              size="lg"
-              class="align-self-center"
-              @change="check(item, $event)"
-            />
-            <b-form-input
-              v-model="item.name"
-              placeholder="(untitled)"
-            />
-            <b-button
-              class="ml-1"
-              variant="danger"
-              @click="remove(item)"
-            >
-              <v-icon
-                height="15"
-                name="trash"
-                scale="1"
-                width="15"
-              />
-            </b-button>
-          </div>
-        </transition-group>
-      </draggable>
-
-      <!-- 기본 모드 -->
-      <div v-else>
-        <b-input-group
-          size="sm"
-          class="mb-2"
-        >
-          <b-input-group-prepend is-text>
-            <v-icon name="search" />
-          </b-input-group-prepend>
-          <b-form-input
-            v-model="keyword"
-            type="search"
-          />
-        </b-input-group>
-
-        <template
-          v-for="(item, index) in items"
+        <draggable
+          v-model="items"
+          class="list-container"
+          :disabled="false"
+          filter=".ignore-dragging"
+          ghost-class="ghost"
+          @start="isDrag = true"
+          @end="isDrag = false"
+          @unchoose="unchoose"
         >
           <b-button
+            v-for="item in items"
             v-show="!keyword || item.name.includes(keyword)"
-            :key="`${_uid}-button-${index}`"
-            v-b-toggle="`collapse-${index}`"
+            :key="`${_uid}-button-${item.index}`"
+            size="sm"
             :pressed="item === selectedItem"
             block
-            class="list-item mt-1"
-            squared
+            class="list-item disable-transition"
+            :class="{'dropdown-shown': item.isMenuShown}"
             variant="white"
-            @click="select(item, index)"
+            @click="select(item, item.index)"
           >
-            {{ item.name || '(untitled)' }}
+            <span>{{ item.name + ' ' + item.index || '(untitled)' }}</span>
+            <b-dropdown
+              size="sm"
+              variant="outline-white"
+              toggle-class="text-decoration-none"
+              right
+              no-caret
+              class="list-item-dropdown ignore-dragging"
+              @shown="item.isMenuShown = true"
+              @hidden="item.isMenuShown = false"
+            >
+              <template #button-content>
+                <b-icon
+                  icon="three-dots"
+                />
+              </template>
+              <b-dropdown-item @click="newItem">
+                <small>Remove</small>
+              </b-dropdown-item>
+              <b-dropdown-item
+                @click="exportSelectedItems"
+              >
+                <small>Export</small>
+              </b-dropdown-item>
+            </b-dropdown>
           </b-button>
-        <!--
-        <b-collapse :id="`collapse-${index}`" :key="`${_uid}-collapse-${index}`">
-          <b-card>I am collapsible content!</b-card>
-        </b-collapse>
-        -->
-        </template>
-
-        <b-button
-          v-b-tooltip.hover.v-light.dh0.noninteractive
-          class="position-absolute shadow-sm mr-1 opacity-3"
-          title="top"
-          variant="light"
-          style="bottom: 14px; right: 14px"
-          @click="scrollToTop"
-        >
-          <v-icon
-            height="15"
-            name="arrow-up"
-            scale="1"
-            width="15"
-            color="gray"
-          />
-        </b-button>
-      </div>
+        </draggable>
+      </b-button-toolbar>
     </div>
+
+    <!-- navigator-footer -->
+    <div
+      class="main-navigator-footer p-1"
+    />
   </div>
 </template>
 
@@ -231,7 +231,7 @@ export default {
   },
   data() {
     return {
-      drag: false,
+      isDrag: false,
       isEditing: false,
       keyword: '',
       items: [],
@@ -239,21 +239,10 @@ export default {
       selectedItem: null
     }
   },
-  computed: {
-    dragOptions() {
-      return {
-        animation: 200,
-        group: 'description',
-        disabled: false,
-        ghostClass: 'ghost',
-        handle: '.handle'
-      }
-    }
-  },
   watch: {
     projectData() {
       this.selectedItem = null
-      this.items = this.projectData
+      this.items = this.projectData.map((x, index) => ({ ...x, isMenuShown: false, isHover: false, index }))
     }
   },
   methods: {
@@ -277,16 +266,25 @@ export default {
         this.checkedItems = this.checkedItems.filter(x => x !== item)
       }
     },
-    add() {
-      this.items.push({
-        name: '',
-        data: { id: 'test@0.1.0', nodes: {} }
-      })
-
+    unchoose(event) {
       setTimeout(() => {
-        const element = document.querySelector('#main-navigator .main-navigator-content')
-        element.scroll({ top: element.scrollHeight, behavior: 'smooth' })
-      }, 0)
+        const { pageX, pageY } = event.originalEvent
+        window.preload.requestWindowMouseMoveEvent({ x: pageX, y: pageY })
+        event.item.focus()
+      })
+    },
+    newItem() {
+      // Open new item modal...
+
+      // this.items.unshift({
+      //   name: '',
+      //   data: { id: 'test@0.1.0', nodes: {} }
+      // })
+
+      // setTimeout(() => {
+      //   const element = document.querySelector('#main-navigator .main-navigator-content')
+      //   element.scroll({ top: 0, behavior: 'smooth' })
+      // }, 0)
     },
     remove(item) {
       const foundIndex = this.items.findIndex((x) => x === item)
@@ -309,51 +307,102 @@ export default {
 
 <style lang="scss" scoped>
 #main-navigator {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow-y: hidden;
   scrollbar-width: thin;
-  flex: 1;
 
   .main-navigator {
     &-header {
-      height: 70px;
       display: flex;
       flex-direction: row;
-      background-color: #1d3557f0;
+      align-items: center;
+
+      .btn-divider {
+        height: 1.5em;
+        display: inline-block;
+        vertical-align: middle;
+        border-left: 1px solid #e9ecef;
+      }
     }
 
     &-content {
-      height: calc(100% - 70px);
+      flex-grow: 1;
       overflow-y: auto;
 
-      .list-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
+      .list-search {
+        width: 100%;
+      }
 
-        &:hover:not(.editing) {
-          background-color: lightgrey;
+      .list-container {
+        width: 100%;
+
+        .list-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          border: 1px solid white;
+
+          &:hover,
+          &.dropdown-shown {
+            background-color: #e9ecef;
+
+            .list-item-dropdown {
+              display: flex;
+            }
+          }
+
+          &.active {
+            background-color: #e9ecef;
+            font-weight: bold;
+          }
+
+          &.btn-block + .btn-block {
+            margin-top: 0;
+          }
+
+          &.ghost {
+            background-color: #e9ecef;
+            box-shadow: inset 0 0 0 0.2rem rgb(0 123 255 / 25%);
+          }
+
+          &-dropdown {
+            width: 2em;
+            display: none;
+            ::v-deep {
+              button {
+                height: 1.5em;
+                padding: 0px;
+                margin: 0px;
+
+                svg {
+                  vertical-align: text-top;
+                }
+              }
+            }
+          }
+
+          &.btn:focus,
+          &.btn:active:focus {
+            outline: none;
+            box-shadow: none;
+            border: 1px solid #80bdff;
+          }
         }
       }
     }
   }
 }
 
-.active {
-  background-color: lightgrey;
+.main-navigator-content.dragging {
+  .sortable-chosen {
+    -webkit-user-drag: none;
+  }
 }
 
-.btn:focus,
-.btn:active:focus {
-  outline: none;
-  box-shadow: none;
-}
-
-.sortable-chosen > .handle > .handle-icon {
-  color: initial !important;
-}
-
-.ghost {
-  opacity: 0;
+.disable-transition {
+  transition: none !important;
 }
 
 /* width */

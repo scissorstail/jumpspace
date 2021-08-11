@@ -190,6 +190,10 @@ export default {
   width: 100%;
   height: 100%;
   margin: 0;
+
+  .layout-divider {
+    border-bottom: 1px solid #e9ecef;
+  }
 }
 
 #main-content {
@@ -201,8 +205,6 @@ export default {
 }
 
 #main-sidebar {
-  opacity: 0.9;
-
   .main-sidebar-list {
     display: flex;
     flex-direction: column;
