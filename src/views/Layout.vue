@@ -32,6 +32,7 @@
       >
         <template v-slot:default="{ hide }">
           <MainNavigator
+            v-if="projectData"
             ref="mainNavigator"
             :project-data="projectData"
             @hide="hide"
@@ -39,17 +40,15 @@
             @deselected="clearEditor"
             @updated="updateProject"
             @open-project="openProject"
-            @export-items="exportItems"
-            @import-items="importItems"
           />
         </template>
       </b-sidebar>
 
       <!-- editor -->
       <Editor
-        v-show="editorData"
         ref="editorRef"
         :editor-data="editorData"
+        :class="[!editorData && 'layout-inactive']"
       />
     </div>
 
@@ -99,7 +98,7 @@ export default {
       isShowSettingPopup: false,
       projectData: null,
       editorData: null,
-      selectedItemIndex: null,
+      openedItemIndex: null,
       headerInfo: {
         name: null
       }
@@ -114,16 +113,23 @@ export default {
   methods: {
     loadEditor({ item, index }) {
       this.editorData = JSON.stringify(item.data)
-      this.selectedItemIndex = index
+      this.openedItemIndex = index
       this.headerInfo.name = item.name
     },
     clearEditor() {
       this.editorData = null
-      this.selectedItemIndex = null
+      this.openedItemIndex = null
       this.headerInfo.name = null
     },
-    async updateProject() {
-      this.projectData = [...this.$refs.mainNavigator.items]
+    async updateProject({ items, index }) {
+      this.projectData = [...items]
+      this.openedItemIndex = index // 열려있는 item의 index 업데이트
+
+      const selectedItem = this.projectData[this.openedItemIndex]
+      if (selectedItem) {
+        this.headerInfo.name = selectedItem.name
+      }
+
       await this.saveProject()
     },
     async loadProject(projectSaveData) {
@@ -135,16 +141,16 @@ export default {
       }
     },
     async saveProject() {
-      if (this.selectedItemIndex !== null) {
+      if (this.openedItemIndex !== null) {
         // editor가 표시중인 item이 가진 각 node의 control(ConnectionControl)의 내부 renderer가 가진 정보를 node에 저장
         this.$refs.editorRef.editor.nodes.forEach((x) =>
           x.controls.get('connection').save()
         )
 
         // editor가 표시중인 item이 가진 내용을 project의 해당 item에 저장
-        this.projectData[this.selectedItemIndex] = {
-          name: this.headerInfo.name,
-          data: await this.$refs.editorRef.compile()
+        const selectedItem = this.projectData[this.openedItemIndex]
+        if (selectedItem) {
+          selectedItem.data = await this.$refs.editorRef.compile()
         }
       }
 
@@ -156,27 +162,10 @@ export default {
       window.preload.saveProjectDataAsJSON(window.localStorage.projectSaveData)
     },
     async openProject() {
-      const projectData = window.preload.loadProjectDataFromJSON()
+      const projectData = await window.preload.loadProjectDataFromJSON()
       if (projectData) {
         this.clearEditor()
         this.loadProject(projectData)
-      }
-    },
-    exportItems(items) {
-      try {
-        window.preload.saveProjectDataAsJSON(JSON.stringify(items), '~/export.json')
-      } catch (e) {
-        console.error(e)
-      }
-    },
-    importItems() {
-      try {
-        const projectData = JSON.parse(window.preload.loadProjectDataFromJSON())
-        if (projectData) {
-          this.projectData = this.projectData.concat(projectData)
-        }
-      } catch (e) {
-        console.error(e)
       }
     }
   }
@@ -193,6 +182,11 @@ export default {
 
   .layout-divider {
     border-bottom: 1px solid #e9ecef;
+  }
+
+  .layout-inactive {
+    opacity: 0;
+    pointer-events: none;
   }
 }
 

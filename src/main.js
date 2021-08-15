@@ -5,6 +5,7 @@ import router from './router'
 import store from './store'
 import mixin from './mixin'
 import VTooltip from 'v-tooltip'
+import vClickOutside from 'v-click-outside'
 import { BootstrapVue } from 'bootstrap-vue'
 import './assets/icons'
 
@@ -18,6 +19,7 @@ Vue.use(VTooltip, {
     defaultArrowClass: 'vt-tooltip-arrow vt-popover-arrow'
   }
 })
+Vue.use(vClickOutside)
 
 Vue.use(BootstrapVue)
 ;(async () => {

@@ -1,7 +1,7 @@
 <template>
   <div
     id="main-header"
-    class="bg-light p-1 pl-2 pr-2"
+    class="layout-divider bg-light p-1 pl-2 pr-2"
   >
     <slot name="main-navigation-toggle" />
 
@@ -14,7 +14,6 @@
         <b-button
           v-b-tooltip.hover.v-light.dh0.noninteractive
           size="sm"
-          class="border-transparent"
           :title="isToggle? 'locked' : 'unlocked'"
           variant="light"
           @click="isToggle = !isToggle; $emit('save')"
@@ -26,7 +25,7 @@
       </template>
 
       <hr
-        class="header-btn-divider my-0 mx-1 p-0"
+        class="btn-divider my-0 mx-1 p-0"
       >
 
       <b-dropdown
@@ -111,7 +110,7 @@ export default {
   display: flex;
   font-size: large;
 
-  .header-btn-divider {
+  .btn-divider {
     height: 1.5em;
     display: inline-block;
     vertical-align: middle;

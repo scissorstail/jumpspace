@@ -1,12 +1,12 @@
 <template>
   <div
     id="main-navigator"
+    v-click-outside="vcoConfig"
     class="shadow"
   >
     <!-- navigator-header -->
     <div class="main-navigator-header p-1 px-2 layout-divider ">
       <b-button
-        v-show="!isEditing"
         size="sm"
         variant="light"
         @click="$emit('hide')"
@@ -20,8 +20,21 @@
         class="btn-divider my-0 mx-1 p-0"
       >
 
+      <div class="ml-auto mr-auto" />
+
+      <b-button
+        size="sm"
+        variant="light"
+        :disabled="isSelecting"
+        @click="addNewItem"
+      >
+        <b-icon
+          icon="plus"
+        />
+      </b-button>
+
       <hr
-        class="btn-divider my-0 mx-1 p-0 ml-auto"
+        class="btn-divider my-0 mx-1 p-0"
       >
 
       <b-dropdown
@@ -36,99 +49,32 @@
             icon="three-dots-vertical"
           />
         </template>
-        <b-dropdown-item @click="newItem">
+        <b-dropdown-item
+          :disabled="isSelecting"
+          @click="addNewItem"
+        >
           <small>New Item</small>
+        </b-dropdown-item>
+        <b-dropdown-item
+          :disabled="!isSelecting"
+          @click="removeSelectedItems"
+        >
+          <small>Remove Items</small>
         </b-dropdown-item>
         <b-dropdown-divider />
         <b-dropdown-item
-          @click="$emit('import-items')"
+          :disabled="isSelecting"
+          @click="importItems"
         >
-          <small>Add Item...</small>
+          <small>Import Items...</small>
+        </b-dropdown-item>
+        <b-dropdown-item
+          :disabled="!isSelecting"
+          @click="exportSelectedItems"
+        >
+          <small>Export Items...</small>
         </b-dropdown-item>
       </b-dropdown>
-
-      <!--
-      <b-button
-        v-show="isEditing"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        title="export items"
-        class="mr-auto"
-        variant="outline-info"
-        :disabled="checkedItems.length === 0"
-        @click="exportSelectedItems"
-      >
-        <v-icon
-          height="15"
-          name="file-export"
-          scale="1"
-          width="15"
-        />
-      </b-button>
-
-      <b-button
-        v-show="isEditing"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        class="shadow-sm mr-1"
-        title="import items"
-        variant="outline-primary"
-        @click="$emit('import-items')"
-      >
-        <v-icon
-          height="15"
-          name="file-import"
-          scale="1"
-          width="15"
-        />
-      </b-button>
-
-      <b-button
-        v-show="isEditing"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        class="shadow-sm mr-1"
-        title="add"
-        variant="primary"
-        @click="add"
-      >
-        <v-icon
-          height="15"
-          name="plus"
-          scale="1"
-          width="15"
-        />
-      </b-button>
-
-      <b-button
-        v-show="!isEditing"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        class="shadow-sm mr-1"
-        title="open"
-        variant="primary"
-        @click="$emit('open-project')"
-      >
-        <v-icon
-          height="15"
-          name="folder-open"
-          scale="1"
-          width="15"
-        />
-      </b-button>
-
-      <b-button
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        :title="isEditing ? 'save' : 'edit'"
-        :variant="isEditing ? 'warning' : 'light'"
-        class="shadow-sm flex-grow-9"
-        @click="toggleEditing"
-      >
-        <v-icon
-          :name="isEditing ? 'save' : 'edit'"
-          height="15"
-          scale="1"
-          style="width: 16px;"
-          width="15"
-        />
-      </b-button>
-      -->
     </div>
 
     <!-- navigator-tool -->
@@ -142,6 +88,7 @@
         </b-input-group-prepend>
         <b-form-input
           v-model="keyword"
+          :debounce="150"
           type="search"
         />
       </b-input-group>
@@ -159,51 +106,116 @@
         <draggable
           v-model="items"
           class="list-container"
-          :disabled="false"
-          filter=".ignore-dragging"
+          :disabled="!isDraggable"
+          filter=".ignore-dragging, input"
+          :prevent-on-filter="false"
           ghost-class="ghost"
           @start="isDrag = true"
           @end="isDrag = false"
           @unchoose="unchoose"
         >
-          <b-button
-            v-for="item in items"
-            v-show="!keyword || item.name.includes(keyword)"
-            :key="`${_uid}-button-${item.index}`"
-            size="sm"
-            :pressed="item === selectedItem"
-            block
-            class="list-item disable-transition"
-            :class="{'dropdown-shown': item.isMenuShown}"
-            variant="white"
-            @click="select(item, item.index)"
+          <template
+            v-for="(item, index) in items"
           >
-            <span>{{ item.name + ' ' + item.index || '(untitled)' }}</span>
-            <b-dropdown
+            <b-button
+              v-if="!item.isEditing"
+              v-show="!keyword || item.name.includes(keyword)"
+              :id="`list-item-${item.index}`"
+              :key="`button-${item.index}`"
               size="sm"
-              variant="outline-white"
-              toggle-class="text-decoration-none"
-              right
-              no-caret
-              class="list-item-dropdown ignore-dragging"
-              @shown="item.isMenuShown = true"
-              @hidden="item.isMenuShown = false"
+              block
+              :pressed="item === openedItem"
+              class="list-item disable-transition"
+              :class="{'dropdown-shown': item.isMenuShown, 'selected': item.isSelected}"
+              variant="white"
+              @dblclick="editItem(item)"
+              @click="openItem($event, item, index)"
             >
-              <template #button-content>
-                <b-icon
-                  icon="three-dots"
-                />
-              </template>
-              <b-dropdown-item @click="newItem">
-                <small>Remove</small>
-              </b-dropdown-item>
-              <b-dropdown-item
-                @click="exportSelectedItems"
-              >
-                <small>Export</small>
-              </b-dropdown-item>
-            </b-dropdown>
-          </b-button>
+              <span
+                class="list-item-name"
+              >{{ item.name || '(untitled)' }}</span>
+              <!--
+              <div class="list-item-dropdown ml-auto">
+                <b-button
+
+                  v-if="!isSelecting"
+                  size="sm"
+                  variant="white"
+                  class="p-0"
+                  @click="removeItem(item)"
+                >
+                  <b-icon
+                    icon="dash"
+                  />
+                </b-button>
+              </div>
+              -->
+              <div @click.stop>
+                <b-dropdown
+                  v-if="!isSelecting"
+                  size="sm"
+                  variant="outline-white"
+                  toggle-class="text-decoration-none"
+                  right
+                  no-caret
+                  class="list-item-dropdown ignore-dragging"
+                  @shown="item.isMenuShown = true"
+                  @hidden="item.isMenuShown = false"
+                >
+                  <template #button-content>
+                    <b-icon
+                      icon="three-dots"
+                    />
+                  </template>
+                  <b-dropdown-item
+                    @click="
+                      item.isMenuShown = false;
+                      editItem(item)
+                    "
+                  >
+                    <small>Edit</small>
+                  </b-dropdown-item>
+                  <b-dropdown-item
+                    @click="
+                      item.isMenuShown = false;
+                      copyItem(item)
+                    "
+                  >
+                    <small>Copy</small>
+                  </b-dropdown-item>
+                  <b-dropdown-item
+                    @click="
+                      item.isMenuShown = false;
+                      removeItem(item)
+                    "
+                  >
+                    <small>Remove</small>
+                  </b-dropdown-item>
+                  <b-dropdown-divider />
+                  <b-dropdown-item
+                    @click="exportSelectedItems"
+                  >
+                    <small>Export</small>
+                  </b-dropdown-item>
+                </b-dropdown>
+              </div>
+            </b-button>
+            <b-form-input
+              v-else
+              :id="`list-item-${item.index}`"
+              :key="`input-${item.index}`"
+              v-model="item.name"
+              :lazy="true"
+              size="sm"
+              type="text"
+              class="list-item disable-transition flex-fill ignore-dragging editing"
+              placeholder="(untitled)"
+              @blur="item.isEditing = false;"
+              @keydown.enter="item.isEditing = false;"
+              @keydown.stop
+              @change="$emit('updated', {items: getProjectDataFormItems(items), index: openedItemIndex})"
+            />
+          </template>
         </draggable>
       </b-button-toolbar>
     </div>
@@ -217,6 +229,7 @@
 
 <script>
 import draggable from 'vuedraggable'
+import cloneDeep from 'lodash/cloneDeep'
 
 export default {
   name: 'MainNavigator',
@@ -231,41 +244,43 @@ export default {
   },
   data() {
     return {
+      itemIndex: 0,
+      isDraggable: true,
       isDrag: false,
       isEditing: false,
       keyword: '',
       items: [],
-      checkedItems: [],
-      selectedItem: null
+      openedItem: null,
+      vcoConfig: {
+        handler: this.onClickOutside,
+        isActive: true
+      }
+    }
+  },
+  computed: {
+    selectedItems() {
+      return this.items.filter(x => x.isSelected)
+    },
+    isSelecting() {
+      return this.selectedItems.length > 0
+    },
+    openedItemIndex() {
+      const foundIndex = this.items.findIndex(x => x === this.openedItem)
+      return foundIndex !== -1 ? foundIndex : null
     }
   },
   watch: {
-    projectData() {
-      this.selectedItem = null
-      this.items = this.projectData.map((x, index) => ({ ...x, isMenuShown: false, isHover: false, index }))
+    keyword() {
+      this.items.forEach(x => { x.isSelected = false })
+    },
+    items() {
+      this.$emit('updated', { items: this.getProjectDataFormItems(this.items), index: this.openedItemIndex })
     }
   },
+  created() {
+    this.items = this.getNavigatorDataFormItems(this.projectData)
+  },
   methods: {
-    toggleEditing() {
-      this.$emit('deselected')
-      this.isEditing = !this.isEditing
-      if (this.isEditing) {
-        this.checkedItems = []
-      } else {
-        this.$emit('updated')
-      }
-    },
-    select(item, index) {
-      this.selectedItem = item
-      this.$emit('selected', { item, index })
-    },
-    check(item, checked) {
-      if (checked) {
-        this.checkedItems.push(item)
-      } else {
-        this.checkedItems = this.checkedItems.filter(x => x !== item)
-      }
-    },
     unchoose(event) {
       setTimeout(() => {
         const { pageX, pageY } = event.originalEvent
@@ -273,33 +288,126 @@ export default {
         event.item.focus()
       })
     },
-    newItem() {
-      // Open new item modal...
+    openItem(event, item, index) {
+      if (event.ctrlKey) {
+        this.vcoConfig.isActive = true
+        item.isSelected = !item.isSelected
+        return
+      }
 
-      // this.items.unshift({
-      //   name: '',
-      //   data: { id: 'test@0.1.0', nodes: {} }
-      // })
+      this.items.forEach(x => { x.isSelected = false })
+      this.vcoConfig.isActive = false
 
-      // setTimeout(() => {
-      //   const element = document.querySelector('#main-navigator .main-navigator-content')
-      //   element.scroll({ top: 0, behavior: 'smooth' })
-      // }, 0)
+      if (this.openedItem !== item) {
+        this.openedItem = item
+        this.$emit('selected', { item, index })
+      }
     },
-    remove(item) {
+    addNewItem() {
+      const newItem = {
+        index: this.itemIndex++,
+        name: '',
+        data: { id: 'test@0.1.0', nodes: {} },
+        isMenuShown: false,
+        isSelected: false,
+        isEditing: true
+      }
+
+      this.items.unshift(newItem)
+
+      this.$nextTick(() => {
+        const element = document.querySelector('#main-navigator .main-navigator-content .list-item.editing')
+        if (element) {
+          element.focus()
+          if (document.activeElement !== element) {
+            newItem.isEditing = false
+          }
+        }
+      })
+    },
+    editItem(item) {
+      item.isEditing = true
+
+      this.$nextTick(() => {
+        const element = document.querySelector(`#list-item-${item.index}`)
+        element.focus()
+      })
+    },
+    copyItem(item) {
+      const newItem = {
+        index: this.itemIndex++,
+        name: item.name,
+        data: cloneDeep(item.data),
+        isMenuShown: false,
+        isSelected: false,
+        isEditing: true
+      }
+
+      const foundIndex = this.items.findIndex(x => x === item)
+      if (foundIndex !== -1) {
+        this.items.splice(foundIndex + 1, 0, newItem)
+
+        this.$nextTick(() => {
+          setTimeout(() => {
+            const element = document.querySelector('#main-navigator .main-navigator-content .list-item.editing')
+            if (element) {
+              element.focus()
+              if (document.activeElement !== element) {
+                newItem.isEditing = false
+              }
+            }
+          })
+        })
+      }
+    },
+    removeItem(item) {
       const foundIndex = this.items.findIndex((x) => x === item)
       if (foundIndex >= 0) {
         this.items.splice(foundIndex, 1)
+
+        if (this.openedItem === item) {
+          this.openedItem = null
+          this.$emit('deselected')
+        }
       }
     },
-    scrollToTop() {
-      setTimeout(() => {
-        const element = document.querySelector('#main-navigator .main-navigator-content')
-        element.scroll({ top: 0, behavior: 'smooth' })
-      }, 0)
+    removeSelectedItems() {
+      this.items = this.items.filter(x => !x.isSelected)
+
+      if (!this.items.includes(this.openedItem)) {
+        this.openedItem = null
+        this.$emit('deselected')
+      }
+    },
+    exportItems(items) {
+      try {
+        window.preload.saveProjectDataAsJSON(JSON.stringify(this.getProjectDataFormItems(items)), '~/export.json')
+      } catch (e) {
+        console.error(e)
+      }
     },
     exportSelectedItems() {
-      this.$emit('export-items', [...this.checkedItems])
+      this.exportItems(this.selectedItems)
+    },
+    async importItems() {
+      try {
+        const projectData = await window.preload.loadProjectDataFromJSON()
+        if (projectData) {
+          this.items = this.items.concat(this.getNavigatorDataFormItems(JSON.parse(projectData)))
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    },
+    getNavigatorDataFormItems(items) {
+      return items.map((x) => ({ ...x, isMenuShown: false, isSelected: false, isEditing: false, index: this.itemIndex++ }))
+    },
+    getProjectDataFormItems(items) {
+      return items.map(x => ({ name: x.name, data: x.data }))
+    },
+    onClickOutside() {
+      this.items.forEach(x => { x.isSelected = false })
+      this.vcoConfig.isActive = false
     }
   }
 }
@@ -344,18 +452,23 @@ export default {
           align-items: flex-end;
           border: 1px solid white;
 
-          &:hover,
+          &:hover:not(.editing),
           &.dropdown-shown {
-            background-color: #e9ecef;
-
             .list-item-dropdown {
               display: flex;
             }
           }
 
+          &.dropdown-shown {
+            border: 1px solid #80bdff;
+          }
+
           &.active {
-            background-color: #e9ecef;
             font-weight: bold;
+          }
+
+          &.selected {
+            background-color: rgb(128, 189, 255, 0.35);
           }
 
           &.btn-block + .btn-block {
@@ -363,8 +476,22 @@ export default {
           }
 
           &.ghost {
-            background-color: #e9ecef;
             box-shadow: inset 0 0 0 0.2rem rgb(0 123 255 / 25%);
+          }
+
+          &.btn:focus,
+          &.editing:focus,
+          &.btn:active:focus {
+            outline: none;
+            box-shadow: none;
+            border: 1px solid #80bdff;
+          }
+
+          &-name {
+            overflow: hidden;
+            text-align: left;
+            width: 90%;
+            text-overflow: ellipsis;
           }
 
           &-dropdown {
@@ -382,22 +509,9 @@ export default {
               }
             }
           }
-
-          &.btn:focus,
-          &.btn:active:focus {
-            outline: none;
-            box-shadow: none;
-            border: 1px solid #80bdff;
-          }
         }
       }
     }
-  }
-}
-
-.main-navigator-content.dragging {
-  .sortable-chosen {
-    -webkit-user-drag: none;
   }
 }
 
