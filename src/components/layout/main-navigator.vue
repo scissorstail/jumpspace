@@ -115,7 +115,7 @@
           @unchoose="unchoose"
         >
           <template
-            v-for="(item, index) in items"
+            v-for="item in items"
           >
             <b-button
               v-if="!item.isEditing"
@@ -129,7 +129,7 @@
               :class="{'dropdown-shown': item.isMenuShown, 'selected': item.isSelected}"
               variant="white"
               @dblclick="editItem(item)"
-              @click="openItem($event, item, index)"
+              @click="openItem(item, $event)"
             >
               <span
                 class="list-item-name"
@@ -230,6 +230,7 @@
 <script>
 import draggable from 'vuedraggable'
 import cloneDeep from 'lodash/cloneDeep'
+import isEmpty from 'lodash/isEmpty'
 
 export default {
   name: 'MainNavigator',
@@ -240,6 +241,10 @@ export default {
     projectData: {
       type: Array,
       default: () => []
+    },
+    isLocked: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -288,22 +293,34 @@ export default {
         event.item.focus()
       })
     },
-    openItem(event, item, index) {
+    async openItem(item, event = {}) {
       if (event.ctrlKey) {
         this.vcoConfig.isActive = true
         item.isSelected = !item.isSelected
         return
       }
 
-      this.items.forEach(x => { x.isSelected = false })
+      if (!this.isLocked && !isEmpty(event)) {
+        if (!(await this.comfirmUnlockedChangeWilBeLost())) {
+          return
+        }
+      }
+
       this.vcoConfig.isActive = false
+      this.items.forEach(x => { x.isSelected = false })
 
       if (this.openedItem !== item) {
         this.openedItem = item
-        this.$emit('selected', { item, index })
+        this.$emit('selected', { item, index: this.openedItemIndex, isLocked: !item.isEditing })
       }
     },
-    addNewItem() {
+    async addNewItem() {
+      if (!this.isLocked) {
+        if (!(await this.comfirmUnlockedChangeWilBeLost())) {
+          return
+        }
+      }
+
       const newItem = {
         index: this.itemIndex++,
         name: '',
@@ -314,6 +331,7 @@ export default {
       }
 
       this.items.unshift(newItem)
+      this.openItem(newItem)
 
       this.$nextTick(() => {
         const element = document.querySelector('#main-navigator .main-navigator-content .list-item.editing')
@@ -360,24 +378,24 @@ export default {
         })
       }
     },
-    removeItem(item) {
-      const foundIndex = this.items.findIndex((x) => x === item)
-      if (foundIndex >= 0) {
-        this.items.splice(foundIndex, 1)
-
-        if (this.openedItem === item) {
-          this.openedItem = null
-          this.$emit('deselected')
-        }
-      }
-    },
-    removeSelectedItems() {
-      this.items = this.items.filter(x => !x.isSelected)
-
-      if (!this.items.includes(this.openedItem)) {
+    async removeItem(item) {
+      if (this.openedItem === item) {
         this.openedItem = null
         this.$emit('deselected')
       }
+
+      const foundIndex = this.items.findIndex((x) => x === item)
+      if (foundIndex >= 0) {
+        this.items.splice(foundIndex, 1)
+      }
+    },
+    async removeSelectedItems() {
+      if (this.items.includes(this.openedItem)) {
+        this.openedItem = null
+        this.$emit('deselected')
+      }
+
+      this.items = this.items.filter(x => !x.isSelected)
     },
     exportItems(items) {
       try {
@@ -408,6 +426,13 @@ export default {
     onClickOutside() {
       this.items.forEach(x => { x.isSelected = false })
       this.vcoConfig.isActive = false
+    },
+    comfirmUnlockedChangeWilBeLost() {
+      return this.$bvModal.msgBoxConfirm('All unlocked changes will be lost', {
+        title: 'Are you sure you want to continue?',
+        okTitle: 'Continue',
+        returnFocus: '[id^=list-item-].active'
+      })
     }
   }
 }

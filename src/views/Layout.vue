@@ -6,9 +6,11 @@
       @info="isShowInfoPopup = true"
       @save="saveProject"
       @setting="isShowSettingPopup = true"
+      @lock="isEditorLocked = true"
+      @unlock="isEditorLocked = false"
     >
       <!-- sidebar toggle -->
-      <template #main-navigation-toggle>
+      <template #main-navigator-toggle>
         <b-button
           v-b-toggle.main-sidebar
           size="sm"
@@ -17,6 +19,22 @@
         >
           <b-icon
             icon="list"
+          />
+        </b-button>
+      </template>
+      <template
+        v-if="editorData"
+        #main-navigator-toolbar
+      >
+        <b-button
+          v-b-tooltip.hover.v-light.dh0.noninteractive
+          size="sm"
+          :title="isEditorLocked? 'locked' : 'unlocked'"
+          variant="light"
+          @click="isEditorLocked = !isEditorLocked"
+        >
+          <b-icon
+            :icon="isEditorLocked? 'lock' : 'unlock'"
           />
         </b-button>
       </template>
@@ -35,6 +53,7 @@
             v-if="projectData"
             ref="mainNavigator"
             :project-data="projectData"
+            :is-locked="isEditorLocked"
             @hide="hide"
             @selected="loadEditor"
             @deselected="clearEditor"
@@ -48,6 +67,7 @@
       <Editor
         ref="editorRef"
         :editor-data="editorData"
+        :is-locked="isEditorLocked"
         :class="[!editorData && 'layout-inactive']"
       />
     </div>
@@ -69,6 +89,7 @@ import MainNavigator from '../components/layout/main-navigator'
 import Editor from '../components/editor'
 import InfoPopup from '../components/layout/popup/info-popup'
 import SettingPopup from '../components/layout/popup/setting-popup'
+// import isEmpty from 'lodash/isEmpty'
 
 /*
 
@@ -96,11 +117,19 @@ export default {
     return {
       isShowInfoPopup: false,
       isShowSettingPopup: false,
+      isEditorLocked: true,
       projectData: null,
       editorData: null,
       openedItemIndex: null,
       headerInfo: {
         name: null
+      }
+    }
+  },
+  watch: {
+    async isEditorLocked() {
+      if (this.isEditorLocked) {
+        await this.saveProject()
       }
     }
   },
@@ -111,12 +140,14 @@ export default {
     }
   },
   methods: {
-    loadEditor({ item, index }) {
+    loadEditor({ item, index, isLocked }) {
+      this.isEditorLocked = isLocked
       this.editorData = JSON.stringify(item.data)
       this.openedItemIndex = index
       this.headerInfo.name = item.name
     },
     clearEditor() {
+      this.isEditorLocked = true
       this.editorData = null
       this.openedItemIndex = null
       this.headerInfo.name = null

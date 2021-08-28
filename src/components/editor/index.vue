@@ -24,6 +24,10 @@ export default {
     editorData: {
       type: String,
       default: null
+    },
+    isLocked: {
+      type: Boolean,
+      default: false
     }
   },
   data() {

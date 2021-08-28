@@ -3,26 +3,14 @@
     id="main-header"
     class="layout-divider bg-light p-1 pl-2 pr-2"
   >
-    <slot name="main-navigation-toggle" />
+    <slot name="main-navigator-toggle" />
 
     <div class="align-self-center">
       <!-- left button -->
     </div>
 
     <div class="ml-auto align-self-center">
-      <template v-if="false">
-        <b-button
-          v-b-tooltip.hover.v-light.dh0.noninteractive
-          size="sm"
-          :title="isToggle? 'locked' : 'unlocked'"
-          variant="light"
-          @click="isToggle = !isToggle; $emit('save')"
-        >
-          <b-icon
-            :icon="isToggle? 'lock' : 'unlock'"
-          />
-        </b-button>
-      </template>
+      <slot name="main-navigator-toolbar" />
 
       <hr
         class="btn-divider my-0 mx-1 p-0"
@@ -86,7 +74,7 @@ export default {
   },
   data() {
     return {
-      isToggle: true
+      isLocked: true
     }
   },
   watch: {
