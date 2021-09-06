@@ -1,7 +1,6 @@
 <template>
   <div id="layout">
     <MainHeader
-      :header-info="headerInfo"
       @export="exportProject"
       @info="isShowInfoPopup = true"
       @save="saveProject"
@@ -120,10 +119,7 @@ export default {
       isEditorLocked: true,
       projectData: null,
       editorData: null,
-      openedItemIndex: null,
-      headerInfo: {
-        name: null
-      }
+      openedItemIndex: null
     }
   },
   watch: {
@@ -144,13 +140,11 @@ export default {
       this.isEditorLocked = isLocked
       this.editorData = JSON.stringify(item.data)
       this.openedItemIndex = index
-      this.headerInfo.name = item.name
     },
     clearEditor() {
       this.isEditorLocked = true
       this.editorData = null
       this.openedItemIndex = null
-      this.headerInfo.name = null
     },
     async updateProject({ items, index }) {
       this.projectData = [...items]
@@ -158,7 +152,7 @@ export default {
 
       const selectedItem = this.projectData[this.openedItemIndex]
       if (selectedItem) {
-        this.headerInfo.name = selectedItem.name
+        window.preload.setWindowTitle(selectedItem.name)
       }
 
       await this.saveProject()

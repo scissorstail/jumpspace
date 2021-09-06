@@ -64,22 +64,9 @@
 <script>
 export default {
   name: 'MainHeader',
-  props: {
-    headerInfo: {
-      type: Object,
-      default: () => ({
-        name: null
-      })
-    }
-  },
   data() {
     return {
       isLocked: true
-    }
-  },
-  watch: {
-    'headerInfo.name': function () {
-      window.preload.setWindowTitle(this.headerInfo.name)
     }
   },
   methods: {

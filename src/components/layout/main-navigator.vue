@@ -300,16 +300,16 @@ export default {
         return
       }
 
-      if (!this.isLocked && !isEmpty(event)) {
-        if (!(await this.comfirmUnlockedChangeWilBeLost())) {
-          return
-        }
-      }
-
       this.vcoConfig.isActive = false
       this.items.forEach(x => { x.isSelected = false })
 
       if (this.openedItem !== item) {
+        if (!this.isLocked && !isEmpty(event)) {
+          if (!(await this.comfirmUnlockedChangeWilBeLost())) {
+            return
+          }
+        }
+
         this.openedItem = item
         this.$emit('selected', { item, index: this.openedItemIndex, isLocked: !item.isEditing })
       }
@@ -408,6 +408,12 @@ export default {
       this.exportItems(this.selectedItems)
     },
     async importItems() {
+      if (!this.isLocked) {
+        if (!(await this.comfirmUnlockedChangeWilBeLost())) {
+          return
+        }
+      }
+
       try {
         const projectData = await window.preload.loadProjectDataFromJSON()
         if (projectData) {
