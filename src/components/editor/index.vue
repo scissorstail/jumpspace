@@ -63,7 +63,7 @@ export default {
     this.editor.use(VueRenderPlugin)
     this.editor.use(ContextMenuPlugin, {
       nodeItems: {
-        Copy: async (args) => {
+        Duplicate: async (args) => {
           const {
             name,
             position: [x, y],
