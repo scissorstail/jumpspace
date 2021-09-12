@@ -3,7 +3,7 @@
     <MainHeader
       @export="exportProject"
       @info="isShowInfoPopup = true"
-      @save="saveProject"
+      @save="compileEditor().then(() => saveProject())"
       @setting="isShowSettingPopup = true"
       @lock="isEditorLocked = true"
       @unlock="isEditorLocked = false"
@@ -57,7 +57,6 @@
             @selected="loadEditor"
             @deselected="clearEditor"
             @updated="updateProject"
-            @open-project="openProject"
           />
         </template>
       </b-sidebar>
@@ -125,7 +124,8 @@ export default {
   watch: {
     async isEditorLocked() {
       if (this.isEditorLocked) {
-        await this.saveProject()
+        await this.compileEditor()
+        this.saveProject()
       }
     }
   },
@@ -140,24 +140,43 @@ export default {
       this.isEditorLocked = isLocked
       this.editorData = JSON.stringify(item.data)
       this.openedItemIndex = index
+
+      const selectedItem = this.projectData[this.openedItemIndex]
+      if (selectedItem) {
+        window.preload.setWindowTitle(selectedItem.name)
+      }
     },
     clearEditor() {
       this.isEditorLocked = true
       this.editorData = null
       this.openedItemIndex = null
     },
-    async updateProject({ items, index }) {
+    async compileEditor() {
+      // 현재 editor에 열려있는 item이 있으면
+      if (this.openedItemIndex !== null) {
+        // editor가 표시중인 item이 가진 각 node의 control(ConnectionControl)의 내부 renderer가 가진 정보를 node에 저장
+        this.$refs.editorRef.editor.nodes.forEach((x) =>
+          x.controls.get('connection').save()
+        )
+
+        // 현재 editor에 열려있는 내용을 projectData에 업데이트
+        const selectedItem = this.projectData[this.openedItemIndex]
+        if (selectedItem) {
+          // editor에서 변경된 item의 내용 가져오기
+          selectedItem.data = await this.$refs.editorRef.compile()
+
+          // MainNavigator에 변경된 item의 editorData 전달
+          this.$refs.mainNavigator.updateItemEditorData({ data: selectedItem.data, index: this.openedItemIndex })
+        }
+      }
+    },
+    updateProject({ items, index }) {
       this.projectData = [...items]
       this.openedItemIndex = index // 열려있는 item의 index 업데이트
 
-      const selectedItem = this.projectData[this.openedItemIndex]
-      if (selectedItem) {
-        window.preload.setWindowTitle(selectedItem.name)
-      }
-
-      await this.saveProject()
+      this.saveProject()
     },
-    async loadProject(projectSaveData) {
+    loadProject(projectSaveData) {
       if (projectSaveData) {
         this.projectData = JSON.parse(projectSaveData)
         window.localStorage.projectSaveData = projectSaveData
@@ -165,33 +184,13 @@ export default {
         this.projectData = []
       }
     },
-    async saveProject() {
-      if (this.openedItemIndex !== null) {
-        // editor가 표시중인 item이 가진 각 node의 control(ConnectionControl)의 내부 renderer가 가진 정보를 node에 저장
-        this.$refs.editorRef.editor.nodes.forEach((x) =>
-          x.controls.get('connection').save()
-        )
-
-        // editor가 표시중인 item이 가진 내용을 project의 해당 item에 저장
-        const selectedItem = this.projectData[this.openedItemIndex]
-        if (selectedItem) {
-          selectedItem.data = await this.$refs.editorRef.compile()
-        }
-      }
-
+    saveProject() {
       // project를 JSON 형식으로 변환하여 localStorage에 저장
       window.localStorage.projectSaveData = JSON.stringify(this.projectData)
     },
-    async exportProject() {
-      await this.saveProject()
-      window.preload.saveProjectDataAsJSON(window.localStorage.projectSaveData)
-    },
-    async openProject() {
-      const projectData = await window.preload.loadProjectDataFromJSON()
-      if (projectData) {
-        this.clearEditor()
-        this.loadProject(projectData)
-      }
+    exportProject() {
+      // project를 JSON 형식으로 변환하여 파일로 저장
+      window.preload.saveProjectDataAsJSON(JSON.stringify(this.projectData))
     }
   }
 }

@@ -429,6 +429,13 @@ export default {
     getProjectDataFormItems(items) {
       return items.map(x => ({ name: x.name, data: x.data }))
     },
+    updateItemEditorData({ data, index }) {
+      // 에디터에 열린 item 정보 업데이트 시 외부에서 호출 후 정보 업데이트
+      const updatedItem = this.items[index]
+      if (updatedItem) {
+        this.items[index].data = data
+      }
+    },
     onClickOutside() {
       this.items.forEach(x => { x.isSelected = false })
       this.vcoConfig.isActive = false
