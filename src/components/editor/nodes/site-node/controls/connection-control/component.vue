@@ -1,20 +1,138 @@
 <template>
   <div class="component">
     <div class="header-menu">
-      <a class="info-edit">
+      <a class="menu-item">
+        <b-icon
+          v-if="isProxyJumpReady"
+          title="ProxyJump"
+          class="menu-item-icon"
+          icon="terminal"
+          font-scale="2"
+          @click="proxyJump"
+        />
+        <b-icon
+          v-else-if="isConnectable && !isProxyJumpReady"
+          title="Connect"
+          class="menu-item-icon"
+          icon="terminal"
+          font-scale="2"
+          @click="connect"
+        />
+      </a>
+      <a
+        v-show="isForwardable"
+        class="menu-item"
+      >
+        <b-icon
+          :style="{opacity: isForwardable && forwards.some(x => x.checked) ? 1.0 : 0.5}"
+          title="Forward"
+          class="menu-item-icon"
+          icon="arrow-left-right"
+          font-scale="2"
+          @click="isForwardable && forwards.some(x => x.checked) ? openForward() : ''"
+        />
+      </a>
+      <a class="menu-item">
+        <!-- forward popover-->
+        <v-popover
+          ref="popover2"
+          placement="auto-end"
+          @hide="save"
+        >
+          <b-icon
+            title="Forward list"
+            class="menu-item-icon"
+            icon="link45deg"
+            font-scale="2"
+          />
+          <template slot="popover">
+            <div class="p-3">
+              <div
+                class="info-list"
+                style="width: 225px;"
+              >
+                <div
+                  v-for="(forward, index) in forwards"
+                  :key="index"
+                  class="info-item mb-1"
+                >
+                  <b-form-checkbox
+                    v-model="forward.checked"
+                    class="middle"
+                    size="lg"
+                  />
+                  <b-form-input
+                    v-model.trim="forward.from"
+                    class="mr-2"
+                    maxlength="5"
+                    size="sm"
+                  />
+                  <span
+                    :style="{ opacity: forward.checked ? 1.0 : 0.1 }"
+                    class="middle"
+                  >
+                    <v-icon
+                      height="15"
+                      name="forward"
+                      scale="1"
+                      width="15"
+                    />
+                  </span>
+                  <b-form-input
+                    v-model.trim="forward.to"
+                    class="ml-2"
+                    maxlength="5"
+                    size="sm"
+                  />
+                  <b-button
+                    class="ml-2"
+                    size="sm"
+                    title="Remove Forward"
+                    @click="removeForward(forward)"
+                  >
+                    <v-icon
+                      height="15"
+                      name="minus"
+                      scale="1"
+                      width="15"
+                    />
+                  </b-button>
+                </div>
+              </div>
+              <div
+                :class="[forwards.length > 0 ? 'mt-2' : '']"
+                class="info-action"
+              >
+                <b-button
+                  class="mr-1"
+                  size="sm"
+                  title="Add Forward"
+                  @click="addForward"
+                >
+                  <v-icon
+                    height="15"
+                    name="plus"
+                    scale="1"
+                    width="15"
+                  />
+                </b-button>
+              </div>
+            </div>
+          </template>
+        </v-popover>
+      </a>
+      <a class="menu-item">
         <!-- setting popover -->
         <v-popover
           ref="popover"
           placement="auto-end"
           @hide="save"
         >
-          <v-icon
-            title="Info"
-            class="info-edit-item"
-            height="24"
-            name="cog"
-            scale="1.5"
-            width="24"
+          <b-icon
+            title="Setting"
+            class="menu-item-icon"
+            icon="gear"
+            font-scale="2"
           />
           <template slot="popover">
             <div class="p-3">
@@ -157,101 +275,9 @@
           </template>
         </v-popover>
       </a>
-      <a class="info-edit left">
-        <!-- forward popover-->
-        <v-popover
-          ref="popover2"
-          placement="auto-end"
-          @hide="save"
-        >
-          <v-icon
-            title="Forward list"
-            class="info-edit-item"
-            height="24"
-            name="link"
-            scale="1.5"
-            width="24"
-          />
-          <template slot="popover">
-            <div class="p-3">
-              <div
-                class="info-list"
-                style="width: 225px;"
-              >
-                <div
-                  v-for="(forward, index) in forwards"
-                  :key="index"
-                  class="info-item mb-1"
-                >
-                  <b-form-checkbox
-                    v-model="forward.checked"
-                    class="middle"
-                    size="lg"
-                  />
-                  <b-form-input
-                    v-model.trim="forward.from"
-                    class="mr-2"
-                    maxlength="5"
-                    size="sm"
-                  />
-                  <span
-                    :style="{ opacity: forward.checked ? 1.0 : 0.1 }"
-                    class="middle"
-                  >
-                    <v-icon
-                      height="15"
-                      name="forward"
-                      scale="1"
-                      width="15"
-                    />
-                  </span>
-                  <b-form-input
-                    v-model.trim="forward.to"
-                    class="ml-2"
-                    maxlength="5"
-                    size="sm"
-                  />
-                  <b-button
-                    class="ml-2"
-                    size="sm"
-                    title="Remove Forward"
-                    @click="removeForward(forward)"
-                  >
-                    <v-icon
-                      height="15"
-                      name="minus"
-                      scale="1"
-                      width="15"
-                    />
-                  </b-button>
-                </div>
-              </div>
-              <div
-                :class="[forwards.length > 0 ? 'mt-2' : '']"
-                class="info-action"
-              >
-                <b-button
-                  class="mr-1"
-                  size="sm"
-                  title="Add Forward"
-                  @click="addForward"
-                >
-                  <v-icon
-                    height="15"
-                    name="plus"
-                    scale="1"
-                    width="15"
-                  />
-                </b-button>
-              </div>
-            </div>
-          </template>
-        </v-popover>
-      </a>
     </div>
 
     <div
-      :class="{ blur: isBlur }"
       class="info-block"
     >
       <img
@@ -260,76 +286,32 @@
         height="40%"
         width="40%"
       >
-      <div
-        class="info-text"
-        :title="name || '(noname)'"
-      >
-        {{ name || '(noname)' }}
+      <div class="info-field">
+        <div
+          class="info-text"
+          :title="name || '(untitled)'"
+        >
+          {{ name || '(untitled)' }}
+        </div>
+        <div
+          class="info-text"
+          :title="user || ''"
+        >
+          {{ user || '' }}
+        </div>
+        <div
+          class="info-text"
+          :title="host || ''"
+        >
+          {{ host || '' }}
+        </div>
+        <div
+          class="info-text"
+          :title="port || ''"
+        >
+          {{ port || '' }}
+        </div>
       </div>
-      <div
-        class="info-text"
-        :title="host || '-'"
-      >
-        {{ host || '-' }}
-      </div>
-      <div class="info-text">
-        {{ port || '-' }}
-      </div>
-    </div>
-
-    <div class="footer-menu">
-      <a class="info-edit">
-        <v-icon
-          v-if="isProxyJumpReady"
-          title="ProxyJump"
-          class="info-edit-item"
-          :class="{'danger': Boolean(exec)}"
-          height="24"
-          name="bolt"
-          scale="1.5"
-          width="24"
-          @click="proxyJump"
-        />
-        <v-icon
-          v-if="isConnectable && !isProxyJumpReady"
-          title="Connect"
-          class="info-edit-item"
-          :class="{'danger': Boolean(exec)}"
-          height="24"
-          name="plug"
-          scale="1.5"
-          width="24"
-          @click="connect"
-        />
-      </a>
-      <a class="info-edit">
-        <v-icon
-          title="Blur"
-          class="info-edit-item"
-          height="24"
-          name="eye-slash"
-          scale="1.5"
-          width="24"
-          @click="blur"
-        />
-      </a>
-      <a class="info-edit left">
-        <v-icon
-          v-show="isForwardable"
-          title="Forward"
-          :style="{
-            opacity: isForwardable && forwards.some(x => x.checked) ? 1.0 : 0.5
-          }"
-          class="info-edit-item"
-          height="24"
-          name="forward"
-          scale="1.5"
-          width="24"
-          @click="
-            isForwardable && forwards.some(x => x.checked) ? openForward() : ''
-          "
-        />
-      </a>
     </div>
   </div>
 </template>
@@ -351,7 +333,7 @@ export default {
     },
     emitter: {
       type: Object,
-      default: () => ({})
+      default: () => {}
     },
     ikey: {
       type: String,
@@ -369,7 +351,6 @@ export default {
   store,
   data() {
     return {
-      isBlur: false,
       name: null,
       user: null,
       host: null,
@@ -546,7 +527,6 @@ export default {
     },
     save() {
       const data = pick(this.$data, [
-        'isBlur',
         'name',
         'user',
         'host',
@@ -560,51 +540,88 @@ export default {
         this.putData(this.ikey, { ...data })
       }
       this.emitter.trigger('process')
-    },
-    blur() {
-      this.isBlur = !this.isBlur
     }
   }
 }
 </script>
 
 <style lang="scss">
-.info-block {
-  font-size: 14px;
-  font-weight: bold;
-  text-align: center;
-  color: #2c3e50;
+.component {
+  padding: 16px;
+  z-index: 1;
+
+  &:hover {
+    .header-menu {
+      opacity: 1;
+    }
+  }
 }
 
-.info-diagram {
-  min-width: 68px;
-  min-height: 68px;
-  max-width: 68px;
-  max-height: 68px;
-}
-
-.info-text {
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.info-item {
+.header-menu {
+  width: calc(100% * 2);
   display: flex;
-  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: -45px;
+  left: -50px;
+  right: 0px;
+  padding-bottom: 10px;
+  opacity: 0;
+  transition: all 0.3s;
 }
 
-.info-action {
-  display: flex;
-  justify-content: flex-start;
-  min-width: 140px;
+.menu-item {
+  background-color: transparent;
+  border: 1px solid transparent;
+  margin: 1px;
+}
+
+.info {
+  &-block {
+    font-weight: bold;
+    text-align: center;
+    color: black;
+  }
+
+  &-diagram {
+    min-width: 68px;
+    min-height: 68px;
+    max-width: 68px;
+    max-height: 68px;
+  }
+
+  &-field {
+    position: absolute;
+    left: -50px;
+    right: 0px;
+    top: 100%;
+    width: calc(100% * 2);
+    padding-top: 10px;
+  }
+
+  &-text {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  &-item {
+    display: flex;
+    align-items: center;
+  }
+
+  &-action {
+    display: flex;
+    justify-content: flex-start;
+    min-width: 140px;
+  }
 }
 
 .vt-popover {
   z-index: 10000;
 
   &:focus {
-    outline: 1px dashed #e3c000;
+    outline: 1px dashed #80bdff;
   }
 
   &[aria-hidden='true'] {
@@ -625,84 +642,5 @@ export default {
     border-radius: 5px;
     box-shadow: 0 5px 30px rgba(black, 0.1);
   }
-}
-
-.header-menu {
-  display: flex;
-  flex-direction: row-reverse;
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  right: 0px;
-  padding: 10px;
-
-  .info-edit {
-    &.left {
-      margin-right: auto;
-    }
-
-    &.right {
-      margin-left: auto;
-    }
-
-    &-item {
-      margin-left: 4px;
-
-      &.warning {
-        color: #e3c000;
-      }
-
-      &.danger {
-        color: #dc3545;
-      }
-    }
-
-    &-text {
-      vertical-align: top;
-      line-height: 24px;
-      margin-left: 4px;
-    }
-  }
-}
-
-.footer-menu {
-  display: flex;
-  flex-direction: row-reverse;
-  position: absolute;
-  bottom: 0px;
-  left: 0px;
-  right: 0px;
-  padding: 10px;
-
-  .info-edit {
-    &.left {
-      margin-right: auto;
-    }
-
-    &.right {
-      margin-left: auto;
-    }
-
-    &-item {
-      margin-left: 4px;
-
-      &.warning {
-        color: #e3c000;
-      }
-
-      &.danger {
-        color: #dc3545;
-      }
-    }
-
-    &-text {
-      vertical-align: top;
-      line-height: 24px;
-    }
-  }
-}
-
-.blur {
-  filter: blur(4px);
 }
 </style>

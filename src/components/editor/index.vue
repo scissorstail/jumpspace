@@ -84,7 +84,7 @@ export default {
     this.editor.use(ConnectionPathPlugin, {
       type: ConnectionPathPlugin.DEFAULT, // DEFAULT or LINEAR transformer
       // curve: ConnectionPathPlugin.curveStep, // curve identifier
-      arrow: { color: 'steelblue', marker: 'M-5,-10 L-5,10 L20,0 z' }
+      arrow: { color: 'black', marker: 'M-5,-10 L-5,10 L20,0 z' }
     })
     this.editor.use(CommentPlugin, {
       margin: 20 // indent for new frame comments by default 30 (px)
@@ -170,60 +170,76 @@ export default {
   }
 
   .node.site {
-    height: 210px;
-    width: 200px;
-    background-color: #4682b42b;
-    border: 2px dashed #4682b4;
-    padding-bottom: initial;
+    background-color: white;
+    border: 3px solid black;
+    border-radius: 24px;
+    padding-bottom: 0;
+    min-width: initial;
+    color: black;
+
+    &.selected {
+      background-color: white;
+      border: 3px solid black;
+      box-shadow: inset 0px 0px 400px 110px rgb(0 0 0 / 10%);
+    }
+
+    & > .input {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+
+      .input-title {
+        height: 100%;
+        margin: 0;
+      }
+    }
+
+    & > .output {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+
+      .output-title {
+        height: 100%;
+        margin: 0;
+      }
+    }
 
     .title {
       display: none;
-    }
-
-    &.selected {
-      background-color: #e3c0002b;
-      border: 2px dashed #e3c000;
     }
 
     .socket {
       background: white;
       height: 24px;
       width: 24px;
+      transform: translateY(-2px);
 
       &.input {
-        border: 2px dashed gray;
+        border: 3px dashed black;
         margin-left: -32px;
       }
 
       &.output {
-        border: 2px dashed green;
+        border: 3px solid black;
         margin-right: -32px;
       }
     }
 
-    .input .input-title {
-      color: black;
-    }
-
-    .output .output-title {
-      color: black;
-    }
-
     .control {
-      padding: 2px 20px;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      padding: 0;
     }
   }
 
-  .connection .main-path {
-    stroke-width: 3px;
-  }
-
-  .frame-comment {
-    z-index: -5;
-    background: rgba(15, 80, 255, 0.1);
-
-    &:focus {
-      border: 3px dashed #ffd92c;
+  .connection {
+    .main-path {
+      stroke-width: 3px;
+      stroke: black;
     }
   }
 }
