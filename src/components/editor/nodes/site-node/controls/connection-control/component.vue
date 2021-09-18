@@ -426,7 +426,9 @@ export default {
         ? `-tt '${this.exec}; exec $SHELL'`
         : ''
       }"`
+
       console.log(command)
+
       window.preload.executeCommand(command)
     },
     openForward() {
@@ -454,6 +456,8 @@ export default {
           .map((x) => `-L "localhost:${x.from}:${this.host}:${x.to}"`)
           .join(' ')
       }"`
+
+      console.log(command)
 
       window.preload.executeCommand(command)
     },
@@ -504,6 +508,8 @@ export default {
         ? `-tt '${this.exec}; exec $SHELL'`
         : ''
       }"`
+
+      console.log(command)
 
       window.preload.executeCommand(command, (output) => {
         setTimeout(() => window.preload.unlinkFile(configTempFilename), 3000)
