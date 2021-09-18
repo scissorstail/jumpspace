@@ -9,13 +9,13 @@
 import cloneDeep from 'lodash/cloneDeep'
 import Rete from 'rete'
 import ConnectionPlugin from 'rete-connection-plugin'
+import ConnectionPathPlugin from 'rete-connection-path-plugin'
 import VueRenderPlugin from 'rete-vue-render-plugin'
 import ContextMenuPlugin from 'rete-context-menu-plugin'
 import AreaPlugin from 'rete-area-plugin'
-import ConnectionPathPlugin from 'rete-connection-path-plugin'
-import CommentPlugin from 'rete-comment-plugin'
-// import AlightRenderPlugin from 'rete-alight-render-plugin'
-// import TaskPlugin from 'rete-task-plugin'
+import ReadonlyPlugin from 'rete-readonly-plugin'
+// import CommentPlugin from 'rete-comment-plugin'
+// import MinimapPlugin from 'rete-minimap-plugin'
 
 import SiteNode from './nodes/site-node'
 
@@ -59,9 +59,13 @@ export default {
       'test@0.1.0',
       document.querySelector('#rete')
     )
+
     this.editor.use(ConnectionPlugin)
+
     this.editor.use(VueRenderPlugin)
+
     this.editor.use(ContextMenuPlugin, {
+      delay: 250,
       nodeItems: {
         Duplicate: async (args) => {
           const {
@@ -80,21 +84,31 @@ export default {
         Clone: false // or Clone item
       }
     })
-    this.editor.use(AreaPlugin, { background })
+
+    this.editor.use(AreaPlugin, {
+      background,
+      snap: true,
+      scaleExtent: { min: 0.1, max: 1 },
+      translateExtent: { width: 1024, height: 1024 }
+    })
+
     this.editor.use(ConnectionPathPlugin, {
       type: ConnectionPathPlugin.DEFAULT, // DEFAULT or LINEAR transformer
       // curve: ConnectionPathPlugin.curveStep, // curve identifier
       arrow: { color: 'black', marker: 'M-5,-10 L-5,10 L20,0 z' }
     })
-    this.editor.use(CommentPlugin, {
-      margin: 20 // indent for new frame comments by default 30 (px)
-    })
+
+    this.editor.use(ReadonlyPlugin, { enabled: true })
+
+    // this.editor.use(CommentPlugin, {
+    //   margin: 20 // indent for new frame comments by default 30 (px)
+    // })
+
+    // this.editor.use(MinimapPlugin)
 
     // this.editor.trigger('addcomment', ({ type, text, nodes, position }) => {
     //  TODO: CommentPlugin 기본 추가동작 오버라이드
     // })
-    // editor.use(AlightRenderPlugin) // VueRenderPlugin과 같이 사용하면 오작동함
-    // editor.use(TaskPlugin)
 
     this.engine = new Rete.Engine('test@0.1.0')
 
@@ -109,6 +123,7 @@ export default {
         'connectionremove',
         'nodecreate',
         'noderemove',
+        /* 'readonly', */
         'process'
       ],
       async () => {
@@ -117,8 +132,6 @@ export default {
         await this.compile()
       }
     )
-
-    this.editor.view.area.zoom(0.85, 0, 0)
   },
   methods: {
     async compile() {

@@ -123,6 +123,8 @@ export default {
   },
   watch: {
     async isEditorLocked() {
+      this.$refs.editorRef.editor.trigger('readonly', this.isEditorLocked)
+
       if (this.isEditorLocked) {
         await this.compileEditor()
         this.saveProject()
@@ -140,6 +142,10 @@ export default {
       this.isEditorLocked = isLocked
       this.editorData = JSON.stringify(item.data)
       this.openedItemIndex = index
+
+      // default
+      this.$refs.editorRef.editor.view.area.zoom(0.85, 0, 0)
+      this.$refs.editorRef.editor.view.area.translate(0, 0)
 
       const selectedItem = this.projectData[this.openedItemIndex]
       if (selectedItem) {
