@@ -123,13 +123,26 @@ export default {
         'connectionremove',
         'nodecreate',
         'noderemove',
-        /* 'readonly', */
         'process'
       ],
       async () => {
         if (this.editor.silent) return
 
         await this.compile()
+      }
+    )
+
+    this.editor.on(
+      [
+        'rendernode',
+        'readonly'
+      ],
+      () => {
+        const isLocked = this.editor.exist('isreadonly') && this.editor.trigger('isreadonly')
+
+        this.editor.nodes.forEach(x => {
+          x.controls.get('connection').vueContext.isLocked = isLocked
+        })
       }
     )
   },

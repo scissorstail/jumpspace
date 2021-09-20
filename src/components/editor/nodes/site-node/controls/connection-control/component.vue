@@ -328,6 +328,7 @@ export default {
   mixins: [mixin],
   props: {
     readonly: {
+      // for connections and nodes, not for controls
       type: Boolean,
       default: false
     },
@@ -351,6 +352,7 @@ export default {
   store,
   data() {
     return {
+      isLocked: false,
       name: null,
       user: null,
       host: null,
