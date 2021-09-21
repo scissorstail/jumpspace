@@ -25,6 +25,7 @@
         v-if="editorData"
         #main-navigator-toolbar
       >
+        <!-- Editor Lock/Unlock button -->
         <b-button
           v-b-tooltip.hover.v-light.dh0.noninteractive
           size="sm"
@@ -87,7 +88,6 @@ import MainNavigator from '../components/layout/main-navigator'
 import Editor from '../components/editor'
 import InfoPopup from '../components/layout/popup/info-popup'
 import SettingPopup from '../components/layout/popup/setting-popup'
-// import isEmpty from 'lodash/isEmpty'
 
 /*
 
