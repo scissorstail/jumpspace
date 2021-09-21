@@ -51,20 +51,18 @@
         <template #footer>
           <div class="d-flex">
             <b-button
-              size="sm"
               class="ml-auto"
+              @click="$emit('update:show', false)"
+            >
+              Cancel
+            </b-button>
+
+            <b-button
+              class="ml-2"
               variant="primary"
               @click="saveSetting"
             >
               Save
-            </b-button>
-
-            <b-button
-              size="sm"
-              class="ml-1"
-              @click="$emit('update:show', false)"
-            >
-              Close
             </b-button>
           </div>
         </template>

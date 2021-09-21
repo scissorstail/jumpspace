@@ -77,7 +77,6 @@
 
         <template v-slot:footer>
           <b-button
-            size="sm"
             block
             class="flex-grow-1"
             @click="$emit('update:show', false)"
@@ -102,4 +101,5 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+</style>
