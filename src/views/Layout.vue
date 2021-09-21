@@ -3,7 +3,6 @@
     <MainHeader
       @export="exportProject"
       @info="isShowInfoPopup = true"
-      @save="compileEditor().then(() => saveProject())"
       @setting="isShowSettingPopup = true"
       @lock="isEditorLocked = true"
       @unlock="isEditorLocked = false"
@@ -139,9 +138,10 @@ export default {
   },
   methods: {
     loadEditor({ item, index, isLocked }) {
-      this.isEditorLocked = isLocked
-      this.editorData = JSON.stringify(item.data)
+      // If not use timestamp, the editor does not update its content while editorData is exactly same. ex) select copied item
+      this.editorData = JSON.stringify({ ...item.data, timestamp: Date.now() })
       this.openedItemIndex = index
+      this.isEditorLocked = isLocked // Call after update 'openedItemIndex'
 
       // default
       this.$refs.editorRef.editor.view.area.zoom(0.85, 0, 0)
@@ -153,9 +153,9 @@ export default {
       }
     },
     clearEditor() {
-      this.isEditorLocked = true
       this.editorData = null
       this.openedItemIndex = null
+      this.isEditorLocked = true // Call after update 'openedItemIndex'
     },
     async compileEditor() {
       // 현재 editor에 열려있는 item이 있으면

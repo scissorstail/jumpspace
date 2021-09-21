@@ -37,6 +37,7 @@ export default {
   watch: {
     async editorData() {
       if (this.editorData) {
+        await this.engine.abort()
         this.load(this.editorData)
       } else {
         await this.engine.abort()
@@ -151,18 +152,18 @@ export default {
     )
   },
   methods: {
+    async load(editorSaveData) {
+      await this.editor.fromJSON(JSON.parse(editorSaveData))
+      await this.compile()
+
+      this.editor.view.resize()
+    },
     async compile() {
       await this.engine.abort()
       await this.engine.process(this.editor.toJSON())
+      await this.engine.abort()
 
       return this.editor.toJSON()
-    },
-    load(editorSaveData) {
-      this.editor.fromJSON(JSON.parse(editorSaveData)).then(() => {
-        this.editor.view.resize()
-
-        this.compile()
-      })
     }
   }
 }

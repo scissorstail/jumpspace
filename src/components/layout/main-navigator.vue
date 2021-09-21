@@ -195,7 +195,7 @@
                   </b-dropdown-item>
                   <b-dropdown-divider />
                   <b-dropdown-item
-                    @click="exportSelectedItems"
+                    @click="exportItems([item])"
                   >
                     <small>Export</small>
                   </b-dropdown-item>

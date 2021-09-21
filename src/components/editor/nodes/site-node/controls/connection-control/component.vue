@@ -534,7 +534,6 @@ export default {
       if (this.ikey) {
         this.putData(this.ikey, { ...data })
       }
-      this.emitter.trigger('process')
     }
   }
 }
