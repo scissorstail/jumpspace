@@ -52,15 +52,17 @@ export default {
     // Node
     const nodes = [new SiteNode()]
 
-    const background = document.createElement('div')
-    background.classList = 'background'
-
     // Editor
     this.editor = new Rete.NodeEditor(
       'test@0.1.0',
       document.querySelector('#rete')
     )
 
+    // Editor Background
+    const background = document.createElement('div')
+    background.classList = 'background'
+
+    // Editor Plugins
     this.editor.use(ConnectionPlugin)
 
     this.editor.use(VueRenderPlugin)
@@ -89,7 +91,7 @@ export default {
     this.editor.use(AreaPlugin, {
       background,
       snap: true,
-      scaleExtent: { min: 0.1, max: 1 },
+      scaleExtent: { min: 0.1, max: 2 },
       translateExtent: { width: 1024, height: 1024 }
     })
 
@@ -139,6 +141,7 @@ export default {
         'readonly'
       ],
       () => {
+        // Update Editor Lock status of Components
         const isLocked = this.editor.exist('isreadonly') && this.editor.trigger('isreadonly')
 
         this.editor.nodes.forEach(x => {

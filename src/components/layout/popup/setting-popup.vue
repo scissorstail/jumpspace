@@ -60,7 +60,6 @@
             </b-button>
 
             <b-button
-
               size="sm"
               class="ml-1"
               @click="$emit('update:show', false)"

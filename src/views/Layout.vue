@@ -225,7 +225,7 @@ export default {
   flex-direction: row;
   flex: 1;
   overflow: hidden;
-  background-color: #f1faee;
+  background-color: #eee;
 }
 
 #main-sidebar {

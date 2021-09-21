@@ -80,7 +80,6 @@
             size="sm"
             block
             class="flex-grow-1"
-            variant="light"
             @click="$emit('update:show', false)"
           >
             Close
