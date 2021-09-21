@@ -84,7 +84,9 @@
         class="list-search py-1"
       >
         <b-input-group-prepend is-text>
-          <v-icon name="search" />
+          <b-icon
+            icon="search"
+          />
         </b-input-group-prepend>
         <b-form-input
           v-model="keyword"
