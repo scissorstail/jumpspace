@@ -2,7 +2,6 @@ const info = require('./package.json')
 process.env.VUE_APP_VERSION = info.version
 
 module.exports = {
-  transpileDependencies: [/\bvue-awesome\b/],
   pluginOptions: {
     electronBuilder: {
       nodeIntegration: false,
