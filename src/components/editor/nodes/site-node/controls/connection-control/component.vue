@@ -60,22 +60,22 @@
                     v-model="forward.checked"
                     class="middle"
                     size="lg"
+                    :disabled="isLocked"
                   />
                   <b-form-input
                     v-model.trim="forward.from"
                     class="mr-2"
                     maxlength="5"
                     size="sm"
+                    :disabled="isLocked"
                   />
                   <span
                     :style="{ opacity: forward.checked ? 1.0 : 0.1 }"
                     class="middle"
                   >
-                    <v-icon
-                      height="15"
-                      name="forward"
-                      scale="1"
-                      width="15"
+                    <b-icon
+                      icon="arrow-left-right"
+                      font-scale="1"
                     />
                   </span>
                   <b-form-input
@@ -83,37 +83,33 @@
                     class="ml-2"
                     maxlength="5"
                     size="sm"
+                    :disabled="isLocked"
                   />
                   <b-button
                     class="ml-2"
                     size="sm"
                     title="Remove Forward"
+                    :disabled="isLocked"
                     @click="removeForward(forward)"
                   >
-                    <v-icon
-                      height="15"
-                      name="minus"
-                      scale="1"
-                      width="15"
+                    <b-icon
+                      icon="dash"
                     />
                   </b-button>
                 </div>
               </div>
               <div
-                :class="[forwards.length > 0 ? 'mt-2' : '']"
                 class="info-action"
               >
                 <b-button
-                  class="mr-1"
+                  class="mr-1 mt-2"
                   size="sm"
                   title="Add Forward"
+                  :disabled="isLocked"
                   @click="addForward"
                 >
-                  <v-icon
-                    height="15"
-                    name="plus"
-                    scale="1"
-                    width="15"
+                  <b-icon
+                    icon="plus"
                   />
                 </b-button>
               </div>
@@ -143,29 +139,28 @@
                 <div class="info-item mb-3">
                   <b-button
                     size="sm"
+                    :disabled="isLocked"
                     @click="loadPrevDiagram"
                   >
-                    <v-icon
-                      height="15"
-                      name="angle-left"
-                      scale="1"
-                      width="15"
+                    <b-icon
+                      class="menu-item-icon"
+                      icon="arrow-left-short"
                     />
                   </b-button>
                   <b-form-input
                     v-model.trim="diagram"
                     size="sm"
                     style="margin: 0 3px;"
+                    :disabled="isLocked"
                   />
                   <b-button
                     size="sm"
+                    :disabled="isLocked"
                     @click="loadNextDiagram"
                   >
-                    <v-icon
-                      height="15"
-                      name="angle-right"
-                      scale="1"
-                      width="15"
+                    <b-icon
+                      class="menu-item-icon"
+                      icon="arrow-right-short"
                     />
                   </b-button>
                 </div>
@@ -178,6 +173,7 @@
                   <b-form-input
                     v-model.trim="name"
                     size="sm"
+                    :disabled="isLocked"
                   />
                 </b-form-group>
                 <b-form-group
@@ -189,6 +185,7 @@
                   <b-form-input
                     v-model.trim="user"
                     size="sm"
+                    :disabled="isLocked"
                   />
                 </b-form-group>
                 <b-form-group
@@ -200,6 +197,7 @@
                   <b-form-input
                     v-model.trim="host"
                     size="sm"
+                    :disabled="isLocked"
                   />
                 </b-form-group>
                 <b-form-group
@@ -212,6 +210,7 @@
                     v-model.trim="port"
                     placeholder="(To blank when Forwarding)"
                     size="sm"
+                    :disabled="isLocked"
                   />
                 </b-form-group>
                 <b-form-group
@@ -223,33 +222,20 @@
                   <b-input-group size="sm">
                     <template #append>
                       <b-button
-                        v-if="keyPath"
                         size="sm"
-                        @click="keyPath = ''"
-                      >
-                        <v-icon
-                          height="15"
-                          name="trash-alt"
-                          scale="1"
-                          width="15"
-                        />
-                      </b-button>
-                      <b-button
-                        v-else
-                        size="sm"
+                        :disabled="isLocked"
                         @click="$refs.file.click()"
                       >
-                        <v-icon
-                          height="15"
-                          name="folder-open"
-                          scale="1"
-                          width="15"
+                        <b-icon
+                          class="menu-item-icon"
+                          icon="key-fill"
                         />
                       </b-button>
                     </template>
                     <b-form-input
                       v-model.trim="keyPath"
                       size="sm"
+                      :disabled="isLocked"
                     />
                     <input
                       ref="file"
@@ -268,6 +254,7 @@
                   <b-form-input
                     v-model.trim="exec"
                     size="sm"
+                    :disabled="isLocked"
                   />
                 </b-form-group>
               </div>
@@ -585,6 +572,12 @@ export default {
 }
 
 .info {
+  &-list {
+    .form-row {
+      align-items: center;
+    }
+  }
+
   &-block {
     font-weight: bold;
     text-align: center;

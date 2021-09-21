@@ -48,9 +48,6 @@
           <small>Show Info</small>
         </b-dropdown-item>
         <b-dropdown-divider />
-        <b-dropdown-item @click="$emit('save')">
-          <small>Save Space</small>
-        </b-dropdown-item>
         <b-dropdown-item
           @click="$emit('export')"
         >

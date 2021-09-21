@@ -2,6 +2,7 @@
   <div
     id="rete"
     ref="rete"
+    :class="[isLocked && 'locked']"
   />
 </template>
 
@@ -266,6 +267,18 @@ export default {
     .main-path {
       stroke-width: 3px;
       stroke: black;
+    }
+  }
+
+  &.locked {
+    .node.site .socket {
+      &.input {
+        border: 3px dashed lightgray;
+      }
+
+      &.output {
+        border: 3px solid lightgray;
+      }
     }
   }
 }
