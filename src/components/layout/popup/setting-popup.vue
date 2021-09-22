@@ -10,73 +10,59 @@
   >
     <template #overlay>
       <b-card
-        :header="`Setting`"
+        v-if="show"
+        header="Settings"
         bg-variant="light"
         style="width: 90vw"
       >
-        <b-card-body>
-          <b-card-text class="mb-3">
-            <b-row class="mb-3">
-              <b-col>
-                <b-form-group
-                  class="mb-0"
-                  label="Git Bash path"
-                  label-align="left"
-                  label-cols-sm="3"
-                >
-                  <b-form-input
-                    v-model="gitBashPath"
-                    size="sm"
-                  />
-                </b-form-group>
-              </b-col>
-            </b-row>
-            <b-row>
-              <b-col>
-                <b-form-group
-                  label-align="left"
-                  class="text-left"
-                >
-                  <b-form-checkbox
-                    v-model="isHideToTrayOnClose"
-                    switch
-                  >
-                    Close to system tray
-                  </b-form-checkbox>
-                </b-form-group>
-              </b-col>
-            </b-row>
-          </b-card-text>
-        </b-card-body>
+        <b-card-text class="mb-3">
+          <b-row class="mb-3">
+            <b-col>
+              <b-form-group
+                class="mb-0"
+                label="Git Bash path"
+                label-align="left"
+                label-cols-sm="3"
+              >
+                <b-form-input
+                  v-model="gitBashPath"
+                  size="sm"
+                />
+              </b-form-group>
+            </b-col>
+          </b-row>
+          <b-row>
+            <b-col>
+              <b-form-group
+                label-align="left"
+                class="text-left"
+                label="Close to system tray"
+                label-cols-sm="3"
+              >
+                <b-form-checkbox
+                  v-model="isHideToTrayOnClose"
+                  switch
+                />
+              </b-form-group>
+            </b-col>
+          </b-row>
+        </b-card-text>
 
         <template #footer>
           <div class="d-flex">
             <b-button
-              block
-              class="shadow-sm mr-1"
-              variant="light"
+              class="ml-auto"
               @click="$emit('update:show', false)"
             >
-              <v-icon
-                height="14"
-                name="times"
-                scale="1"
-                width="14"
-              />
+              Cancel
             </b-button>
+
             <b-button
-              v-b-tooltip.hover.v-light.dh0.noninteractive
-              class="shadow-sm"
-              title="save"
-              variant="light"
+              class="ml-2"
+              variant="primary"
               @click="saveSetting"
             >
-              <v-icon
-                height="14"
-                name="save"
-                scale="1"
-                width="14"
-              />
+              Save
             </b-button>
           </div>
         </template>
@@ -121,4 +107,10 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+::v-deep {
+  .form-group .form-row {
+    align-items: center;
+  }
+}
+</style>

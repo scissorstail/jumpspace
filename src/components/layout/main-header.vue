@@ -1,106 +1,59 @@
 <template>
   <div
     id="main-header"
-    class="p-3"
+    class="layout-divider bg-light p-1 pl-2 pr-2"
   >
-    <slot name="main-navigation-toggle" />
+    <slot name="main-navigator-toggle" />
 
     <div class="align-self-center">
       <!-- left button -->
     </div>
 
     <div class="ml-auto align-self-center">
-      <span class="mr-3">{{ headerInfo.name || '' }}</span>
+      <slot name="main-navigator-toolbar" />
 
-      <b-button
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        class="mr-1"
-        title="refresh"
-        variant="outline-danger"
-        @click="reload"
+      <hr
+        class="btn-divider my-0 mx-1 p-0"
       >
-        <v-icon
-          height="14"
-          name="fire-extinguisher"
-          scale="1"
-          width="14"
-        />
-      </b-button>
 
-      <b-button
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        class="mr-1"
-        title="devtools"
-        variant="outline-warning"
-        @click="toggleDevTools"
-      >
-        <v-icon
-          height="14"
-          name="bug"
-          scale="1"
-          width="14"
-        />
-      </b-button>
-
-      <b-button
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        class
-        title="info"
-        variant="outline-primary mr-1"
-        @click="$emit('info')"
-      >
-        <v-icon
-          height="14"
-          name="info-circle"
-          scale="1"
-          width="14"
-        />
-      </b-button>
-
-      <b-button
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        class="mr-1"
-        title="export"
-        variant="outline-info mr-3"
-        @click="$emit('export')"
-      >
-        <v-icon
-          height="14"
-          name="archive"
-          scale="1"
-          width="14"
-        />
-      </b-button>
-
-      <b-button
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        class="mr-3"
-        title="save"
+      <b-dropdown
+        size="sm"
         variant="light"
-        @click="$emit('save')"
+        toggle-class="text-decoration-none"
+        no-caret
+        right
       >
-        <v-icon
-          height="14"
-          name="save"
-          scale="1"
-          width="14"
-        />
-      </b-button>
-
-      <b-button
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        class="mr-1"
-        title="setting"
-        variant="primary"
-        @click="$emit('setting')"
-      >
-        <v-icon
-          height="14"
-          name="cog"
-          scale="1"
-          width="14"
-        />
-      </b-button>
+        <template #button-content>
+          <b-icon
+            icon="gear"
+          />
+        </template>
+        <b-dropdown-item
+          @click="$emit('setting')"
+        >
+          <small>Settings</small>
+        </b-dropdown-item>
+        <b-dropdown-divider />
+        <b-dropdown-item @click="reload">
+          <small>Refresh Window</small>
+        </b-dropdown-item>
+        <b-dropdown-item
+          @click="toggleDevTools"
+        >
+          <small>Toggle Devtools</small>
+        </b-dropdown-item>
+        <b-dropdown-item
+          @click="$emit('info')"
+        >
+          <small>Show Info</small>
+        </b-dropdown-item>
+        <b-dropdown-divider />
+        <b-dropdown-item
+          @click="$emit('export')"
+        >
+          <small>Export Space</small>
+        </b-dropdown-item>
+      </b-dropdown>
     </div>
   </div>
 </template>
@@ -108,20 +61,17 @@
 <script>
 export default {
   name: 'MainHeader',
-  props: {
-    headerInfo: {
-      type: Object,
-      default: () => ({
-        name: null
-      })
+  data() {
+    return {
+      isLocked: true
     }
   },
   methods: {
     reload() {
-      window.reloadApp()
+      window.preload.reloadApp()
     },
     toggleDevTools() {
-      window.toggleDevTools()
+      window.preload.toggleDevTools()
     }
   }
 }
@@ -130,9 +80,13 @@ export default {
 <style lang="scss" scoped>
 #main-header {
   display: flex;
-  background-color: #1d3557;
-  padding: 10px;
-  color: white;
   font-size: large;
+
+  .btn-divider {
+    height: 1.5em;
+    display: inline-block;
+    vertical-align: middle;
+    border-left: 1px solid #e9ecef;
+  }
 }
 </style>

@@ -1,222 +1,238 @@
 <template>
-  <div id="main-navigator">
+  <div
+    id="main-navigator"
+    v-click-outside="vcoConfig"
+    class="shadow"
+  >
     <!-- navigator-header -->
-    <div class="main-navigator-header p-3 shadow justify-content-end">
+    <div class="main-navigator-header p-1 px-2 layout-divider ">
       <b-button
-        v-show="isEditing"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        title="export items"
-        class="mr-auto"
-        variant="outline-info"
-        :disabled="checkedItems.length === 0"
-        @click="exportSelectedItems"
-      >
-        <v-icon
-          height="14"
-          name="file-export"
-          scale="1"
-          width="14"
-        />
-      </b-button>
-
-      <b-button
-        v-show="isEditing"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        class="shadow-sm mr-1"
-        title="import items"
-        variant="outline-primary"
-        @click="$emit('import-items')"
-      >
-        <v-icon
-          height="14"
-          name="file-import"
-          scale="1"
-          width="14"
-        />
-      </b-button>
-
-      <b-button
-        v-show="isEditing"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        class="shadow-sm mr-1"
-        title="add"
-        variant="primary"
-        @click="add"
-      >
-        <v-icon
-          height="14"
-          name="plus"
-          scale="1"
-          width="14"
-        />
-      </b-button>
-
-      <b-button
-        v-show="!isEditing"
-        class="shadow-sm flex-grow-1 mr-1"
+        size="sm"
         variant="light"
         @click="$emit('hide')"
       >
-        <v-icon
-          height="14"
-          name="times"
-          scale="1"
-          width="14"
+        <b-icon
+          icon="x"
         />
       </b-button>
 
-      <b-button
-        v-show="!isEditing"
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        class="shadow-sm mr-1"
-        title="open"
-        variant="primary"
-        @click="$emit('open-project')"
+      <hr
+        class="btn-divider my-0 mx-1 p-0"
       >
-        <v-icon
-          height="14"
-          name="folder-open"
-          scale="1"
-          width="14"
+
+      <div class="ml-auto mr-auto" />
+
+      <b-button
+        size="sm"
+        variant="light"
+        :disabled="isSelecting"
+        @click="addNewItem"
+      >
+        <b-icon
+          icon="plus"
         />
       </b-button>
 
-      <b-button
-        v-b-tooltip.hover.v-light.dh0.noninteractive
-        :title="isEditing ? 'save' : 'edit'"
-        :variant="isEditing ? 'warning' : 'light'"
-        class="shadow-sm flex-grow-9"
-        @click="toggleEditing"
+      <hr
+        class="btn-divider my-0 mx-1 p-0"
       >
-        <v-icon
-          :name="isEditing ? 'save' : 'edit'"
-          height="14"
-          scale="1"
-          style="width: 16px;"
-          width="14"
+
+      <b-dropdown
+        size="sm"
+        variant="light"
+        toggle-class="text-decoration-none"
+        no-caret
+        right
+      >
+        <template #button-content>
+          <b-icon
+            icon="three-dots-vertical"
+          />
+        </template>
+        <b-dropdown-item
+          :disabled="isSelecting"
+          @click="addNewItem"
+        >
+          <small>New Item</small>
+        </b-dropdown-item>
+        <b-dropdown-item
+          :disabled="!isSelecting"
+          @click="removeSelectedItems"
+        >
+          <small>Remove Items</small>
+        </b-dropdown-item>
+        <b-dropdown-divider />
+        <b-dropdown-item
+          :disabled="isSelecting"
+          @click="importItems"
+        >
+          <small>Import Items...</small>
+        </b-dropdown-item>
+        <b-dropdown-item
+          :disabled="!isSelecting"
+          @click="exportSelectedItems"
+        >
+          <small>Export Items...</small>
+        </b-dropdown-item>
+      </b-dropdown>
+    </div>
+
+    <!-- navigator-tool -->
+    <div class="main-navigator-header p-1 px-2 layout-divider">
+      <b-input-group
+        size="sm"
+        class="list-search py-1"
+      >
+        <b-input-group-prepend is-text>
+          <b-icon
+            icon="search"
+          />
+        </b-input-group-prepend>
+        <b-form-input
+          v-model="keyword"
+          :debounce="150"
+          type="search"
         />
-      </b-button>
+      </b-input-group>
     </div>
 
     <!-- navigator-content -->
     <div
-      class="p-3 main-navigator-content"
+      class="main-navigator-content layout-divider bg-white"
+      :class="{dragging: isDrag}"
     >
-      <!-- 편집 모드 -->
-      <draggable
-        v-if="isEditing"
-        v-model="items"
-        v-bind="dragOptions"
-        @start="drag = true"
-        @end="drag = false"
+      <b-button-toolbar
+        key-nav
+        class="px-2 py-1"
       >
-        <transition-group
-          type="transition"
-          :name="!drag ? 'flip-list' : null"
+        <draggable
+          v-model="items"
+          class="list-container"
+          :disabled="!isDraggable"
+          filter=".ignore-dragging, input"
+          :prevent-on-filter="false"
+          ghost-class="ghost"
+          @start="isDrag = true"
+          @end="isDrag = false"
+          @unchoose="unchoose"
         >
-          <div
-            v-for="(item, index) in items"
-            :key="`${_uid}-input-${index}`"
-            class="list-item mt-1 editing"
+          <template
+            v-for="item in items"
           >
             <b-button
+              v-if="!item.isEditing"
+              v-show="!keyword || item.name.includes(keyword)"
+              :id="`list-item-${item.index}`"
+              :key="`button-${item.index}`"
+              size="sm"
+              block
+              :pressed="item === openedItem"
+              class="list-item disable-transition"
+              :class="{'dropdown-shown': item.isMenuShown, 'selected': item.isSelected}"
               variant="white"
-              class="handle"
+              @dblclick="editItem(item)"
+              @click="openItem(item, $event)"
             >
-              <v-icon
-                class="handle-icon text-secondary"
-                height="14"
-                name="grip-vertical"
-                scale="1"
-                width="14"
-              />
+              <span
+                class="list-item-name"
+              >{{ item.name || '(untitled)' }}</span>
+              <!--
+              <div class="list-item-dropdown ml-auto">
+                <b-button
+
+                  v-if="!isSelecting"
+                  size="sm"
+                  variant="white"
+                  class="p-0"
+                  @click="removeItem(item)"
+                >
+                  <b-icon
+                    icon="dash"
+                  />
+                </b-button>
+              </div>
+              -->
+              <div @click.stop>
+                <b-dropdown
+                  v-if="!isSelecting"
+                  size="sm"
+                  variant="outline-white"
+                  toggle-class="text-decoration-none"
+                  right
+                  no-caret
+                  class="list-item-dropdown ignore-dragging"
+                  @shown="item.isMenuShown = true"
+                  @hidden="item.isMenuShown = false"
+                >
+                  <template #button-content>
+                    <b-icon
+                      icon="three-dots"
+                    />
+                  </template>
+                  <b-dropdown-item
+                    @click="
+                      item.isMenuShown = false;
+                      editItem(item)
+                    "
+                  >
+                    <small>Edit</small>
+                  </b-dropdown-item>
+                  <b-dropdown-item
+                    @click="
+                      item.isMenuShown = false;
+                      copyItem(item)
+                    "
+                  >
+                    <small>Copy</small>
+                  </b-dropdown-item>
+                  <b-dropdown-item
+                    @click="
+                      item.isMenuShown = false;
+                      removeItem(item)
+                    "
+                  >
+                    <small>Remove</small>
+                  </b-dropdown-item>
+                  <b-dropdown-divider />
+                  <b-dropdown-item
+                    @click="exportItems([item])"
+                  >
+                    <small>Export</small>
+                  </b-dropdown-item>
+                </b-dropdown>
+              </div>
             </b-button>
-            <b-form-checkbox
-              size="lg"
-              class="align-self-center"
-              @change="check(item, $event)"
-            />
             <b-form-input
+              v-else
+              :id="`list-item-${item.index}`"
+              :key="`input-${item.index}`"
               v-model="item.name"
+              :lazy="true"
+              size="sm"
+              type="text"
+              class="list-item disable-transition flex-fill ignore-dragging editing"
               placeholder="(untitled)"
+              @blur="item.isEditing = false;"
+              @keydown.enter="item.isEditing = false;"
+              @keydown.stop
+              @change="$emit('updated', {items: getProjectDataFormItems(items), index: openedItemIndex})"
             />
-            <b-button
-              class="ml-1"
-              variant="danger"
-              @click="remove(item)"
-            >
-              <v-icon
-                height="14"
-                name="trash"
-                scale="1"
-                width="14"
-              />
-            </b-button>
-          </div>
-        </transition-group>
-      </draggable>
-
-      <!-- 기본 모드 -->
-      <div v-else>
-        <b-input-group
-          size="sm"
-          class="mb-2"
-        >
-          <b-input-group-prepend is-text>
-            <v-icon name="search" />
-          </b-input-group-prepend>
-          <b-form-input
-            v-model="keyword"
-            type="search"
-          />
-        </b-input-group>
-
-        <template
-          v-for="(item, index) in items"
-        >
-          <b-button
-            v-show="!keyword || item.name.includes(keyword)"
-            :key="`${_uid}-button-${index}`"
-            v-b-toggle="`collapse-${index}`"
-            :pressed="item === selectedItem"
-            block
-            class="list-item mt-1"
-            squared
-            variant="white"
-            @click="select(item, index)"
-          >
-            {{ item.name || '(untitled)' }}
-          </b-button>
-        <!--
-        <b-collapse :id="`collapse-${index}`" :key="`${_uid}-collapse-${index}`">
-          <b-card>I am collapsible content!</b-card>
-        </b-collapse>
-        -->
-        </template>
-
-        <b-button
-          v-b-tooltip.hover.v-light.dh0.noninteractive
-          class="position-absolute shadow-sm mr-1 opacity-3"
-          title="top"
-          variant="light"
-          style="bottom: 14px; right: 14px"
-          @click="scrollToTop"
-        >
-          <v-icon
-            height="14"
-            name="arrow-up"
-            scale="1"
-            width="14"
-            color="gray"
-          />
-        </b-button>
-      </div>
+          </template>
+        </draggable>
+      </b-button-toolbar>
     </div>
+
+    <!-- navigator-footer -->
+    <div
+      class="main-navigator-footer p-1"
+    />
   </div>
 </template>
 
 <script>
 import draggable from 'vuedraggable'
+import cloneDeep from 'lodash/cloneDeep'
+import isEmpty from 'lodash/isEmpty'
 
 export default {
   name: 'MainNavigator',
@@ -227,81 +243,211 @@ export default {
     projectData: {
       type: Array,
       default: () => []
+    },
+    isLocked: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     return {
-      drag: false,
+      itemIndex: 0,
+      isDraggable: true,
+      isDrag: false,
       isEditing: false,
       keyword: '',
       items: [],
-      checkedItems: [],
-      selectedItem: null
+      openedItem: null,
+      vcoConfig: {
+        handler: this.onClickOutside,
+        isActive: true
+      }
     }
   },
   computed: {
-    dragOptions() {
-      return {
-        animation: 200,
-        group: 'description',
-        disabled: false,
-        ghostClass: 'ghost',
-        handle: '.handle'
-      }
+    selectedItems() {
+      return this.items.filter(x => x.isSelected)
+    },
+    isSelecting() {
+      return this.selectedItems.length > 0
+    },
+    openedItemIndex() {
+      const foundIndex = this.items.findIndex(x => x === this.openedItem)
+      return foundIndex !== -1 ? foundIndex : null
     }
   },
   watch: {
-    projectData() {
-      this.selectedItem = null
-      this.items = this.projectData
+    keyword() {
+      this.items.forEach(x => { x.isSelected = false })
+    },
+    items() {
+      this.$emit('updated', { items: this.getProjectDataFormItems(this.items), index: this.openedItemIndex })
     }
   },
+  created() {
+    this.items = this.getNavigatorDataFormItems(this.projectData)
+  },
   methods: {
-    toggleEditing() {
-      this.$emit('deselected')
-      this.isEditing = !this.isEditing
-      if (this.isEditing) {
-        this.checkedItems = []
-      } else {
-        this.$emit('updated')
-      }
-    },
-    select(item, index) {
-      this.selectedItem = item
-      this.$emit('selected', { item, index })
-    },
-    check(item, checked) {
-      if (checked) {
-        this.checkedItems.push(item)
-      } else {
-        this.checkedItems = this.checkedItems.filter(x => x !== item)
-      }
-    },
-    add() {
-      this.items.push({
-        name: '',
-        data: { id: 'test@0.1.0', nodes: {} }
-      })
-
+    unchoose(event) {
       setTimeout(() => {
-        const element = document.querySelector('#main-navigator .main-navigator-content')
-        element.scroll({ top: element.scrollHeight, behavior: 'smooth' })
-      }, 0)
+        const { pageX, pageY } = event.originalEvent
+        window.preload.requestWindowMouseMoveEvent({ x: pageX, y: pageY })
+        event.item.focus()
+      })
     },
-    remove(item) {
+    async openItem(item, event = {}) {
+      if (event.ctrlKey) {
+        this.vcoConfig.isActive = true
+        item.isSelected = !item.isSelected
+        return
+      }
+
+      this.vcoConfig.isActive = false
+      this.items.forEach(x => { x.isSelected = false })
+
+      if (this.openedItem !== item) {
+        if (!this.isLocked && !isEmpty(event)) {
+          if (!(await this.comfirmUnlockedChangeWilBeLost())) {
+            return
+          }
+        }
+
+        this.openedItem = item
+        this.$emit('selected', { item, index: this.openedItemIndex, isLocked: !item.isEditing })
+      }
+    },
+    async addNewItem() {
+      if (!this.isLocked) {
+        if (!(await this.comfirmUnlockedChangeWilBeLost())) {
+          return
+        }
+      }
+
+      const newItem = {
+        index: this.itemIndex++,
+        name: '',
+        data: { id: 'test@0.1.0', nodes: {} },
+        isMenuShown: false,
+        isSelected: false,
+        isEditing: true
+      }
+
+      this.items.unshift(newItem)
+      this.openItem(newItem)
+
+      this.$nextTick(() => {
+        const element = document.querySelector('#main-navigator .main-navigator-content .list-item.editing')
+        if (element) {
+          element.focus()
+          if (document.activeElement !== element) {
+            newItem.isEditing = false
+          }
+        }
+      })
+    },
+    editItem(item) {
+      item.isEditing = true
+
+      this.$nextTick(() => {
+        const element = document.querySelector(`#list-item-${item.index}`)
+        element.focus()
+      })
+    },
+    copyItem(item) {
+      const newItem = {
+        index: this.itemIndex++,
+        name: item.name,
+        data: cloneDeep(item.data),
+        isMenuShown: false,
+        isSelected: false,
+        isEditing: true
+      }
+
+      const foundIndex = this.items.findIndex(x => x === item)
+      if (foundIndex !== -1) {
+        this.items.splice(foundIndex + 1, 0, newItem)
+
+        this.$nextTick(() => {
+          setTimeout(() => {
+            const element = document.querySelector('#main-navigator .main-navigator-content .list-item.editing')
+            if (element) {
+              element.focus()
+              if (document.activeElement !== element) {
+                newItem.isEditing = false
+              }
+            }
+          })
+        })
+      }
+    },
+    async removeItem(item) {
+      if (this.openedItem === item) {
+        this.openedItem = null
+        this.$emit('deselected')
+      }
+
       const foundIndex = this.items.findIndex((x) => x === item)
       if (foundIndex >= 0) {
         this.items.splice(foundIndex, 1)
       }
     },
-    scrollToTop() {
-      setTimeout(() => {
-        const element = document.querySelector('#main-navigator .main-navigator-content')
-        element.scroll({ top: 0, behavior: 'smooth' })
-      }, 0)
+    async removeSelectedItems() {
+      if (this.items.includes(this.openedItem)) {
+        this.openedItem = null
+        this.$emit('deselected')
+      }
+
+      this.items = this.items.filter(x => !x.isSelected)
+    },
+    exportItems(items) {
+      try {
+        window.preload.saveProjectDataAsJSON(JSON.stringify(this.getProjectDataFormItems(items)), '~/export.json')
+      } catch (e) {
+        console.error(e)
+      }
     },
     exportSelectedItems() {
-      this.$emit('export-items', [...this.checkedItems])
+      this.exportItems(this.selectedItems)
+    },
+    async importItems() {
+      if (!this.isLocked) {
+        if (!(await this.comfirmUnlockedChangeWilBeLost())) {
+          return
+        }
+      }
+
+      try {
+        const projectData = await window.preload.loadProjectDataFromJSON()
+        if (projectData) {
+          this.items = this.items.concat(this.getNavigatorDataFormItems(JSON.parse(projectData)))
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    },
+    getNavigatorDataFormItems(items) {
+      return items.map((x) => ({ ...x, isMenuShown: false, isSelected: false, isEditing: false, index: this.itemIndex++ }))
+    },
+    getProjectDataFormItems(items) {
+      return items.map(x => ({ name: x.name, data: x.data }))
+    },
+    updateItemEditorData({ data, index }) {
+      // 에디터에 열린 item 정보 업데이트 시 외부에서 호출 후 정보 업데이트
+      const updatedItem = this.items[index]
+      if (updatedItem) {
+        this.items[index].data = data
+      }
+    },
+    onClickOutside() {
+      this.items.forEach(x => { x.isSelected = false })
+      this.vcoConfig.isActive = false
+    },
+    comfirmUnlockedChangeWilBeLost() {
+      return this.$bvModal.msgBoxConfirm('All unlocked changes will be lost', {
+        title: 'Are you sure you want to continue?',
+        okTitle: 'Continue',
+        returnFocus: '[id^=list-item-].active'
+      })
     }
   }
 }
@@ -309,51 +455,108 @@ export default {
 
 <style lang="scss" scoped>
 #main-navigator {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow-y: hidden;
   scrollbar-width: thin;
-  flex: 1;
 
   .main-navigator {
     &-header {
-      height: 70px;
       display: flex;
       flex-direction: row;
-      background-color: #1d3557f0;
+      align-items: center;
+
+      .btn-divider {
+        height: 1.5em;
+        display: inline-block;
+        vertical-align: middle;
+        border-left: 1px solid #e9ecef;
+      }
     }
 
     &-content {
-      height: calc(100% - 70px);
+      flex-grow: 1;
       overflow-y: auto;
 
-      .list-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
+      .list-search {
+        width: 100%;
+      }
 
-        &:hover:not(.editing) {
-          background-color: lightgrey;
+      .list-container {
+        width: 100%;
+
+        .list-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          border: 1px solid white;
+
+          &:hover:not(.editing),
+          &.dropdown-shown {
+            .list-item-dropdown {
+              display: flex;
+            }
+          }
+
+          &.dropdown-shown {
+            border: 1px solid #80bdff;
+          }
+
+          &.active {
+            font-weight: bold;
+          }
+
+          &.selected {
+            background-color: rgb(128, 189, 255, 0.35);
+          }
+
+          &.btn-block + .btn-block {
+            margin-top: 0;
+          }
+
+          &.ghost {
+            box-shadow: inset 0 0 0 0.2rem rgb(0 123 255 / 25%);
+          }
+
+          &.btn:focus,
+          &.editing:focus,
+          &.btn:active:focus {
+            outline: none;
+            box-shadow: none;
+            border: 1px solid #80bdff;
+          }
+
+          &-name {
+            overflow: hidden;
+            text-align: left;
+            width: 90%;
+            text-overflow: ellipsis;
+          }
+
+          &-dropdown {
+            width: 2em;
+            display: none;
+            ::v-deep {
+              button {
+                height: 1.5em;
+                padding: 0px;
+                margin: 0px;
+
+                svg {
+                  vertical-align: text-top;
+                }
+              }
+            }
+          }
         }
       }
     }
   }
 }
 
-.active {
-  background-color: lightgrey;
-}
-
-.btn:focus,
-.btn:active:focus {
-  outline: none;
-  box-shadow: none;
-}
-
-.sortable-chosen > .handle > .handle-icon {
-  color: initial !important;
-}
-
-.ghost {
-  opacity: 0;
+.disable-transition {
+  transition: none !important;
 }
 
 /* width */

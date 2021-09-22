@@ -1,20 +1,134 @@
 <template>
   <div class="component">
     <div class="header-menu">
-      <a class="info-edit">
+      <a class="menu-item">
+        <b-icon
+          v-if="isProxyJumpReady"
+          title="ProxyJump"
+          class="menu-item-icon"
+          icon="terminal"
+          font-scale="2"
+          @click="proxyJump"
+        />
+        <b-icon
+          v-else-if="isConnectable && !isProxyJumpReady"
+          title="Connect"
+          class="menu-item-icon"
+          icon="terminal"
+          font-scale="2"
+          @click="connect"
+        />
+      </a>
+      <a
+        v-show="isForwardable"
+        class="menu-item"
+      >
+        <b-icon
+          :style="{opacity: isForwardable && forwards.some(x => x.checked) ? 1.0 : 0.5}"
+          title="Forward"
+          class="menu-item-icon"
+          icon="arrow-left-right"
+          font-scale="2"
+          @click="isForwardable && forwards.some(x => x.checked) ? openForward() : ''"
+        />
+      </a>
+      <a class="menu-item">
+        <!-- forward popover-->
+        <v-popover
+          ref="popover2"
+          placement="auto-end"
+          @hide="save"
+        >
+          <b-icon
+            title="Forward list"
+            class="menu-item-icon"
+            icon="link45deg"
+            font-scale="2"
+          />
+          <template slot="popover">
+            <div class="p-3">
+              <div
+                class="info-list"
+                style="width: 225px;"
+              >
+                <div
+                  v-for="(forward, index) in forwards"
+                  :key="index"
+                  class="info-item mb-1"
+                >
+                  <b-form-checkbox
+                    v-model="forward.checked"
+                    class="middle"
+                    size="lg"
+                    :disabled="isLocked"
+                  />
+                  <b-form-input
+                    v-model.trim="forward.from"
+                    class="mr-2"
+                    maxlength="5"
+                    size="sm"
+                    :disabled="isLocked"
+                  />
+                  <span
+                    :style="{ opacity: forward.checked ? 1.0 : 0.1 }"
+                    class="middle"
+                  >
+                    <b-icon
+                      icon="arrow-left-right"
+                      font-scale="1"
+                    />
+                  </span>
+                  <b-form-input
+                    v-model.trim="forward.to"
+                    class="ml-2"
+                    maxlength="5"
+                    size="sm"
+                    :disabled="isLocked"
+                  />
+                  <b-button
+                    class="ml-2"
+                    size="sm"
+                    title="Remove Forward"
+                    :disabled="isLocked"
+                    @click="removeForward(forward)"
+                  >
+                    <b-icon
+                      icon="dash"
+                    />
+                  </b-button>
+                </div>
+              </div>
+              <div
+                class="info-action"
+              >
+                <b-button
+                  class="mr-1 mt-2"
+                  size="sm"
+                  title="Add Forward"
+                  :disabled="isLocked"
+                  @click="addForward"
+                >
+                  <b-icon
+                    icon="plus"
+                  />
+                </b-button>
+              </div>
+            </div>
+          </template>
+        </v-popover>
+      </a>
+      <a class="menu-item">
         <!-- setting popover -->
         <v-popover
           ref="popover"
           placement="auto-end"
           @hide="save"
         >
-          <v-icon
-            title="Info"
-            class="info-edit-item"
-            height="24"
-            name="cog"
-            scale="1.5"
-            width="24"
+          <b-icon
+            title="Setting"
+            class="menu-item-icon"
+            icon="gear"
+            font-scale="2"
           />
           <template slot="popover">
             <div class="p-3">
@@ -25,29 +139,28 @@
                 <div class="info-item mb-3">
                   <b-button
                     size="sm"
+                    :disabled="isLocked"
                     @click="loadPrevDiagram"
                   >
-                    <v-icon
-                      height="14"
-                      name="angle-left"
-                      scale="1"
-                      width="14"
+                    <b-icon
+                      class="menu-item-icon"
+                      icon="arrow-left-short"
                     />
                   </b-button>
                   <b-form-input
                     v-model.trim="diagram"
                     size="sm"
                     style="margin: 0 3px;"
+                    :disabled="isLocked"
                   />
                   <b-button
                     size="sm"
+                    :disabled="isLocked"
                     @click="loadNextDiagram"
                   >
-                    <v-icon
-                      height="14"
-                      name="angle-right"
-                      scale="1"
-                      width="14"
+                    <b-icon
+                      class="menu-item-icon"
+                      icon="arrow-right-short"
                     />
                   </b-button>
                 </div>
@@ -60,6 +173,7 @@
                   <b-form-input
                     v-model.trim="name"
                     size="sm"
+                    :disabled="isLocked"
                   />
                 </b-form-group>
                 <b-form-group
@@ -71,6 +185,7 @@
                   <b-form-input
                     v-model.trim="user"
                     size="sm"
+                    :disabled="isLocked"
                   />
                 </b-form-group>
                 <b-form-group
@@ -82,6 +197,7 @@
                   <b-form-input
                     v-model.trim="host"
                     size="sm"
+                    :disabled="isLocked"
                   />
                 </b-form-group>
                 <b-form-group
@@ -94,6 +210,7 @@
                     v-model.trim="port"
                     placeholder="(To blank when Forwarding)"
                     size="sm"
+                    :disabled="isLocked"
                   />
                 </b-form-group>
                 <b-form-group
@@ -105,33 +222,20 @@
                   <b-input-group size="sm">
                     <template #append>
                       <b-button
-                        v-if="keyPath"
                         size="sm"
-                        @click="keyPath = ''"
-                      >
-                        <v-icon
-                          height="14"
-                          name="trash-alt"
-                          scale="1"
-                          width="14"
-                        />
-                      </b-button>
-                      <b-button
-                        v-else
-                        size="sm"
+                        :disabled="isLocked"
                         @click="$refs.file.click()"
                       >
-                        <v-icon
-                          height="14"
-                          name="folder-open"
-                          scale="1"
-                          width="14"
+                        <b-icon
+                          class="menu-item-icon"
+                          icon="key-fill"
                         />
                       </b-button>
                     </template>
                     <b-form-input
                       v-model.trim="keyPath"
                       size="sm"
+                      :disabled="isLocked"
                     />
                     <input
                       ref="file"
@@ -150,99 +254,9 @@
                   <b-form-input
                     v-model.trim="exec"
                     size="sm"
+                    :disabled="isLocked"
                   />
                 </b-form-group>
-              </div>
-            </div>
-          </template>
-        </v-popover>
-      </a>
-      <a class="info-edit left">
-        <!-- forward popover-->
-        <v-popover
-          ref="popover2"
-          placement="auto-end"
-          @hide="save"
-        >
-          <v-icon
-            title="Forward list"
-            class="info-edit-item"
-            height="24"
-            name="link"
-            scale="1.5"
-            width="24"
-          />
-          <template slot="popover">
-            <div class="p-3">
-              <div
-                class="info-list"
-                style="width: 225px;"
-              >
-                <div
-                  v-for="(forward, index) in forwards"
-                  :key="index"
-                  class="info-item mb-1"
-                >
-                  <b-form-checkbox
-                    v-model="forward.checked"
-                    class="middle"
-                    size="lg"
-                  />
-                  <b-form-input
-                    v-model.trim="forward.from"
-                    class="mr-2"
-                    maxlength="5"
-                    size="sm"
-                  />
-                  <span
-                    :style="{ opacity: forward.checked ? 1.0 : 0.1 }"
-                    class="middle"
-                  >
-                    <v-icon
-                      height="14"
-                      name="forward"
-                      scale="1"
-                      width="14"
-                    />
-                  </span>
-                  <b-form-input
-                    v-model.trim="forward.to"
-                    class="ml-2"
-                    maxlength="5"
-                    size="sm"
-                  />
-                  <b-button
-                    class="ml-2"
-                    size="sm"
-                    title="Remove Forward"
-                    @click="removeForward(forward)"
-                  >
-                    <v-icon
-                      height="14"
-                      name="minus"
-                      scale="1"
-                      width="14"
-                    />
-                  </b-button>
-                </div>
-              </div>
-              <div
-                :class="[forwards.length > 0 ? 'mt-2' : '']"
-                class="info-action"
-              >
-                <b-button
-                  class="mr-1"
-                  size="sm"
-                  title="Add Forward"
-                  @click="addForward"
-                >
-                  <v-icon
-                    height="14"
-                    name="plus"
-                    scale="1"
-                    width="14"
-                  />
-                </b-button>
               </div>
             </div>
           </template>
@@ -251,7 +265,6 @@
     </div>
 
     <div
-      :class="{ blur: isBlur }"
       class="info-block"
     >
       <img
@@ -260,76 +273,32 @@
         height="40%"
         width="40%"
       >
-      <div
-        class="info-text"
-        :title="name || '(noname)'"
-      >
-        {{ name || '(noname)' }}
+      <div class="info-field">
+        <div
+          class="info-text"
+          :title="name || '(untitled)'"
+        >
+          {{ name || '(untitled)' }}
+        </div>
+        <div
+          class="info-text"
+          :title="user || ''"
+        >
+          {{ user || '' }}
+        </div>
+        <div
+          class="info-text"
+          :title="host || ''"
+        >
+          {{ host || '' }}
+        </div>
+        <div
+          class="info-text"
+          :title="port || ''"
+        >
+          {{ port || '' }}
+        </div>
       </div>
-      <div
-        class="info-text"
-        :title="host || '-'"
-      >
-        {{ host || '-' }}
-      </div>
-      <div class="info-text">
-        {{ port || '-' }}
-      </div>
-    </div>
-
-    <div class="footer-menu">
-      <a class="info-edit">
-        <v-icon
-          v-if="isProxyJumpReady"
-          title="ProxyJump"
-          class="info-edit-item"
-          :class="{'danger': Boolean(exec)}"
-          height="24"
-          name="bolt"
-          scale="1.5"
-          width="24"
-          @click="proxyJump"
-        />
-        <v-icon
-          v-if="isConnectable && !isProxyJumpReady"
-          title="Connect"
-          class="info-edit-item"
-          :class="{'danger': Boolean(exec)}"
-          height="24"
-          name="plug"
-          scale="1.5"
-          width="24"
-          @click="connect"
-        />
-      </a>
-      <a class="info-edit">
-        <v-icon
-          title="Blur"
-          class="info-edit-item"
-          height="24"
-          name="eye-slash"
-          scale="1.5"
-          width="24"
-          @click="blur"
-        />
-      </a>
-      <a class="info-edit left">
-        <v-icon
-          v-show="isFowardable"
-          title="Forward"
-          :style="{
-            opacity: isFowardable && forwards.some(x => x.checked) ? 1.0 : 0.5
-          }"
-          class="info-edit-item"
-          height="24"
-          name="forward"
-          scale="1.5"
-          width="24"
-          @click="
-            isFowardable && forwards.some(x => x.checked) ? openForward() : ''
-          "
-        />
-      </a>
     </div>
   </div>
 </template>
@@ -346,12 +315,13 @@ export default {
   mixins: [mixin],
   props: {
     readonly: {
+      // for connections and nodes, not for controls
       type: Boolean,
       default: false
     },
     emitter: {
       type: Object,
-      default: () => ({})
+      default: () => {}
     },
     ikey: {
       type: String,
@@ -369,7 +339,7 @@ export default {
   store,
   data() {
     return {
-      isBlur: false,
+      isLocked: false,
       name: null,
       user: null,
       host: null,
@@ -386,7 +356,7 @@ export default {
     isConnectable() {
       return this.user && this.host && this.port
     },
-    isFowardable() {
+    isForwardable() {
       const prevNodeData = last(this.prevNodeDataList)
       if (!prevNodeData) {
         return false
@@ -404,7 +374,7 @@ export default {
       return false
     },
     isProxyJumpReady() {
-      return this.isConnectable && this.isFowardable
+      return this.isConnectable && this.isForwardable
     }
   },
   created() {
@@ -436,17 +406,18 @@ export default {
       }
     },
     connect() {
-      const command = `"${this.setting.gitBashPath}" -c "ssh -o 'StrictHostKeyChecking=accept-new' ${
-        this.keyPath
-          ? `-i '${upath.toUnix(this.keyPath)}' `
-          : ''
-      }${this.user ? this.user + '@' : ''}${this.host} -p '${this.port}' ${
-        this.exec
-        ? `-tt '${this.exec}; exec $SHELL'`
-        : ''
-      }"`
+      const keyPathCommand = this.keyPath ? `-i '${upath.toUnix(this.keyPath)}'` : ''
+      const destHost = `${this.user ? this.user + '@' : ''}${this.host}`
+      const echoCommands = [`echo 'Connect... ${destHost}:${this.port} (${this.name})'`, "echo ''"].join(' && ')
+      const execCommand = this.exec ? `-tt '${this.exec}; exec $SHELL'` : ''
+
+      const command = `"${this.setting.gitBashPath}" -c " ${echoCommands} && ssh -o 'StrictHostKeyChecking=accept-new' ${keyPathCommand} -p '${this.port}' '${destHost}' ${execCommand}"`
+
       console.log(command)
-      window.executeCommand(command)
+
+      window.preload.executeCommand(command, (output) => {
+        console.log('Connect output:', output)
+      })
     },
     openForward() {
       const prevNodeData = last(this.prevNodeDataList)
@@ -454,27 +425,34 @@ export default {
         return false
       }
 
-      const ctlPathTempFilename = `${window.md5(`${prevNodeData.user}${prevNodeData.host}${prevNodeData.port}` + Date.now())}.ctl`
       const forwardList = this.forwards.filter(
         (x) => x.checked && x.from && x.to
       )
+
       if (forwardList.length === 0) {
         return
       }
 
-      const command = `"${
-        this.setting.gitBashPath
-      }" -c "echo 'Foward...' && ${
-        forwardList
-          .map((x, i) => `echo ':${x.from} >> [${prevNodeData.host}]:${prevNodeData.port} -> :${x.to}'`)
-          .join('&&')
-      } && ssh -o 'StrictHostKeyChecking=accept-new' -i "${upath.toUnix(prevNodeData.keyPath)}" "${prevNodeData.user}@${prevNodeData.host}" -p "${prevNodeData.port}" -N -M -S "${ctlPathTempFilename}" ${
-        forwardList
-          .map((x) => `-L "localhost:${x.from}:${this.host}:${x.to}"`)
-          .join(' ')
-      }"`
+      const keyPathToUnix = upath.toUnix(prevNodeData.keyPath)
+      const remoteHost = `${prevNodeData.user}@${prevNodeData.host}`
+      const remotePort = prevNodeData.port
+      const destHost = `${this.user}@${this.host}`
+      const echoCommands = [
+        "echo 'Forward...'",
+        `echo 'localhost -> ${remoteHost}:${remotePort} (${prevNodeData.name}) -> ${destHost} (${this.name})'`,
+        ...forwardList.map(x => `echo 'localhost:${x.from} <-> ${prevNodeData.name} <-> ${this.name}:${x.to}'`),
+        "echo ''"
+      ].join(' && ')
+      const ctlPathTempFilename = `${window.preload.md5(`${remoteHost}:${remotePort}` + Date.now())}.ctl`
+      const forwardCommand = forwardList.map((x) => `-L 'localhost:${x.from}:${this.host}:${x.to}'`).join(' ')
 
-      window.executeCommand(command)
+      const command = `"${this.setting.gitBashPath}" -c "${echoCommands} && ssh -o 'StrictHostKeyChecking=accept-new' -i '${keyPathToUnix}' -p '${remotePort}' -N -M -S '${ctlPathTempFilename}' ${forwardCommand} '${remoteHost}'"`
+
+      console.log(command)
+
+      window.preload.executeCommand(command, (output) => {
+        console.log('Forward output:', output)
+      })
     },
     addForward() {
       this.forwards.push({
@@ -494,7 +472,8 @@ export default {
       for (let i = 0; i < nodes.length; i += 1) {
         const { host, user, port, keyPath } = nodes[i]
 
-        const hostHash = window.md5(host + user + port)
+        const pathHash = window.preload.md5(jumpHosts.join(''))
+        const hostHash = window.preload.md5(pathHash + host + user + port)
         jumpHosts.push(hostHash)
 
         str += `Host ${hostHash}\r\n`
@@ -507,25 +486,20 @@ export default {
         str += '\r\n'
       }
 
-      const configTempFilename = `${window.md5(str + Date.now())}.jmp`
-
-      window.writeFileSync(configTempFilename, str)
-
+      const echoCommands = ["echo 'ProxyJump...'", ...nodes.map(x => `echo '>>> ${x.host}:${x.port} (${x.name})'`), "echo ''"].join(' && ')
+      const configTempFilename = `${window.preload.md5(str + Date.now())}.jmp`
       const destHost = jumpHosts.pop()
-      const command = `"${
-        this.setting.gitBashPath
-      }" -c "echo 'ProxyJump...' && ${
-        nodes
-          .map((x, i) => `echo '>>> [${x.host}]:${x.port}'`)
-          .join('&&')
-      } && ssh -o 'StrictHostKeyChecking=accept-new' -F "${configTempFilename}" -J ${jumpHosts.join(',')} ${destHost} ${
-        this.exec
-        ? `-tt '${this.exec}; exec $SHELL'`
-        : ''
-      }"`
+      const jumpPath = jumpHosts.join(',')
+      const execCommand = this.exec ? `-tt '${this.exec}; exec $SHELL'` : ''
 
-      window.executeCommand(command, (output) => {
-        setTimeout(() => window.unlinkFile(configTempFilename), 3000)
+      const command = `"${this.setting.gitBashPath}" -c "${echoCommands} && ssh -o 'StrictHostKeyChecking=accept-new' -F '${configTempFilename}' -J '${jumpPath}' '${destHost}' ${execCommand}"`
+
+      console.log(command)
+
+      window.preload.writeFileSync(configTempFilename, str)
+      window.preload.executeCommand(command, (output) => {
+        console.log('ProxyJump output:', output)
+        setTimeout(() => window.preload.unlinkFile(configTempFilename), 3000)
       })
     },
     update() {
@@ -546,7 +520,6 @@ export default {
     },
     save() {
       const data = pick(this.$data, [
-        'isBlur',
         'name',
         'user',
         'host',
@@ -559,50 +532,94 @@ export default {
       if (this.ikey) {
         this.putData(this.ikey, { ...data })
       }
-      this.emitter.trigger('process')
-    },
-    blur() {
-      this.isBlur = !this.isBlur
     }
   }
 }
 </script>
 
 <style lang="scss">
-.info-block {
-  font-size: 14px;
-  font-weight: bold;
+.component {
+  padding: 16px;
+  z-index: 1;
+
+  &:hover {
+    .header-menu {
+      opacity: 1;
+    }
+  }
 }
 
-.info-diagram {
-  min-width: 68px;
-  min-height: 68px;
-  max-width: 68px;
-  max-height: 68px;
-}
-
-.info-text {
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.info-item {
+.header-menu {
+  width: calc(100% * 2);
   display: flex;
-  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: -45px;
+  left: -50px;
+  right: 0px;
+  padding-bottom: 10px;
+  opacity: 0;
+  transition: all 0.3s;
 }
 
-.info-action {
-  display: flex;
-  justify-content: flex-start;
-  min-width: 140px;
+.menu-item {
+  background-color: transparent;
+  border: 1px solid transparent;
+  margin: 1px;
+}
+
+.info {
+  &-list {
+    .form-row {
+      align-items: center;
+    }
+  }
+
+  &-block {
+    font-weight: bold;
+    text-align: center;
+    color: black;
+  }
+
+  &-diagram {
+    min-width: 68px;
+    min-height: 68px;
+    max-width: 68px;
+    max-height: 68px;
+  }
+
+  &-field {
+    position: absolute;
+    left: -50px;
+    right: 0px;
+    top: 100%;
+    width: calc(100% * 2);
+    padding-top: 10px;
+  }
+
+  &-text {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  &-item {
+    display: flex;
+    align-items: center;
+  }
+
+  &-action {
+    display: flex;
+    justify-content: flex-start;
+    min-width: 140px;
+  }
 }
 
 .vt-popover {
   z-index: 10000;
 
   &:focus {
-    outline: 1px dashed #e3c000;
+    outline: 1px dashed #80bdff;
   }
 
   &[aria-hidden='true'] {
@@ -623,84 +640,5 @@ export default {
     border-radius: 5px;
     box-shadow: 0 5px 30px rgba(black, 0.1);
   }
-}
-
-.header-menu {
-  display: flex;
-  flex-direction: row-reverse;
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  right: 0px;
-  padding: 10px;
-
-  .info-edit {
-    &.left {
-      margin-right: auto;
-    }
-
-    &.right {
-      margin-left: auto;
-    }
-
-    &-item {
-      margin-left: 4px;
-
-      &.warning {
-        color: #e3c000;
-      }
-
-      &.danger {
-        color: #dc3545;
-      }
-    }
-
-    &-text {
-      vertical-align: top;
-      line-height: 24px;
-      margin-left: 4px;
-    }
-  }
-}
-
-.footer-menu {
-  display: flex;
-  flex-direction: row-reverse;
-  position: absolute;
-  bottom: 0px;
-  left: 0px;
-  right: 0px;
-  padding: 10px;
-
-  .info-edit {
-    &.left {
-      margin-right: auto;
-    }
-
-    &.right {
-      margin-left: auto;
-    }
-
-    &-item {
-      margin-left: 4px;
-
-      &.warning {
-        color: #e3c000;
-      }
-
-      &.danger {
-        color: #dc3545;
-      }
-    }
-
-    &-text {
-      vertical-align: top;
-      line-height: 24px;
-    }
-  }
-}
-
-.blur {
-  filter: blur(4px);
 }
 </style>

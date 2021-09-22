@@ -17,6 +17,7 @@ import path from 'path'
 import Store from 'electron-store'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
+const isMac = process.platform === 'darwin'
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -47,12 +48,41 @@ if (!singleInstanceLock) {
 
   app.quit()
 } else {
-  ipcMain.on('getStore', event => {
-    event.returnValue = store.get('setting')
+  // ipc
+  ipcMain.on('setWindowTitle', (event, data = '') => {
+    win.title = (data ? `${data} - ` : '') + 'jumpspace'
+  })
+
+  ipcMain.on('requestWindowMouseMoveEvent', (event, data = { x: 0, y: 0 }) => {
+    win.webContents.sendInputEvent({ type: 'mouseMove', x: data.x, y: data.y })
+  })
+
+  ipcMain.handle('getStore', event => {
+    return store.get('setting')
   })
 
   ipcMain.on('setStore', (event, data) => {
     store.set('setting', data)
+  })
+
+  ipcMain.on('toggleDevTools', event => {
+    win.webContents.toggleDevTools()
+  })
+
+  ipcMain.on('reload', event => {
+    win.webContents.reload()
+  })
+
+  ipcMain.on('loadURL', (event, data) => {
+    win.webContents.loadURL(data)
+  })
+
+  ipcMain.handle('showSaveDialogSync', (event, data) => {
+    return dialog.showSaveDialogSync(data)
+  })
+
+  ipcMain.handle('showOpenDialogSync', (event, data) => {
+    return dialog.showOpenDialogSync(data)
   })
 
   // Singleton instance
@@ -70,7 +100,7 @@ if (!singleInstanceLock) {
   app.on('window-all-closed', () => {
     // On macOS it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
-    if (process.platform !== 'darwin') {
+    if (!isMac) {
       app.quit()
     }
   })
@@ -147,20 +177,22 @@ async function createWindow() {
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
       preload: path.join(__dirname, 'preload.js'),
-      enableRemoteModule: true
+      nativeWindowOpen: true
     },
     icon: path.join(__static, 'icon.png'),
     show: false
   })
+
   win.removeMenu()
 
   win.once('ready-to-show', () => {
     win.show()
   })
 
-  win.webContents.on('new-window', function(event, url) {
-    event.preventDefault()
+  // https://www.electronjs.org/docs/api/window-open#native-window-example
+  win.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)
+    return { action: 'deny' }
   })
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
@@ -181,10 +213,8 @@ async function createWindow() {
     const setting = JSON.parse(store.get('setting'))
     if (!isQuitting && setting.isHideToTrayOnClose) {
       event.preventDefault()
-      if (!win.isMinimized()) {
-        win.setSkipTaskbar(true)
-        win.hide()
-      }
+      win.setSkipTaskbar(true)
+      win.hide()
     } else {
       win = null
     }

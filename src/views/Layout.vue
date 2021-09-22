@@ -1,24 +1,39 @@
 <template>
   <div id="layout">
     <MainHeader
-      :header-info="headerInfo"
       @export="exportProject"
       @info="isShowInfoPopup = true"
-      @save="saveProject"
       @setting="isShowSettingPopup = true"
+      @lock="isEditorLocked = true"
+      @unlock="isEditorLocked = false"
     >
       <!-- sidebar toggle -->
-      <template #main-navigation-toggle>
+      <template #main-navigator-toggle>
         <b-button
           v-b-toggle.main-sidebar
-          class="header-button shadow-sm"
-          variant="info"
+          size="sm"
+          class=""
+          variant="light"
         >
-          <v-icon
-            height="14"
-            name="bars"
-            scale="1"
-            width="14"
+          <b-icon
+            icon="list"
+          />
+        </b-button>
+      </template>
+      <template
+        v-if="editorData"
+        #main-navigator-toolbar
+      >
+        <!-- Editor Lock/Unlock button -->
+        <b-button
+          v-b-tooltip.hover.v-light.dh0.noninteractive
+          size="sm"
+          :title="isEditorLocked? 'locked' : 'unlocked'"
+          variant="light"
+          @click="isEditorLocked = !isEditorLocked"
+        >
+          <b-icon
+            :icon="isEditorLocked? 'lock' : 'unlock'"
           />
         </b-button>
       </template>
@@ -34,24 +49,24 @@
       >
         <template v-slot:default="{ hide }">
           <MainNavigator
+            v-if="projectData"
             ref="mainNavigator"
             :project-data="projectData"
+            :is-locked="isEditorLocked"
             @hide="hide"
             @selected="loadEditor"
             @deselected="clearEditor"
             @updated="updateProject"
-            @open-project="openProject"
-            @export-items="exportItems"
-            @import-items="importItems"
           />
         </template>
       </b-sidebar>
 
       <!-- editor -->
       <Editor
-        v-show="editorData"
         ref="editorRef"
         :editor-data="editorData"
+        :is-locked="isEditorLocked"
+        :class="[!editorData && 'layout-inactive']"
       />
     </div>
 
@@ -99,11 +114,19 @@ export default {
     return {
       isShowInfoPopup: false,
       isShowSettingPopup: false,
+      isEditorLocked: true,
       projectData: null,
       editorData: null,
-      selectedItemIndex: null,
-      headerInfo: {
-        name: null
+      openedItemIndex: null
+    }
+  },
+  watch: {
+    async isEditorLocked() {
+      this.$refs.editorRef.editor.trigger('readonly', this.isEditorLocked)
+
+      if (this.isEditorLocked) {
+        await this.compileEditor()
+        this.saveProject()
       }
     }
   },
@@ -114,21 +137,52 @@ export default {
     }
   },
   methods: {
-    loadEditor({ item, index }) {
-      this.editorData = JSON.stringify(item.data)
-      this.selectedItemIndex = index
-      this.headerInfo.name = item.name
+    loadEditor({ item, index, isLocked }) {
+      // If not use timestamp, the editor does not update its content while editorData is exactly same. ex) select copied item
+      this.editorData = JSON.stringify({ ...item.data, timestamp: Date.now() })
+      this.openedItemIndex = index
+      this.isEditorLocked = isLocked // Call after update 'openedItemIndex'
+
+      // default
+      this.$refs.editorRef.editor.view.area.zoom(0.85, 0, 0)
+      this.$refs.editorRef.editor.view.area.translate(0, 0)
+
+      const selectedItem = this.projectData[this.openedItemIndex]
+      if (selectedItem) {
+        window.preload.setWindowTitle(selectedItem.name)
+      }
     },
     clearEditor() {
       this.editorData = null
-      this.selectedItemIndex = null
-      this.headerInfo.name = null
+      this.openedItemIndex = null
+      this.isEditorLocked = true // Call after update 'openedItemIndex'
     },
-    async updateProject() {
-      this.projectData = [...this.$refs.mainNavigator.items]
-      await this.saveProject()
+    async compileEditor() {
+      // 현재 editor에 열려있는 item이 있으면
+      if (this.openedItemIndex !== null) {
+        // editor가 표시중인 item이 가진 각 node의 control(ConnectionControl)의 내부 renderer가 가진 정보를 node에 저장
+        this.$refs.editorRef.editor.nodes.forEach((x) =>
+          x.controls.get('connection').save()
+        )
+
+        // 현재 editor에 열려있는 내용을 projectData에 업데이트
+        const selectedItem = this.projectData[this.openedItemIndex]
+        if (selectedItem) {
+          // editor에서 변경된 item의 내용 가져오기
+          selectedItem.data = await this.$refs.editorRef.compile()
+
+          // MainNavigator에 변경된 item의 editorData 전달
+          this.$refs.mainNavigator.updateItemEditorData({ data: selectedItem.data, index: this.openedItemIndex })
+        }
+      }
     },
-    async loadProject(projectSaveData) {
+    updateProject({ items, index }) {
+      this.projectData = [...items]
+      this.openedItemIndex = index // 열려있는 item의 index 업데이트
+
+      this.saveProject()
+    },
+    loadProject(projectSaveData) {
       if (projectSaveData) {
         this.projectData = JSON.parse(projectSaveData)
         window.localStorage.projectSaveData = projectSaveData
@@ -136,65 +190,34 @@ export default {
         this.projectData = []
       }
     },
-    async saveProject() {
-      if (this.selectedItemIndex !== null) {
-        // editor가 표시중인 item이 가진 각 node의 control(ConnectionControl)의 내부 renderer가 가진 정보를 node에 저장
-        this.$refs.editorRef.editor.nodes.forEach((x) =>
-          x.controls.get('connection').save()
-        )
-
-        // editor가 표시중인 item이 가진 내용을 project의 해당 item에 저장
-        this.projectData[this.selectedItemIndex] = {
-          name: this.headerInfo.name,
-          data: await this.$refs.editorRef.compile()
-        }
-      }
-
+    saveProject() {
       // project를 JSON 형식으로 변환하여 localStorage에 저장
       window.localStorage.projectSaveData = JSON.stringify(this.projectData)
     },
-    async exportProject() {
-      await this.saveProject()
-      window.saveProjectDataAsJSON(window.localStorage.projectSaveData)
-    },
-    async openProject() {
-      const projectData = window.loadProjectDataFromJSON()
-      if (projectData) {
-        this.clearEditor()
-        this.loadProject(projectData)
-      }
-    },
-    exportItems(items) {
-      try {
-        window.saveProjectDataAsJSON(JSON.stringify(items), '~/export.json')
-      } catch (e) {
-        console.error(e)
-      }
-    },
-    importItems() {
-      try {
-        const projectData = JSON.parse(window.loadProjectDataFromJSON())
-        if (projectData) {
-          this.projectData = this.projectData.concat(projectData)
-        }
-      } catch (e) {
-        console.error(e)
-      }
+    exportProject() {
+      // project를 JSON 형식으로 변환하여 파일로 저장
+      window.preload.saveProjectDataAsJSON(JSON.stringify(this.projectData))
     }
   }
 }
 </script>
 
 <style lang="scss">
-@import '../../node_modules/bootstrap/dist/css/bootstrap.css';
-@import '../../node_modules/bootstrap-vue/dist/bootstrap-vue.css';
-
 #layout {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
   margin: 0;
+
+  .layout-divider {
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .layout-inactive {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 #main-content {
@@ -202,12 +225,10 @@ export default {
   flex-direction: row;
   flex: 1;
   overflow: hidden;
-  background-color: #f1faee;
+  background-color: #eee;
 }
 
 #main-sidebar {
-  opacity: 0.9;
-
   .main-sidebar-list {
     display: flex;
     flex-direction: column;
