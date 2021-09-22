@@ -406,19 +406,18 @@ export default {
       }
     },
     connect() {
-      const command = `"${this.setting.gitBashPath}" -c "ssh -o 'StrictHostKeyChecking=accept-new' ${
-        this.keyPath
-          ? `-i '${upath.toUnix(this.keyPath)}' `
-          : ''
-      }${this.user ? this.user + '@' : ''}${this.host} -p '${this.port}' ${
-        this.exec
-        ? `-tt '${this.exec}; exec $SHELL'`
-        : ''
-      }"`
+      const keyPathCommand = this.keyPath ? `-i '${upath.toUnix(this.keyPath)}'` : ''
+      const destHost = `${this.user ? this.user + '@' : ''}${this.host}`
+      const echoCommands = [`echo 'Connect... ${destHost}:${this.port} (${this.name})'`, "echo ''"].join(' && ')
+      const execCommand = this.exec ? `-tt '${this.exec}; exec $SHELL'` : ''
+
+      const command = `"${this.setting.gitBashPath}" -c " ${echoCommands} && ssh -o 'StrictHostKeyChecking=accept-new' ${keyPathCommand} -p '${this.port}' '${destHost}' ${execCommand}"`
 
       console.log(command)
 
-      window.preload.executeCommand(command)
+      window.preload.executeCommand(command, (output) => {
+        console.log('Connect output:', output)
+      })
     },
     openForward() {
       const prevNodeData = last(this.prevNodeDataList)
@@ -426,29 +425,34 @@ export default {
         return false
       }
 
-      const ctlPathTempFilename = `${window.preload.md5(`${prevNodeData.user}${prevNodeData.host}${prevNodeData.port}` + Date.now())}.ctl`
       const forwardList = this.forwards.filter(
         (x) => x.checked && x.from && x.to
       )
+
       if (forwardList.length === 0) {
         return
       }
 
-      const command = `"${
-        this.setting.gitBashPath
-      }" -c "echo 'Forward...' && ${
-        forwardList
-          .map((x, i) => `echo ':${x.from} >> [${prevNodeData.host}]:${prevNodeData.port} -> :${x.to}'`)
-          .join('&&')
-      } && ssh -o 'StrictHostKeyChecking=accept-new' -i "${upath.toUnix(prevNodeData.keyPath)}" "${prevNodeData.user}@${prevNodeData.host}" -p "${prevNodeData.port}" -N -M -S "${ctlPathTempFilename}" ${
-        forwardList
-          .map((x) => `-L "localhost:${x.from}:${this.host}:${x.to}"`)
-          .join(' ')
-      }"`
+      const keyPathToUnix = upath.toUnix(prevNodeData.keyPath)
+      const remoteHost = `${prevNodeData.user}@${prevNodeData.host}`
+      const remotePort = prevNodeData.port
+      const destHost = `${this.user}@${this.host}`
+      const echoCommands = [
+        "echo 'Forward...'",
+        `echo 'localhost -> ${remoteHost}:${remotePort} (${prevNodeData.name}) -> ${destHost} (${this.name})'`,
+        ...forwardList.map(x => `echo 'localhost:${x.from} <-> ${prevNodeData.name} <-> ${this.name}:${x.to}'`),
+        "echo ''"
+      ].join(' && ')
+      const ctlPathTempFilename = `${window.preload.md5(`${remoteHost}:${remotePort}` + Date.now())}.ctl`
+      const forwardCommand = forwardList.map((x) => `-L 'localhost:${x.from}:${this.host}:${x.to}'`).join(' ')
+
+      const command = `"${this.setting.gitBashPath}" -c "${echoCommands} && ssh -o 'StrictHostKeyChecking=accept-new' -i '${keyPathToUnix}' -p '${remotePort}' -N -M -S '${ctlPathTempFilename}' ${forwardCommand} '${remoteHost}'"`
 
       console.log(command)
 
-      window.preload.executeCommand(command)
+      window.preload.executeCommand(command, (output) => {
+        console.log('Forward output:', output)
+      })
     },
     addForward() {
       this.forwards.push({
@@ -468,7 +472,8 @@ export default {
       for (let i = 0; i < nodes.length; i += 1) {
         const { host, user, port, keyPath } = nodes[i]
 
-        const hostHash = window.preload.md5(host + user + port)
+        const pathHash = window.preload.md5(jumpHosts.join(''))
+        const hostHash = window.preload.md5(pathHash + host + user + port)
         jumpHosts.push(hostHash)
 
         str += `Host ${hostHash}\r\n`
@@ -481,26 +486,19 @@ export default {
         str += '\r\n'
       }
 
+      const echoCommands = ["echo 'ProxyJump...'", ...nodes.map(x => `echo '>>> ${x.host}:${x.port} (${x.name})'`), "echo ''"].join(' && ')
       const configTempFilename = `${window.preload.md5(str + Date.now())}.jmp`
-
-      window.preload.writeFileSync(configTempFilename, str)
-
       const destHost = jumpHosts.pop()
-      const command = `"${
-        this.setting.gitBashPath
-      }" -c "echo 'ProxyJump...' && ${
-        nodes
-          .map((x, i) => `echo '>>> [${x.host}]:${x.port}'`)
-          .join('&&')
-      } && ssh -o 'StrictHostKeyChecking=accept-new' -F "${configTempFilename}" -J ${jumpHosts.join(',')} ${destHost} ${
-        this.exec
-        ? `-tt '${this.exec}; exec $SHELL'`
-        : ''
-      }"`
+      const jumpPath = jumpHosts.join(',')
+      const execCommand = this.exec ? `-tt '${this.exec}; exec $SHELL'` : ''
+
+      const command = `"${this.setting.gitBashPath}" -c "${echoCommands} && ssh -o 'StrictHostKeyChecking=accept-new' -F '${configTempFilename}' -J '${jumpPath}' '${destHost}' ${execCommand}"`
 
       console.log(command)
 
+      window.preload.writeFileSync(configTempFilename, str)
       window.preload.executeCommand(command, (output) => {
+        console.log('ProxyJump output:', output)
         setTimeout(() => window.preload.unlinkFile(configTempFilename), 3000)
       })
     },
