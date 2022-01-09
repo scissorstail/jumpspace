@@ -47,7 +47,7 @@
         no-header
         shadow
       >
-        <template v-slot:default="{ hide }">
+        <template #default="{ hide }">
           <MainNavigator
             v-if="projectData"
             ref="mainNavigator"
@@ -101,7 +101,7 @@ import SettingPopup from '../components/layout/popup/setting-popup'
 */
 
 export default {
-  name: 'Layout',
+  name: 'ViewLayout',
   components: {
     MainHeader,
     MainNavigator,
