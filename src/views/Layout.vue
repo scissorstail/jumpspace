@@ -115,7 +115,7 @@ export default {
       isShowInfoPopup: false,
       isShowSettingPopup: false,
       isEditorLocked: true,
-      projectData: null,
+      projectData: [],
       editorData: null,
       openedItemIndex: null
     }
