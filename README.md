@@ -2,7 +2,7 @@
 
 The visual SSH connection editor. **Quick Open Git Bash with SSH commands**
 
-![example](https://user-images.githubusercontent.com/7657391/93624397-3fd1da80-fa1b-11ea-9448-3fd25dc01c5e.png)
+![1](https://user-images.githubusercontent.com/93466598/144472417-13bef28d-a4e8-43f2-a0ec-16b27f46b103.PNG)
 
 note: This currently only works on Windows
 

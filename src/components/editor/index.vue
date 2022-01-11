@@ -21,6 +21,7 @@ import ReadonlyPlugin from 'rete-readonly-plugin'
 import SiteNode from './nodes/site-node'
 
 export default {
+  name: 'EditorIndex',
   props: {
     editorData: {
       type: String,
@@ -116,7 +117,7 @@ export default {
 
     this.engine = new Rete.Engine('test@0.1.0')
 
-    nodes.map((c) => {
+    nodes.forEach((c) => {
       this.editor.register(c)
       this.engine.register(c)
     })

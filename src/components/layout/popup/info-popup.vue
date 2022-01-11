@@ -8,7 +8,7 @@
     variant="dark"
     z-index="1050"
   >
-    <template v-slot:overlay>
+    <template #overlay>
       <b-card
         v-if="show"
         header="Info"
@@ -75,7 +75,7 @@
           </div>
         </b-card-text>
 
-        <template v-slot:footer>
+        <template #footer>
           <b-button
             block
             class="flex-grow-1"
