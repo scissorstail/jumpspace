@@ -1,6 +1,6 @@
 {
   "name": "jumpspace",
-  "version": "0.2.1-beta",
+  "version": "0.2.2-beta",
   "author": "@nameEO",
   "description": "The visual SSH connection editor",
   "repository": {
@@ -29,7 +29,7 @@
     "lodash": "^4.17.21",
     "regenerator-runtime": "^0.13.9",
     "register-service-worker": "^1.7.2",
-    "rete": "^1.4.5",
+    "rete": "^1.0.0-rc2",
     "rete-alight-render-plugin": "^0.1.5",
     "rete-area-plugin": "^0.2.1",
     "rete-comment-plugin": "^0.7.0-rc.1",

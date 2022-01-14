@@ -115,7 +115,7 @@ export default {
       isShowInfoPopup: false,
       isShowSettingPopup: false,
       isEditorLocked: true,
-      projectData: [],
+      projectData: null,
       editorData: null,
       openedItemIndex: null
     }
@@ -131,10 +131,7 @@ export default {
     }
   },
   mounted() {
-    const localSave = window.localStorage.projectSaveData
-    if (localSave) {
-      this.loadProject(localSave)
-    }
+    this.loadProject()
   },
   methods: {
     loadEditor({ item, index, isLocked }) {
@@ -182,13 +179,8 @@ export default {
 
       this.saveProject()
     },
-    loadProject(projectSaveData) {
-      if (projectSaveData) {
-        this.projectData = JSON.parse(projectSaveData)
-        window.localStorage.projectSaveData = projectSaveData
-      } else {
-        this.projectData = []
-      }
+    loadProject() {
+      this.projectData = JSON.parse(window.localStorage.projectSaveData || '[]')
     },
     saveProject() {
       // project를 JSON 형식으로 변환하여 localStorage에 저장
