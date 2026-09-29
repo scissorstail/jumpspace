@@ -66,6 +66,7 @@
                     v-model.trim="forward.from"
                     class="mr-2"
                     maxlength="5"
+                    :state="portState(forward.from)"
                     size="sm"
                     :disabled="isLocked"
                   />
@@ -82,6 +83,7 @@
                     v-model.trim="forward.to"
                     class="ml-2"
                     maxlength="5"
+                    :state="portState(forward.to)"
                     size="sm"
                     :disabled="isLocked"
                   />
@@ -209,6 +211,7 @@
                   <b-form-input
                     v-model.trim="port"
                     placeholder="(To blank when Forwarding)"
+                    :state="portState(port)"
                     size="sm"
                     :disabled="isLocked"
                   />
@@ -237,6 +240,36 @@
                       size="sm"
                       :disabled="isLocked"
                     />
+                  </b-input-group>
+                </b-form-group>
+                <b-form-group
+                  class="mb-0"
+                  label="Password"
+                  label-align="left"
+                  label-cols-sm="3"
+                >
+                  <b-input-group size="sm">
+                    <b-form-input
+                      v-model="password"
+                      :type="isPasswordVisible ? 'text' : 'password'"
+                      autocomplete="off"
+                      placeholder="(optional)"
+                      title="Saved as plain text. It is also included when you export the item."
+                      size="sm"
+                      :disabled="isLocked"
+                    />
+                    <template #append>
+                      <b-button
+                        size="sm"
+                        title="Show/hide password"
+                        @click="isPasswordVisible = !isPasswordVisible"
+                      >
+                        <b-icon
+                          class="menu-item-icon"
+                          :icon="isPasswordVisible ? 'eye-slash' : 'eye'"
+                        />
+                      </b-button>
+                    </template>
                   </b-input-group>
                 </b-form-group>
                 <b-form-group
@@ -348,6 +381,7 @@ export default {
       baseUrl: import.meta.env.BASE_URL,
       isLocked: false,
       isCopied: false,
+      isPasswordVisible: false,
       name: null,
       user: null,
       host: null,
@@ -355,6 +389,7 @@ export default {
       exec: null,
       diagram: null,
       keyPath: null,
+      password: null,
       forwards: [],
       diagramFilenames: [],
       prevNodeDataList: []
@@ -374,7 +409,7 @@ export default {
         prevNodeData.host &&
         prevNodeData.user &&
         prevNodeData.port &&
-        prevNodeData.keyPath
+        (prevNodeData.keyPath || prevNodeData.password)
       ) {
         return true
       }
@@ -413,9 +448,14 @@ export default {
         this.diagram = head(this.diagramFilenames)
       }
     },
+    // 값이 비어있으면 표시하지 않고, 입력했다면 1~65535 범위의 숫자인지 알려준다.
+    portState(value) {
+      if (!value) return null
+      return /^\d{1,5}$/.test(value) && Number(value) >= 1 && Number(value) <= 65535
+    },
     // ssh 실행 요청에 넘길 수 있는 순수한 값만 추린다. (실제 명령어는 main 프로세스에서 검증 후 만든다)
     connectionOf(data) {
-      return pick(data, ['name', 'user', 'host', 'port', 'keyPath', 'exec'])
+      return pick(data, ['name', 'user', 'host', 'port', 'keyPath', 'password', 'exec'])
     },
     async run(request) {
       try {
@@ -495,6 +535,7 @@ export default {
         'port',
         'diagram',
         'keyPath',
+        'password',
         'forwards',
         'exec'
       ])

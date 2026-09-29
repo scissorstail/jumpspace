@@ -19,7 +19,9 @@ import {
   BIconLock,
   BIconUnlock,
   BIconClipboard,
-  BIconClipboardCheck
+  BIconClipboardCheck,
+  BIconEye,
+  BIconEyeSlash
 } from 'bootstrap-vue'
 // import { BootstrapVueIcons } from 'bootstrap-vue' // To use all icons
 
@@ -42,5 +44,7 @@ Vue.component('BIconLock', BIconLock)
 Vue.component('BIconUnlock', BIconUnlock)
 Vue.component('BIconClipboard', BIconClipboard)
 Vue.component('BIconClipboardCheck', BIconClipboardCheck)
+Vue.component('BIconEye', BIconEye)
+Vue.component('BIconEyeSlash', BIconEyeSlash)
 
 // Vue.use(BootstrapVueIcons) // To use all icons

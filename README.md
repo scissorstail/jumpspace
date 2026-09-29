@@ -10,10 +10,12 @@ note: This currently only works on Windows
 
 1. Open the sidebar, add an item (a diagram) and give it a name.
 2. Unlock the editor, right-click the canvas to add a `Site` node, and drag from a node's right socket to another node's left socket to chain them (jump hosts).
-3. Hover a node to open its menu: **Setting** (name, user, host, port, key, exec), **Forward list**, and the terminal button.
+3. Hover a node to open its menu: **Setting** (name, user, host, port, key, password, exec), **Forward list**, and the terminal button.
    - **Connect** opens Git Bash and runs `ssh` to the node.
    - **ProxyJump** is shown instead when the node has a previous node; it connects through the whole chain.
    - **Forward** opens `ssh -L` port forwards through the previous node.
+   - In **Setting**, *Copy SSH config* copies the node in `~/.ssh/config` format (previous nodes become `ProxyJump`). Passwords are never included.
+   - **Password**: instead of a key you can sign in with a password. It is stored as **plain text** in `projects.json` and included when you export the item (you are asked to confirm). It is passed to `ssh` through `SSH_ASKPASS`, not through the command line or a file.
 4. Lock the editor to save. Items can be exported/imported as JSON from the sidebar menu.
 
 Projects are stored in `projects.json` in the app data directory (the previous version is kept as `projects.json.bak`).
@@ -37,4 +39,4 @@ Node.js 20.19+ or 22.12+ is required. `.npmrc` sets `legacy-peer-deps` because t
 ## requirements
 
 1. [Git for Windows](https://gitforwindows.org/) (To install Git Bash)
-2. OpenSSH >= 7.6 (Installed together with Git Bash)
+2. OpenSSH >= 7.6 (Installed together with Git Bash). Password sign-in needs OpenSSH >= 8.4 (`SSH_ASKPASS_REQUIRE`), which current Git for Windows ships.

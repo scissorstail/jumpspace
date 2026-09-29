@@ -87,6 +87,7 @@ import MainNavigator from '../components/layout/main-navigator'
 import Editor from '../components/editor'
 import InfoPopup from '../components/layout/popup/info-popup'
 import SettingPopup from '../components/layout/popup/setting-popup'
+import { hasSavedPassword, EXPORT_PASSWORD_WARNING } from '../utils/project'
 
 /*
 
@@ -215,6 +216,10 @@ export default {
       }
     },
     async exportProject() {
+      if (hasSavedPassword(this.projectData) && !(await this.$bvModal.msgBoxConfirm(EXPORT_PASSWORD_WARNING, { title: 'Export', okTitle: 'Export' }))) {
+        return
+      }
+
       // project를 JSON 형식으로 변환하여 파일로 저장
       try {
         await window.preload.exportProjects(JSON.stringify(this.projectData), 'jumpspace.json')

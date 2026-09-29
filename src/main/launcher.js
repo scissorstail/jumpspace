@@ -60,19 +60,14 @@ export async function launch(kind, payload, { tempDir, gitBashPath }) {
   const paths = { scriptPath: toUnixPath(scriptFile), configPath: toUnixPath(configFile) }
   assertSafePath(paths.scriptPath)
 
-  let script
-  let config = null
-  if (kind === 'connect') {
-    script = buildConnect(payload, paths)
-  } else if (kind === 'forward') {
-    script = buildForward(payload, paths)
-  } else if (kind === 'proxyJump') {
-    ({ script, config } = buildProxyJump(payload, paths))
-  } else {
+  const builders = { connect: buildConnect, forward: buildForward, proxyJump: buildProxyJump }
+  if (!Object.hasOwn(builders, kind)) {
     throw new Error(`Unknown command: ${kind}`)
   }
+  const { script, config, env } = builders[kind](payload, paths)
 
-  await writeFile(scriptFile, script, { encoding: 'utf-8', mode: 0o600 })
+  // 이 스크립트는 ssh의 SSH_ASKPASS로도 실행되므로 실행 권한이 필요하다.
+  await writeFile(scriptFile, script, { encoding: 'utf-8', mode: 0o700 })
   if (config) {
     await writeFile(configFile, config, { encoding: 'utf-8', mode: 0o600 })
   }
@@ -80,7 +75,8 @@ export async function launch(kind, payload, { tempDir, gitBashPath }) {
   try {
     const child = spawn(bash, ['-c', `bash '${paths.scriptPath}'`], {
       detached: true,
-      stdio: 'ignore'
+      stdio: 'ignore',
+      env: { ...process.env, ...env }
     })
     await waitForSpawn(child)
     child.unref()

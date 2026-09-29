@@ -233,6 +233,7 @@
 import draggable from 'vuedraggable'
 import cloneDeep from 'lodash/cloneDeep'
 import isEmpty from 'lodash/isEmpty'
+import { hasSavedPassword, EXPORT_PASSWORD_WARNING } from '../../utils/project'
 
 export default {
   name: 'MainNavigator',
@@ -408,6 +409,10 @@ export default {
       this.items = this.items.filter(x => !x.isSelected)
     },
     async exportItems(items) {
+      if (hasSavedPassword(items) && !(await this.$bvModal.msgBoxConfirm(EXPORT_PASSWORD_WARNING, { title: 'Export', okTitle: 'Export' }))) {
+        return
+      }
+
       try {
         await window.preload.exportProjects(JSON.stringify(this.getProjectDataFromItems(items)), 'export.json')
       } catch (e) {
