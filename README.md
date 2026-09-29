@@ -8,11 +8,31 @@ note: This currently only works on Windows
 
 ## usage
 
-(empty)
+1. Open the sidebar, add an item (a diagram) and give it a name.
+2. Unlock the editor, right-click the canvas to add a `Site` node, and drag from a node's right socket to another node's left socket to chain them (jump hosts).
+3. Hover a node to open its menu: **Setting** (name, user, host, port, key, exec), **Forward list**, and the terminal button.
+   - **Connect** opens Git Bash and runs `ssh` to the node.
+   - **ProxyJump** is shown instead when the node has a previous node; it connects through the whole chain.
+   - **Forward** opens `ssh -L` port forwards through the previous node.
+4. Lock the editor to save. Items can be exported/imported as JSON from the sidebar menu.
 
-## workflow
+Projects are stored in `projects.json` in the app data directory (the previous version is kept as `projects.json.bak`).
+Data saved by v0.2.x in the browser storage is migrated automatically on first launch.
 
-feature(local only) => develop(merge features) => master(release only)
+SSH commands are started from the main process. Every value (user, host, port, key path, ...) is validated and written into a temporary script that is removed when the session ends, so imported items cannot inject shell commands.
+
+## development
+
+```sh
+npm install
+npm run dev      # electron-vite dev server with HMR
+npm run lint
+npm test         # unit tests for command building / storage
+npm run build    # bundle into ./out
+npm run dist     # bundle and create the installer in ./dist_electron
+```
+
+Node.js 20.19+ or 22.12+ is required. `.npmrc` sets `legacy-peer-deps` because the Rete v1 plugins declare outdated peer dependencies.
 
 ## requirements
 
