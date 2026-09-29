@@ -54,7 +54,7 @@ describe('buildForward', () => {
     expect(script).not.toContain(':1:')
   })
 
-  it('requires a key for the previous node', () => {
+  it('requires a key or password for the previous node', () => {
     expect(() => buildForward({
       prev: { ...node, keyPath: '' },
       node,

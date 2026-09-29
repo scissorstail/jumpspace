@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validateExec, validateForwards, validateHost, validateKeyPath, validateNode, validatePort, validateUser } from './validate.js'
+import { validatePassword, validateExec, validateForwards, validateHost, validateKeyPath, validateNode, validatePort, validateUser } from './validate.js'
 
 describe('validate', () => {
   it('accepts normal values', () => {
@@ -34,10 +34,17 @@ describe('validate', () => {
 
   it('validates key path', () => {
     expect(validateKeyPath('')).toBe('')
-    expect(() => validateKeyPath('', { required: true })).toThrow()
     expect(validateKeyPath("C:\\Users\\o'brien\\.ssh\\id rsa")).toBe("C:\\Users\\o'brien\\.ssh\\id rsa")
     expect(() => validateKeyPath('a"b')).toThrow()
     expect(() => validateKeyPath('a\nb')).toThrow()
+  })
+
+  it('keeps passwords as they are', () => {
+    expect(validatePassword(' a b ')).toBe(' a b ')
+    expect(validatePassword(undefined)).toBe('')
+    expect(() => validatePassword('a\nb')).toThrow()
+    expect(() => validatePassword('a\u0000b')).toThrow()
+    expect(() => validatePassword(123)).toThrow()
   })
 
   it('validates exec', () => {
@@ -49,7 +56,11 @@ describe('validate', () => {
   it('validates node and forwards', () => {
     expect(validateNode({ name: 'a\nb', user: 'u', host: 'h', port: '22' }).name).toBe('a b')
     expect(() => validateNode(null)).toThrow()
-    expect(() => validateNode({ user: 'u', host: 'h', port: '22' }, { requireKey: true })).toThrow()
+    expect(() => validateNode({ user: 'u', host: 'h', port: '22' }, { requireAuth: true })).toThrow()
+    expect(validateNode({ user: 'u', host: 'h', port: '22', password: 'p w' }, { requireAuth: true }).password).toBe('p w')
+    expect(validateNode({ host: 'h' }, { partial: true })).toMatchObject({ user: '', port: '' })
+    expect(() => validateNode({ host: 'h' })).toThrow()
+    expect(() => validateNode({ host: '', user: 'u', port: '1' }, { partial: true })).toThrow()
 
     expect(validateForwards([
       { checked: true, from: '8080', to: '80' },

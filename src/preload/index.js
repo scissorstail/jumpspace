@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('preload', {
   ssh: {
     connect: node => ipcRenderer.invoke('ssh:connect', node),
     forward: data => ipcRenderer.invoke('ssh:forward', data),
-    proxyJump: nodes => ipcRenderer.invoke('ssh:proxyJump', nodes)
+    proxyJump: nodes => ipcRenderer.invoke('ssh:proxyJump', nodes),
+    copyConfig: nodes => ipcRenderer.invoke('ssh:copyConfig', nodes)
   }
 })

@@ -33,10 +33,9 @@ export function validateHost(value) {
   return host
 }
 
-export function validateKeyPath(value, { required = false } = {}) {
+export function validateKeyPath(value) {
   const keyPath = str(value)
   if (!keyPath) {
-    if (required) throw new Error('Key path is required.')
     return ''
   }
   if (keyPath.length > 1024 || CONTROL_RE.test(keyPath) || keyPath.includes('"')) {
@@ -60,19 +59,39 @@ export function sanitizeName(value) {
   return str(value).replace(CONTROL_RE, ' ').slice(0, 200)
 }
 
-export function validateNode(node, { requireKey = false } = {}) {
+// 비밀번호는 그대로 사용한다. (trim하지 않는다) 줄바꿈이 있으면 prompt 응답이 잘리므로 막는다.
+export function validatePassword(value) {
+  if (value === undefined || value === null || value === '') {
+    return ''
+  }
+  // eslint-disable-next-line no-control-regex
+  if (typeof value !== 'string' || value.length > 1024 || /[\u0000\r\n]/.test(value)) {
+    throw new Error('Invalid password.')
+  }
+  return value
+}
+
+// requireAuth: 키 또는 비밀번호가 있어야 한다. partial: 입력 중인 값도 허용한다. (host만 필수)
+export function validateNode(node, { requireAuth = false, partial = false } = {}) {
   if (!node || typeof node !== 'object') {
     throw new Error('Invalid connection data.')
   }
 
-  return {
+  const result = {
     name: sanitizeName(node.name),
-    user: validateUser(node.user),
+    user: partial && !str(node.user) ? '' : validateUser(node.user),
     host: validateHost(node.host),
-    port: validatePort(node.port),
-    keyPath: validateKeyPath(node.keyPath, { required: requireKey }),
+    port: partial && !str(node.port) ? '' : validatePort(node.port),
+    keyPath: validateKeyPath(node.keyPath),
+    password: validatePassword(node.password),
     exec: validateExec(node.exec)
   }
+
+  if (requireAuth && !result.keyPath && !result.password) {
+    throw new Error(`Key or password is required for ${result.name || result.host}.`)
+  }
+
+  return result
 }
 
 export function validateForwards(forwards) {

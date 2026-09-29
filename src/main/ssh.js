@@ -56,7 +56,7 @@ export function buildConnect(rawNode, { scriptPath }) {
 }
 
 export function buildForward({ prev, node, forwards }, { scriptPath }) {
-  const prevNode = validateNode(prev, { requireKey: true })
+  const prevNode = validateNode(prev, { requireAuth: true })
   const destNode = validateNode(node)
   const list = validateForwards(forwards)
 

@@ -10,12 +10,14 @@ import {
   Menu,
   Tray,
   shell,
-  dialog
+  dialog,
+  clipboard
 } from 'electron'
 import Store from 'electron-store'
 import info from '../../package.json'
 import icon from '../../resources/icon.png?asset'
 import { launch, sweepTempDir } from './launcher.js'
+import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, normalizeItems } from './storage.js'
 
 const isMac = process.platform === 'darwin'
@@ -155,6 +157,16 @@ function main() {
       }
     })
   }
+
+  // 접속 정보를 ~/.ssh/config 형식으로 클립보드에 복사한다.
+  handle('ssh:copyConfig', (event, nodes) => {
+    try {
+      clipboard.writeText(buildSshConfig(nodes))
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, error: e.message }
+    }
+  })
 
   // Singleton instance
   app.on('second-instance', () => showWindow())

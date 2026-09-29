@@ -17,7 +17,9 @@ import {
   BIconThreeDotsVertical,
   BIconList,
   BIconLock,
-  BIconUnlock
+  BIconUnlock,
+  BIconClipboard,
+  BIconClipboardCheck
 } from 'bootstrap-vue'
 // import { BootstrapVueIcons } from 'bootstrap-vue' // To use all icons
 
@@ -38,5 +40,7 @@ Vue.component('BIconThreeDotsVertical', BIconThreeDotsVertical)
 Vue.component('BIconList', BIconList)
 Vue.component('BIconLock', BIconLock)
 Vue.component('BIconUnlock', BIconUnlock)
+Vue.component('BIconClipboard', BIconClipboard)
+Vue.component('BIconClipboardCheck', BIconClipboardCheck)
 
 // Vue.use(BootstrapVueIcons) // To use all icons

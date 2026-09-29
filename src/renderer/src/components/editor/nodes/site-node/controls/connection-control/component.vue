@@ -251,6 +251,19 @@
                     :disabled="isLocked"
                   />
                 </b-form-group>
+                <div class="info-action mt-2">
+                  <b-button
+                    size="sm"
+                    title="Copy as SSH config (includes previous nodes as ProxyJump)"
+                    @click="copyConfig"
+                  >
+                    <b-icon
+                      :icon="isCopied ? 'clipboard-check' : 'clipboard'"
+                      class="mr-1"
+                    />
+                    {{ isCopied ? 'Copied!' : 'Copy SSH config' }}
+                  </b-button>
+                </div>
               </div>
             </div>
           </template>
@@ -334,6 +347,7 @@ export default {
     return {
       baseUrl: import.meta.env.BASE_URL,
       isLocked: false,
+      isCopied: false,
       name: null,
       user: null,
       host: null,
@@ -443,6 +457,19 @@ export default {
     },
     removeForward(forward) {
       this.forwards = this.forwards.filter((x) => x !== forward)
+    },
+    async copyConfig() {
+      const nodes = this.prevNodeDataList.concat(this.$data).map(x => this.connectionOf(x))
+      const result = await window.preload.ssh.copyConfig(nodes)
+
+      if (!result.ok) {
+        this.$bvModal.msgBoxOk(result.error, { title: 'Failed to copy' })
+        return
+      }
+
+      this.isCopied = true
+      clearTimeout(this.copiedTimer)
+      this.copiedTimer = setTimeout(() => { this.isCopied = false }, 1500)
     },
     async selectKeyFile() {
       const path = await window.preload.selectKeyFile()
