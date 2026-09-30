@@ -1,6 +1,6 @@
 # jumpspace: notes for Claude
 
-A visual SSH connection editor (Electron 44 + Vue 2.7 + Rete v1). Servers are nodes, chained nodes are jump hosts, one click opens Git Bash with the right `ssh` command. Windows + Git Bash is the target; development and CI also run on Linux.
+A visual SSH connection editor (Electron 44 + Vue 2.7 + Rete v1). Servers are nodes, chained nodes are jump hosts, one click runs the right `ssh` command in a terminal inside the app (Git's `bash.exe` on Windows) or in a Git Bash window. Windows + Git Bash is the target; development and CI also run on Linux.
 
 The owner writes Korean: answer in Korean in chat, keep code, commit messages and docs in English. Code comments are mostly Korean; match the file you are editing.
 

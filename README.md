@@ -27,7 +27,7 @@ note: This currently only works on Windows
 1. Open the sidebar, add an item (a diagram) and give it a name.
 2. Unlock the editor (lock icon), right-click the canvas and choose *Add node*, and drag from a node's right socket to another node's left socket to chain them (jump hosts).
 3. Hover a node to open its menu:
-   - terminal: **Connect** opens Git Bash and runs `ssh` to the node. When the node has previous nodes and every one of them has a user, host and port, it is **ProxyJump** instead, which connects through the whole chain.
+   - terminal: **Connect** runs `ssh` to the node in a terminal tab of the app (or in a Git Bash window, see *Settings > Open SSH in*). When the node has previous nodes and every one of them has a user, host and port, it is **ProxyJump** instead, which connects through the whole chain.
    - link: **Port forwarding**, see below. The button with a counter next to it starts the enabled forwards.
    - gear: **Setting** (icon picked from a grid, name, user, host, port, key, password, exec) and *Copy SSH config*.
 4. The canvas position and zoom of each item are remembered and restored when you open it again. Lock the editor to save changes to the diagram. You can start connections while it is locked.
@@ -133,7 +133,8 @@ src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
 ### tests
 
 - `src/main/terminal.test.js` also runs a generated script in a real pty (node-pty) with a fake `ssh`, types into it and closes it, on Linux and in the Windows CI job (ConPTY and Git Bash).
-- `npm test` covers validation, script and config building, the askpass routing (it runs the generated script), the launcher (with a fake `spawn`), storage (including the migration of old forwards and the canvas view), the settings and the pure UI logic.
+- `npm test` covers validation, script and config building, the askpass routing (it runs the generated script), the launcher (with a fake `spawn`), storage (including the migration of old forwards and the canvas view), the settings, the terminal session manager (with a fake pty) and the pure UI logic.
+- `src/main/terminal.test.js` also starts real sessions with `node-pty`: key strokes reach the program, closing a tab ends it, and Korean text passes through unchanged in both directions. On Windows this runs through ConPTY and Git's `bash.exe` (`JUMPSPACE_TEST_BASH`).
 - `src/main/ssh-script.test.js` runs the generated scripts for real under bash with a fake `ssh`, and lets the real `ssh-add` run a script file as `SSH_ASKPASS`. It needs bash: `/bin/bash` on Linux and macOS, on Windows set `JUMPSPACE_TEST_BASH` to Git Bash (`C:\Program Files\Git\bin\bash.exe`), otherwise it is skipped.
 - CI runs lint, tests and the build on Ubuntu. On Windows it runs the tests and the build too, with the bash based tests under the Git Bash of the runner, plus one that starts a generated script through the real `git-bash.exe` (`JUMPSPACE_TEST_GIT_BASH_EXE`), the launcher the app uses.
 

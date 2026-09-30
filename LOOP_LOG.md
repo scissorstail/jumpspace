@@ -220,6 +220,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Did: `terminalShortcut()` in `utils/terminal-sessions.js` (Ctrl+Shift+C and Ctrl+Insert = copy; Ctrl+C stays the interrupt), handled in `terminal-panel.vue` with xterm's custom key handler; a right click copies the selection or pastes when there is none (`term.paste`, so bracketed paste works). The sandboxed renderer uses two new IPC calls, `clipboard:writeText` / `clipboard:readText` (trusted sender only, 1 MiB limit). Bug found on the way: in Electron 44 `clipboard.readText()` returns a Promise (`.slice` failed); both clipboard handlers and Copy SSH config now await.
 - Result: tests 218 passed (+2, mutation checked), lint ok, build ok. In the app against a real sshd (scratch t45): Ctrl+Shift+C copies, Ctrl+Shift+V and Shift+Insert paste, right click pastes, right click with a selection copies, Ctrl+C still interrupts; Copy SSH config still fills the clipboard (t46); t12, t13, t25, t35, t44 pass.
 
+### #29 2026-09-30 15:2x UTC · health (scheduled run)
+- Did: `npm outdated`: every package is at the newest version its range allows; the newer majors (Vue 3, Rete 2, Bootstrap 5, vue-router/vuex, vite 8, vitest 5, eslint 10) stay held back as decided. `npm audit --omit=dev`: 0 vulnerabilities. CI: every run today green, including run 44 of the clipboard commit. Docs checked against the code after the day's changes: README usage still said Connect "opens Git Bash" (it opens an app terminal by default), the tests section did not mention the terminal tests (fake pty, and the real pty ones incl. Korean input that also run on Windows through ConPTY), and the CLAUDE.md intro still described the Git Bash-only flow. All three fixed.
+- Result: docs only. Tests 218 passed, lint ok, build ok.
+- Found / next: the README tagline and screenshot at the top still show the old Git Bash look; replacing the screenshot needs the owner (it is hosted on GitHub user content).
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
