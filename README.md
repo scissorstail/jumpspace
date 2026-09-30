@@ -13,6 +13,7 @@ note: This currently only works on Windows
 - Every node has its own authentication (key, password, both, or neither), so one path can mix them.
 - Port forwarding is set up on the node itself, also through several hops.
 - Copy any node as `~/.ssh/config`.
+- Pick an icon for each node from a grid. The canvas position and zoom of each diagram are remembered.
 
 ## requirements
 
@@ -26,12 +27,20 @@ note: This currently only works on Windows
 1. Open the sidebar, add an item (a diagram) and give it a name.
 2. Unlock the editor (lock icon), right-click the canvas to add a `Site` node, and drag from a node's right socket to another node's left socket to chain them (jump hosts).
 3. Hover a node to open its menu:
-   - terminal: **Connect** opens Git Bash and runs `ssh` to the node. When the node has previous nodes it is **ProxyJump** instead, which connects through the whole chain.
+   - terminal: **Connect** opens Git Bash and runs `ssh` to the node. When the node has previous nodes and every one of them has a user, host and port, it is **ProxyJump** instead, which connects through the whole chain.
    - link: **Port forwarding**, see below. The button with a counter next to it starts the enabled forwards.
    - gear: **Setting** (icon picked from a grid, name, user, host, port, key, password, exec) and *Copy SSH config*.
-4. The canvas position and zoom of each item are remembered and restored when you open it again. Lock the editor to save changes to the diagram. You can start connections while it is locked. Items can be exported and imported as JSON from the sidebar menu.
+4. The canvas position and zoom of each item are remembered and restored when you open it again. Lock the editor to save changes to the diagram. You can start connections while it is locked.
+
+The node menu also shows when one of its buttons has keyboard focus, and Escape closes its popovers. Right-click a node for **Duplicate** or **Delete** (a node with content asks first).
 
 *Exec* is a command that runs on the server after login, the shell stays open afterwards.
+
+### items (sidebar)
+
+- `+` adds an item. Double-click a name (or *Edit* in its `...` menu) to rename it, Escape cancels. *Copy* duplicates an item, *Remove* asks first.
+- The search box filters by name and ignores case. Drag an item to reorder the list, Ctrl+click selects several items for *Export* or *Remove*.
+- *Import Items* adds the items of a JSON file. *Export Space* in the gear menu of the header exports everything.
 
 ### authentication
 
@@ -61,7 +70,7 @@ Open the link icon of a node and add rows of `local port -> target host : target
 
 ### your data
 
-Projects are stored in `projects.json` in the app data folder (`%APPDATA%\jumpspace` on Windows). The previous version of the file is kept as `projects.json.bak`. Settings are stored next to it. Data saved by v0.2.x in the browser storage is migrated automatically on first launch.
+Projects are stored in `projects.json` in the app data folder (`%APPDATA%\jumpspace` on Windows). Each item keeps its name, its nodes and the last canvas view. The previous version of the file is kept as `projects.json.bak`. Settings are stored next to it. Data saved by v0.2.x in the browser storage is migrated automatically on first launch.
 
 ## development
 
@@ -85,13 +94,16 @@ src/main/       Electron main process
   ssh-config.js   "Copy SSH config"
   launcher.js     writes the temp files and starts Git Bash
   validate.js     validation of every value that ends up in a command
-  storage.js      projects.json (atomic write, .bak)
+  storage.js      projects.json (atomic write, .bak), import parsing
+  legacy-forwards.js  moves forwards saved by older versions to their current place
+  setting.js      the app settings (Git Bash path, tray)
 src/preload/    the small API exposed to the renderer (window.preload)
 src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
-  src/utils/      pure logic with unit tests (forwarding rules, ...)
+  src/utils/      pure logic with unit tests (forwarding rules, canvas view, ...)
   src/components/editor/nodes/site-node/controls/connection-control/
                   the node: component.vue coordinates, forward-menu.vue and
-                  connection-settings.vue are its two popovers
+                  connection-settings.vue are its two popovers (the latter uses
+                  icon-picker.vue)
 ```
 
 ### how ssh is started
@@ -104,7 +116,7 @@ src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
 
 ### tests
 
-- `npm test` covers validation, script and config building, the askpass routing (it runs the generated script), the launcher (with a fake `spawn`), storage and the pure UI logic.
+- `npm test` covers validation, script and config building, the askpass routing (it runs the generated script), the launcher (with a fake `spawn`), storage (including the migration of old forwards and the canvas view), the settings and the pure UI logic.
 - `src/main/ssh-script.test.js` runs the generated scripts for real under bash with a fake `ssh`, and lets the real `ssh-add` run a script file as `SSH_ASKPASS`. It needs bash: `/bin/bash` on Linux and macOS, on Windows set `JUMPSPACE_TEST_BASH` to Git Bash (`C:\Program Files\Git\bin\bash.exe`), otherwise it is skipped.
 - CI runs lint, tests and the build on Ubuntu. On Windows it runs the tests and the build too, with the bash based tests under the Git Bash of the runner, plus one that starts a generated script through the real `git-bash.exe` (`JUMPSPACE_TEST_GIT_BASH_EXE`), the launcher the app uses.
 
@@ -120,3 +132,7 @@ Port 2214   # key and password:    AuthenticationMethods publickey,password
 ## changes
 
 See [CHANGELOG.md](CHANGELOG.md).
+
+## license
+
+MIT, see [LICENSE](LICENSE).

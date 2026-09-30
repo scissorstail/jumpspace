@@ -24,8 +24,10 @@ Run lint, tests and build before every commit. Node 20.19+ or 22.12+. `.npmrc` s
 ## Rules that matter
 
 - **Nothing user-controlled reaches a shell unchecked.** Every value that ends up in an `ssh` command or config goes through `src/main/validate.js`; `ssh.js` builds a bash script with POSIX single-quoted values. Passwords travel only as environment variables and are answered through `SSH_ASKPASS` (the generated script is its own askpass). Never put passwords or keys into logs, docs or commit messages.
+- **The repository is public (MIT).** No secrets, tokens, real hosts or personal data in files or commit messages.
 - **Behavior changes need a test.** After adding a test, break the code on purpose once and see it fail. Never skip or delete a failing test to get green.
 - The renderer is sandboxed with a narrow IPC API (`src/preload/index.js`). Keep logic that can be pure in `src/renderer/src/utils/` or `src/main/*.js` with tests; components stay thin.
+- **Keep the docs true.** A user-visible change goes into the Unreleased section of `CHANGELOG.md`; a new file in `src/main` or a new node component goes into the "project layout" of `README.md`.
 - Saved data (`projects.json`, items are `{ name, data, view? }`) goes through `normalizeItems` in `src/main/storage.js`. Old data must keep loading; add a migration there instead of breaking it.
 
 ## Owner's decisions (details in LOOP_LOG.md)

@@ -59,7 +59,7 @@ Ordered roughly by value. Move an item to the log when it is done.
 ### Missing or thin tests
 - No component tests (Vue) at all; logic lives in `utils/` on purpose. Consider `@vue/test-utils` only if it stays cheap.
 - `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts.
-- A small Playwright + Electron smoke test in the repo (needs xvfb in CI) would keep the UI honest. Weigh the CI time.
+- A Playwright + Electron smoke test in the repo was considered and turned down by the owner (decision 6).
 
 ### Dependencies (checked 2026-09-30)
 - `npm audit --omit=dev`: 0 vulnerabilities. Dev tooling may report more.
@@ -104,6 +104,10 @@ Ordered roughly by value. Move an item to the log when it is done.
 
 ### #4 2026-09-30 · routine change (by hand, not by the trigger)
 - Did: removed the `research` activity and the list of research targets from the routine at the owner's request; the trigger prompt was updated the same way. Also removed a stale, duplicated block (a second "Log entry template", Backlog and old proposals) that an earlier edit of this file had left in by mistake: its "Proposals" listed the Vue 3 migration as open, against decision 5.
+- Result: docs only.
+
+### #5 2026-09-30 · docs review (by hand, not by the trigger)
+- Did: checked README, CHANGELOG, CLAUDE.md and this file against the code (versions, commands, behavior). Fixed: README said ProxyJump replaces Connect whenever a node has previous nodes, but it needs every previous node to have user/host/port; README lacked the sidebar, context menu, keyboard and canvas view behavior, the newer files in the project layout and the license; CLAUDE.md now says the repository is public and that docs must be kept true; the backlog no longer lists the smoke test the owner turned down. CHANGELOG matched the code.
 - Result: docs only.
 
 ## Routine
