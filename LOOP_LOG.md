@@ -46,7 +46,7 @@ This file is its memory. **Read the whole file before doing anything, and append
 Ordered roughly by value. Move an item to the log when it is done.
 
 ### UX candidates
-- Lock button tooltip stays visible after a click (mouse still over it).
+- (none open)
 
 ### Code hot spots
 - `src/renderer/src/components/layout/main-navigator.vue` (about 640 lines): list, drag, select, rename, import/export all in one. A candidate to split (item list vs. actions).
@@ -192,6 +192,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 ### #22 2026-09-30 · halos in Vivid (by hand, at the owner's request)
 - Did: the owner found Vivid too loud and suggested a blurred border around the main nodes and elements, only in that mode. `#editor-area` now carries `backdrop-<name>`; in Vivid each node gets a `::before` plate behind it that also covers its name and address (blur 10px via `backdrop-filter`, darkened, faded out with a radial mask), the name/address block a dark `drop-shadow`, and connections a dark `drop-shadow` outline. Other modes are unchanged. A first try with a small square frosted plate looked like a smudge; the larger round plate reads as a halo.
 - Result: CSS and one class binding, no logic change. Tests 212 passed, lint ok, build ok. In the app (scratch t40): no halo in Depth, halo in Vivid, the halo does not catch clicks (hit test lands on the canvas), nodes still select and drag; checked in all three palettes.
+
+### #23 2026-09-30 14:2x UTC · ux (scheduled run)
+- Did: the Backlog item "lock tooltip stays after a click". Reproduced in the app: after clicking the lock, the Bootstrap tooltip stayed and already showed the opposite label. The lock was the only header button with `v-b-tooltip`; it now uses the plain `title` like the others (the accessible name is unchanged). Also the Settings label "Close to system tray" wrapped to two lines in the pixel font; it is "Close to tray" now, with a one-line description of what it does.
+- Result: template only, no logic change. Tests 212 passed, lint ok, build ok. In the app (scratch t41): no tooltip left after clicking the lock (failed before the fix), name/title present; settings scripts t4, t12, t17, t39 pass; screenshot of the dialog checked.
+- Found / next: the UX candidate list is empty; next ux run starts with a fresh walk through the app.
 
 ## Routine
 

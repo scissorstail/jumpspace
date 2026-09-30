@@ -89,8 +89,9 @@
               <b-form-group
                 label-align="left"
                 class="text-left"
-                label="Close to system tray"
+                label="Close to tray"
                 label-cols-sm="4"
+                description="Closing the window keeps jumpspace running in the system tray."
               >
                 <b-form-checkbox
                   v-model="isHideToTrayOnClose"

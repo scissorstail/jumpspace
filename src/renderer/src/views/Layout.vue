@@ -41,10 +41,9 @@
             {{ terminalCount }}
           </b-badge>
         </b-button>
-        <!-- Editor Lock/Unlock button -->
+        <!-- Editor Lock/Unlock button (다른 머리글 단추처럼 기본 title을 쓴다. b-tooltip은 누른 뒤에도 남아 있었다) -->
         <b-button
           v-if="editorData"
-          v-b-tooltip.hover.v-light.dh0.noninteractive
           size="sm"
           :title="isEditorLocked ? 'Unlock editor' : 'Lock editor'"
           :aria-label="isEditorLocked ? 'Unlock editor' : 'Lock editor'"
