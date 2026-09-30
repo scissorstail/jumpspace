@@ -181,6 +181,10 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Result: CSS only, no behavior change. Tests 211 passed, lint ok, build ok; checked in all three palettes (computed radius 0, hover background, screenshots).
 - Found / next: the long "Close to system tray" label wraps to two lines in the pixel font (fine, but could get a shorter label). Backlog UX item "lock tooltip stays after a click" is still open.
 
+### #20 2026-09-30 · background effects (by hand, at the owner's request)
+- Did: the owner wanted the background a little less prominent, with more depth so the nodes read better, and suggested blur, glare or CRT scan lines on the background only, selectable in Settings if hard to choose. The scene is split into `.scene-art` (picture) and `.scene-fx` (overlays); five modes as `.scene-<name>`: vivid (as before), soft (faded + vignette), depth (blur 3px, faded, vignette, haze at the horizon), crt (scan lines, a slow rolling band that stops for reduced motion, strong vignette, 0.6px blur), off. New setting `backdrop` (validated in `setting.js`, default depth) with a button group in Settings. Tried `brightness()` first: the dimmed yellow sun turned olive; switched to opacity and a sun mixed toward pink in the dimmed modes. Help text under form fields now uses the muted theme color instead of Bootstrap's grey.
+- Result: tests 212 passed (+ backdrop normalization; mutation checked), lint ok, build ok. In the app: default depth, choosing CRT is saved and kept after reload, Off hides the scene; depth and CRT checked in all three palettes; scratch scripts t9, t12, t16, t24, t35, t39 pass.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
