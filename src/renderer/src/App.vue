@@ -66,7 +66,8 @@ body {
       format('woff2');
 }
 
-* {
+// 터미널(xterm.js)은 고정폭 글꼴로 글자 폭을 재므로 제외한다.
+*:not(.xterm):not(.xterm *) {
   font-family: 'Spoqa Han Sans Neo', 'sans-serif';
 }
 

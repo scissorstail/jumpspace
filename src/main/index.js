@@ -11,12 +11,15 @@ import {
   Tray,
   shell,
   dialog,
-  clipboard
+  clipboard,
+  webContents
 } from 'electron'
 import Store from 'electron-store'
 import info from '../../package.json'
 import icon from '../../resources/icon.png?asset'
+import { spawn as spawnPty } from 'node-pty'
 import { launch, sweepTempDir } from './launcher.js'
+import { createTerminalManager, terminalBash } from './terminal.js'
 import { normalizeSetting } from './setting.js'
 import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
@@ -148,6 +151,40 @@ function main() {
       }
     })
   }
+
+  // 앱 안의 터미널. 스크립트는 위와 같이 만들고, Git Bash 창 대신 pty에서 실행해 화면(xterm.js)과 주고받는다.
+  const terminals = createTerminalManager({
+    tempDir,
+    getBash: () => terminalBash(getSetting().gitBashPath),
+    spawnPty,
+    send: (owner, channel, ...args) => {
+      const contents = webContents.fromId(owner)
+      if (contents && !contents.isDestroyed()) contents.send(channel, ...args)
+    }
+  })
+
+  handle('terminal:open', async (event, kind, payload, size) => {
+    try {
+      const id = await terminals.open(kind, payload, { owner: event.sender.id, cols: size?.cols, rows: size?.rows })
+      return { ok: true, id }
+    } catch (e) {
+      console.error(`terminal:${kind} failed:`, e)
+      return { ok: false, error: e.message }
+    }
+  })
+  on('terminal:write', (event, id, data) => terminals.write(id, event.sender.id, data))
+  on('terminal:resize', (event, id, cols, rows) => terminals.resize(id, event.sender.id, cols, rows))
+  on('terminal:close', (event, id) => terminals.close(id, event.sender.id))
+
+  // 새로고침하거나 창을 닫으면 그 화면의 터미널은 끝낸다.
+  app.on('web-contents-created', (event, contents) => {
+    const owner = contents.id
+    contents.on('did-start-navigation', details => {
+      if (details.isMainFrame && !details.isSameDocument) terminals.closeAll(owner)
+    })
+    contents.on('destroyed', () => terminals.closeAll(owner))
+  })
+  app.on('before-quit', () => terminals.closeAll())
 
   // 접속 정보를 ~/.ssh/config 형식으로 클립보드에 복사한다.
   handle('ssh:copyConfig', (event, request) => {

@@ -6,6 +6,7 @@ Everything since 0.2.2-beta.
 
 ### Added
 
+- **Terminals inside the app.** Connect, ProxyJump and forwards open in a panel at the bottom of the window (xterm.js + node-pty), one tab per session, instead of a separate Git Bash window. Key passphrases and other prompts are typed into the tab; closing a tab ends the session. *Settings > Open SSH in* brings back the Git Bash window.
 - **Port forwarding on a node.** A node carries its own forwards (`local port -> target host : target port`). The tunnel goes through the node and every previous node, each with its own authentication. The target host defaults to `localhost`. The node shows a counter on its start button and a summary line of the enabled forwards.
 - **Password authentication** as an alternative to a key, for Connect, ProxyJump and forwarding. Passwords are stored as plain text; exporting an item that contains one asks for confirmation.
 - **A different authentication per hop.** Key, password, key + password, or neither can be mixed in one path. `keyboard-interactive` password prompts are answered as well; key passphrases and one-time codes are asked in the terminal.
@@ -31,6 +32,7 @@ Everything since 0.2.2-beta.
 ### Fixed
 
 - The "previous image" button could not return to the first image.
+- The generated script ignored a hang-up: after its window was closed it could still run its last lines. It now exits on HUP and TERM.
 - A key path with a control character could pass validation after an earlier value had been rejected (shared global regex).
 - ProxyJump failed with an error for a node whose key was never set, and wrote an empty `IdentityFile` line for one whose key was cleared. Temp files were written to the working directory and never cleaned up.
 - Saved data contained a copy of the previous nodes (including their passwords) inside every node. It is no longer saved and is removed from existing files.

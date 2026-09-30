@@ -31,6 +31,24 @@
               </b-form-group>
             </b-col>
           </b-row>
+          <b-row class="mb-3">
+            <b-col>
+              <b-form-group
+                class="mb-0"
+                label="Open SSH in"
+                label-align="left"
+                label-cols-sm="4"
+              >
+                <b-form-radio-group
+                  v-model="openIn"
+                  :options="openInOptions"
+                  buttons
+                  button-variant="outline-primary"
+                  size="sm"
+                />
+              </b-form-group>
+            </b-col>
+          </b-row>
           <b-row>
             <b-col>
               <b-form-group
@@ -87,7 +105,12 @@ export default {
   data() {
     return {
       gitBashPath: null,
-      isHideToTrayOnClose: false
+      isHideToTrayOnClose: false,
+      openIn: 'app',
+      openInOptions: [
+        { text: 'This app', value: 'app' },
+        { text: 'Git Bash window', value: 'window' }
+      ]
     }
   },
   computed: {
@@ -105,11 +128,13 @@ export default {
     init() {
       this.gitBashPath = this.setting.gitBashPath
       this.isHideToTrayOnClose = this.setting.isHideToTrayOnClose
+      this.openIn = this.setting.openIn || 'app'
     },
     async saveSetting() {
       await this.settingSave({
         gitBashPath: this.gitBashPath,
-        isHideToTrayOnClose: this.isHideToTrayOnClose
+        isHideToTrayOnClose: this.isHideToTrayOnClose,
+        openIn: this.openIn
       })
       this.$emit('update:show', false)
     }

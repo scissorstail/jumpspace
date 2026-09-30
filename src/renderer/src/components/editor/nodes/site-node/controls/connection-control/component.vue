@@ -105,6 +105,7 @@
 import pick from 'lodash/pick'
 import store from '@/store'
 import { errorMessage } from '@/utils/notify'
+import { terminalTitle } from '@/utils/terminal-sessions'
 import {
   configRequest,
   forwardEntries,
@@ -228,8 +229,16 @@ export default {
         this.$bvModal.msgBoxOk(errorMessage(e), { title: 'Failed to start SSH' })
       }
     },
+    // 설정에 따라 앱 안의 터미널 또는 Git Bash 창에서 연다.
+    launch(kind, payload, hops = 0) {
+      if (this.$store.getters.setting.openIn === 'window') {
+        return this.run(() => window.preload.ssh[kind](payload))
+      }
+
+      this.$store.dispatch('terminalOpen', { kind, payload, title: terminalTitle(kind, this.$data, hops) })
+    },
     connect() {
-      return this.run(() => window.preload.ssh.connect(this.connectionOf(this.$data)))
+      return this.launch('connect', this.connectionOf(this.$data))
     },
     openForward() {
       const plan = this.forwardPlan
@@ -238,15 +247,15 @@ export default {
       }
 
       // plan.via의 마지막 노드에 접속하고(앞 노드들은 각자의 인증으로 거친다), 그 서버에서 바라본 host:port로 포워딩한다.
-      return this.run(() => window.preload.ssh.forward({
+      return this.launch('forward', {
         via: plan.via.map(x => this.connectionOf(x)),
         forwards: forwardEntries(this.forwards, plan)
-      }))
+      })
     },
     proxyJump() {
       const nodes = (this.prevNodeDataList || []).concat(this.$data).map(x => this.connectionOf(x))
 
-      return this.run(() => window.preload.ssh.proxyJump(nodes))
+      return this.launch('proxyJump', nodes, nodes.length - 1)
     },
     async copyConfig() {
       const request = configRequest(this.connectionOf(this.$data), this.prevNodeDataList, this.forwards, this.forwardPlan)

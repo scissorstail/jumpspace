@@ -53,4 +53,7 @@ The app is checked in the real Electron with Playwright under `xvfb-run` (script
 - `b-form-input` with `trim` is fine for typing spaces; do not "fix" it.
 - On Windows Git Bash puts its own `/usr/bin` before `PATH`, so tests that fake `ssh` must use a bash function (`BASH_ENV`), not a fake binary on `PATH`.
 - Vue 2 reactivity: a property added later to an item needs `$set`; navigator items and `projectData` in `views/Layout.vue` are separate copies that are rebuilt on every `updated` event.
+- Terminals in the app: `node-pty` is the only runtime `dependencies` entry (native, N-API, prebuilt for Windows/macOS, compiled with node-gyp on Linux), so electron-vite keeps it external and electron-builder packs it (`npmRebuild: false`, `asarUnpack`). `pty.kill()` only signals bash; `killPty` hangs up the whole process group so ssh ends too.
+- The global font rule in `App.vue` must not reach `.xterm` (xterm measures a monospace font).
+- Never `pkill -f` a pattern that also appears in your own shell command: it kills the shell running it.
 - `SSH_ASKPASS_REQUIRE` needs OpenSSH 8.4+. Password sign-in was verified against Linux sshd and on Windows only up to the script/askpass mechanics.

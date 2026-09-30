@@ -9,7 +9,7 @@ note: This currently only works on Windows
 ## features
 
 - Draw your servers as nodes and chain them into jump-host paths.
-- One click opens Git Bash with the right `ssh` command: to a single node, through the whole chain (ProxyJump), or as port forwards.
+- One click opens the right `ssh` command in a terminal inside the app (or, if you prefer, in a Git Bash window): to a single node, through the whole chain (ProxyJump), or as port forwards.
 - Every node has its own authentication (key, password, both, or neither), so one path can mix them.
 - Port forwarding is set up on the node itself, also through several hops.
 - Copy any node as `~/.ssh/config`.
@@ -35,6 +35,12 @@ note: This currently only works on Windows
 The node menu also shows when one of its buttons has keyboard focus, and Escape closes its popovers. Right-click a node for **Duplicate** or **Delete** (a node with content asks first).
 
 *Exec* is a command that runs on the server after login, the shell stays open afterwards.
+
+### terminals
+
+Connect, ProxyJump and port forwarding open in a **terminal panel at the bottom of the app**, one tab per session. Password prompts are answered as described below; anything else (a key passphrase, a one-time code, host key questions) is typed into the tab. The dot on a tab shows the state (starting, running, ended). Closing a tab ends its ssh session; the arrow on the right hides the panel while the sessions keep running, and the terminal button in the header shows it again. Drag the top edge of the panel to resize it.
+
+*Settings > Open SSH in* switches back to opening a separate **Git Bash window** instead.
 
 ### items (sidebar)
 
@@ -92,7 +98,8 @@ src/main/       Electron main process
   index.js        window, tray and IPC
   ssh.js          builds the bash script and the ssh config for connect / ProxyJump / forward
   ssh-config.js   "Copy SSH config"
-  launcher.js     writes the temp files and starts Git Bash
+  launcher.js     writes the temp files and starts Git Bash (window)
+  terminal.js     terminal sessions inside the app (node-pty), used by the terminal panel
   validate.js     validation of every value that ends up in a command
   storage.js      projects.json (atomic write, .bak), import parsing
   legacy-forwards.js  moves forwards saved by older versions to their current place
@@ -104,6 +111,8 @@ src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
                   the node: component.vue coordinates, forward-menu.vue and
                   connection-settings.vue are its two popovers (the latter uses
                   icon-picker.vue)
+  src/components/terminal/terminal-panel.vue
+                  the terminal panel (xterm.js), one tab per session
 ```
 
 ### how ssh is started
@@ -111,11 +120,12 @@ src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
 1. The UI never runs commands. It sends a small request (`connect`, `proxyJump`, `forward`) to the main process.
 2. `validate.js` checks every value (user, host, port, key path, exec, forwards) and rejects what could turn into an option or an injection into the shell or the ssh config.
 3. `ssh.js` builds a temporary bash script (values quoted with POSIX single quotes). A path also gets an `ssh -F` config with one `Host` block per node holding that node's own key / password options.
-4. `launcher.js` writes both into the OS temp folder and runs `git-bash.exe -c "bash '<script>'"`. The script removes itself and the config when the session ends, leftovers are swept on the next start.
+4. `launcher.js` writes both into the OS temp folder. In the app, `terminal.js` runs the script with bash in a pseudo terminal (node-pty, ConPTY on Windows; Git's `bin\bash.exe` next to the configured `git-bash.exe`) and the panel exchanges key strokes and output with it; only the generated script is ever started, the window only sends key strokes. For a Git Bash window it runs `git-bash.exe -c "bash '<script>'"`. The script removes itself and the config when the session ends (also when its tab is closed), leftovers are swept on the next start.
 5. Passwords are passed as environment variables. The same script is also the `SSH_ASKPASS` program and answers only the prompts of the hop the password belongs to.
 
 ### tests
 
+- `src/main/terminal.test.js` also runs a generated script in a real pty (node-pty) with a fake `ssh`, types into it and closes it, on Linux and in the Windows CI job (ConPTY and Git Bash).
 - `npm test` covers validation, script and config building, the askpass routing (it runs the generated script), the launcher (with a fake `spawn`), storage (including the migration of old forwards and the canvas view), the settings and the pure UI logic.
 - `src/main/ssh-script.test.js` runs the generated scripts for real under bash with a fake `ssh`, and lets the real `ssh-add` run a script file as `SSH_ASKPASS`. It needs bash: `/bin/bash` on Linux and macOS, on Windows set `JUMPSPACE_TEST_BASH` to Git Bash (`C:\Program Files\Git\bin\bash.exe`), otherwise it is skipped.
 - CI runs lint, tests and the build on Ubuntu. On Windows it runs the tests and the build too, with the bash based tests under the Git Bash of the runner, plus one that starts a generated script through the real `git-bash.exe` (`JUMPSPACE_TEST_GIT_BASH_EXE`), the launcher the app uses.

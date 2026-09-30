@@ -22,5 +22,22 @@ contextBridge.exposeInMainWorld('preload', {
     forward: data => ipcRenderer.invoke('ssh:forward', data),
     proxyJump: nodes => ipcRenderer.invoke('ssh:proxyJump', nodes),
     copyConfig: request => ipcRenderer.invoke('ssh:copyConfig', request)
+  },
+
+  // 앱 안의 터미널. kind는 'connect' | 'forward' | 'proxyJump', payload는 ssh.*와 같다.
+  terminal: {
+    open: (kind, payload, size) => ipcRenderer.invoke('terminal:open', kind, payload, size),
+    write: (id, data) => ipcRenderer.send('terminal:write', id, data),
+    resize: (id, cols, rows) => ipcRenderer.send('terminal:resize', id, cols, rows),
+    close: id => ipcRenderer.send('terminal:close', id),
+    // 받은 출력/종료를 알려준다. 돌려주는 함수를 부르면 그만 받는다.
+    onData: listener => subscribe('terminal:data', listener),
+    onExit: listener => subscribe('terminal:exit', listener)
   }
 })
+
+function subscribe(channel, listener) {
+  const wrapped = (event, ...args) => listener(...args)
+  ipcRenderer.on(channel, wrapped)
+  return () => ipcRenderer.removeListener(channel, wrapped)
+}

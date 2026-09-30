@@ -3,8 +3,8 @@ import { DEFAULT_SETTING, normalizeSetting } from './setting.js'
 
 describe('normalizeSetting', () => {
   it('keeps valid values', () => {
-    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true }))
-      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true })
+    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window' }))
+      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window' })
   })
 
   it('uses the default path when it is empty, blank or not a string', () => {
@@ -28,5 +28,15 @@ describe('normalizeSetting', () => {
     expect(normalizeSetting({ isHideToTrayOnClose: 1 }).isHideToTrayOnClose).toBe(true)
     expect(normalizeSetting({ isHideToTrayOnClose: 0 }).isHideToTrayOnClose).toBe(false)
     expect(normalizeSetting({ evil: 'x' })).toEqual(DEFAULT_SETTING)
+  })
+})
+
+describe('normalizeSetting: openIn', () => {
+  it('opens sessions in the app by default and accepts only known places', () => {
+    expect(normalizeSetting({}).openIn).toBe('app')
+    expect(normalizeSetting({ openIn: 'window' }).openIn).toBe('window')
+    expect(normalizeSetting({ openIn: 'app' }).openIn).toBe('app')
+    expect(normalizeSetting({ openIn: 'cmd.exe' }).openIn).toBe('app')
+    expect(normalizeSetting({ openIn: 1 }).openIn).toBe('app')
   })
 })

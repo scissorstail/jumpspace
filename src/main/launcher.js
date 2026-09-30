@@ -46,9 +46,9 @@ function waitForSpawn(child) {
   })
 }
 
+// 요청을 검증하고 스크립트(와 필요하면 ssh config)를 만든다. 파일은 write()를 부를 때 쓴다.
 // kind: 'connect' | 'forward' | 'proxyJump'. payload는 kind별 요청 내용(ssh.js의 빌더 참고)이다.
-// spawn은 테스트에서 바꿀 수 있게 열어 둔다.
-export async function launch(kind, payload, { tempDir, gitBashPath, spawn = nodeSpawn }) {
+export function prepareSession(kind, payload, { tempDir }) {
   const builders = { connect: buildConnect, forward: buildForward, proxyJump: buildProxyJump }
   if (!Object.hasOwn(builders, kind)) {
     throw new Error(`Unknown command: ${kind}`)
@@ -63,30 +63,46 @@ export async function launch(kind, payload, { tempDir, gitBashPath, spawn = node
   // 입력 검증도 여기서 끝난다. 잘못된 요청이면 디스크에 아무것도 만들지 않는다.
   const { script, config, env } = builders[kind](payload, paths)
 
+  return {
+    scriptPath: paths.scriptPath,
+    env,
+    async write() {
+      await mkdir(tempDir, { recursive: true })
+
+      // 이 스크립트는 ssh의 SSH_ASKPASS로도 실행되므로 실행 권한이 필요하다.
+      await writeFile(scriptFile, script, { encoding: 'utf-8', mode: 0o700 })
+      if (config) {
+        await writeFile(configFile, config, { encoding: 'utf-8', mode: 0o600 })
+      }
+    },
+    async cleanup() {
+      await rm(scriptFile, { force: true })
+      await rm(configFile, { force: true })
+    }
+  }
+}
+
+// Git Bash 창(mintty)을 새로 띄워서 실행한다. spawn은 테스트에서 바꿀 수 있게 열어 둔다.
+export async function launch(kind, payload, { tempDir, gitBashPath, spawn = nodeSpawn }) {
+  const session = prepareSession(kind, payload, { tempDir })
+
   const bash = expandEnv(gitBashPath || '')
   if (!bash || !existsSync(bash)) {
     throw new Error(`Git Bash was not found: ${bash || '(not set)'}\nCheck "Git Bash path" in Settings.`)
   }
 
-  await mkdir(tempDir, { recursive: true })
-
-  // 이 스크립트는 ssh의 SSH_ASKPASS로도 실행되므로 실행 권한이 필요하다.
-  await writeFile(scriptFile, script, { encoding: 'utf-8', mode: 0o700 })
-  if (config) {
-    await writeFile(configFile, config, { encoding: 'utf-8', mode: 0o600 })
-  }
+  await session.write()
 
   try {
-    const child = spawn(bash, ['-c', `bash '${paths.scriptPath}'`], {
+    const child = spawn(bash, ['-c', `bash '${session.scriptPath}'`], {
       detached: true,
       stdio: 'ignore',
-      env: { ...process.env, ...env }
+      env: { ...process.env, ...session.env }
     })
     await waitForSpawn(child)
     child.unref()
   } catch (e) {
-    await rm(scriptFile, { force: true })
-    await rm(configFile, { force: true })
+    await session.cleanup()
     throw e
   }
 }

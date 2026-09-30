@@ -153,6 +153,9 @@ describe('password auth', () => {
     // askpass branch must run before the cleanup trap, otherwise every prompt would delete the script
     expect(script.indexOf('SSH_ASKPASS_REQUIRE')).toBeLessThan(script.indexOf('trap cleanup'))
     expect(script.indexOf('if [ "$#" -gt 0 ]')).toBeLessThan(script.indexOf('trap cleanup'))
+    // 닫힌 창/탭에서 남은 명령(오류 안내 후 read 등)을 계속 실행하지 않는다.
+    expect(script).toContain("trap 'exit 129' HUP")
+    expect(script).toContain("trap 'exit 143' TERM")
   })
 
   it('keeps public key auth when a key is set too', () => {

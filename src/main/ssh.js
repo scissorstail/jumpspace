@@ -80,7 +80,10 @@ function wrap({ prelude = [], lines, cleanupPaths, env = {} }) {
     '#!/bin/bash',
     ...prelude,
     `cleanup() { rm -f -- ${cleanupPaths.map(sq).join(' ')}; }`,
-    'trap cleanup EXIT HUP TERM',
+    'trap cleanup EXIT',
+    // 창이나 탭을 닫으면(HUP), 끝내라는 요청(TERM)이면 남은 명령을 실행하지 않고 끝낸다. (파일은 EXIT trap이 지운다)
+    "trap 'exit 129' HUP",
+    "trap 'exit 143' TERM",
     ...lines,
     'rc=$?',
     // ssh 자체의 오류(255)는 창이 바로 닫히면 확인할 수 없으므로 잠시 멈춘다.

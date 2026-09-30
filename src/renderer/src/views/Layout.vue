@@ -22,12 +22,28 @@
           />
         </b-button>
       </template>
-      <template
-        v-if="editorData"
-        #main-navigator-toolbar
-      >
+      <template #main-navigator-toolbar>
+        <!-- 숨긴 터미널 패널 다시 열기 -->
+        <b-button
+          v-if="terminalCount > 0 && !isTerminalPanelOpen"
+          size="sm"
+          variant="light"
+          :aria-label="`Show terminals (${terminalCount})`"
+          :title="`Show terminals (${terminalCount})`"
+          @click="$store.commit('terminalPanel', true)"
+        >
+          <b-icon icon="terminal" />
+          <b-badge
+            variant="primary"
+            pill
+            class="ml-1"
+          >
+            {{ terminalCount }}
+          </b-badge>
+        </b-button>
         <!-- Editor Lock/Unlock button -->
         <b-button
+          v-if="editorData"
           v-b-tooltip.hover.v-light.dh0.noninteractive
           size="sm"
           :title="isEditorLocked ? 'Unlock editor' : 'Lock editor'"
@@ -64,21 +80,28 @@
         </template>
       </b-sidebar>
 
-      <!-- editor -->
-      <Editor
-        ref="editorRef"
-        :editor-data="editorData"
-        :is-locked="isEditorLocked"
-        :class="[!editorData && 'layout-inactive']"
-        @view-change="updateView"
-      />
+      <div id="workspace">
+        <div id="editor-area">
+          <!-- editor -->
+          <Editor
+            ref="editorRef"
+            :editor-data="editorData"
+            :is-locked="isEditorLocked"
+            :class="[!editorData && 'layout-inactive']"
+            @view-change="updateView"
+          />
 
-      <!-- 열려 있는 item이 없을 때 -->
-      <div
-        v-if="!editorData"
-        class="layout-empty"
-      >
-        Select an item in the sidebar, or add a new one.
+          <!-- 열려 있는 item이 없을 때 -->
+          <div
+            v-if="!editorData"
+            class="layout-empty"
+          >
+            Select an item in the sidebar, or add a new one.
+          </div>
+        </div>
+
+        <!-- 앱 안의 터미널 -->
+        <TerminalPanel />
       </div>
     </div>
 
@@ -94,6 +117,7 @@ import MainNavigator from '../components/layout/main-navigator'
 import Editor from '../components/editor'
 import InfoPopup from '../components/layout/popup/info-popup'
 import SettingPopup from '../components/layout/popup/setting-popup'
+import TerminalPanel from '../components/terminal/terminal-panel'
 import { hasSavedPassword, EXPORT_PASSWORD_WARNING } from '../utils/project'
 import { toastError } from '../utils/notify'
 import { DEFAULT_VIEW, sanitizeView } from '../utils/view'
@@ -117,7 +141,8 @@ export default {
     MainNavigator,
     Editor,
     InfoPopup,
-    SettingPopup
+    SettingPopup,
+    TerminalPanel
   },
   data() {
     return {
@@ -131,6 +156,12 @@ export default {
     }
   },
   computed: {
+    terminalCount() {
+      return this.$store.getters.terminalSessions.length
+    },
+    isTerminalPanelOpen() {
+      return this.$store.getters.isTerminalPanelOpen
+    },
     // 열려 있는 item의 이름. 창 제목에 쓴다.
     openedItemName() {
       const item = this.openedItemIndex === null ? null : this.projectData?.[this.openedItemIndex]
@@ -289,6 +320,20 @@ export default {
     opacity: 0;
     pointer-events: none;
   }
+}
+
+#workspace {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+#editor-area {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 
 #main-content {
