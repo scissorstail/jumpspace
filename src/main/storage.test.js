@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createProjectStorage, normalizeItems } from './storage.js'
+import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
 
 const items = [{ name: 'a', data: { id: 'test@0.1.0', nodes: {} } }]
 
@@ -80,5 +80,22 @@ describe('normalizeItems', () => {
 
   it('drops unknown fields', () => {
     expect(normalizeItems([{ name: 'a', data: {}, evil: 1 }])).toEqual([{ name: 'a', data: { nodes: {} } }])
+  })
+})
+
+describe('parseItems', () => {
+  it('reads an export file', () => {
+    const items = [{ name: 'a', data: { id: 'x', nodes: {} } }]
+
+    expect(parseItems(JSON.stringify(items))).toEqual(items)
+    expect(parseItems(JSON.stringify({ version: 1, items }))).toEqual(items)
+  })
+
+  it('explains what is wrong with a file that cannot be imported', () => {
+    expect(() => parseItems('{ not json')).toThrow('The file is not valid JSON.')
+    expect(() => parseItems('')).toThrow('The file is not valid JSON.')
+    expect(() => parseItems('{"a":1}')).toThrow('The file does not look like a jumpspace export.')
+    expect(() => parseItems('[{"name":"x"}]')).toThrow('The file does not look like a jumpspace export.')
+    expect(() => parseItems('null')).toThrow('The file does not look like a jumpspace export.')
   })
 })

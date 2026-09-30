@@ -32,6 +32,22 @@ export function normalizeItems(value) {
   })
 }
 
+// import 파일에서 읽은 문자열을 [{ name, data }]로 바꾼다. 형식이 맞지 않으면 화면에 그대로 보여줄 수 있는 메시지로 실패한다.
+export function parseItems(text) {
+  let value
+  try {
+    value = JSON.parse(text)
+  } catch {
+    throw new Error('The file is not valid JSON.')
+  }
+
+  try {
+    return normalizeItems(value)
+  } catch {
+    throw new Error('The file does not look like a jumpspace export.')
+  }
+}
+
 export function createProjectStorage(dir) {
   const file = join(dir, 'projects.json')
   const backup = join(dir, 'projects.json.bak')

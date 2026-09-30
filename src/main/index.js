@@ -18,7 +18,7 @@ import info from '../../package.json'
 import icon from '../../resources/icon.png?asset'
 import { launch, sweepTempDir } from './launcher.js'
 import { buildSshConfig } from './ssh-config.js'
-import { createProjectStorage, normalizeItems } from './storage.js'
+import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
 
 const isMac = process.platform === 'darwin'
 const APP_ORIGIN = 'app://.'
@@ -133,8 +133,7 @@ function main() {
 
     if (!filenames || filenames.length === 0) return null
 
-    const items = normalizeItems(JSON.parse(await readFile(filenames[0], 'utf-8')))
-    return JSON.stringify(items)
+    return JSON.stringify(parseItems(await readFile(filenames[0], 'utf-8')))
   })
 
   handle('dialog:selectKeyFile', () => {

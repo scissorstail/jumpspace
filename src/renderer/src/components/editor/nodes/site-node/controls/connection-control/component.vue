@@ -91,6 +91,7 @@
 <script>
 import pick from 'lodash/pick'
 import store from '@/store'
+import { errorMessage } from '@/utils/notify'
 import {
   configRequest,
   forwardEntries,
@@ -202,7 +203,7 @@ export default {
         }
       } catch (e) {
         console.error(e)
-        this.$bvModal.msgBoxOk(String(e.message || e), { title: 'Failed to start SSH' })
+        this.$bvModal.msgBoxOk(errorMessage(e), { title: 'Failed to start SSH' })
       }
     },
     connect() {
