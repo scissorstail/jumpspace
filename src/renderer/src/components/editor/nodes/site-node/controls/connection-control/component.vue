@@ -61,40 +61,43 @@
         />
       </div>
       <div class="info-field">
-        <div
-          class="info-name"
-          :title="name || '(untitled)'"
-        >
-          <span>{{ name || '(untitled)' }}</span>
-        </div>
-        <div
-          class="info-text"
-          :title="user || ''"
-        >
-          {{ user || '' }}
-        </div>
-        <div
-          class="info-text"
-          :title="host || ''"
-        >
-          {{ host || '' }}
-        </div>
-        <div
-          class="info-text"
-          :title="port || ''"
-        >
-          {{ port || '' }}
-        </div>
-        <div
-          v-if="forwardSummaryText"
-          class="info-text info-forward"
-          :title="forwardSummaryText.title"
-        >
-          <b-icon
-            icon="arrow-left-right"
-            font-scale="0.85"
-            class="mr-1"
-          />{{ forwardSummaryText.text }}
+        <!-- 이름과 접속 정보. 설정 > Node glass를 켜면 이 판만 유리판이 된다. -->
+        <div class="info-card">
+          <div
+            class="info-name"
+            :title="name || '(untitled)'"
+          >
+            <span>{{ name || '(untitled)' }}</span>
+          </div>
+          <div
+            class="info-text"
+            :title="user || ''"
+          >
+            {{ user || '' }}
+          </div>
+          <div
+            class="info-text"
+            :title="host || ''"
+          >
+            {{ host || '' }}
+          </div>
+          <div
+            class="info-text"
+            :title="port || ''"
+          >
+            {{ port || '' }}
+          </div>
+          <div
+            v-if="forwardSummaryText"
+            class="info-text info-forward"
+            :title="forwardSummaryText.title"
+          >
+            <b-icon
+              icon="arrow-left-right"
+              font-scale="0.85"
+              class="mr-1"
+            />{{ forwardSummaryText.text }}
+          </div>
         </div>
       </div>
     </div>
@@ -429,6 +432,13 @@ export default {
     top: 100%;
     width: calc(100% * 2);
     padding-top: 10px;
+  }
+
+  // 글자 묶음의 폭에 맞춘 판 (보통은 보이지 않는다)
+  &-card {
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: top;
   }
 
   // user / host / port: 고정폭 청록 글자. 배경 풍경 위에서도 읽히도록 어두운 바탕을 깐다.

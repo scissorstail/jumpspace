@@ -428,18 +428,14 @@ export default {
   }
 }
 
-// 노드 뒤의 반투명 유리판 (설정 > Node glass, 0이면 없음). 뒤의 풍경을 밝게 흐려서 노드와 이름표/주소가 풍경과 구분된다.
-// 좌우는 노드 폭에 맞춘다. 연결선이 노드 아래층에 그려져서 판이 덮으면 선까지 흐려진다.
-.node-glass #rete .node.site::before {
-  content: '';
-  position: absolute;
-  inset: -12px -10px -118px;
-  z-index: -1;
+// 노드 아래 글자(이름, 주소, 포워딩)를 덮는 반투명 유리판 (설정 > Node glass, 0이면 없음).
+// 뒤의 풍경을 밝게 흐려서 글자가 풍경과 구분된다. 노드 상자 쪽은 그대로 둔다.
+.node-glass #rete .info-card {
+  padding: 4px 8px 6px;
   border: 1px solid color-mix(in srgb, #fff 20%, transparent);
   background: color-mix(in srgb, #fff 7%, transparent);
   -webkit-backdrop-filter: blur(var(--node-blur)) saturate(1.2);
   backdrop-filter: blur(var(--node-blur)) saturate(1.2);
-  pointer-events: none;
 }
 
 // Vivid 배경에서는 풍경이 선명해서 연결선이 묻히므로 어두운 테두리를 두른다.
