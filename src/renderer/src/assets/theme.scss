@@ -94,7 +94,7 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
 
 :root {
   --js-border: var(--js-line);
-  // 열려 있는 세션 (터미널 탭의 점, 캔버스의 LIVE 표)
+  // 열려 있는 세션 (터미널 탭의 점, 캔버스 노드의 초록 점)
   --js-live: #3dff8a;
   --js-hover: rgba(255, 255, 255, 0.08);
   --js-primary-soft: color-mix(in srgb, var(--js-primary) 22%, transparent);

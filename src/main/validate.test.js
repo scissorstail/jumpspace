@@ -41,6 +41,7 @@ describe('validate', () => {
 
   // 회귀: g 플래그 정규식의 lastIndex 때문에, 한 번 거부된 뒤에는 앞쪽 위치의 제어문자를 놓쳤다.
   it('rejects control characters every time, not only the first time', () => {
+    // 같은 값을 두 번씩 넣는 것은 일부러다: 전역(g) 정규식의 lastIndex 때문에 두 번째 값이 통과하던 버그를 막는다.
     for (const value of ['aaaa\nbbbb', 'a\nb', 'a\nb', 'x\ry', '\u0000', 'ok\tno']) {
       expect(() => validateKeyPath(value), JSON.stringify(value)).toThrow()
     }

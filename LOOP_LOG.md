@@ -259,6 +259,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: CSS only. lint exit 0, tests 223 passed, build exit 0; checked in all three palettes; t5, t13, t16 pass.
 - Found / next: nothing else stood out in this pass (the popover can overlap the header when a node is near the top, which is the popper placement and acceptable). If the next polish run also finds nothing worthwhile, the polish phase counts as good enough and the following run is the first `feature` run (reconnect an ended tab).
 
+### #35 2026-09-30 20:2x UTC · cleanup (scheduled run, polish phase)
+- Did: looked for stale comments, dependencies nobody imports, exports used nowhere, unused style rules and leftover files. Found only trivia: a comment in `theme.scss` still spoke of the "LIVE" tag (now a green dot), and the repeated values in a `validate.test.js` loop looked like a copy mistake but guard against the old global-regex bug, so they got a comment. The rest checked out: `vue-eslint-parser` is a peer of `eslint-plugin-vue` 10 and must stay with `legacy-peer-deps`; `@fontsource/vt323` is used through a relative path; exports only used by tests are there for the tests; `.prettierrc` matches the code style for editors.
+- Result: comments only. lint exit 0, tests 223 passed, build exit 0.
+- Phase: this run found nothing worthwhile. If the next polish run (ux or style) also finds nothing, the run after it is the first `feature` run.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
