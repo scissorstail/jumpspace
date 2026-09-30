@@ -84,6 +84,30 @@
               </b-form-group>
             </b-col>
           </b-row>
+          <b-row class="mb-3">
+            <b-col>
+              <b-form-group
+                class="mb-0"
+                label="Node glass"
+                label-for="setting-node-blur"
+                label-align="left"
+                label-cols-sm="4"
+                description="A frosted panel behind each node that blurs the scenery. 0 turns it off."
+              >
+                <div class="d-flex align-items-center">
+                  <b-form-input
+                    id="setting-node-blur"
+                    v-model.number="nodeBlur"
+                    type="range"
+                    min="0"
+                    :max="nodeBlurMax"
+                    step="1"
+                  />
+                  <span class="setting-value ml-3">{{ nodeBlur > 0 ? `${nodeBlur}px` : 'Off' }}</span>
+                </div>
+              </b-form-group>
+            </b-col>
+          </b-row>
           <b-row>
             <b-col>
               <b-form-group
@@ -128,6 +152,7 @@
 <script>
 import { mapActions, mapGetters } from 'vuex'
 import { dismissOnEscape } from '@/utils/dismiss'
+import { NODE_BLUR_MAX } from '../../../../../shared/setting.js'
 
 export default {
   name: 'SettingPopup',
@@ -150,6 +175,8 @@ export default {
         { text: 'Vapor blue', value: 'vapor-blue' }
       ],
       backdrop: null,
+      nodeBlur: 0,
+      nodeBlurMax: NODE_BLUR_MAX,
       backdropOptions: [
         { text: 'Vivid', value: 'vivid' },
         { text: 'Soft', value: 'soft' },
@@ -181,6 +208,7 @@ export default {
       this.openIn = this.setting.openIn
       this.theme = this.setting.theme
       this.backdrop = this.setting.backdrop
+      this.nodeBlur = this.setting.nodeBlur
     },
     async saveSetting() {
       await this.settingSave({
@@ -188,7 +216,8 @@ export default {
         isHideToTrayOnClose: this.isHideToTrayOnClose,
         openIn: this.openIn,
         theme: this.theme,
-        backdrop: this.backdrop
+        backdrop: this.backdrop,
+        nodeBlur: this.nodeBlur
       })
       this.$emit('update:show', false)
     }
@@ -201,5 +230,13 @@ export default {
   .form-group .form-row {
     align-items: center;
   }
+}
+
+.setting-value {
+  min-width: 3.5em;
+  color: var(--js-sun);
+  font-family: var(--js-font-display);
+  font-size: 1.15rem;
+  text-transform: uppercase;
 }
 </style>

@@ -249,6 +249,42 @@ body {
   color: var(--js-text);
 }
 
+// 슬라이더 (설정 > Node glass): 네모난 분홍 손잡이와 평평한 홈
+.custom-range {
+  &::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 0;
+    background: var(--js-line);
+  }
+
+  &::-webkit-slider-thumb {
+    width: 14px;
+    height: 18px;
+    margin-top: -6px;
+    border: 0;
+    border-radius: 0;
+    background: var(--js-primary);
+    box-shadow: 2px 2px 0 #000;
+  }
+
+  &:focus {
+    box-shadow: none;
+
+    &::-webkit-slider-thumb {
+      box-shadow: 2px 2px 0 #000;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--js-sun);
+    outline-offset: 2px;
+  }
+
+  &::-webkit-slider-thumb:active {
+    background: var(--js-sun);
+  }
+}
+
 // 입력칸 아래의 도움말 (Bootstrap의 회색은 어두운 바탕에서 잘 안 읽힌다)
 .form-text.text-muted {
   color: var(--js-text-muted) !important;

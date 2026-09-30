@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { BACKDROPS, DEFAULT_SETTING, normalizeSetting, THEMES } from './setting.js'
+import { BACKDROPS, DEFAULT_SETTING, NODE_BLUR_MAX, normalizeSetting, THEMES } from './setting.js'
 
 describe('normalizeSetting', () => {
   it('keeps valid values', () => {
-    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt' }))
-      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt' })
+    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', nodeBlur: 12 }))
+      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', nodeBlur: 12 })
   })
 
   it('uses the default path when it is empty, blank or not a string', () => {
@@ -60,5 +60,26 @@ describe('normalizeSetting: backdrop', () => {
     }
     expect(normalizeSetting({ backdrop: 'x" onload="y' }).backdrop).toBe('depth')
     expect(normalizeSetting({ backdrop: 3 }).backdrop).toBe('depth')
+  })
+})
+
+describe('normalizeSetting: nodeBlur', () => {
+  it('is off (0) by default', () => {
+    expect(normalizeSetting({}).nodeBlur).toBe(0)
+    expect(DEFAULT_SETTING.nodeBlur).toBe(0)
+  })
+
+  it('keeps whole pixels inside the range, also from a string (range input)', () => {
+    expect(normalizeSetting({ nodeBlur: 8 }).nodeBlur).toBe(8)
+    expect(normalizeSetting({ nodeBlur: '14' }).nodeBlur).toBe(14)
+    expect(normalizeSetting({ nodeBlur: 6.6 }).nodeBlur).toBe(7)
+  })
+
+  it('clamps to 0..max and falls back to 0 for anything else', () => {
+    expect(normalizeSetting({ nodeBlur: -3 }).nodeBlur).toBe(0)
+    expect(normalizeSetting({ nodeBlur: 999 }).nodeBlur).toBe(NODE_BLUR_MAX)
+    for (const nodeBlur of [null, undefined, '', 'blur(9px)', NaN, Infinity, {}, true]) {
+      expect(normalizeSetting({ nodeBlur }).nodeBlur).toBe(0)
+    }
   })
 })

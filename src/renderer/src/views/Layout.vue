@@ -82,7 +82,8 @@
       <div id="workspace">
         <div
           id="editor-area"
-          :class="`backdrop-${backdrop}`"
+          :class="[`backdrop-${backdrop}`, nodeBlur > 0 && 'node-glass']"
+          :style="{ '--node-blur': `${nodeBlur}px` }"
         >
           <!-- 배경 풍경: 밤하늘, 별, 줄무늬 해, 도시, 네온 격자 바닥 (장식) -->
           <div
@@ -181,6 +182,10 @@ export default {
     // 배경 풍경의 효과 (설정 > Background)
     backdrop() {
       return this.$store.getters.setting.backdrop
+    },
+    // 노드 뒤 유리판의 흐림(px), 0이면 없음 (설정 > Node glass)
+    nodeBlur() {
+      return this.$store.getters.setting.nodeBlur
     },
     terminalCount() {
       return this.$store.getters.terminalSessions.length

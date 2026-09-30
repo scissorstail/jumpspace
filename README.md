@@ -44,7 +44,7 @@ Connect, ProxyJump and port forwarding open in a **terminal panel at the bottom 
 
 ### look
 
-A flat, high-contrast synthwave night: a neon grid floor, a striped sun behind a pixel skyline, square panels with hard shadows and pixel lettering. *Settings > Theme* picks one of three palettes: **Neon Night** (pink, yellow and cyan, the default), **Sunset Drive** (coral and orange) and **Vapor Blue** (magenta and mint on navy). *Settings > Background* tones the scenery down: **Depth** (blurred with a haze, the default), **CRT** (scan lines), **Soft**, **Vivid** (full scene, nodes on frosted glass panels) or **Off**.
+A flat, high-contrast synthwave night: a neon grid floor, a striped sun behind a pixel skyline, square panels with hard shadows and pixel lettering. *Settings > Theme* picks one of three palettes: **Neon Night** (pink, yellow and cyan, the default), **Sunset Drive** (coral and orange) and **Vapor Blue** (magenta and mint on navy). *Settings > Background* tones the scenery down: **Depth** (blurred with a haze, the default), **CRT** (scan lines), **Soft**, **Vivid** or **Off**. *Settings > Node glass* (off by default) puts each node on a frosted glass panel; the slider sets how strongly it blurs.
 
 ### items (sidebar)
 
@@ -109,7 +109,7 @@ src/main/       Electron main process
   legacy-forwards.js  moves forwards saved by older versions to their current place
 src/shared/     pure modules used by both main and renderer
   setting.js      the app settings and their defaults (Git Bash path, tray,
-                  where ssh opens, theme, background)
+                  where ssh opens, theme, background, node glass)
   view.js         the canvas zoom range and the check of a saved view
 src/preload/    the small API exposed to the renderer (window.preload)
 src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)

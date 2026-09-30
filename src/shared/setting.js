@@ -9,12 +9,24 @@ export const THEMES = ['neon-night', 'sunset-drive', 'vapor-blue']
 // 배경 풍경의 효과 (renderer의 views/Layout.vue에 있는 .scene-* 클래스)
 export const BACKDROPS = ['vivid', 'soft', 'depth', 'crt', 'off']
 
+// 노드 뒤 유리판의 흐림(px). 0이면 유리판이 없다. (renderer의 components/editor/index.vue)
+export const NODE_BLUR_MAX = 20
+
 export const DEFAULT_SETTING = {
   gitBashPath: '%ProgramFiles%\\Git\\git-bash.exe',
   isHideToTrayOnClose: false,
   openIn: 'app',
   theme: 'neon-night',
-  backdrop: 'depth'
+  backdrop: 'depth',
+  nodeBlur: 0
+}
+
+// 0..NODE_BLUR_MAX의 정수. 숫자가 아니면 기본값
+function normalizeNodeBlur(value) {
+  const number = typeof value === 'string' && value.trim() !== '' ? Number(value) : value
+  if (typeof number !== 'number' || !Number.isFinite(number)) return DEFAULT_SETTING.nodeBlur
+
+  return Math.min(NODE_BLUR_MAX, Math.max(0, Math.round(number)))
 }
 
 // 저장하거나 읽은 설정을 정리한다. Git Bash 경로를 비워 두면 기본값을 쓴다. (화면은 빈 값을 기본값으로 보여준다)
@@ -26,6 +38,7 @@ export function normalizeSetting(data) {
     isHideToTrayOnClose: Boolean(data?.isHideToTrayOnClose),
     openIn: OPEN_IN.includes(data?.openIn) ? data.openIn : DEFAULT_SETTING.openIn,
     theme: THEMES.includes(data?.theme) ? data.theme : DEFAULT_SETTING.theme,
-    backdrop: BACKDROPS.includes(data?.backdrop) ? data.backdrop : DEFAULT_SETTING.backdrop
+    backdrop: BACKDROPS.includes(data?.backdrop) ? data.backdrop : DEFAULT_SETTING.backdrop,
+    nodeBlur: normalizeNodeBlur(data?.nodeBlur)
   }
 }
