@@ -396,20 +396,17 @@ export default {
     }
   }
 
-  // 열린 세션이 지나가는 노드: 왼쪽 위에 깜박이는 LIVE 표
+  // 열린 세션이 지나가는 노드: 안쪽 왼쪽 위에 깜박이는 작은 초록 네모 (터미널 탭의 점과 같은 모양)
+  // 노드 위에 뜨는 메뉴 단추와 겹치지 않도록 노드 안에 둔다.
   .is-live .node.site::after {
-    content: 'LIVE';
+    content: '';
     position: absolute;
-    top: -12px;
-    left: -10px;
-    padding: 0 5px;
+    top: 6px;
+    left: 6px;
+    width: 9px;
+    height: 9px;
     background: var(--js-live);
-    box-shadow: 2px 2px 0 #000;
-    color: #000;
-    font-family: var(--js-font-display);
-    font-size: 0.95rem;
-    letter-spacing: 0.08em;
-    line-height: 1.2;
+    box-shadow: 1px 1px 0 #000;
     pointer-events: none;
     animation: live-blink 1.2s steps(1) infinite;
   }
@@ -455,7 +452,7 @@ export default {
 
 @keyframes live-blink {
   50% {
-    opacity: 0.6;
+    opacity: 0.35;
   }
 }
 

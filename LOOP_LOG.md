@@ -210,6 +210,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Did: the owner wanted the glass only behind the text below the node, covering all of it, and the node box left as it is. The name and the address/forward lines are now wrapped in `.info-card` (inline-block, as wide as its widest line, at most the info width); with Node glass on, that card gets the padding, light border, tint and `backdrop-filter`. The panel around the node box is gone.
 - Result: tests 215 passed, lint ok, build ok. In the app (scratch t43): off by default, 12px after saving, kept in depth/crt/soft/vivid, the card covers the name tag and the forward line; t6, t9, t13, t16, t20, t24, t35 pass.
 
+### #27 2026-09-30 · Korean input checked, LIVE tag -> green dot (by hand, at the owner's request)
+- Asked: does the in-app terminal work on Windows, and does Korean input work? Checked: (1) in the app on Linux, Korean typed through a simulated IME composition (CDP `Input.imeSetComposition` / `insertText`) reaches a real sshd as the exact UTF-8 bytes and is shown back; (2) new real-pty test in `terminal.test.js` types "한글 입력" and checks the bytes the program receives and the echoed text; it ran and passed on the Windows CI job through ConPTY and Git's bash.exe (run 42). Not checkable here: a real Windows IME (Microsoft Korean IME) in the packaged app on a desktop.
+- Did: the LIVE tag overlapped the node's hover menu; it is now a 9px green square inside the node's top-left corner, blinking (stops for reduced motion), the same shape as the terminal tab's status dot.
+- Result: tests 216 passed (+1, mutation checked with NFD input), lint ok, build ok; t35 and t44 pass.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
