@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createOutputRouter, hopKey, liveRoutes, terminalTitle } from './terminal-sessions'
+import { createOutputRouter, hopKey, liveRoutes, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -102,5 +102,23 @@ describe('liveRoutes', () => {
 
     expect(links.has(`${a}>${b}`)).toBe(true)
     expect(links.has(`${b}>${a}`)).toBe(false)
+  })
+})
+
+describe('terminalShortcut', () => {
+  const key = (code, mods = {}, key = '') => ({ type: 'keydown', code, key, ctrlKey: false, shiftKey: false, altKey: false, metaKey: false, ...mods })
+
+  it('copies with Ctrl+Shift+C and Ctrl+Insert', () => {
+    expect(terminalShortcut(key('KeyC', { ctrlKey: true, shiftKey: true }, 'C'))).toBe('copy')
+    expect(terminalShortcut(key('Insert', { ctrlKey: true }, 'Insert'))).toBe('copy')
+  })
+
+  it('leaves Ctrl+C (interrupt), plain keys, other modifiers and key-up alone', () => {
+    expect(terminalShortcut(key('KeyC', { ctrlKey: true }, 'c'))).toBe(null)
+    expect(terminalShortcut(key('KeyC', { shiftKey: true }, 'C'))).toBe(null)
+    expect(terminalShortcut(key('KeyC', { ctrlKey: true, shiftKey: true, altKey: true }, 'C'))).toBe(null)
+    expect(terminalShortcut(key('Insert', { shiftKey: true }, 'Insert'))).toBe(null)
+    expect(terminalShortcut({ ...key('KeyC', { ctrlKey: true, shiftKey: true }, 'C'), type: 'keyup' })).toBe(null)
+    expect(terminalShortcut(undefined)).toBe(null)
   })
 })

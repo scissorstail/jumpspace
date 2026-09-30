@@ -38,7 +38,7 @@ The node menu also shows when one of its buttons has keyboard focus, and Escape 
 
 ### terminals
 
-Connect, ProxyJump and port forwarding open in a **terminal panel at the bottom of the app**, one tab per session. Password prompts are answered as described below; anything else (a key passphrase, a one-time code, host key questions) is typed into the tab. The dot on a tab shows the state (starting, running, ended). Closing a tab ends its ssh session; the arrow on the right hides the panel while the sessions keep running, and the terminal button in the header shows it again. Drag the top edge of the panel to resize it. While a session is open, its path lights up on the canvas: signals flow along the connections it goes through and its nodes show a blinking green dot.
+Connect, ProxyJump and port forwarding open in a **terminal panel at the bottom of the app**, one tab per session. Password prompts are answered as described below; anything else (a key passphrase, a one-time code, host key questions) is typed into the tab. The dot on a tab shows the state (starting, running, ended). Closing a tab ends its ssh session; the arrow on the right hides the panel while the sessions keep running, and the terminal button in the header shows it again. Drag the top edge of the panel to resize it. Copy with Ctrl+Shift+C (or select and right click), paste with Ctrl+Shift+V, Shift+Insert or a right click; Ctrl+C is sent to the remote program. While a session is open, its path lights up on the canvas: signals flow along the connections it goes through and its nodes show a blinking green dot.
 
 *Settings > Open SSH in* switches back to opening a separate **Git Bash window** instead.
 

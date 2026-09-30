@@ -215,6 +215,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Did: the LIVE tag overlapped the node's hover menu; it is now a 9px green square inside the node's top-left corner, blinking (stops for reduced motion), the same shape as the terminal tab's status dot.
 - Result: tests 216 passed (+1, mutation checked with NFD input), lint ok, build ok; t35 and t44 pass.
 
+### #28 2026-09-30 · terminal copy/paste (by hand, at the owner's request to keep improving)
+- Found: in the app terminal, pasting worked (Chromium paste event for Ctrl+Shift+V / Shift+Insert) but copying did not, and a right click did nothing.
+- Did: `terminalShortcut()` in `utils/terminal-sessions.js` (Ctrl+Shift+C and Ctrl+Insert = copy; Ctrl+C stays the interrupt), handled in `terminal-panel.vue` with xterm's custom key handler; a right click copies the selection or pastes when there is none (`term.paste`, so bracketed paste works). The sandboxed renderer uses two new IPC calls, `clipboard:writeText` / `clipboard:readText` (trusted sender only, 1 MiB limit). Bug found on the way: in Electron 44 `clipboard.readText()` returns a Promise (`.slice` failed); both clipboard handlers and Copy SSH config now await.
+- Result: tests 218 passed (+2, mutation checked), lint ok, build ok. In the app against a real sshd (scratch t45): Ctrl+Shift+C copies, Ctrl+Shift+V and Shift+Insert paste, right click pastes, right click with a selection copies, Ctrl+C still interrupts; Copy SSH config still fills the clipboard (t46); t12, t13, t25, t35, t44 pass.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

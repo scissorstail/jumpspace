@@ -24,6 +24,12 @@ contextBridge.exposeInMainWorld('preload', {
     copyConfig: request => ipcRenderer.invoke('ssh:copyConfig', request)
   },
 
+  // 터미널의 복사/붙여넣기
+  clipboard: {
+    writeText: text => ipcRenderer.invoke('clipboard:writeText', text),
+    readText: () => ipcRenderer.invoke('clipboard:readText')
+  },
+
   // 앱 안의 터미널. kind는 'connect' | 'forward' | 'proxyJump', payload는 ssh.*와 같다.
   terminal: {
     open: (kind, payload, size) => ipcRenderer.invoke('terminal:open', kind, payload, size),

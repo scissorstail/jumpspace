@@ -24,6 +24,9 @@ import { normalizeSetting } from '../shared/setting.js'
 import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
 
+// 터미널에서 복사/붙여넣기로 오가는 글자 수의 상한
+const MAX_CLIPBOARD = 1024 * 1024
+
 const isMac = process.platform === 'darwin'
 const APP_ORIGIN = 'app://.'
 
@@ -186,10 +189,17 @@ function main() {
   })
   app.on('before-quit', () => terminals.closeAll())
 
+  // 앱 안의 터미널의 복사/붙여넣기. (샌드박스 렌더러는 클립보드에 직접 접근하지 않는다)
+  // (Electron 44의 clipboard.readText()는 Promise를 돌려준다)
+  handle('clipboard:writeText', async (event, text) => {
+    if (typeof text === 'string' && text.length <= MAX_CLIPBOARD) await clipboard.writeText(text)
+  })
+  handle('clipboard:readText', async () => String((await clipboard.readText()) ?? '').slice(0, MAX_CLIPBOARD))
+
   // 접속 정보를 ~/.ssh/config 형식으로 클립보드에 복사한다.
-  handle('ssh:copyConfig', (event, request) => {
+  handle('ssh:copyConfig', async (event, request) => {
     try {
-      clipboard.writeText(buildSshConfig(request?.nodes, { forwards: request?.forwards }))
+      await clipboard.writeText(buildSshConfig(request?.nodes, { forwards: request?.forwards }))
       return { ok: true }
     } catch (e) {
       return { ok: false, error: e.message }

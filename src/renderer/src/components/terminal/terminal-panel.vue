@@ -78,7 +78,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
-import { createOutputRouter } from '@/utils/terminal-sessions'
+import { createOutputRouter, terminalShortcut } from '@/utils/terminal-sessions'
 
 const MIN_HEIGHT = 140
 
@@ -176,6 +176,7 @@ export default {
       term.focus()
 
       term.onData(data => entry.id !== null && window.preload.terminal.write(entry.id, data))
+      this.enableClipboard(term, el)
 
       const result = await window.preload.terminal.open(kind, payload, { cols: term.cols, rows: term.rows })
       if (!result.ok) {
@@ -189,6 +190,31 @@ export default {
       this.$store.commit('terminalUpdate', { key: session.key, id: result.id, status: 'running' })
       // 여는 동안 패널 크기가 바뀌었을 수 있다.
       this.fit(entry, true)
+    },
+    // 복사: 선택하고 Ctrl+Shift+C (또는 Ctrl+Insert). 붙여넣기: Ctrl+Shift+V, Shift+Insert (브라우저가 처리).
+    // 오른쪽 클릭: 선택한 글자가 있으면 복사, 없으면 붙여넣기 (Windows 터미널처럼)
+    enableClipboard(term, el) {
+      const copySelection = () => {
+        if (!term.hasSelection()) return false
+        window.preload.clipboard.writeText(term.getSelection())
+        return true
+      }
+      term.attachCustomKeyEventHandler(event => {
+        if (terminalShortcut(event) !== 'copy') return true
+        event.preventDefault()
+        copySelection()
+        return false
+      })
+      el.addEventListener('contextmenu', async event => {
+        event.preventDefault()
+        if (copySelection()) {
+          term.clearSelection()
+          return
+        }
+        const text = await window.preload.clipboard.readText()
+        if (text) term.paste(text)
+        term.focus()
+      })
     },
     onExit(id, exitCode) {
       const session = this.sessions.find(x => x.id === id)
