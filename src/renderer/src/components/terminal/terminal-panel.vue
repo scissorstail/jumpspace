@@ -132,14 +132,21 @@ export default {
 
       const term = new Terminal({
         cursorBlink: true,
-        fontFamily: 'Consolas, "Cascadia Mono", "DejaVu Sans Mono", monospace',
+        fontFamily: '"JetBrains Mono", Consolas, "Cascadia Mono", "DejaVu Sans Mono", monospace',
         fontSize: 13,
         scrollback: 5000,
         theme: {
-          background: '#05070d',
-          foreground: '#e6e6e6',
-          cursor: '#ff7a00',
-          selectionBackground: 'rgba(255, 122, 0, 0.35)'
+          background: '#030304',
+          foreground: '#e8e8e8',
+          cursor: '#ff8a00',
+          cursorAccent: '#030304',
+          selectionBackground: 'rgba(255, 138, 0, 0.35)',
+          red: '#ff3b42',
+          green: '#39ff6a',
+          yellow: '#ffb347',
+          blue: '#5aa9ff',
+          magenta: '#ff5ec4',
+          cyan: '#3ee6e6'
         }
       })
       const fit = new FitAddon()
@@ -233,8 +240,9 @@ export default {
   display: flex;
   flex: none;
   flex-direction: column;
-  border-top: 1px solid var(--js-border);
-  background: #05070d;
+  border-top: 4px solid transparent;
+  border-image: var(--js-stripes) 1;
+  background: #030304;
 }
 
 .terminal-resize {
@@ -250,10 +258,12 @@ export default {
 .terminal-tabs {
   display: flex;
   align-items: stretch;
-  min-height: 32px;
+  gap: 4px;
+  min-height: 34px;
+  padding: 3px 8px 0 14px;
   overflow-x: auto;
-  background: var(--js-bg-raised);
-  border-bottom: 1px solid var(--js-border);
+  background: #000;
+  border-bottom: 2px solid var(--js-red);
 }
 
 .terminal-tab {
@@ -261,16 +271,26 @@ export default {
   align-items: center;
   gap: 8px;
   max-width: 220px;
-  padding: 0 6px 0 12px;
-  border-right: 1px solid var(--js-border);
+  padding: 0 8px 0 14px;
+  background: #16161b;
   color: var(--js-text-muted);
-  font-size: 0.8rem;
+  font-family: var(--js-font-display);
+  font-size: 0.95rem;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   cursor: pointer;
   user-select: none;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+
+  &:hover {
+    color: var(--js-text);
+  }
 
   &.active {
-    background: #05070d;
-    color: var(--js-text);
+    background: var(--js-red);
+    color: white;
   }
 
   &:focus-visible {
@@ -290,15 +310,15 @@ export default {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #64748b;
+  background: #55555d;
 
   .is-starting & {
     background: #facc15;
   }
 
   .is-running & {
-    background: #22c55e;
-    box-shadow: 0 0 6px #22c55e;
+    background: #39ff6a;
+    box-shadow: 0 0 6px #39ff6a;
   }
 
   .is-failed & {

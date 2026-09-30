@@ -96,7 +96,12 @@
             v-if="!editorData"
             class="layout-empty"
           >
-            Select an item in the sidebar, or add a new one.
+            <div class="layout-empty-title">
+              No diagram open
+            </div>
+            <div class="layout-empty-text">
+              Select an item in the sidebar, or add a new one.
+            </div>
           </div>
         </div>
 
@@ -343,7 +348,10 @@ export default {
   flex: 1;
   overflow: hidden;
   background-color: var(--js-bg);
-  background-image: radial-gradient(ellipse 70% 55% at 50% 0%, rgba(56, 189, 248, 0.1), transparent 70%);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse 60% 45% at 50% 0%, rgba(255, 138, 0, 0.1), transparent 70%),
+    radial-gradient(ellipse 55% 45% at 0% 100%, rgba(229, 23, 31, 0.12), transparent 70%);
 }
 
 .layout-empty {
@@ -354,9 +362,32 @@ export default {
   left: 0;
   display: flex;
   align-items: center;
+  flex-direction: column;
   justify-content: center;
   color: var(--js-text-muted);
   pointer-events: none;
+}
+
+.layout-empty-title {
+  padding: 4px 28px;
+  border-top: 4px solid transparent;
+  border-image: var(--js-stripes) 1;
+  color: var(--js-accent);
+  font-family: var(--js-font-display);
+  font-size: 3rem;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform: skewX(-8deg);
+}
+
+.layout-empty-text {
+  margin-top: 8px;
+  font-family: var(--js-font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 #main-sidebar {

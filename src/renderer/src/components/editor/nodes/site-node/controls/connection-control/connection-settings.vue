@@ -24,7 +24,7 @@
         <div class="p-3">
           <div
             class="info-list"
-            style="width: 280px;"
+            style="width: 310px;"
           >
             <IconPicker
               ref="picker"

@@ -284,16 +284,21 @@ export default {
   width: 440px;
 
   .forward-title {
-    font-weight: 600;
+    font-family: var(--js-font-display);
+    font-size: 1.3rem;
+    font-style: italic;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
   .forward-hint {
     margin-bottom: 0.75rem;
     font-size: 0.8rem;
-    color: #565e64;
+    color: var(--js-text-muted);
 
     &.forward-hint-blocked {
-      color: #8a5a00;
+      color: var(--js-accent);
     }
   }
 
@@ -307,8 +312,11 @@ export default {
 
   .forward-labels {
     margin-bottom: 2px;
-    font-size: 0.7rem;
-    color: #565e64;
+    font-family: var(--js-font-display);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--js-text-muted);
   }
 
   .forward-check {
@@ -320,23 +328,24 @@ export default {
 
   .forward-arrow {
     justify-self: center;
+    color: var(--js-accent);
   }
 
   .forward-colon {
     text-align: center;
-    color: #565e64;
+    color: var(--js-text-muted);
   }
 
   .forward-empty {
     padding: 0.5rem 0;
     font-size: 0.8rem;
-    color: #565e64;
+    color: var(--js-text-muted);
   }
 
   .forward-locked {
     margin-top: 0.25rem;
     font-size: 0.75rem;
-    color: #565e64;
+    color: var(--js-text-muted);
   }
 
   .forward-actions {

@@ -1,15 +1,45 @@
-// 앱 전체 색. 어두운 "immersive" 테마: 짙은 남색 캔버스, 유리 질감 카드, 하늘색 강조.
-// 팝오버와 대화상자는 입력하기 편하도록 밝은 카드로 둔다.
+// 앱 전체의 모양. 게임/애니메이션의 HUD처럼 강렬한 테마:
+// 거의 검은 바탕, 주황(계기판 선과 데이터)과 빨강(선택과 강조), 흰 글자,
+// 기울인 굵은 압축 서체, 모서리를 자른 각진 패널, 경고 줄무늬.
+// 서체는 OFL 라이선스의 Barlow Condensed(제목, 라벨)와 JetBrains Mono(주소, 포트, 터미널)를 앱에 넣어서 쓴다.
+@import '@fontsource/barlow-condensed/500.css';
+@import '@fontsource/barlow-condensed/700.css';
+@import '@fontsource/barlow-condensed/700-italic.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/700.css';
+
 :root {
-  --js-bg: #0b1220;
-  --js-bg-raised: #0f172a;
-  --js-surface: rgba(30, 41, 59, 0.72);
-  --js-border: rgba(148, 163, 184, 0.22);
-  --js-text: #e2e8f0;
-  --js-text-muted: #94a3b8;
-  --js-accent: #38bdf8;
-  --js-accent-soft: rgba(56, 189, 248, 0.16);
-  --js-hover: rgba(148, 163, 184, 0.12);
+  --js-bg: #070708;
+  --js-bg-raised: #0e0e11;
+  --js-surface: #121216;
+  --js-line: #2a2a31;
+  --js-border: rgba(255, 138, 0, 0.3);
+  --js-text: #f4f4f5;
+  --js-text-muted: #9a9aa3;
+  --js-accent: #ff8a00;
+  --js-accent-soft: rgba(255, 138, 0, 0.14);
+  --js-red: #e5171f;
+  --js-red-soft: rgba(229, 23, 31, 0.18);
+  --js-hover: rgba(255, 255, 255, 0.06);
+  --js-font-display: 'Barlow Condensed', 'Spoqa Han Sans Neo', sans-serif;
+  --js-font-mono: 'JetBrains Mono', Consolas, 'DejaVu Sans Mono', monospace;
+  --js-stripes: repeating-linear-gradient(-45deg, #ff8a00 0 7px, #070708 7px 14px);
+  // 모서리를 자른 패널 (오른쪽 위, 왼쪽 아래)
+  --js-cut: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+
+body {
+  background: var(--js-bg);
+  color: var(--js-text);
+}
+
+// 제목과 라벨: 기울인 굵은 압축 서체, 대문자
+.js-display {
+  font-family: var(--js-font-display) !important;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 // 헤더와 사이드바의 밝은 버튼(variant light / white)을 어두운 배경에 맞춘다.
@@ -19,6 +49,7 @@
   .btn-white,
   .btn-outline-white {
     border-color: transparent;
+    border-radius: 0;
     background-color: transparent;
     color: var(--js-text);
     box-shadow: none;
@@ -28,14 +59,242 @@
     &.active,
     &:not(:disabled):not(.disabled):active {
       background-color: var(--js-hover);
-      color: var(--js-text);
+      color: var(--js-accent);
     }
   }
 }
 
-// b-sidebar는 기본으로 bg-light를 쓴다.
 #main-sidebar.b-sidebar {
+  border-right: 2px solid var(--js-red);
   background-color: var(--js-bg-raised) !important;
   color: var(--js-text);
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 12px 0 40px rgba(0, 0, 0, 0.7) !important;
+}
+
+// ---- Bootstrap 부품을 어두운 테마에 맞춘다 ----
+
+.btn {
+  border-radius: 0;
+  font-family: var(--js-font-display);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.btn-primary,
+.btn-danger {
+  border-color: var(--js-red);
+  background: var(--js-red);
+
+  &:hover,
+  &:focus,
+  &:not(:disabled):not(.disabled):active {
+    border-color: #ff3b42;
+    background: #ff3b42;
+    box-shadow: 0 0 16px rgba(229, 23, 31, 0.55);
+  }
+
+  &:disabled {
+    border-color: #5a1a1d;
+    background: #5a1a1d;
+    color: #b9b9be;
+  }
+}
+
+.btn-secondary {
+  border-color: var(--js-line);
+  background: #1c1c22;
+  color: var(--js-text);
+
+  &:hover,
+  &:focus {
+    border-color: var(--js-accent);
+    background: #26262d;
+    color: var(--js-accent);
+  }
+}
+
+.btn-outline-secondary,
+.btn-outline-primary {
+  border-color: var(--js-line);
+  color: var(--js-text);
+
+  &:hover,
+  &:focus {
+    border-color: var(--js-accent);
+    background: var(--js-accent-soft);
+    color: var(--js-accent);
+  }
+
+  &:disabled {
+    color: #6b6b73;
+  }
+}
+
+.btn-outline-primary:not(:disabled):not(.disabled).active,
+.btn-outline-primary:not(:disabled):not(.disabled):active {
+  border-color: var(--js-red);
+  background: var(--js-red);
+  color: white;
+}
+
+.form-control,
+.custom-select,
+.input-group-text {
+  border-color: var(--js-line);
+  border-radius: 0;
+  background-color: #0b0b0e;
+  color: var(--js-text);
+}
+
+.form-control {
+  font-family: var(--js-font-mono);
+  font-size: 0.8rem;
+
+  &::placeholder {
+    color: #5c5c64;
+  }
+
+  &:focus {
+    border-color: var(--js-accent);
+    background-color: #0b0b0e;
+    color: var(--js-text);
+    box-shadow: 0 0 0 1px var(--js-accent), 0 0 12px rgba(255, 138, 0, 0.35);
+  }
+
+  &:disabled {
+    background-color: #141418;
+    color: #8a8a92;
+  }
+
+  &.is-invalid {
+    border-color: var(--js-red);
+  }
+}
+
+.input-group-append .btn,
+.input-group-prepend .btn {
+  border-color: var(--js-line);
+}
+
+.custom-control-input:checked ~ .custom-control-label::before {
+  border-color: var(--js-red);
+  background-color: var(--js-red);
+}
+
+.custom-control-label::before {
+  border-color: #55555d;
+  background-color: #0b0b0e;
+}
+
+.dropdown-menu {
+  border: 1px solid var(--js-border);
+  border-radius: 0;
+  background: var(--js-surface);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+}
+
+.dropdown-item {
+  color: var(--js-text);
+
+  &:hover,
+  &:focus {
+    background: var(--js-red);
+    color: white;
+  }
+
+  &.disabled,
+  &:disabled {
+    color: #5c5c64;
+  }
+}
+
+.dropdown-divider {
+  border-top-color: var(--js-line);
+}
+
+.badge-primary {
+  border-radius: 0;
+  background: var(--js-red);
+}
+
+// 확인창, 설정/정보 창, 토스트: 경고 줄무늬를 두른 검은 패널
+.modal-content,
+.card {
+  border: 1px solid var(--js-border);
+  border-radius: 0;
+  background: var(--js-surface);
+  color: var(--js-text);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75);
+}
+
+.modal-content::before,
+.card::before {
+  content: '';
+  display: block;
+  height: 5px;
+  background: var(--js-stripes);
+}
+
+.modal-header,
+.card-header {
+  border-bottom: 1px solid var(--js-line);
+  background: transparent;
+}
+
+.modal-title,
+.card-header {
+  font-family: var(--js-font-display);
+  font-size: 1.35rem;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.modal-footer,
+.card-footer {
+  border-top: 1px solid var(--js-line);
+  background: transparent;
+}
+
+.close {
+  color: var(--js-text);
+  text-shadow: none;
+}
+
+.b-toast .toast {
+  border: 1px solid var(--js-border);
+  border-radius: 0;
+  background: var(--js-surface);
+  color: var(--js-text);
+}
+
+.toast-header {
+  border-bottom-color: var(--js-line);
+  background: #19191e;
+  color: var(--js-accent);
+  font-family: var(--js-font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.b-toast-danger .toast-header {
+  background: var(--js-red);
+  color: white;
+}
+
+.tooltip-inner {
+  border-radius: 0;
+  font-family: var(--js-font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+a {
+  color: var(--js-accent);
+
+  &:hover {
+    color: #ffb04d;
+  }
 }

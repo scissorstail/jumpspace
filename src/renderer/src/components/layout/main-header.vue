@@ -6,11 +6,16 @@
     <slot name="main-navigator-toggle" />
 
     <!-- 열려 있는 item의 이름 -->
-    <div
-      class="header-title"
-      :title="title"
-    >
-      {{ title }}
+    <div class="header-title">
+      <span
+        v-if="title"
+        class="header-title-tag"
+        :title="title"
+      ><span>{{ title }}</span></span>
+      <span
+        v-else
+        class="header-brand"
+      >jumpspace</span>
     </div>
 
     <div class="ml-auto align-self-center">
@@ -85,22 +90,64 @@ export default {
 
 <style lang="scss" scoped>
 #main-header {
+  position: relative;
   display: flex;
   font-size: large;
-  background-color: var(--js-bg-raised);
+  background-color: #000;
+
+  // 아래 가장자리의 경고 줄무늬
+  &::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: -4px;
+    left: 0;
+    height: 4px;
+    background: var(--js-stripes);
+    opacity: 0.85;
+    z-index: 2;
+    pointer-events: none;
+  }
 
   .header-title {
+    display: flex;
     flex: 1;
+    align-items: center;
+    justify-content: center;
     min-width: 0;
     padding: 0 12px;
-    align-self: center;
-    overflow: hidden;
-    color: var(--js-text);
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-family: var(--js-font-display);
+    font-style: italic;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  // 열린 다이어그램 이름: 기울인 빨간 이름표
+  .header-title-tag {
+    max-width: 60%;
+    padding: 0 22px;
+    background: var(--js-red);
+    box-shadow: 4px 4px 0 var(--js-accent);
+    color: white;
+    font-size: 1.15rem;
+    line-height: 1.55;
+    transform: skewX(-14deg);
+
+    > span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transform: skewX(14deg);
+    }
+  }
+
+  .header-brand {
+    color: var(--js-accent);
+    font-size: 1.2rem;
+    letter-spacing: 0.3em;
+    opacity: 0.8;
   }
 
   .btn-divider {

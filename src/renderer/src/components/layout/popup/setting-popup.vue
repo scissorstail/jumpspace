@@ -12,7 +12,6 @@
       <b-card
         v-if="show"
         header="Settings"
-        bg-variant="light"
         style="width: 90vw; max-width: 520px"
       >
         <b-card-text class="mb-3">
@@ -148,25 +147,4 @@ export default {
     align-items: center;
   }
 }
-
-// 팝업 카드: 둥근 모서리, 흰 바탕, 굵은 제목
-::v-deep {
-  .card {
-    overflow: hidden;
-    border: 0;
-    border-radius: 12px;
-    background-color: white !important;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
-  }
-
-  .card-header {
-    background-color: white;
-    font-weight: 600;
-  }
-
-  .card-footer {
-    background-color: #f8f9fa;
-  }
-}
-
 </style>

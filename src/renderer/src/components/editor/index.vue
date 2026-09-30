@@ -120,7 +120,7 @@ export default {
     this.editor.use(ConnectionPathPlugin, {
       type: ConnectionPathPlugin.DEFAULT, // DEFAULT or LINEAR transformer
       // curve: ConnectionPathPlugin.curveStep, // curve identifier
-      arrow: { color: '#38bdf8', marker: 'M-5,-7 L-5,7 L14,0 z' }
+      arrow: { color: '#ff8a00', marker: 'M-4,-8 L-4,8 L14,0 z' }
     })
 
     this.editor.use(ReadonlyPlugin, { enabled: true })
@@ -246,41 +246,79 @@ export default {
   margin: 0;
   padding: 0;
 
-  // 멈춰 있는 은은한 빛(화면에 고정)과, 캔버스와 함께 움직이는 점 격자를 겹쳐서 깊이감을 준다.
+  // 화면에 고정된 층: 위쪽 주황 빛, 아래쪽 붉은 빛, 옅은 주사선
   background-color: var(--js-bg);
   background-image:
-    radial-gradient(ellipse 70% 55% at 50% 0%, rgba(56, 189, 248, 0.1), transparent 70%),
-    radial-gradient(ellipse 60% 50% at 85% 100%, rgba(129, 140, 248, 0.08), transparent 70%);
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse 60% 45% at 50% 0%, rgba(255, 138, 0, 0.1), transparent 70%),
+    radial-gradient(ellipse 55% 45% at 0% 100%, rgba(229, 23, 31, 0.12), transparent 70%);
 
+  // 캔버스와 함께 움직이는 층: 계기판 격자 (굵은 칸 120px, 가는 칸 24px)
   .background {
     z-index: -5;
 
-    background-image: radial-gradient(circle, rgba(148, 163, 184, 0.16) 1px, transparent 1.4px);
-    background-size: 22px 22px;
-    background-position: 11px 11px;
+    background-image:
+      linear-gradient(rgba(255, 138, 0, 0.09) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 138, 0, 0.09) 1px, transparent 1px),
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
   }
 
-  // 노드: 유리 질감 카드. 올리면 살짝 떠오르고, 선택하면 하늘색으로 빛난다.
+  // 노드: 각진 검은 패널에 짙은 그림자. 올리거나 고르면 네 모서리에 조준선이 뜬다.
   .node.site {
-    border: 1px solid var(--js-border);
-    border-radius: 20px;
+    --bracket: var(--js-accent);
+
+    border: 1px solid rgba(255, 138, 0, 0.55);
+    border-radius: 0;
     padding-bottom: 0;
     min-width: initial;
-    background: linear-gradient(160deg, rgba(51, 65, 85, 0.85), rgba(15, 23, 42, 0.9));
+    background: linear-gradient(135deg, #1a1a20 0%, #0a0a0c 70%);
     color: var(--js-text);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 12px 28px rgba(0, 0, 0, 0.45);
-    transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+    box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.85);
+    transition: border-color 0.12s, box-shadow 0.12s;
+
+    // 조준선 (모서리 네 개의 ㄱ자)
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      pointer-events: none;
+      opacity: 0;
+      background:
+        linear-gradient(var(--bracket), var(--bracket)) top left / 14px 2px,
+        linear-gradient(var(--bracket), var(--bracket)) top left / 2px 14px,
+        linear-gradient(var(--bracket), var(--bracket)) top right / 14px 2px,
+        linear-gradient(var(--bracket), var(--bracket)) top right / 2px 14px,
+        linear-gradient(var(--bracket), var(--bracket)) bottom left / 14px 2px,
+        linear-gradient(var(--bracket), var(--bracket)) bottom left / 2px 14px,
+        linear-gradient(var(--bracket), var(--bracket)) bottom right / 14px 2px,
+        linear-gradient(var(--bracket), var(--bracket)) bottom right / 2px 14px;
+      background-repeat: no-repeat;
+      transition: opacity 0.12s, inset 0.12s;
+    }
 
     &:hover {
-      border-color: rgba(56, 189, 248, 0.55);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(56, 189, 248, 0.25), 0 16px 36px rgba(0, 0, 0, 0.55), 0 0 28px rgba(56, 189, 248, 0.18);
-      transform: translateY(-2px);
+      border-color: var(--js-accent);
+      box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.85), 0 0 24px rgba(255, 138, 0, 0.35);
+
+      &::before {
+        inset: -6px;
+        opacity: 1;
+      }
     }
 
     &.selected {
-      border-color: var(--js-accent);
-      background: linear-gradient(160deg, rgba(51, 65, 85, 0.9), rgba(15, 23, 42, 0.95));
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 3px rgba(56, 189, 248, 0.35), 0 0 36px rgba(56, 189, 248, 0.35);
+      --bracket: var(--js-red);
+
+      border-color: var(--js-red);
+      background: linear-gradient(135deg, #2a1012 0%, #0a0a0c 70%);
+      box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.85), 0 0 30px rgba(229, 23, 31, 0.5);
+
+      &::before {
+        inset: -6px;
+        opacity: 1;
+      }
     }
 
     & > .input {
@@ -311,21 +349,24 @@ export default {
       display: none;
     }
 
+    // 소켓: 마름모. 들어오는 쪽은 비어 있고, 나가는 쪽은 채워져 있다.
     .socket {
+      height: 16px;
+      width: 16px;
+      border-radius: 0;
       background: var(--js-bg);
-      height: 20px;
-      width: 20px;
-      transform: translateY(0);
+      transform: rotate(45deg);
 
       &.input {
-        border: 2px dashed var(--js-accent);
-        margin-left: -30px;
+        border: 2px solid var(--js-accent);
+        margin-left: -28px;
       }
 
       &.output {
         border: 2px solid var(--js-accent);
-        margin-right: -30px;
-        box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+        margin-right: -28px;
+        background: var(--js-accent);
+        box-shadow: 0 0 10px rgba(255, 138, 0, 0.7);
       }
     }
 
@@ -337,20 +378,20 @@ export default {
     }
   }
 
-  // 연결선: 흐린 선 위로 밝은 점들이 흐른다.
+  // 연결선: 굵은 주황 선 위로 짧은 신호가 흐른다.
   .connection {
     .main-path {
-      stroke-width: 3px;
-      stroke: rgba(56, 189, 248, 0.22);
+      stroke-width: 4px;
+      stroke: rgba(255, 138, 0, 0.28);
     }
 
     .flow-path {
       fill: none;
-      stroke: #7dd3fc;
+      stroke: #ffb347;
       stroke-width: 2.5px;
-      stroke-linecap: round;
-      stroke-dasharray: 1 15;
-      filter: drop-shadow(0 0 3px rgba(56, 189, 248, 0.9));
+      stroke-linecap: butt;
+      stroke-dasharray: 6 10;
+      filter: drop-shadow(0 0 3px rgba(255, 138, 0, 0.9));
       pointer-events: none;
       animation: connection-flow 1.1s linear infinite;
     }
@@ -359,11 +400,12 @@ export default {
   &.locked {
     .node.site .socket {
       &.input {
-        border-color: rgba(148, 163, 184, 0.45);
+        border-color: #4a4a52;
       }
 
       &.output {
-        border-color: rgba(148, 163, 184, 0.45);
+        border-color: #4a4a52;
+        background: #4a4a52;
         box-shadow: none;
       }
     }
@@ -385,8 +427,8 @@ export default {
     animation: none;
   }
 
-  #rete .node.site:hover {
-    transform: none;
+  #rete .node.site::before {
+    transition: none;
   }
 }
 </style>

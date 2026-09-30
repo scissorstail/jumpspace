@@ -120,9 +120,8 @@ export default {
   max-height: 136px;
   overflow-y: auto;
   padding: 4px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  background: white;
+  border: 1px solid var(--js-line);
+  background: #0b0b0e;
 }
 
 .icon-picker-item {
@@ -132,15 +131,18 @@ export default {
   height: 36px;
   padding: 0;
   border: 2px solid transparent;
-  border-radius: 4px;
   background: transparent;
 
+  img {
+    filter: invert(1) brightness(0.85);
+  }
+
   &:hover:not(:disabled) {
-    background: #e9ecef;
+    background: var(--js-hover);
   }
 
   &:focus-visible {
-    outline: 2px solid #0056b3;
+    outline: 2px solid var(--js-accent);
     outline-offset: 1px;
   }
 
@@ -150,12 +152,12 @@ export default {
   }
 
   &.icon-picker-selected {
-    border-color: #007bff;
-    background: #e7f1ff;
+    border-color: var(--js-red);
+    background: var(--js-red-soft);
   }
 }
 
 .icon-picker-none {
-  color: #495057;
+  color: var(--js-text-muted);
 }
 </style>
