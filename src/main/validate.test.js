@@ -56,8 +56,9 @@ describe('validate', () => {
   it('validates node and forwards', () => {
     expect(validateNode({ name: 'a\nb', user: 'u', host: 'h', port: '22' }).name).toBe('a b')
     expect(() => validateNode(null)).toThrow()
-    expect(() => validateNode({ user: 'u', host: 'h', port: '22' }, { requireAuth: true })).toThrow()
-    expect(validateNode({ user: 'u', host: 'h', port: '22', password: 'p w' }, { requireAuth: true }).password).toBe('p w')
+    // 인증 정보(키/비밀번호)는 필수가 아니다. (ssh-agent, 기본 키, 터미널 입력)
+    expect(validateNode({ user: 'u', host: 'h', port: '22' })).toMatchObject({ keyPath: '', password: '' })
+    expect(validateNode({ user: 'u', host: 'h', port: '22', password: 'p w' }).password).toBe('p w')
     expect(validateNode({ host: 'h' }, { partial: true })).toMatchObject({ user: '', port: '' })
     expect(() => validateNode({ host: 'h' })).toThrow()
     expect(() => validateNode({ host: '', user: 'u', port: '1' }, { partial: true })).toThrow()

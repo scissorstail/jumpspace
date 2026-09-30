@@ -71,13 +71,14 @@ export function validatePassword(value) {
   return value
 }
 
-// requireAuth: 키 또는 비밀번호가 있어야 한다. partial: 입력 중인 값도 허용한다. (host만 필수)
-export function validateNode(node, { requireAuth = false, partial = false } = {}) {
+// partial: 입력 중인 값도 허용한다. (host만 필수)
+// 인증은 필수가 아니다. 키도 비밀번호도 없으면 ssh-agent나 기본 키, 터미널 입력으로 진행된다.
+export function validateNode(node, { partial = false } = {}) {
   if (!node || typeof node !== 'object') {
     throw new Error('Invalid connection data.')
   }
 
-  const result = {
+  return {
     name: sanitizeName(node.name),
     user: partial && !str(node.user) ? '' : validateUser(node.user),
     host: validateHost(node.host),
@@ -86,12 +87,6 @@ export function validateNode(node, { requireAuth = false, partial = false } = {}
     password: validatePassword(node.password),
     exec: validateExec(node.exec)
   }
-
-  if (requireAuth && !result.keyPath && !result.password) {
-    throw new Error(`Key or password is required for ${result.name || result.host}.`)
-  }
-
-  return result
 }
 
 export function validateForwards(forwards) {

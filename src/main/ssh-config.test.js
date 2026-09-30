@@ -12,6 +12,7 @@ describe('buildSshConfig', () => {
       '    User jumper',
       '    Port 22',
       '    IdentityFile "C:/keys/a b"',
+      '    IdentitiesOnly yes',
       ''
     ].join('\n'))
   })

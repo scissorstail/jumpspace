@@ -1,9 +1,17 @@
 import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import { buildConnect, buildForward, buildProxyJump, sq } from './ssh.js'
+import { buildSshConfig } from './ssh-config.js'
 
 const paths = { scriptPath: 'C:/tmp/jumpspace/a.sh', configPath: 'C:/tmp/jumpspace/a.jmp' }
 const node = { name: 'web', user: 'deploy', host: 'example.com', port: '22', keyPath: 'C:\\Users\\me\\.ssh\\id_rsa', exec: '' }
+
+// config에서 Host 별칭 목록과 Host별 설정 줄을 꺼낸다.
+const aliasesOf = config => [...config.matchAll(/^Host (\w+)$/gm)].map(x => x[1])
+const blocksOf = config => Object.fromEntries(config.trim().split('\n\n').map(block => {
+  const [head, ...lines] = block.split('\n')
+  return [head.replace('Host ', ''), lines]
+}))
 
 describe('sq', () => {
   it('escapes single quotes', () => {
@@ -15,7 +23,7 @@ describe('sq', () => {
 describe('buildConnect', () => {
   it('builds ssh command', () => {
     const script = buildConnect(node, paths).script
-    expect(script).toContain("ssh -o StrictHostKeyChecking=accept-new -i 'C:/Users/me/.ssh/id_rsa' -p '22' -- 'deploy@example.com'")
+    expect(script).toContain("ssh -o StrictHostKeyChecking=accept-new -i 'C:/Users/me/.ssh/id_rsa' -o IdentitiesOnly=yes -p '22' -- 'deploy@example.com'")
     expect(script).not.toContain('-tt')
   })
 
@@ -30,7 +38,13 @@ describe('buildConnect', () => {
   })
 
   it('omits -i when there is no key', () => {
-    expect(buildConnect({ ...node, keyPath: '' }, paths).script).not.toContain(' -i ')
+    const { script } = buildConnect({ ...node, keyPath: '' }, paths)
+    expect(script).not.toContain(' -i ')
+    expect(script).not.toContain('IdentitiesOnly')
+  })
+
+  it('exits with the status of ssh', () => {
+    expect(buildConnect(node, paths).script).toContain('exit "$rc"')
   })
 
   it('rejects options injected through host', () => {
@@ -43,23 +57,59 @@ describe('buildConnect', () => {
 })
 
 describe('buildForward', () => {
-  it('builds -L options through the previous node', () => {
-    const script = buildForward({
-      prev: node,
-      node: { ...node, host: '10.0.0.5', name: 'db' },
-      forwards: [{ checked: true, from: '15432', to: '5432' }, { checked: false, from: '1', to: '2' }]
-    }, paths).script
+  const forwards = [{ checked: true, from: '15432', to: '5432' }, { checked: false, from: '1', to: '2' }]
+  const db = { ...node, host: '10.0.0.5', name: 'db' }
 
-    expect(script).toContain("-N -L 'localhost:15432:10.0.0.5:5432' -- 'deploy@example.com'")
+  it('opens -L through the previous node', () => {
+    const { script, config } = buildForward({ via: [node], node: db, forwards }, paths)
+    const [alias] = aliasesOf(config)
+
+    expect(script).toContain(`-F 'C:/tmp/jumpspace/a.jmp' -N -o ExitOnForwardFailure=yes -L 'localhost:15432:10.0.0.5:5432' -- '${alias}'`)
+    expect(script).not.toContain(' -J ')
     expect(script).not.toContain(':1:')
+    expect(script).toContain("rm -f -- 'C:/tmp/jumpspace/a.sh' 'C:/tmp/jumpspace/a.jmp'")
   })
 
-  it('requires a key or password for the previous node', () => {
-    expect(() => buildForward({
-      prev: { ...node, keyPath: '' },
-      node,
-      forwards: [{ checked: true, from: '1', to: '2' }]
-    }, paths).script).toThrow()
+  it('goes through every earlier node (ProxyJump) before opening the forward', () => {
+    const hop2 = { ...node, name: 'hop2', host: 'hop2.example.com' }
+    const hop3 = { ...node, name: 'hop3', host: 'hop3.example.com' }
+    const { script, config } = buildForward({ via: [node, hop2, hop3], node: db, forwards }, paths)
+    const [a1, a2, a3] = aliasesOf(config)
+
+    expect(aliasesOf(config)).toHaveLength(3)
+    expect(script).toContain(`-J '${a1},${a2}'`)
+    expect(script).toContain(`-L 'localhost:15432:10.0.0.5:5432' -- '${a3}'`)
+    // 포워딩 도착지는 ssh 접속 대상이 아니므로 config에 들어가지 않는다.
+    expect(config).not.toContain('10.0.0.5')
+  })
+
+  it('shares host aliases with ProxyJump for the same path (known_hosts entries are reused)', () => {
+    const hop2 = { ...node, name: 'hop2', host: 'hop2.example.com' }
+    const forward = buildForward({ via: [node, hop2], node: db, forwards }, paths)
+    const jump = buildProxyJump([node, hop2, db], paths)
+
+    expect(aliasesOf(forward.config)).toEqual(aliasesOf(jump.config).slice(0, 2))
+  })
+
+  it('brackets an IPv6 destination', () => {
+    const { script } = buildForward({ via: [node], node: { ...db, host: 'fe80::1' }, forwards }, paths)
+    expect(script).toContain("-L 'localhost:15432:[fe80::1]:5432'")
+  })
+
+  it('needs a previous node and something to forward', () => {
+    expect(() => buildForward({ via: [], node: db, forwards }, paths)).toThrow()
+    expect(() => buildForward({ node: db, forwards }, paths)).toThrow()
+    expect(() => buildForward({ via: [node], node: db, forwards: [] }, paths)).toThrow()
+  })
+
+  it('only needs a host on the destination node', () => {
+    const { script } = buildForward({ via: [node], node: { host: '10.0.0.5' }, forwards }, paths)
+    expect(script).toContain("-L 'localhost:15432:10.0.0.5:5432'")
+    expect(() => buildForward({ via: [node], node: { user: 'u' }, forwards }, paths)).toThrow()
+  })
+
+  it('does not need explicit auth on the hops (ssh-agent / default keys / prompts are fine)', () => {
+    expect(() => buildForward({ via: [{ ...node, keyPath: '' }], node: db, forwards }, paths)).not.toThrow()
   })
 })
 
@@ -71,7 +121,8 @@ describe('password auth', () => {
 
     expect(env).toEqual({ JS_PW_0: withPw.password })
     expect(script).not.toContain('S3cr3t') // the secret itself is never written into the script
-    expect(script).toContain("'deploy@example.com'\\''s password:'*) printf '%s\\n' \"$JS_PW_0\" ;;")
+    // password 방식("user@host's password:")과 keyboard-interactive 방식("(user@host) Password:") 둘 다 답한다.
+    expect(script).toContain("'deploy@example.com'\\''s password:'*|'(deploy@example.com) '[Pp]assword:*) printf '%s\\n' \"$JS_PW_0\" ;;")
     expect(script).toContain('export SSH_ASKPASS="$0" SSH_ASKPASS_REQUIRE=force')
     expect(script).toContain('-o NumberOfPasswordPrompts=1 -o PubkeyAuthentication=no')
     // askpass branch must run before the cleanup trap, otherwise every prompt would delete the script
@@ -92,14 +143,16 @@ describe('password auth', () => {
   })
 
   it('forwards through a password-only previous node', () => {
-    const { script, env } = buildForward({
-      prev: withPw,
+    const { script, config, env } = buildForward({
+      via: [withPw],
       node: { ...node, host: '10.0.0.5' },
       forwards: [{ checked: true, from: '1', to: '2' }]
     }, paths)
+    const [alias] = aliasesOf(config)
 
     expect(env).toEqual({ JS_PW_0: withPw.password })
-    expect(script).not.toContain(' -i ')
+    expect(script).toContain(`'deploy@${alias}'\\''s password:'*`)
+    expect(blocksOf(config)[alias]).toContain('PubkeyAuthentication no')
   })
 
   it('supports a different password per hop', () => {
@@ -110,11 +163,65 @@ describe('password auth', () => {
 
     expect(env).toEqual({ JS_PW_0: 'one', JS_PW_1: 'two' })
     // ProxyJump에서 ssh는 Host 별칭(해시)으로 접속하므로 prompt에도 별칭이 나온다.
-    const aliases = [...config.matchAll(/^Host (\w+)$/gm)].map(x => x[1])
-    expect(script).toContain(`'deploy@${aliases[0]}'\\''s password:'*) printf '%s\\n' "$JS_PW_0"`)
-    expect(script).toContain(`'root@${aliases[1]}'\\''s password:'*) printf '%s\\n' "$JS_PW_1"`)
+    const aliases = aliasesOf(config)
+    expect(script).toContain(`'deploy@${aliases[0]}'\\''s password:'*|'(deploy@${aliases[0]}) '[Pp]assword:*) printf '%s\\n' "$JS_PW_0"`)
+    expect(script).toContain(`'root@${aliases[1]}'\\''s password:'*|'(root@${aliases[1]}) '[Pp]assword:*) printf '%s\\n' "$JS_PW_1"`)
     expect(config).toContain('PubkeyAuthentication no')
     expect(config.match(/NumberOfPasswordPrompts 1/g)).toHaveLength(2)
+  })
+})
+
+// 경로의 노드마다 인증 방식이 다른 경우: 키 / 비밀번호 / 키+비밀번호 / 인증 정보 없음(ssh-agent, 기본 키)
+describe('a different authentication per hop', () => {
+  const keyHop = { name: 'key', user: 'kate', host: 'a.example.com', port: '22', keyPath: 'C:\\keys\\a' }
+  const pwHop = { name: 'pw', user: 'paul', host: 'b.example.com', port: '2222', password: 'pw-secret' }
+  const bothHop = { name: 'both', user: 'bob', host: 'c.example.com', port: '22', keyPath: '/keys/c', password: 'both-secret' }
+  const bareHop = { name: 'bare', user: 'ann', host: 'd.example.com', port: '22' }
+  const chain = [keyHop, pwHop, bothHop, bareHop]
+
+  const expectPerHopAuth = (config, env, aliases) => {
+    const blocks = blocksOf(config)
+    const [key, pw, both, bare] = aliases.map(alias => blocks[alias])
+
+    expect(key).toContain('IdentityFile "C:/keys/a"')
+    expect(key).toContain('IdentitiesOnly yes')
+    expect(key.join('\n')).not.toMatch(/NumberOfPasswordPrompts|PubkeyAuthentication/)
+
+    expect(pw).toContain('NumberOfPasswordPrompts 1')
+    expect(pw).toContain('PubkeyAuthentication no')
+    expect(pw.join('\n')).not.toMatch(/IdentityFile|IdentitiesOnly/)
+
+    // 키와 비밀번호가 둘 다 있으면 키를 먼저 쓰고(공개키 인증을 끄지 않는다) 비밀번호를 이어서 쓴다.
+    expect(both).toContain('IdentityFile "/keys/c"')
+    expect(both).toContain('IdentitiesOnly yes')
+    expect(both).toContain('NumberOfPasswordPrompts 1')
+    expect(both).not.toContain('PubkeyAuthentication no')
+
+    // 인증 정보가 없으면 ssh 기본 동작(agent, ~/.ssh의 기본 키, 터미널 입력)에 맡긴다.
+    expect(bare.join('\n')).not.toMatch(/IdentityFile|IdentitiesOnly|NumberOfPasswordPrompts|PubkeyAuthentication/)
+
+    // 비밀번호는 비밀번호가 있는 노드의 순번(JS_PW_<index>)으로만 넘어간다.
+    expect(env).toEqual({ JS_PW_1: 'pw-secret', JS_PW_2: 'both-secret' })
+  }
+
+  it('ProxyJump writes each hop its own auth', () => {
+    const { config, env } = buildProxyJump(chain, paths)
+    expectPerHopAuth(config, env, aliasesOf(config))
+  })
+
+  it('Forward through the same hops uses the same per-hop auth', () => {
+    const { config, env } = buildForward({
+      via: chain,
+      node: { name: 'db', user: 'x', host: '10.0.0.9', port: '22' },
+      forwards: [{ checked: true, from: '1000', to: '2000' }]
+    }, paths)
+    expectPerHopAuth(config, env, aliasesOf(config))
+  })
+
+  it('copies the same hops as an ssh config (without passwords)', () => {
+    const config = buildSshConfig(chain)
+    expect(config).toContain('IdentityFile "C:/keys/a"')
+    expect(config).not.toContain('secret')
   })
 })
 
@@ -128,6 +235,7 @@ describe('buildProxyJump', () => {
     expect(hosts).toHaveLength(2)
     expect(config).toContain('IdentityFile "C:/Users/me/.ssh/id_rsa"')
     expect(config).toContain('IdentityFile "D:/keys/my key"')
+    expect(config.match(/IdentitiesOnly yes/g)).toHaveLength(2)
     expect(config).not.toContain('\r')
     expect(script).toContain(`-F 'C:/tmp/jumpspace/a.jmp' -J '${hosts[0]}' -- '${hosts[1]}'`)
     expect(script).toContain("rm -f -- 'C:/tmp/jumpspace/a.sh' 'C:/tmp/jumpspace/a.jmp'")

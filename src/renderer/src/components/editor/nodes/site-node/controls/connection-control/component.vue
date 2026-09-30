@@ -25,7 +25,7 @@
       >
         <b-icon
           :style="{opacity: isForwardable && forwards.some(x => x.checked) ? 1.0 : 0.5}"
-          title="Forward"
+          title="Forward (through all previous nodes)"
           class="menu-item-icon"
           icon="arrow-left-right"
           font-scale="2"
@@ -345,7 +345,6 @@
 
 <script>
 import head from 'lodash/head'
-import last from 'lodash/last'
 import pick from 'lodash/pick'
 import store from '../../../../../../store'
 import mixin from '../../../../../../mixin'
@@ -399,22 +398,12 @@ export default {
     isConnectable() {
       return this.user && this.host && this.port
     },
+    // 앞에 노드가 있고, 그 경로의 모든 노드가 접속에 필요한 정보(user/host/port)를 가지고 있어야 한다.
+    // 키/비밀번호는 노드마다 다를 수 있고, 둘 다 없으면 ssh-agent나 기본 키, 터미널 입력으로 진행한다.
     isForwardable() {
-      const prevNodeData = last(this.prevNodeDataList)
-      if (!prevNodeData) {
-        return false
-      }
+      const prevNodeDataList = this.prevNodeDataList || []
 
-      if (
-        prevNodeData.host &&
-        prevNodeData.user &&
-        prevNodeData.port &&
-        (prevNodeData.keyPath || prevNodeData.password)
-      ) {
-        return true
-      }
-
-      return false
+      return prevNodeDataList.length > 0 && prevNodeDataList.every(x => x.host && x.user && x.port)
     },
     isProxyJumpReady() {
       return this.isConnectable && this.isForwardable
@@ -472,19 +461,20 @@ export default {
       return this.run(() => window.preload.ssh.connect(this.connectionOf(this.$data)))
     },
     openForward() {
-      const prevNodeData = last(this.prevNodeDataList)
-      if (!prevNodeData) {
+      const prevNodeDataList = this.prevNodeDataList || []
+      if (prevNodeDataList.length === 0) {
         return
       }
 
+      // 앞선 모든 노드를 순서대로 거쳐서(각자의 인증으로) 마지막 앞 노드에 접속하고, 이 노드의 host:port로 포워딩한다.
       return this.run(() => window.preload.ssh.forward({
-        prev: this.connectionOf(prevNodeData),
+        via: prevNodeDataList.map(x => this.connectionOf(x)),
         node: this.connectionOf(this.$data),
         forwards: this.forwards.map(({ checked, from, to }) => ({ checked, from, to }))
       }))
     },
     proxyJump() {
-      const nodes = this.prevNodeDataList.concat(this.$data).map(x => this.connectionOf(x))
+      const nodes = (this.prevNodeDataList || []).concat(this.$data).map(x => this.connectionOf(x))
 
       return this.run(() => window.preload.ssh.proxyJump(nodes))
     },
@@ -499,7 +489,7 @@ export default {
       this.forwards = this.forwards.filter((x) => x !== forward)
     },
     async copyConfig() {
-      const nodes = this.prevNodeDataList.concat(this.$data).map(x => this.connectionOf(x))
+      const nodes = (this.prevNodeDataList || []).concat(this.$data).map(x => this.connectionOf(x))
       const result = await window.preload.ssh.copyConfig(nodes)
 
       if (!result.ok) {
@@ -517,7 +507,8 @@ export default {
         this.keyPath = path
       }
     },
-    update() {
+    // prevNodeDataList: 이 노드 앞에 연결된 노드들의 접속 정보. (연결 순서대로)
+    update(prevNodeDataList = []) {
       const data = this.getData(this.ikey)
       for (const key in data) {
         if (key in this.$data) {
@@ -525,7 +516,7 @@ export default {
         }
       }
 
-      this.prevNodeDataList = this.getData('prevNodeDataList')
+      this.prevNodeDataList = prevNodeDataList
     },
     save() {
       const data = pick(this.$data, [

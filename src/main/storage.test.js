@@ -56,7 +56,29 @@ describe('normalizeItems', () => {
     expect(normalizeItems({ version: 1, items })).toEqual(items)
   })
 
+  it('removes derived prevNodeDataList (older versions stored copies of previous nodes, including passwords)', () => {
+    const data = {
+      id: 'test@0.1.0',
+      nodes: {
+        1: { id: 1, data: { connection: { name: 'a', password: 'pw' } } },
+        2: { id: 2, data: { connection: { name: 'b' }, prevNodeDataList: [{ name: 'a', password: 'pw' }] } }
+      }
+    }
+    const [item] = normalizeItems([{ name: 'x', data }])
+
+    expect(JSON.stringify(item)).not.toContain('prevNodeDataList')
+    expect(item.data.nodes[2].data.connection).toEqual({ name: 'b' })
+    expect(JSON.stringify(item).match(/"pw"/g)).toHaveLength(1)
+    // 원본은 바꾸지 않는다
+    expect(data.nodes[2].data.prevNodeDataList).toBeDefined()
+  })
+
+  it('keeps items that have no nodes or odd node shapes', () => {
+    expect(normalizeItems([{ name: 'x', data: { id: 'a' } }])[0].data).toEqual({ id: 'a', nodes: {} })
+    expect(normalizeItems([{ name: 'x', data: { nodes: { 1: null, 2: { id: 2 } } } }])[0].data.nodes).toEqual({ 1: null, 2: { id: 2 } })
+  })
+
   it('drops unknown fields', () => {
-    expect(normalizeItems([{ name: 'a', data: {}, evil: 1 }])).toEqual([{ name: 'a', data: {} }])
+    expect(normalizeItems([{ name: 'a', data: {}, evil: 1 }])).toEqual([{ name: 'a', data: { nodes: {} } }])
   })
 })

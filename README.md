@@ -12,11 +12,17 @@ note: This currently only works on Windows
 2. Unlock the editor, right-click the canvas to add a `Site` node, and drag from a node's right socket to another node's left socket to chain them (jump hosts).
 3. Hover a node to open its menu: **Setting** (name, user, host, port, key, password, exec), **Forward list**, and the terminal button.
    - **Connect** opens Git Bash and runs `ssh` to the node.
-   - **ProxyJump** is shown instead when the node has a previous node; it connects through the whole chain.
-   - **Forward** opens `ssh -L` port forwards through the previous node.
+   - **ProxyJump** is shown instead when the node has a previous node; it connects through the whole chain of previous nodes.
+   - **Forward** opens `ssh -L` port forwards to this node's host, tunnelled through the whole chain of previous nodes (every hop is reached through the hops before it).
    - In **Setting**, *Copy SSH config* copies the node in `~/.ssh/config` format (previous nodes become `ProxyJump`). Passwords are never included.
    - **Password**: instead of a key you can sign in with a password. It is stored as **plain text** in `projects.json` and included when you export the item (you are asked to confirm). It is passed to `ssh` through `SSH_ASKPASS`, not through the command line or a file.
-4. Lock the editor to save. Items can be exported/imported as JSON from the sidebar menu.
+4. Each node has its **own authentication**, so a path can mix them freely (for example key -> password -> key + password).
+   - *Key*: only that key is offered to that hop (`IdentitiesOnly`).
+   - *Password*: no key is tried for that hop.
+   - *Both*: the key is tried first, then the password (also works for servers that require both).
+   - *Neither*: `ssh-agent`, the default keys in `~/.ssh` or what you type in the terminal are used.
+   - Password prompts (both the `password` and `keyboard-interactive` styles) are answered per hop. Anything else, such as a key passphrase or a one-time code, is asked in the terminal window.
+5. Lock the editor to save. Items can be exported/imported as JSON from the sidebar menu.
 
 Projects are stored in `projects.json` in the app data directory (the previous version is kept as `projects.json.bak`).
 Data saved by v0.2.x in the browser storage is migrated automatically on first launch.

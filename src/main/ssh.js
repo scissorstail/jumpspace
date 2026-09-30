@@ -20,9 +20,12 @@ const SSH_BASE = 'ssh -o StrictHostKeyChecking=accept-new'
 
 // 비밀번호 인증은 SSH_ASKPASS로 처리한다. 비밀번호는 파일에 쓰지 않고 환경변수(JS_PW_n)로만 넘긴다.
 // 같은 스크립트가 askpass 역할도 한다. (인자가 있으면 ssh가 prompt를 물어보는 것)
-// 비밀번호 prompt("user@host's password:")에만 답하고, 그 외(키 암호 등)는 터미널에서 직접 입력받는다.
+// 이 노드의 비밀번호 prompt에만 답하고, 그 외(키 암호, OTP 등)는 터미널에서 직접 입력받는다.
 //
-// prompt에 표시되는 호스트는 ssh에 넘긴 이름이다. 직접 접속이면 node.host, ProxyJump는 config의 Host 별칭이다.
+// ssh가 물어보는 비밀번호 prompt는 인증 방식에 따라 형식이 다르다.
+//   password             : "user@host's password: "
+//   keyboard-interactive : "(user@host) Password: "   (문구는 서버가 정한다)
+// host는 ssh에 넘긴 이름이다. 직접 접속이면 node.host, config를 쓰는 경로는 Host 별칭이다.
 function askpassPrelude(nodes, promptHosts = nodes.map(x => x.host)) {
   const env = {}
   const cases = []
@@ -30,7 +33,9 @@ function askpassPrelude(nodes, promptHosts = nodes.map(x => x.host)) {
   nodes.forEach((node, index) => {
     if (node.password) {
       env[`JS_PW_${index}`] = node.password
-      cases.push(`  ${sq(`${node.user}@${promptHosts[index]}'s password:`)}*) printf '%s\\n' "$JS_PW_${index}" ;;`)
+      const who = `${node.user}@${promptHosts[index]}`
+      // OTP처럼 "password"가 들어간 다른 prompt에 잘못 답하지 않도록, 문구가 "Password:"로 시작할 때만 답한다.
+      cases.push(`  ${sq(`${who}'s password:`)}*|${sq(`(${who}) `)}[Pp]assword:*) printf '%s\\n' "$JS_PW_${index}" ;;`)
     }
   })
 
@@ -53,10 +58,16 @@ function askpassPrelude(nodes, promptHosts = nodes.map(x => x.host)) {
   }
 }
 
-function passwordOptions(node) {
-  if (!node.password) return []
-  // 틀린 비밀번호로 여러 번 시도해서 계정이 잠기는 일을 막는다.
-  return ['-o NumberOfPasswordPrompts=1', ...(node.keyPath ? [] : ['-o PubkeyAuthentication=no'])]
+// 직접 접속(Connect)에서 노드 하나의 인증에 쓰는 ssh 옵션
+function authOptions(node) {
+  return [
+    // 지정한 키만 사용한다. (ssh-agent의 다른 키를 먼저 시도하다가 "Too many authentication failures"가 나는 것을 막는다)
+    node.keyPath && `-i ${sq(toUnixPath(node.keyPath))} -o IdentitiesOnly=yes`,
+    // 틀린 비밀번호로 여러 번 시도해서 계정이 잠기는 일을 막는다.
+    node.password && '-o NumberOfPasswordPrompts=1',
+    // 비밀번호만 쓰는 노드는 키 인증을 시도하지 않는다.
+    node.password && !node.keyPath && '-o PubkeyAuthentication=no'
+  ].filter(Boolean)
 }
 
 function wrap({ prelude = [], lines, cleanupPaths, env = {} }) {
@@ -69,6 +80,7 @@ function wrap({ prelude = [], lines, cleanupPaths, env = {} }) {
     'rc=$?',
     // ssh 자체의 오류(255)는 창이 바로 닫히면 확인할 수 없으므로 잠시 멈춘다.
     'if [ "$rc" -eq 255 ]; then printf \'\\nssh failed (exit status 255). Press Enter to close.\'; read -r _; fi',
+    'exit "$rc"',
     ''
   ].join('\n')
 
@@ -85,9 +97,8 @@ export function buildConnect(rawNode, { scriptPath }) {
 
   const ssh = [
     SSH_BASE,
-    node.keyPath && `-i ${sq(toUnixPath(node.keyPath))}`,
+    ...authOptions(node),
     `-p ${sq(node.port)}`,
-    ...passwordOptions(node),
     node.exec && '-tt',
     '--',
     sq(dest),
@@ -101,84 +112,105 @@ export function buildConnect(rawNode, { scriptPath }) {
   })
 }
 
-export function buildForward({ prev, node, forwards }, { scriptPath }) {
-  const prevNode = validateNode(prev, { requireAuth: true })
-  const destNode = validateNode(node)
+// 경로(여러 노드)를 ssh config로 만든다. 노드마다 자기 인증(키/비밀번호/둘 다/없음)을 가진다.
+// Host 별칭은 "앞선 경로 + 자기 정보"의 해시라서, 같은 앞부분을 공유하는 경로는 같은 별칭(=같은 known_hosts 항목)을 쓴다.
+function hostAliases(nodes) {
+  const aliases = []
+  for (const node of nodes) {
+    const pathHash = md5(aliases.join(''))
+    aliases.push(md5(pathHash + node.host + node.user + node.port))
+  }
+  return aliases
+}
+
+function hostConfig(nodes, aliases) {
+  return nodes.map((node, index) => [
+    `Host ${aliases[index]}`,
+    `HostName ${node.host}`,
+    `HostKeyAlias ${aliases[index]}`,
+    'StrictHostKeyChecking accept-new',
+    `User ${node.user}`,
+    `Port ${node.port}`,
+    ...(node.keyPath ? [`IdentityFile "${toUnixPath(node.keyPath).replaceAll('%', '%%')}"`, 'IdentitiesOnly yes'] : []),
+    ...(node.password ? ['NumberOfPasswordPrompts 1'] : []),
+    ...(node.password && !node.keyPath ? ['PubkeyAuthentication no'] : [])
+  ].join('\n') + '\n').join('\n') + '\n'
+}
+
+// via: 앞선 노드들(순서대로). 마지막 노드에 접속하고, 그 앞의 노드들은 ProxyJump로 거친다.
+// node: 목적지 노드. 포트포워딩의 도착지(host:to)로만 쓰이고 ssh로 접속하지는 않는다.
+export function buildForward({ via, node, forwards }, { scriptPath, configPath }) {
+  if (!Array.isArray(via) || via.length === 0) {
+    throw new Error('Forward needs at least one previous node.')
+  }
+
+  const hops = via.map(x => validateNode(x))
+  // 도착지는 host만 쓰인다. (user/port는 이 노드에 ssh로 접속할 때만 필요하다)
+  const destNode = validateNode(node, { partial: true })
   const list = validateForwards(forwards)
 
-  const remoteHost = `${prevNode.user}@${prevNode.host}`
-  const destHost = `${destNode.user}@${destNode.host}`
+  const aliases = hostAliases(hops)
+  const config = hostConfig(hops, aliases)
+  const jumps = aliases.slice(0, -1).join(',')
+  const destHost = destNode.host.includes(':') && !destNode.host.startsWith('[') ? `[${destNode.host}]` : destNode.host
 
   const ssh = [
     SSH_BASE,
-    prevNode.keyPath && `-i ${sq(toUnixPath(prevNode.keyPath))}`,
-    `-p ${sq(prevNode.port)}`,
-    ...passwordOptions(prevNode),
+    `-F ${sq(configPath)}`,
+    jumps && `-J ${sq(jumps)}`,
     '-N',
-    ...list.map(x => `-L ${sq(`localhost:${x.from}:${destNode.host}:${x.to}`)}`),
+    // 로컬 포트가 이미 사용 중이면 조용히 무시하지 않고 오류로 끝낸다.
+    '-o ExitOnForwardFailure=yes',
+    ...list.map(x => `-L ${sq(`localhost:${x.from}:${destHost}:${x.to}`)}`),
     '--',
-    sq(remoteHost)
+    sq(aliases[aliases.length - 1])
   ].filter(Boolean).join(' ')
 
-  return wrap({
-    ...askpassPrelude([prevNode]),
-    lines: [
-      banner(
-        'Forward...',
-        `localhost -> ${remoteHost}:${prevNode.port} (${prevNode.name}) -> ${destHost} (${destNode.name})`,
-        ...list.map(x => `localhost:${x.from} <-> ${prevNode.name} <-> ${destNode.name}:${x.to}`),
-        ''
-      ),
-      ssh
-    ],
-    cleanupPaths: [scriptPath]
-  })
+  const route = [...hops.map(x => `${x.user}@${x.host}:${x.port} (${x.name})`), `${destNode.host} (${destNode.name})`]
+  const lastHop = hops[hops.length - 1]
+
+  return {
+    ...wrap({
+      ...askpassPrelude(hops, aliases),
+      lines: [
+        banner(
+          'Forward...',
+          `localhost -> ${route.join(' -> ')}`,
+          ...list.map(x => `localhost:${x.from} <-> ${lastHop.name} <-> ${destNode.name}:${x.to}`),
+          ''
+        ),
+        ssh
+      ],
+      cleanupPaths: [scriptPath, configPath]
+    }),
+    config
+  }
 }
 
-// ProxyJump는 노드마다 키가 다를 수 있어서 임시 ssh config 파일을 함께 만든다.
+// ProxyJump는 노드마다 인증이 다를 수 있어서 임시 ssh config 파일을 함께 만든다.
 export function buildProxyJump(rawNodes, { scriptPath, configPath }) {
   if (!Array.isArray(rawNodes) || rawNodes.length < 2) {
     throw new Error('ProxyJump needs at least two nodes.')
   }
 
   const nodes = rawNodes.map(x => validateNode(x))
-  const hostHashes = []
-
-  const config = nodes.map(node => {
-    const pathHash = md5(hostHashes.join(''))
-    const hostHash = md5(pathHash + node.host + node.user + node.port)
-    hostHashes.push(hostHash)
-
-    return [
-      `Host ${hostHash}`,
-      `HostName ${node.host}`,
-      `HostKeyAlias ${hostHash}`,
-      'StrictHostKeyChecking accept-new',
-      `User ${node.user}`,
-      `Port ${node.port}`,
-      ...(node.keyPath ? [`IdentityFile "${toUnixPath(node.keyPath).replaceAll('%', '%%')}"`] : []),
-      ...(node.password ? ['NumberOfPasswordPrompts 1'] : []),
-      ...(node.password && !node.keyPath ? ['PubkeyAuthentication no'] : [])
-    ].join('\n') + '\n'
-  }).join('\n') + '\n'
-
-  const dest = hostHashes[hostHashes.length - 1]
-  const jumps = hostHashes.slice(0, -1).join(',')
+  const aliases = hostAliases(nodes)
+  const config = hostConfig(nodes, aliases)
   const last = nodes[nodes.length - 1]
 
   const ssh = [
     SSH_BASE,
     `-F ${sq(configPath)}`,
-    `-J ${sq(jumps)}`,
+    `-J ${sq(aliases.slice(0, -1).join(','))}`,
     last.exec && '-tt',
     '--',
-    sq(dest),
+    sq(aliases[aliases.length - 1]),
     last.exec && sq(`${last.exec}; exec $SHELL`)
   ].filter(Boolean).join(' ')
 
   return {
     ...wrap({
-      ...askpassPrelude(nodes, hostHashes),
+      ...askpassPrelude(nodes, aliases),
       lines: [banner('ProxyJump...', ...nodes.map(x => `>>> ${x.host}:${x.port} (${x.name})`), ''), ssh],
       cleanupPaths: [scriptPath, configPath]
     }),

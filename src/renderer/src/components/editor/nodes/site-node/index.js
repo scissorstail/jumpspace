@@ -28,9 +28,8 @@ export default class SiteNode extends Rete.Component {
     const prevNodeDataList = head(inputs.input1)?.connection || []
     const nextNodeDataList = prevNodeDataList.concat([node.data.connection])
 
-    node.data.prevNodeDataList = prevNodeDataList
-
-    this.getControl(node)?.get('connection').vueContext.update()
+    // 앞선 노드들의 정보는 계산해서 얻는 값이라 node.data에 넣지 않는다. (저장 파일에 앞 노드의 비밀번호 등이 중복으로 남는다)
+    this.getControl(node)?.get('connection').vueContext.update(prevNodeDataList)
 
     /// process data
     outputs.output1 = {

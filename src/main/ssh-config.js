@@ -33,6 +33,7 @@ export function buildSshConfig(rawNodes) {
       node.user && `    User ${node.user}`,
       node.port && `    Port ${node.port}`,
       node.keyPath && `    IdentityFile "${toUnixPath(node.keyPath).replaceAll('%', '%%')}"`,
+      node.keyPath && '    IdentitiesOnly yes',
       index > 0 && `    ProxyJump ${aliases.slice(0, index).join(',')}`,
       canExec && `    RemoteCommand ${node.exec}; exec $SHELL`,
       canExec && '    RequestTTY yes',

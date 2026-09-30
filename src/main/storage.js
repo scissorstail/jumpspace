@@ -3,6 +3,20 @@ import { join } from 'node:path'
 
 const FILE_VERSION = 1
 
+// 이전 버전은 계산해서 얻는 값(앞선 노드들의 접속 정보)을 node.data에 그대로 저장했다.
+// 앞 노드의 비밀번호까지 중복으로 남기 때문에 저장하지 않고, 이미 저장된 데이터에서도 제거한다.
+function stripDerivedData(data) {
+  const nodes = Object.fromEntries(Object.entries(data.nodes || {}).map(([id, node]) => {
+    if (!node || typeof node !== 'object' || !node.data || typeof node.data !== 'object') {
+      return [id, node]
+    }
+    const { prevNodeDataList, ...rest } = node.data
+    return [id, { ...node, data: rest }]
+  }))
+
+  return { ...data, nodes }
+}
+
 // 저장 파일/import 파일에서 읽은 내용을 [{ name, data }] 형태로 정리한다.
 export function normalizeItems(value) {
   const items = Array.isArray(value) ? value : value?.items
@@ -14,7 +28,7 @@ export function normalizeItems(value) {
     if (!x || typeof x !== 'object' || typeof x.data !== 'object' || x.data === null) {
       throw new Error('Invalid project item.')
     }
-    return { name: typeof x.name === 'string' ? x.name : '', data: x.data }
+    return { name: typeof x.name === 'string' ? x.name : '', data: stripDerivedData(x.data) }
   })
 }
 
