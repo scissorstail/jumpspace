@@ -254,6 +254,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: looked for modules without tests; `src/main/index.js` had none. Its IPC sender check (`isTrusted`) and the `will-navigate` guard compared URLs by prefix, so `app://.evil/...` or, in development, `http://localhost:51730` for a dev server on `:5173` would have passed. Moved the check to `src/main/trust.js` (`isAppUrl`: parses the URL, accepts `app:` with host `.` or the exact origin of the dev server) with tests, and used it for both places and for the load URL.
 - Result: tests 223 passed (+4; mutation checked: going back to a prefix check fails), lint exit 0, build exit 0. In the app every IPC path still works (scratch t9, t10, t12, t45; t45 needed the local sshd started again, it had stopped).
 
+### #34 2026-09-30 19:2x UTC · style (scheduled run, polish phase)
+- Did: screenshots of the empty screen, canvas, sidebar menu, forward popover, settings dialog, terminal and tooltip in all three palettes. The one rough edge: the Port forwarding popover's title (pixel font, line height 1) sat directly on its description line. It now has a gap and a 2px divider below it, like the dialog headers.
+- Result: CSS only. lint exit 0, tests 223 passed, build exit 0; checked in all three palettes; t5, t13, t16 pass.
+- Found / next: nothing else stood out in this pass (the popover can overlap the header when a node is near the top, which is the popper placement and acceptable). If the next polish run also finds nothing worthwhile, the polish phase counts as good enough and the following run is the first `feature` run (reconnect an ended tab).
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

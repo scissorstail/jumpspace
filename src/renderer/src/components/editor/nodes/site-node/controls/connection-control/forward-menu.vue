@@ -283,7 +283,11 @@ export default {
 .forward-panel {
   width: 440px;
 
+  // 제목 아래를 창(모달)의 머리글처럼 선으로 나눈다. (줄 간격 1이라 설명 글과 붙어 보였다)
   .forward-title {
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--js-line);
     color: var(--js-sun);
     font-family: var(--js-font-display);
     font-size: 1.9rem;
