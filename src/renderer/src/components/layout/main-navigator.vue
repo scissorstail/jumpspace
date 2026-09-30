@@ -121,7 +121,7 @@
           >
             <b-button
               v-if="!item.isEditing"
-              v-show="!keyword || item.name.includes(keyword)"
+              v-show="matches(item)"
               :id="`list-item-${item.index}`"
               :key="`button-${item.index}`"
               size="sm"
@@ -135,6 +135,7 @@
             >
               <span
                 class="list-item-name"
+                :title="item.name || null"
               >{{ item.name || '(untitled)' }}</span>
               <!--
               <div class="list-item-dropdown ml-auto">
@@ -214,6 +215,7 @@
               placeholder="(untitled)"
               @blur="item.isEditing = false;"
               @keydown.enter="item.isEditing = false;"
+              @keydown.esc="cancelEdit(item, $event)"
               @keydown.stop
               @change="$emit('updated', {items: getProjectDataFromItems(items), index: openedItemIndex})"
             />
@@ -233,7 +235,7 @@
 import draggable from 'vuedraggable'
 import cloneDeep from 'lodash/cloneDeep'
 import isEmpty from 'lodash/isEmpty'
-import { hasSavedPassword, EXPORT_PASSWORD_WARNING } from '@/utils/project'
+import { hasSavedPassword, matchesKeyword, EXPORT_PASSWORD_WARNING } from '@/utils/project'
 import { toastError } from '@/utils/notify'
 
 export default {
@@ -325,6 +327,9 @@ export default {
         }
       }
 
+      // 검색어에 맞지 않으면 새 항목이 목록에서 사라지므로 검색을 푼다.
+      this.keyword = ''
+
       const newItem = {
         index: this.itemIndex++,
         name: '',
@@ -347,6 +352,9 @@ export default {
         }
       })
     },
+    matches(item) {
+      return matchesKeyword(item.name, this.keyword)
+    },
     editItem(item) {
       item.isEditing = true
 
@@ -355,7 +363,15 @@ export default {
         element.focus()
       })
     },
+    // 이름 변경을 취소한다. 입력값은 change 때만 이름에 반영되므로(lazy), 입력창을 닫기 전에 원래 값으로 되돌려 둔다.
+    cancelEdit(item, event) {
+      event.target.value = item.name
+      item.isEditing = false
+    },
     copyItem(item) {
+      // 검색어에 맞지 않으면 새 항목이 목록에서 사라지므로 검색을 푼다.
+      this.keyword = ''
+
       const newItem = {
         index: this.itemIndex++,
         name: item.name,
@@ -555,6 +571,7 @@ export default {
 
           &-name {
             overflow: hidden;
+            white-space: nowrap;
             text-align: left;
             width: 90%;
             text-overflow: ellipsis;
