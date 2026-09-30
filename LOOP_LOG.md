@@ -55,7 +55,7 @@ Ordered roughly by value. Move an item to the log when it is done.
 ### Code hot spots
 - `src/renderer/src/components/layout/main-navigator.vue` (about 640 lines): list, drag, select, rename, import/export all in one. A candidate to split (item list vs. actions).
 - `src/renderer/src/views/Layout.vue`: item state, project load/save, view saving are mixed.
-- `src/main/index.js`: IPC handlers could move into small modules like `launcher.js`.
+- `src/main/index.js`: IPC handlers could move into small modules like `launcher.js` (the trust check moved to `trust.js`).
 
 ### Missing or thin tests
 - No component tests (Vue) at all; logic lives in `utils/` on purpose. Consider `@vue/test-utils` only if it stays cheap.
@@ -249,6 +249,10 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 ### #32 2026-09-30 17:2x UTC · CI fix (scheduled run)
 - CI run 47 (commit of #31) failed on Ubuntu: ESLint `no-template-curly-in-string` for `${JUMPSPACE_IN_APP:-}` inside a JS string in `ssh.js`. My own check had piped `npm run lint` into `tail -1`, and ESLint ends with a blank line, so the error was not seen. The script line now uses `"$JUMPSPACE_IN_APP"` (the script has no `set -u`, so an unset variable is empty). Protocol step 3 now says to check exit codes.
 - Result: lint exit 0, tests 219 passed, build exit 0. The feature phase waits: this run was the CI fix.
+
+### #33 2026-09-30 18:2x UTC · tests (scheduled run, polish phase)
+- Did: looked for modules without tests; `src/main/index.js` had none. Its IPC sender check (`isTrusted`) and the `will-navigate` guard compared URLs by prefix, so `app://.evil/...` or, in development, `http://localhost:51730` for a dev server on `:5173` would have passed. Moved the check to `src/main/trust.js` (`isAppUrl`: parses the URL, accepts `app:` with host `.` or the exact origin of the dev server) with tests, and used it for both places and for the load URL.
+- Result: tests 223 passed (+4; mutation checked: going back to a prefix check fails), lint exit 0, build exit 0. In the app every IPC path still works (scratch t9, t10, t12, t45; t45 needed the local sshd started again, it had stopped).
 
 ## Routine
 

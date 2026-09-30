@@ -20,6 +20,7 @@ import icon from '../../resources/icon.png?asset'
 import { spawn as spawnPty } from 'node-pty'
 import { launch, sweepTempDir } from './launcher.js'
 import { createTerminalManager, terminalBash } from './terminal.js'
+import { APP_URL, isAppUrl } from './trust.js'
 import { normalizeSetting } from '../shared/setting.js'
 import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
@@ -28,7 +29,6 @@ import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
 const MAX_CLIPBOARD = 1024 * 1024
 
 const isMac = process.platform === 'darwin'
-const APP_ORIGIN = 'app://.'
 
 let win = null
 let tray = null
@@ -70,9 +70,7 @@ function main() {
 
   // 앱 화면(app:// 또는 dev server)에서 온 요청만 처리한다.
   function isTrusted(event) {
-    const url = event.senderFrame?.url || ''
-    const devUrl = process.env.ELECTRON_RENDERER_URL
-    return url.startsWith(APP_ORIGIN) || (Boolean(devUrl) && url.startsWith(devUrl))
+    return isAppUrl(event.senderFrame?.url, process.env.ELECTRON_RENDERER_URL)
   }
 
   function on(channel, handler) {
@@ -315,8 +313,7 @@ async function createWindow(getSetting) {
 
   // 앱 화면 밖으로 이동하지 못하게 한다.
   win.webContents.on('will-navigate', (event, url) => {
-    const devUrl = process.env.ELECTRON_RENDERER_URL
-    if (!url.startsWith(APP_ORIGIN) && !(devUrl && url.startsWith(devUrl))) {
+    if (!isAppUrl(url, process.env.ELECTRON_RENDERER_URL)) {
       event.preventDefault()
     }
   })
@@ -340,6 +337,6 @@ async function createWindow(getSetting) {
     await win.loadURL(process.env.ELECTRON_RENDERER_URL)
     win.webContents.openDevTools()
   } else {
-    await win.loadURL(`${APP_ORIGIN}/index.html`)
+    await win.loadURL(APP_URL)
   }
 }
