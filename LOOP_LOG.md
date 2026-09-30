@@ -117,7 +117,6 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Right click on an empty canvas while the editor is locked does nothing and says nothing; a hint ("Unlock the editor to add nodes") would help.
 - A node without an icon shows an empty grey frame; a neutral default icon would look finished.
 - Lock button tooltip stays visible after a click (mouse still over it).
-- The canvas can only be panned inside 1024x1024 (`translateExtent` in `components/editor/index.vue`); nodes placed further cannot be reached except by zooming out.
 
 ### Code hot spots
 - `src/renderer/src/components/layout/main-navigator.vue` (about 640 lines): list, drag, select, rename, import/export all in one. A candidate to split (item list vs. actions).
