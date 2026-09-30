@@ -431,22 +431,19 @@ export default {
 // Vivid 배경에서만: 풍경이 선명해서 노드와 글자가 묻히므로, 노드 둘레의 풍경을 흐리게 가리고
 // 이름표/주소와 연결선에 어두운 번짐 테두리를 둘러 떼어 놓는다.
 .backdrop-vivid #rete {
-  // 노드와 그 아래의 이름표/주소까지 덮는 둥근 판. 가운데는 풍경을 흐리고 어둡게, 가장자리로 갈수록 사라진다.
+  // 노드와 그 아래의 이름표/주소까지 덮는 반투명 유리판. 뒤의 풍경을 밝게 흐려서 판 안쪽이 풍경과 구분된다.
+  // (어둡게 번지는 둥근 판은 경계가 흐릿해서 얼룩처럼 보였다)
   .node.site::before {
     content: '';
     position: absolute;
-    inset: -34px -64px -120px;
+    // 좌우는 노드 폭에 맞춘다. 연결선이 노드 아래층에 그려져서 판이 덮으면 선까지 흐려진다.
+    inset: -12px -10px -118px;
     z-index: -1;
-    background: color-mix(in srgb, var(--js-bg) 72%, transparent);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    -webkit-mask-image: radial-gradient(closest-side, #000 55%, transparent);
-    mask-image: radial-gradient(closest-side, #000 55%, transparent);
+    border: 1px solid color-mix(in srgb, #fff 20%, transparent);
+    background: color-mix(in srgb, #fff 7%, transparent);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    backdrop-filter: blur(12px) saturate(1.2);
     pointer-events: none;
-  }
-
-  .info-field {
-    filter: drop-shadow(0 0 2px var(--js-bg)) drop-shadow(0 0 8px var(--js-bg));
   }
 
   .connection .main-path {

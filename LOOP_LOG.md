@@ -198,6 +198,10 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Result: template only, no logic change. Tests 212 passed, lint ok, build ok. In the app (scratch t41): no tooltip left after clicking the lock (failed before the fix), name/title present; settings scripts t4, t12, t17, t39 pass; screenshot of the dialog checked.
 - Found / next: the UX candidate list is empty; next ux run starts with a fresh walk through the app.
 
+### #24 2026-09-30 · lighter blur in Vivid (by hand, at the owner's request)
+- Did: the owner found the dark round halo vague and asked whether a lighter blur would be better. Compared four variants in screenshots (dark round halo, light round halo, tinted round halo, light glass card); the round ones all read as a smudge, the card has a clear edge. Now each node sits on a light frosted glass panel (white 7%, 1px light border, `backdrop-filter: blur(12px) saturate(1.2)`) that covers the node and its name/address. First version was wider than the node and blurred the connections too (they are drawn below the nodes), so the panel is now only as wide as the node. The dark drop shadow on the name block was dropped (the plates already separate it); lines keep their dark outline.
+- Result: CSS only. Lint ok, build ok; checked in three palettes; t40 (halo present only in Vivid, no click capture, select and drag) passes.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
