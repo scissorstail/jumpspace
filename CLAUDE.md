@@ -30,7 +30,7 @@ Run lint, tests and build before every commit. Node 20.19+ or 22.12+. `.npmrc` s
 
 ## Owner's decisions (details in LOOP_LOG.md)
 
-Passwords stay plain text. The Vue 3 / Rete 2 migration is on hold. No Playwright test in the repo. Do not propose those again unless something breaks.
+Passwords stay plain text. The Vue 3 / Rete 2 migration is on hold. No Playwright test in the repo. Do not propose those again unless something breaks. The scheduled routine does no research (no web browsing, no looking at other projects or issues); it works on this repository only.
 
 ## Git
 
