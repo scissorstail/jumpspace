@@ -110,6 +110,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Did: checked README, CHANGELOG, CLAUDE.md and this file against the code (versions, commands, behavior). Fixed: README said ProxyJump replaces Connect whenever a node has previous nodes, but it needs every previous node to have user/host/port; README lacked the sidebar, context menu, keyboard and canvas view behavior, the newer files in the project layout and the license; CLAUDE.md now says the repository is public and that docs must be kept true; the backlog no longer lists the smoke test the owner turned down. CHANGELOG matched the code.
 - Result: docs only.
 
+### #6 2026-09-30 05:2x UTC · refactor (scheduled run)
+- Did: `main-navigator.vue` (638 -> 621 lines): item creation (new item, copy, import, initial load) and the conversion back to `{ name, data, view? }` moved to `utils/navigator-items.js` (9 tests, mutation checked); the two copies of the "focus the name box" code became `focusNameBox`, and the two ways of emitting `updated` became `emitUpdated`. No behavior change. Last CI run (27c8d08) was green.
+- Result: tests 178 passed, lint ok, build ok. Re-ran the scratch UI scripts for the sidebar (rename Enter/blur/Esc, new item, copy, drag, import/export, title, canvas view): all as before.
+- Found / next: the component is still large (dropdown menu per item, drag, selection, confirm dialogs). Next refactor candidate: split the header actions (New, Remove Items, Import/Export) from the list, or `views/Layout.vue` (project load/save). Not done yet: `cleanup` and `tests` activities.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

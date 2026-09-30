@@ -223,7 +223,7 @@
               @keydown.enter="item.isEditing = false;"
               @keydown.esc="cancelEdit(item, $event)"
               @keydown.stop
-              @change="$emit('updated', {items: getProjectDataFromItems(items), index: openedItemIndex})"
+              @change="emitUpdated"
             />
           </template>
         </draggable>
@@ -242,6 +242,7 @@ import draggable from 'vuedraggable'
 import cloneDeep from 'lodash/cloneDeep'
 import isEmpty from 'lodash/isEmpty'
 import { hasSavedPassword, matchesKeyword, EXPORT_PASSWORD_WARNING } from '@/utils/project'
+import { createNavigatorItem, emptyItemData, toProjectItems } from '@/utils/navigator-items'
 import { toastError } from '@/utils/notify'
 
 export default {
@@ -291,11 +292,11 @@ export default {
       this.items.forEach(x => { x.isSelected = false })
     },
     items() {
-      this.$emit('updated', { items: this.getProjectDataFromItems(this.items), index: this.openedItemIndex })
+      this.emitUpdated()
     }
   },
   created() {
-    this.items = this.getNavigatorDataFromItems(this.projectData)
+    this.items = this.toNavigatorItems(this.projectData)
   },
   methods: {
     unchoose(event) {
@@ -336,27 +337,22 @@ export default {
       // 검색어에 맞지 않으면 새 항목이 목록에서 사라지므로 검색을 푼다.
       this.keyword = ''
 
-      const newItem = {
-        index: this.itemIndex++,
-        name: '',
-        data: { id: 'test@0.1.0', nodes: {} },
-        isMenuShown: false,
-        isSelected: false,
-        isEditing: true
-      }
+      const newItem = createNavigatorItem({ name: '', data: emptyItemData() }, this.itemIndex++, { isEditing: true })
 
       this.items.unshift(newItem)
       this.openItem(newItem)
 
-      this.$nextTick(() => {
-        const element = document.querySelector('#main-navigator .main-navigator-content .list-item.editing')
-        if (element) {
-          element.focus()
-          if (document.activeElement !== element) {
-            newItem.isEditing = false
-          }
+      this.$nextTick(() => this.focusNameBox(newItem))
+    },
+    // 열려 있는 이름 입력창에 포커스를 준다. 포커스를 받지 못하면 입력창을 닫는다.
+    focusNameBox(item) {
+      const element = document.querySelector('#main-navigator .main-navigator-content .list-item.editing')
+      if (element) {
+        element.focus()
+        if (document.activeElement !== element) {
+          item.isEditing = false
         }
-      })
+      }
     },
     matches(item) {
       return matchesKeyword(item.name, this.keyword)
@@ -378,31 +374,17 @@ export default {
       // 검색어에 맞지 않으면 새 항목이 목록에서 사라지므로 검색을 푼다.
       this.keyword = ''
 
-      const newItem = {
-        index: this.itemIndex++,
-        name: item.name,
-        data: cloneDeep(item.data),
-        view: item.view ? { ...item.view } : undefined,
-        isMenuShown: false,
-        isSelected: false,
-        isEditing: true
-      }
+      const newItem = createNavigatorItem(
+        { name: item.name, data: cloneDeep(item.data), view: item.view ? { ...item.view } : undefined },
+        this.itemIndex++,
+        { isEditing: true }
+      )
 
       const foundIndex = this.items.findIndex(x => x === item)
       if (foundIndex !== -1) {
         this.items.splice(foundIndex + 1, 0, newItem)
 
-        this.$nextTick(() => {
-          setTimeout(() => {
-            const element = document.querySelector('#main-navigator .main-navigator-content .list-item.editing')
-            if (element) {
-              element.focus()
-              if (document.activeElement !== element) {
-                newItem.isEditing = false
-              }
-            }
-          })
-        })
+        this.$nextTick(() => setTimeout(() => this.focusNameBox(newItem)))
       }
     },
     async removeItem(item) {
@@ -438,7 +420,7 @@ export default {
       }
 
       try {
-        await window.preload.exportProjects(JSON.stringify(this.getProjectDataFromItems(items)), 'export.json')
+        await window.preload.exportProjects(JSON.stringify(toProjectItems(items)), 'export.json')
       } catch (e) {
         console.error(e)
         this.notifyError('Failed to export', e)
@@ -457,18 +439,19 @@ export default {
       try {
         const projectData = await window.preload.importProjects()
         if (projectData) {
-          this.items = this.items.concat(this.getNavigatorDataFromItems(JSON.parse(projectData)))
+          this.items = this.items.concat(this.toNavigatorItems(JSON.parse(projectData)))
         }
       } catch (e) {
         console.error(e)
         this.notifyError('Failed to import', e)
       }
     },
-    getNavigatorDataFromItems(items) {
-      return items.map((x) => ({ ...x, isMenuShown: false, isSelected: false, isEditing: false, index: this.itemIndex++ }))
+    toNavigatorItems(items) {
+      return items.map(x => createNavigatorItem(x, this.itemIndex++))
     },
-    getProjectDataFromItems(items) {
-      return items.map(x => ({ name: x.name, data: x.data, ...(x.view && { view: x.view }) }))
+    // 저장할 수 있게 부모(Layout)에 항목 목록을 알린다.
+    emitUpdated() {
+      this.$emit('updated', { items: toProjectItems(this.items), index: this.openedItemIndex })
     },
     updateItemEditorData({ data, index }) {
       // 에디터에 열린 item 정보 업데이트 시 외부에서 호출 후 정보 업데이트
