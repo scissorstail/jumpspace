@@ -103,7 +103,7 @@
 
     <!-- navigator-content -->
     <div
-      class="main-navigator-content layout-divider bg-white"
+      class="main-navigator-content layout-divider"
       :class="{dragging: isDrag}"
     >
       <b-button-toolbar
@@ -510,7 +510,7 @@ export default {
         height: 1.5em;
         display: inline-block;
         vertical-align: middle;
-        border-left: 1px solid #e9ecef;
+        border-left: 1px solid var(--js-border);
       }
     }
 
@@ -529,7 +529,9 @@ export default {
           display: flex;
           justify-content: space-between;
           align-items: flex-end;
-          border: 1px solid white;
+          border: 1px solid transparent;
+          border-radius: 6px;
+          color: var(--js-text);
 
           &:hover:not(.editing),
           &.dropdown-shown {
@@ -539,21 +541,23 @@ export default {
           }
 
           &.dropdown-shown {
-            border: 1px solid #80bdff;
+            border: 1px solid var(--js-accent);
           }
 
           &.btn:hover:not(.editing):not(.selected):not(.active) {
-            background-color: #f1f3f5;
+            background-color: var(--js-hover);
           }
 
           // 열려 있는 항목
           &.active {
-            background-color: #e7f1ff;
+            background-color: var(--js-accent-soft);
+            color: white;
             font-weight: 600;
+            box-shadow: inset 3px 0 0 var(--js-accent);
           }
 
           &.selected {
-            background-color: rgb(128, 189, 255, 0.35);
+            background-color: rgba(56, 189, 248, 0.3);
           }
 
           &.btn-block + .btn-block {
@@ -574,7 +578,13 @@ export default {
 
           &.btn:focus-visible,
           &.editing:focus {
-            border: 1px solid #80bdff;
+            border: 1px solid var(--js-accent);
+          }
+
+          &.editing {
+            border-color: var(--js-border);
+            background-color: var(--js-bg);
+            color: var(--js-text);
           }
 
           &-name {
@@ -614,15 +624,23 @@ export default {
 .list-search {
   ::v-deep .input-group-text {
     padding-right: 4px;
+    border-color: var(--js-border);
     border-right: 0;
     border-radius: 999px 0 0 999px;
-    background-color: white;
-    color: #6c757d;
+    background-color: var(--js-bg);
+    color: var(--js-text-muted);
   }
 
   ::v-deep .form-control {
+    border-color: var(--js-border);
     border-left: 0;
     border-radius: 0 999px 999px 0;
+    background-color: var(--js-bg);
+    color: var(--js-text);
+
+    &:focus {
+      box-shadow: none;
+    }
   }
 }
 
@@ -638,10 +656,10 @@ export default {
 
 ::-webkit-scrollbar-thumb {
   border-radius: 4px;
-  background: #c4c9d0;
+  background: rgba(148, 163, 184, 0.35);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a3aab3;
+  background: rgba(148, 163, 184, 0.6);
 }
 </style>

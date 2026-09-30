@@ -8,7 +8,7 @@ This file is its memory. **Read the whole file before doing anything, and append
 1. **Orient.** `git fetch origin claude/cool-bardeen-9x9ymz`, check `git status -sb`, read this file (Backlog and the last few log entries). If CI is reachable (GitHub MCP `actions_list`), look at the last run of the branch; a red run is the first thing to fix.
 2. **Pick one activity** from the rotation below. Prefer the one that was not done for the longest time (see the log). Do exactly one, small and finished, in about an hour at most.
 3. **Verify before every commit:** `npm run lint`, `npx vitest run`, `npm run build`. A UI change is also tried in the real app when practical (Playwright + Electron under `xvfb-run`; the old scripts lived in the session scratchpad and are not in the repo, so write a small new one if needed).
-4. **Commit and push** to `claude/cool-bardeen-9x9ymz` only. Small commits with a message that says why, ending with the two trailer lines the session asks for (`Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>` and `Claude-Session: <the session URL>`). No pull requests, no force push, no other branches.
+4. **Commit and push** to `claude/cool-bardeen-9x9ymz` only. Small commits with a message that says why, ending with the trailer lines the session asks for (`Co-Authored-By:` with the model the session names, and `Claude-Session: <the session URL>`). No pull requests, no force push, no other branches.
 5. **Append a log entry** (template below) and commit it too. Keep entries short and factual. If nothing worthwhile was found, log that and stop; do not invent work.
 
 ### Rotation
@@ -148,6 +148,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Result: tests 186 passed, lint ok, build ok; ten scratch UI scripts pass; screenshots of the new look were checked.
 - **The hourly trigger was disabled** at 10:18 UTC (`update_trigger` with `enabled: false`), so no run happens at 10:17. The last scheduled run was #10 (09:17).
 - Found / next: ideas for the next visual pass: the sidebar header (three tiny buttons), the empty state, the node text under the icon, a consistent primary colour (Bootstrap blue is used as is), dark mode is not planned.
+
+### #14 2026-09-30 · ux: dark "immersive" architecture-diagram look (by hand, at the owner's request; routine still stopped)
+- Did: short web research (the owner asked for it directly; the routine itself still does no research) on animated architecture diagrams: common traits are a dark canvas, glass cards with an inner highlight and glow, and data flowing along the edges (animated `stroke-dashoffset`). Implemented with CSS and one small hook, no new dependency and no 3D library: theme variables in `assets/theme.scss`, navy canvas with a moving dot grid over a fixed radial glow, glass nodes with inverted (light) icons, glowing output sockets, a second `path.flow-path` per connection animated from source to target, dark header and sidebar. Popovers, dialogs and the right click menu stay light cards. A real three.js 3D scene was not done: it would replace the Rete editor (drag, connect, sockets) and is far outside "don't add much complexity"; noted as an idea only.
+- Result: tests 186 passed, lint ok, build ok. New scratch check `t24_flow` (one flow path per connection, same shape as the line, animated, follows a dragged node, no duplicates) plus the ten older UI scripts pass; screenshots checked.
+- Found / next: the icon picker grid still shows the black icons on white (fine, it is inside a light popover). If the owner wants the popovers dark as well, the Bootstrap form controls need dark overrides.
 
 ## Routine
 

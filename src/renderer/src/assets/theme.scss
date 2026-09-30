@@ -1,0 +1,41 @@
+// 앱 전체 색. 어두운 "immersive" 테마: 짙은 남색 캔버스, 유리 질감 카드, 하늘색 강조.
+// 팝오버와 대화상자는 입력하기 편하도록 밝은 카드로 둔다.
+:root {
+  --js-bg: #0b1220;
+  --js-bg-raised: #0f172a;
+  --js-surface: rgba(30, 41, 59, 0.72);
+  --js-border: rgba(148, 163, 184, 0.22);
+  --js-text: #e2e8f0;
+  --js-text-muted: #94a3b8;
+  --js-accent: #38bdf8;
+  --js-accent-soft: rgba(56, 189, 248, 0.16);
+  --js-hover: rgba(148, 163, 184, 0.12);
+}
+
+// 헤더와 사이드바의 밝은 버튼(variant light / white)을 어두운 배경에 맞춘다.
+#main-header,
+#main-sidebar {
+  .btn-light,
+  .btn-white,
+  .btn-outline-white {
+    border-color: transparent;
+    background-color: transparent;
+    color: var(--js-text);
+    box-shadow: none;
+
+    &:hover,
+    &:focus,
+    &.active,
+    &:not(:disabled):not(.disabled):active {
+      background-color: var(--js-hover);
+      color: var(--js-text);
+    }
+  }
+}
+
+// b-sidebar는 기본으로 bg-light를 쓴다.
+#main-sidebar.b-sidebar {
+  background-color: var(--js-bg-raised) !important;
+  color: var(--js-text);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5) !important;
+}

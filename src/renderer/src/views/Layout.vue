@@ -282,7 +282,7 @@ export default {
   margin: 0;
 
   .layout-divider {
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--js-border);
   }
 
   .layout-inactive {
@@ -297,7 +297,8 @@ export default {
   flex-direction: row;
   flex: 1;
   overflow: hidden;
-  background-color: #eee;
+  background-color: var(--js-bg);
+  background-image: radial-gradient(ellipse 70% 55% at 50% 0%, rgba(56, 189, 248, 0.1), transparent 70%);
 }
 
 .layout-empty {
@@ -309,7 +310,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #495057;
+  color: var(--js-text-muted);
   pointer-events: none;
 }
 

@@ -10,6 +10,7 @@ import { BootstrapVue } from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 import './assets/icons'
+import './assets/theme.scss'
 
 Vue.config.productionTip = false
 

@@ -319,7 +319,7 @@ export default {
   margin: 1px 3px;
 }
 
-// 노드 위에 뜨는 아이콘 버튼: 흰 원형 칩. 키보드로도 누를 수 있고 포커스가 보인다.
+// 노드 위에 뜨는 아이콘 버튼: 어두운 유리 원형 칩. 키보드로도 누를 수 있고 포커스가 보인다.
 .menu-button {
   display: flex;
   align-items: center;
@@ -327,22 +327,23 @@ export default {
   width: 34px;
   height: 34px;
   padding: 0;
-  border: 0;
+  border: 1px solid var(--js-border);
   border-radius: 50%;
-  background: white;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-  color: #495057;
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  color: #cbd5e1;
   line-height: 1;
   cursor: pointer;
-  transition: color 0.12s, box-shadow 0.12s;
+  transition: color 0.12s, box-shadow 0.12s, border-color 0.12s;
 
   &:hover {
-    color: #0d6efd;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
+    border-color: var(--js-accent);
+    color: var(--js-accent);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 14px rgba(56, 189, 248, 0.45);
   }
 
   &:focus-visible {
-    outline: 2px solid #0056b3;
+    outline: 2px solid var(--js-accent);
     outline-offset: 2px;
     border-radius: 4px;
   }
@@ -368,10 +369,12 @@ export default {
 
   &-block {
     text-align: center;
-    color: #212529;
+    color: var(--js-text);
   }
 
+  // 아이콘 파일은 검은 선 그림이라 어두운 카드 위에서는 밝게 뒤집는다.
   &-diagram {
+    filter: invert(1) brightness(0.92);
     min-width: 68px;
     min-height: 68px;
     max-width: 68px;
@@ -390,14 +393,14 @@ export default {
   // 이름은 굵게, user / host / port는 한 단계 낮춰서 보인다.
   &-text {
     overflow: hidden;
-    color: #565e64;
+    color: var(--js-text-muted);
     font-size: 0.85rem;
     line-height: 1.45;
     text-overflow: ellipsis;
     white-space: nowrap;
 
     &:first-child {
-      color: #212529;
+      color: var(--js-text);
       font-size: 1rem;
       font-weight: 600;
     }
@@ -410,13 +413,14 @@ export default {
     justify-content: center;
     margin-left: auto;
     margin-right: auto;
-    color: #c3c9d1;
+    color: #64748b;
+    filter: none;
   }
 
   &-forward {
     font-size: 0.8rem;
     font-weight: normal;
-    color: #565e64;
+    color: #7dd3fc;
   }
 
   &-action {

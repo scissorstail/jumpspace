@@ -1,7 +1,7 @@
 <template>
   <div
     id="main-header"
-    class="layout-divider bg-light p-1 pl-2 pr-2"
+    class="layout-divider p-1 pl-2 pr-2"
   >
     <slot name="main-navigator-toggle" />
 
@@ -87,6 +87,7 @@ export default {
 #main-header {
   display: flex;
   font-size: large;
+  background-color: var(--js-bg-raised);
 
   .header-title {
     flex: 1;
@@ -94,7 +95,7 @@ export default {
     padding: 0 12px;
     align-self: center;
     overflow: hidden;
-    color: #495057;
+    color: var(--js-text);
     font-size: 0.9rem;
     font-weight: 600;
     text-align: center;
@@ -106,7 +107,7 @@ export default {
     height: 1.5em;
     display: inline-block;
     vertical-align: middle;
-    border-left: 1px solid #e9ecef;
+    border-left: 1px solid var(--js-border);
   }
 }
 </style>

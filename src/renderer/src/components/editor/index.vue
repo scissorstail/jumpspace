@@ -120,10 +120,27 @@ export default {
     this.editor.use(ConnectionPathPlugin, {
       type: ConnectionPathPlugin.DEFAULT, // DEFAULT or LINEAR transformer
       // curve: ConnectionPathPlugin.curveStep, // curve identifier
-      arrow: { color: '#495057', marker: 'M-5,-8 L-5,8 L16,0 z' }
+      arrow: { color: '#38bdf8', marker: 'M-5,-7 L-5,7 L14,0 z' }
     })
 
     this.editor.use(ReadonlyPlugin, { enabled: true })
+
+    // 연결선 위에 흐르는 점선을 한 겹 더 그려서 데이터가 앞 노드에서 다음 노드로 흐르는 것처럼 보이게 한다.
+    // (화살표 플러그인이 첫 번째 path를 기준으로 쓰므로 main-path 뒤에 넣는다)
+    this.editor.on('renderconnection', ({ el }) => {
+      const main = el.querySelector('path.main-path')
+      if (!main || el.querySelector('path.flow-path')) return
+
+      const flow = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+      flow.classList.add('flow-path')
+      flow.setAttribute('d', main.getAttribute('d'))
+      main.after(flow)
+    })
+    this.editor.on('updateconnection', ({ el }) => {
+      const main = el.querySelector('path.main-path')
+      const flow = el.querySelector('path.flow-path')
+      if (main && flow) flow.setAttribute('d', main.getAttribute('d'))
+    })
 
     // 프레임(주석)과 미니맵은 rete-comment-plugin / rete-minimap-plugin으로 만들 수 있다.
     // 쓰지 않아서 의존성에서 뺐다. 필요하면 패키지를 다시 추가한다.
@@ -229,35 +246,41 @@ export default {
   margin: 0;
   padding: 0;
 
-  // 캔버스 배경: 눈에 덜 띄는 점 격자
+  // 멈춰 있는 은은한 빛(화면에 고정)과, 캔버스와 함께 움직이는 점 격자를 겹쳐서 깊이감을 준다.
+  background-color: var(--js-bg);
+  background-image:
+    radial-gradient(ellipse 70% 55% at 50% 0%, rgba(56, 189, 248, 0.1), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 85% 100%, rgba(129, 140, 248, 0.08), transparent 70%);
+
   .background {
     z-index: -5;
 
-    background-color: #f7f8fa;
-    background-image: radial-gradient(circle, #cfd4db 1px, transparent 1.3px);
-    background-size: 20px 20px;
-    background-position: 10px 10px;
+    background-image: radial-gradient(circle, rgba(148, 163, 184, 0.16) 1px, transparent 1.4px);
+    background-size: 22px 22px;
+    background-position: 11px 11px;
   }
 
+  // 노드: 유리 질감 카드. 올리면 살짝 떠오르고, 선택하면 하늘색으로 빛난다.
   .node.site {
-    background-color: white;
-    border: 2px solid #2f343b;
-    border-radius: 22px;
+    border: 1px solid var(--js-border);
+    border-radius: 20px;
     padding-bottom: 0;
     min-width: initial;
-    color: #212529;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transition: box-shadow 0.15s;
+    background: linear-gradient(160deg, rgba(51, 65, 85, 0.85), rgba(15, 23, 42, 0.9));
+    color: var(--js-text);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 12px 28px rgba(0, 0, 0, 0.45);
+    transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
 
     &:hover {
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+      border-color: rgba(56, 189, 248, 0.55);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(56, 189, 248, 0.25), 0 16px 36px rgba(0, 0, 0, 0.55), 0 0 28px rgba(56, 189, 248, 0.18);
+      transform: translateY(-2px);
     }
 
-    // 선택한 노드: 어두운 덮개 대신 파란 테두리 링
     &.selected {
-      background-color: white;
-      border: 2px solid #0d6efd;
-      box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.18);
+      border-color: var(--js-accent);
+      background: linear-gradient(160deg, rgba(51, 65, 85, 0.9), rgba(15, 23, 42, 0.95));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 3px rgba(56, 189, 248, 0.35), 0 0 36px rgba(56, 189, 248, 0.35);
     }
 
     & > .input {
@@ -289,19 +312,20 @@ export default {
     }
 
     .socket {
-      background: white;
-      height: 24px;
-      width: 24px;
-      transform: translateY(-2px);
+      background: var(--js-bg);
+      height: 20px;
+      width: 20px;
+      transform: translateY(0);
 
       &.input {
-        border: 3px dashed #2f343b;
-        margin-left: -32px;
+        border: 2px dashed var(--js-accent);
+        margin-left: -30px;
       }
 
       &.output {
-        border: 3px solid #2f343b;
-        margin-right: -32px;
+        border: 2px solid var(--js-accent);
+        margin-right: -30px;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
       }
     }
 
@@ -313,23 +337,56 @@ export default {
     }
   }
 
+  // 연결선: 흐린 선 위로 밝은 점들이 흐른다.
   .connection {
     .main-path {
+      stroke-width: 3px;
+      stroke: rgba(56, 189, 248, 0.22);
+    }
+
+    .flow-path {
+      fill: none;
+      stroke: #7dd3fc;
       stroke-width: 2.5px;
-      stroke: #495057;
+      stroke-linecap: round;
+      stroke-dasharray: 1 15;
+      filter: drop-shadow(0 0 3px rgba(56, 189, 248, 0.9));
+      pointer-events: none;
+      animation: connection-flow 1.1s linear infinite;
     }
   }
 
   &.locked {
     .node.site .socket {
       &.input {
-        border: 3px dashed lightgray;
+        border-color: rgba(148, 163, 184, 0.45);
       }
 
       &.output {
-        border: 3px solid lightgray;
+        border-color: rgba(148, 163, 184, 0.45);
+        box-shadow: none;
       }
     }
+  }
+}
+
+@keyframes connection-flow {
+  from {
+    stroke-dashoffset: 16;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #rete .connection .flow-path {
+    animation: none;
+  }
+
+  #rete .node.site:hover {
+    transform: none;
   }
 }
 </style>

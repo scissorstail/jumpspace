@@ -37,7 +37,7 @@ Passwords stay plain text. The Vue 3 / Rete 2 migration is on hold. No Playwrigh
 ## Git
 
 - Work on `claude/cool-bardeen-9x9ymz`, push there, no pull request unless asked, no force push, no history rewriting.
-- Small commits whose message says why. End each commit with the trailers the session asks for (`Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>` and the `Claude-Session:` line).
+- Small commits whose message says why. End each commit with the trailer lines the session asks for (`Co-Authored-By: ...` with the model the session names, and the `Claude-Session:` line). Do not copy the model name from older commits.
 - CI (`.github/workflows/ci.yml`): Ubuntu runs lint, tests and build; Windows runs the tests, the bash based script tests under Git Bash and the real `git-bash.exe` launcher test. Check the result of the last run with the GitHub MCP tools (`gh` is not available).
 
 ## Checking the UI
@@ -49,6 +49,7 @@ The app is checked in the real Electron with Playwright under `xvfb-run` (script
 - The popovers (v-tooltip / popper.js 1.x) are moved out of the window by the `arrow` modifier because the arrow element has no styles; it is disabled in `main.js`. Keep it that way.
 - Styles of `rete-context-menu-plugin` are scoped (`.item[data-v-x]`); overriding needs a more specific selector such as `div.context-menu div.item`.
 - Rete plugins need `regenerator-runtime` (imported first in `main.js`).
+- The theme colors are CSS variables in `src/renderer/src/assets/theme.scss` (dark canvas, light popovers and dialogs). The moving dots on a connection are a second `path.flow-path` added in `components/editor/index.vue` on `renderconnection` and kept in step on `updateconnection`; it must stay after `path.main-path` because the arrow plugin measures the first path.
 - `b-form-input` with `trim` is fine for typing spaces; do not "fix" it.
 - On Windows Git Bash puts its own `/usr/bin` before `PATH`, so tests that fake `ssh` must use a bash function (`BASH_ENV`), not a fake binary on `PATH`.
 - Vue 2 reactivity: a property added later to an item needs `$set`; navigator items and `projectData` in `views/Layout.vue` are separate copies that are rebuilt on every `updated` event.
