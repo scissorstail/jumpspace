@@ -174,7 +174,8 @@ ssh-add -l
     expect(r.stderr).not.toMatch(/Permission denied|exec\(/)
     expect(r.stdout).toMatch(/ED25519/)
     expect(r.status).toBe(0)
-  })
+    // 키 만들기와 ssh-agent 시작은 Windows 러너에서 10초 넘게 걸리기도 한다. bash에 준 시간(60초)과 맞춘다.
+  }, 70000)
 })
 
 describe.skipIf(!canRun)('generated scripts run under bash', () => {
