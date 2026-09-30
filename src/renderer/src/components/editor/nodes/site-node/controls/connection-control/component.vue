@@ -373,11 +373,6 @@ export default {
     color: #565e64;
   }
 
-  &-item {
-    display: flex;
-    align-items: center;
-  }
-
   &-action {
     display: flex;
     justify-content: flex-start;

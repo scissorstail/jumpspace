@@ -107,7 +107,6 @@
                     @click="selectKeyFile"
                   >
                     <b-icon
-                      class="menu-item-icon"
                       icon="key-fill"
                     />
                   </b-button>
@@ -147,7 +146,6 @@
                     @click="isPasswordVisible = !isPasswordVisible"
                   >
                     <b-icon
-                      class="menu-item-icon"
                       :icon="isPasswordVisible ? 'eye-slash' : 'eye'"
                     />
                   </b-button>

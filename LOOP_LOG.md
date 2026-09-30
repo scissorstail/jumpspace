@@ -120,6 +120,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Result: tests 183 passed, lint ok, build ok.
 - Found / next: every other export in `src/main/*.js` and `src/renderer/src/utils/*.js` has a test that mentions it. Still without tests: `src/main/index.js` (IPC wiring, needs Electron) and the Vue components. The `cleanup` activity has not been done yet.
 
+### #8 2026-09-30 07:2x UTC · cleanup (scheduled run)
+- Did: scanned for unused dependencies (every dependency is referenced by the sources or configs), unused exports, files nobody imports, CSS classes without a user, stale words (vue-cli, webpack, upath, TODO) and leftover files. Found and removed only small things: a commented-out `console.log` in the node worker, two `menu-item-icon` classes with no style, and the `.info-item` rule that the icon picker made unused. Last CI run (273272b) was green.
+- Result: tests 183 passed, lint ok, build ok; rechecked the node settings and forwarding UI in the app (icon picker, fresh node, connect error): unchanged.
+- Found / next: the code is otherwise tidy. Exports that only tests use (`validate*`, `sq`, `expandEnv`, `DEFAULT_SETTING`, `onEscape`, `SELF_HOST`) are kept on purpose. `.prettierrc` has no tool behind it in `package.json`, but it matches the lint style and helps editors, so it stays. Every activity has now been done once; next pick the one with the oldest entry (`health`: outdated packages, docs), then `ux`.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
