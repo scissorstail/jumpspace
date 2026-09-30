@@ -15,8 +15,6 @@ import VueRenderPlugin from 'rete-vue-render-plugin'
 import ContextMenuPlugin from 'rete-context-menu-plugin'
 import AreaPlugin from 'rete-area-plugin'
 import ReadonlyPlugin from 'rete-readonly-plugin'
-// import CommentPlugin from 'rete-comment-plugin'
-// import MinimapPlugin from 'rete-minimap-plugin'
 
 import SiteNode from './nodes/site-node'
 
@@ -105,15 +103,8 @@ export default {
 
     this.editor.use(ReadonlyPlugin, { enabled: true })
 
-    // this.editor.use(CommentPlugin, {
-    //   margin: 20 // indent for new frame comments by default 30 (px)
-    // })
-
-    // this.editor.use(MinimapPlugin)
-
-    // this.editor.trigger('addcomment', ({ type, text, nodes, position }) => {
-    //  TODO: CommentPlugin 기본 추가동작 오버라이드
-    // })
+    // 프레임(주석)과 미니맵은 rete-comment-plugin / rete-minimap-plugin으로 만들 수 있다.
+    // 쓰지 않아서 의존성에서 뺐다. 필요하면 패키지를 다시 추가한다.
 
     this.engine = new Rete.Engine('test@0.1.0')
 

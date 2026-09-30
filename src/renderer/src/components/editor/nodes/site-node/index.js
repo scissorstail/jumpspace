@@ -1,5 +1,5 @@
 import Rete from 'rete'
-import ConnectionSocket from '../../sockets/connection-socket'
+import ConnectionSocket from '@/components/editor/sockets/connection-socket'
 import ConnectionControl from './controls/connection-control'
 import head from 'lodash/head'
 

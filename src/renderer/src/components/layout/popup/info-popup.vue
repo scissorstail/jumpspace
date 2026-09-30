@@ -97,6 +97,11 @@ export default {
       type: Boolean,
       default: false
     }
+  },
+  data() {
+    return {
+      appVersion: __APP_VERSION__
+    }
   }
 }
 </script>

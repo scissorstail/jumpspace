@@ -1,4 +1,5 @@
 import { readFileSync, readdirSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'electron-vite'
 import vue2 from '@vitejs/plugin-vue2'
 
@@ -20,6 +21,7 @@ export default defineConfig({
     },
     plugins: [vue2()],
     resolve: {
+      alias: { '@': fileURLToPath(new URL('./src/renderer/src', import.meta.url)) },
       extensions: ['.mjs', '.js', '.json', '.vue']
     },
     css: {

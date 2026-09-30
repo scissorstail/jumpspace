@@ -72,6 +72,8 @@
 </template>
 
 <script>
+import { mapActions, mapGetters } from 'vuex'
+
 export default {
   name: 'SettingPopup',
   props: {
@@ -86,12 +88,16 @@ export default {
       isHideToTrayOnClose: false
     }
   },
+  computed: {
+    ...mapGetters(['setting'])
+  },
   watch: {
     show() {
       this.init()
     }
   },
   methods: {
+    ...mapActions(['settingSave']),
     init() {
       this.gitBashPath = this.setting.gitBashPath
       this.isHideToTrayOnClose = this.setting.isHideToTrayOnClose

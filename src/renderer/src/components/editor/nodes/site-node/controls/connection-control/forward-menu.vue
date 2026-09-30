@@ -172,7 +172,7 @@
 </template>
 
 <script>
-import { activeForwards, portState } from '../../../../../../utils/forward'
+import { activeForwards, portState } from '@/utils/forward'
 
 // 노드의 포트포워딩 목록(v-model)과 시작 버튼. 목록은 항상 새 배열로 바꿔서 부모에게 돌려준다.
 export default {

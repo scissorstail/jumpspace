@@ -27,188 +27,15 @@
         @start="openForward"
         @hide="save"
       />
-      <a class="menu-item">
-        <!-- setting popover -->
-        <v-popover
-          ref="popover"
-          placement="auto-end"
-          @hide="save"
-        >
-          <b-icon
-            title="Setting"
-            class="menu-item-icon"
-            icon="gear"
-            font-scale="2"
-          />
-          <template slot="popover">
-            <div class="p-3">
-              <div
-                class="info-list"
-                style="width: 280px;"
-              >
-                <div class="info-item mb-3">
-                  <b-button
-                    size="sm"
-                    :disabled="isLocked"
-                    @click="loadPrevDiagram"
-                  >
-                    <b-icon
-                      class="menu-item-icon"
-                      icon="arrow-left-short"
-                    />
-                  </b-button>
-                  <b-form-input
-                    v-model.trim="diagram"
-                    size="sm"
-                    style="margin: 0 3px;"
-                    :disabled="isLocked"
-                  />
-                  <b-button
-                    size="sm"
-                    :disabled="isLocked"
-                    @click="loadNextDiagram"
-                  >
-                    <b-icon
-                      class="menu-item-icon"
-                      icon="arrow-right-short"
-                    />
-                  </b-button>
-                </div>
-                <b-form-group
-                  class="mb-0"
-                  label="Name"
-                  label-align="left"
-                  label-cols-sm="3"
-                >
-                  <b-form-input
-                    v-model.trim="name"
-                    size="sm"
-                    :disabled="isLocked"
-                  />
-                </b-form-group>
-                <b-form-group
-                  class="mb-0"
-                  label="User"
-                  label-align="left"
-                  label-cols-sm="3"
-                >
-                  <b-form-input
-                    v-model.trim="user"
-                    size="sm"
-                    :disabled="isLocked"
-                  />
-                </b-form-group>
-                <b-form-group
-                  class="mb-0"
-                  label="Host"
-                  label-align="left"
-                  label-cols-sm="3"
-                >
-                  <b-form-input
-                    v-model.trim="host"
-                    size="sm"
-                    :disabled="isLocked"
-                  />
-                </b-form-group>
-                <b-form-group
-                  class="mb-0"
-                  label="Port"
-                  label-align="left"
-                  label-cols-sm="3"
-                >
-                  <b-form-input
-                    v-model.trim="port"
-                    :state="portState(port)"
-                    size="sm"
-                    :disabled="isLocked"
-                  />
-                </b-form-group>
-                <b-form-group
-                  class="mb-0"
-                  label="Key"
-                  label-align="left"
-                  label-cols-sm="3"
-                >
-                  <b-input-group size="sm">
-                    <template #append>
-                      <b-button
-                        size="sm"
-                        :disabled="isLocked"
-                        @click="selectKeyFile"
-                      >
-                        <b-icon
-                          class="menu-item-icon"
-                          icon="key-fill"
-                        />
-                      </b-button>
-                    </template>
-                    <b-form-input
-                      v-model.trim="keyPath"
-                      size="sm"
-                      :disabled="isLocked"
-                    />
-                  </b-input-group>
-                </b-form-group>
-                <b-form-group
-                  class="mb-0"
-                  label="Password"
-                  label-align="left"
-                  label-cols-sm="3"
-                >
-                  <b-input-group size="sm">
-                    <b-form-input
-                      v-model="password"
-                      :type="isPasswordVisible ? 'text' : 'password'"
-                      autocomplete="off"
-                      placeholder="(optional)"
-                      title="Saved as plain text. It is also included when you export the item."
-                      size="sm"
-                      :disabled="isLocked"
-                    />
-                    <template #append>
-                      <b-button
-                        size="sm"
-                        title="Show/hide password"
-                        @click="isPasswordVisible = !isPasswordVisible"
-                      >
-                        <b-icon
-                          class="menu-item-icon"
-                          :icon="isPasswordVisible ? 'eye-slash' : 'eye'"
-                        />
-                      </b-button>
-                    </template>
-                  </b-input-group>
-                </b-form-group>
-                <b-form-group
-                  class="mb-0"
-                  label="Exec"
-                  label-align="left"
-                  label-cols-sm="3"
-                >
-                  <b-form-input
-                    v-model.trim="exec"
-                    size="sm"
-                    :disabled="isLocked"
-                  />
-                </b-form-group>
-                <div class="info-action mt-2">
-                  <b-button
-                    size="sm"
-                    title="Copy as SSH config (includes previous nodes as ProxyJump)"
-                    @click="copyConfig"
-                  >
-                    <b-icon
-                      :icon="isCopied ? 'clipboard-check' : 'clipboard'"
-                      class="mr-1"
-                    />
-                    {{ isCopied ? 'Copied!' : 'Copy SSH config' }}
-                  </b-button>
-                </div>
-              </div>
-            </div>
-          </template>
-        </v-popover>
-      </a>
+      <ConnectionSettings
+        :value="connectionFields"
+        :disabled="isLocked"
+        :diagrams="diagramFilenames"
+        :copied="isCopied"
+        @input="applyConnectionFields"
+        @copy="copyConfig"
+        @hide="save"
+      />
     </div>
 
     <div
@@ -262,10 +89,8 @@
 </template>
 
 <script>
-import head from 'lodash/head'
 import pick from 'lodash/pick'
-import store from '../../../../../../store'
-import mixin from '../../../../../../mixin'
+import store from '@/store'
 import {
   configRequest,
   forwardEntries,
@@ -273,14 +98,20 @@ import {
   forwardPlan,
   forwardSummary,
   isRoutable,
-  normalizeForward,
-  portState
-} from '../../../../../../utils/forward'
+  normalizeForward
+} from '@/utils/forward'
+import ConnectionSettings from './connection-settings'
 import ForwardMenu from './forward-menu'
 
+// ssh 접속에 쓰는 값. main 프로세스에 넘기는 요청에는 이 값만 담는다.
+const CONNECTION_FIELDS = ['name', 'user', 'host', 'port', 'keyPath', 'password', 'exec']
+// 설정 팝오버(connection-settings.vue)에서 편집하는 값: 접속 값 + 이미지
+const EDITABLE_FIELDS = [...CONNECTION_FIELDS, 'diagram']
+// 저장하는 값: 편집하는 값 + 포워딩 목록
+const SAVED_FIELDS = [...EDITABLE_FIELDS, 'forwards']
+
 export default {
-  components: { ForwardMenu },
-  mixins: [mixin],
+  components: { ConnectionSettings, ForwardMenu },
   props: {
     readonly: {
       // for connections and nodes, not for controls
@@ -310,7 +141,6 @@ export default {
       baseUrl: import.meta.env.BASE_URL,
       isLocked: false,
       isCopied: false,
-      isPasswordVisible: false,
       name: null,
       user: null,
       host: null,
@@ -347,40 +177,22 @@ export default {
     },
     forwardSummaryText() {
       return forwardSummary(this.forwards, this.forwardPlan)
+    },
+    // 설정 팝오버에서 편집하는 값
+    connectionFields() {
+      return pick(this, EDITABLE_FIELDS)
     }
   },
   created() {
     this.diagramFilenames = this.$store.getters.diagram
   },
   methods: {
-    loadPrevDiagram() {
-      const foundIndex = this.diagramFilenames.findIndex(
-        (x) => x === this.diagram
-      )
-      if (foundIndex !== -1) {
-        const index =
-          foundIndex - 1 >= 0 ? foundIndex - 1 : this.diagramFilenames.length - 1
-        this.diagram = this.diagramFilenames[index]
-      } else {
-        this.diagram = head(this.diagramFilenames)
-      }
+    applyConnectionFields(fields) {
+      Object.assign(this, pick(fields, EDITABLE_FIELDS))
     },
-    loadNextDiagram() {
-      const foundIndex = this.diagramFilenames.findIndex(
-        (x) => x === this.diagram
-      )
-      if (foundIndex !== -1) {
-        const index =
-          foundIndex + 1 > this.diagramFilenames.length - 1 ? 0 : foundIndex + 1
-        this.diagram = this.diagramFilenames[index]
-      } else {
-        this.diagram = head(this.diagramFilenames)
-      }
-    },
-    portState,
     // ssh 실행 요청에 넘길 수 있는 순수한 값만 추린다. (실제 명령어는 main 프로세스에서 검증 후 만든다)
     connectionOf(data) {
-      return pick(data, ['name', 'user', 'host', 'port', 'keyPath', 'password', 'exec'])
+      return pick(data, CONNECTION_FIELDS)
     },
     async run(request) {
       try {
@@ -429,12 +241,6 @@ export default {
       clearTimeout(this.copiedTimer)
       this.copiedTimer = setTimeout(() => { this.isCopied = false }, 1500)
     },
-    async selectKeyFile() {
-      const path = await window.preload.selectKeyFile()
-      if (path) {
-        this.keyPath = path
-      }
-    },
     // prevNodeDataList: 이 노드 앞에 연결된 노드들의 접속 정보. (연결 순서대로)
     update(prevNodeDataList = []) {
       const data = this.getData(this.ikey)
@@ -449,19 +255,8 @@ export default {
       this.prevNodeDataList = prevNodeDataList
     },
     save() {
-      const data = pick(this.$data, [
-        'name',
-        'user',
-        'host',
-        'port',
-        'diagram',
-        'keyPath',
-        'password',
-        'forwards',
-        'exec'
-      ])
       if (this.ikey) {
-        this.putData(this.ikey, { ...data })
+        this.putData(this.ikey, pick(this.$data, SAVED_FIELDS))
       }
     }
   }

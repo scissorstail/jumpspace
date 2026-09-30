@@ -70,10 +70,6 @@
       />
     </div>
 
-    <!--
-      <MainFooter id="main-footer"></MainFooter>
-    -->
-
     <InfoPopup :show.sync="isShowInfoPopup" />
 
     <SettingPopup :show.sync="isShowSettingPopup" />
@@ -83,11 +79,11 @@
 <script>
 import MainHeader from '../components/layout/main-header'
 import MainNavigator from '../components/layout/main-navigator'
-// import MainFooter from '../components/layout/main-footer'
 import Editor from '../components/editor'
 import InfoPopup from '../components/layout/popup/info-popup'
 import SettingPopup from '../components/layout/popup/setting-popup'
 import { hasSavedPassword, EXPORT_PASSWORD_WARNING } from '../utils/project'
+import { toastError } from '../utils/notify'
 
 /*
 
@@ -106,7 +102,6 @@ export default {
   components: {
     MainHeader,
     MainNavigator,
-    // MainFooter,
     Editor,
     InfoPopup,
     SettingPopup
@@ -229,7 +224,7 @@ export default {
       }
     },
     notifyError(title, error) {
-      this.$bvToast.toast(String(error?.message || error), { title, variant: 'danger', solid: true })
+      toastError(this, title, error)
     }
   }
 }

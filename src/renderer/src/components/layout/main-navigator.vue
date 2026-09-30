@@ -233,7 +233,8 @@
 import draggable from 'vuedraggable'
 import cloneDeep from 'lodash/cloneDeep'
 import isEmpty from 'lodash/isEmpty'
-import { hasSavedPassword, EXPORT_PASSWORD_WARNING } from '../../utils/project'
+import { hasSavedPassword, EXPORT_PASSWORD_WARNING } from '@/utils/project'
+import { toastError } from '@/utils/notify'
 
 export default {
   name: 'MainNavigator',
@@ -465,7 +466,7 @@ export default {
       })
     },
     notifyError(title, error) {
-      this.$bvToast.toast(String(error?.message || error), { title, variant: 'danger', solid: true })
+      toastError(this, title, error)
     },
     confirmUnlockedChangeWillBeLost() {
       return this.$bvModal.msgBoxConfirm('All unlocked changes will be lost', {
