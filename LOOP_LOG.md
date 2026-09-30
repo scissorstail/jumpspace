@@ -158,6 +158,10 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Result: tests 172 passed, lint ok, build ok. Checked in the app with an old-format file (summary shows on the previous node, the saved file is migrated), delete confirm (cancel/confirm/empty node) and far panning.
 - Found / next: the context menu can end up with two "Delete" items in the DOM in scripts (use `.last()`); harmless for users. Back to the rotation.
 
+### #3 2026-09-30 · CLAUDE.md (by hand, not by the trigger)
+- Did: added `CLAUDE.md` at the repo root (commands, rules, owner's decisions, git and CI notes, how the UI is checked, gotchas) so a new session picks up the project rules automatically. It points here for the protocol, decisions and backlog; keep the two consistent (rules there, history and to-dos here).
+- Result: docs only.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
