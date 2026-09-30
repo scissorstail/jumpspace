@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { errorMessage } from './notify'
+import { describe, expect, it, vi } from 'vitest'
+import { errorMessage, toastError } from './notify'
 
 describe('errorMessage', () => {
   it('drops the prefix Electron adds to errors thrown by invoke()', () => {
@@ -17,5 +17,15 @@ describe('errorMessage', () => {
   it('has a fallback for empty errors', () => {
     expect(errorMessage(undefined)).toBe('Unknown error')
     expect(errorMessage(new Error(''))).toBe('Unknown error')
+  })
+})
+
+describe('toastError', () => {
+  it('shows the readable message as a danger toast with the given title', () => {
+    const vm = { $bvToast: { toast: vi.fn() } }
+
+    toastError(vm, 'Failed to import', new Error("Error invoking remote method 'projects:import': Error: The file is not valid JSON."))
+
+    expect(vm.$bvToast.toast).toHaveBeenCalledWith('The file is not valid JSON.', { title: 'Failed to import', variant: 'danger', solid: true })
   })
 })

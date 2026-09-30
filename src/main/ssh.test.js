@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { buildConnect, buildForward, buildProxyJump, sq } from './ssh.js'
+import { bracketHost, buildConnect, buildForward, buildProxyJump, sq, toUnixPath } from './ssh.js'
 import { buildSshConfig } from './ssh-config.js'
 
 const paths = { scriptPath: 'C:/tmp/jumpspace/a.sh', configPath: 'C:/tmp/jumpspace/a.jmp' }
@@ -280,5 +280,29 @@ describe('buildProxyJump', () => {
 
   it('needs at least two nodes', () => {
     expect(() => buildProxyJump([node], paths)).toThrow()
+  })
+})
+
+describe('toUnixPath', () => {
+  it('turns Windows separators into slashes so bash can read the path', () => {
+    expect(toUnixPath('C:\\Users\\me\\AppData\\Local\\Temp\\jumpspace\\a.sh')).toBe('C:/Users/me/AppData/Local/Temp/jumpspace/a.sh')
+  })
+
+  it('leaves a path that already uses slashes, and accepts non-strings', () => {
+    expect(toUnixPath('/tmp/a b/c.sh')).toBe('/tmp/a b/c.sh')
+    expect(toUnixPath(12)).toBe('12')
+  })
+})
+
+describe('bracketHost', () => {
+  it('wraps an IPv6 address so the port after it stays readable', () => {
+    expect(bracketHost('::1')).toBe('[::1]')
+    expect(bracketHost('fe80::1234:5678')).toBe('[fe80::1234:5678]')
+  })
+
+  it('leaves names, IPv4 addresses and already bracketed addresses alone', () => {
+    expect(bracketHost('example.com')).toBe('example.com')
+    expect(bracketHost('10.0.0.5')).toBe('10.0.0.5')
+    expect(bracketHost('[::1]')).toBe('[::1]')
   })
 })

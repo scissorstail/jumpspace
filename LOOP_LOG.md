@@ -115,6 +115,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Result: tests 178 passed, lint ok, build ok. Re-ran the scratch UI scripts for the sidebar (rename Enter/blur/Esc, new item, copy, drag, import/export, title, canvas view): all as before.
 - Found / next: the component is still large (dropdown menu per item, drag, selection, confirm dialogs). Next refactor candidate: split the header actions (New, Remove Items, Import/Export) from the list, or `views/Layout.vue` (project load/save). Not done yet: `cleanup` and `tests` activities.
 
+### #7 2026-09-30 06:2x UTC · tests (scheduled run)
+- Did: listed the exported functions that no test file mentions. `toUnixPath` (Windows path -> bash path) and `bracketHost` (IPv6 targets) in `ssh.js` were only used indirectly, and `toastError` had no test; added direct tests (5 new). All three were mutation checked (each break fails the new tests; the `toUnixPath` and `bracketHost` breaks also fail 5 existing script tests). Left out on purpose: `SELF_HOST` and `EXPORT_PASSWORD_WARNING`, plain constants. Last CI run (b366287) was green.
+- Result: tests 183 passed, lint ok, build ok.
+- Found / next: every other export in `src/main/*.js` and `src/renderer/src/utils/*.js` has a test that mentions it. Still without tests: `src/main/index.js` (IPC wiring, needs Electron) and the Vue components. The `cleanup` activity has not been done yet.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
