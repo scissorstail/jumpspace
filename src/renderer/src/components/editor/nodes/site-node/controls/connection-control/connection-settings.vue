@@ -1,9 +1,10 @@
 <template>
   <span class="menu-item">
     <v-popover
+      ref="popover"
       placement="auto-end"
-      @apply-show="$nextTick(() => $refs.picker && $refs.picker.scrollToSelected())"
-      @hide="$emit('hide')"
+      @apply-show="onPopoverShow(); $nextTick(() => $refs.picker && $refs.picker.scrollToSelected())"
+      @hide="onPopoverHide(); $emit('hide')"
     >
       <button
         type="button"
@@ -188,6 +189,7 @@
 </template>
 
 <script>
+import { closePopoverOnEscape } from '@/utils/dismiss'
 import { portState } from '@/utils/forward'
 import IconPicker from './icon-picker'
 
@@ -195,6 +197,7 @@ import IconPicker from './icon-picker'
 export default {
   name: 'ConnectionSettings',
   components: { IconPicker },
+  mixins: [closePopoverOnEscape],
   props: {
     // { diagram, name, user, host, port, keyPath, password, exec }
     value: {

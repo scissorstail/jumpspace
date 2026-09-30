@@ -22,7 +22,7 @@ Everything since 0.2.2-beta.
 - **Projects live in `projects.json`** in the app data folder (atomic write, `.bak` backup) instead of the browser storage. Older data is migrated on first launch.
 - The Forward and ProxyJump buttons no longer need a key on the previous node. They are available when every previous node has user, host and port.
 - A key given for a hop is the only key offered to it (`IdentitiesOnly`). A busy local port now makes a forward fail visibly.
-- Popovers are opaque.
+- Popovers are opaque and close with Escape. The right click menu has dark text on a white background.
 - Accessibility: the icon-only controls (node menu, sidebar, header, forwards) are real buttons with names for screen readers and tooltips, keyboard focus is visible and reveals the node menu, and the grey helper texts are darker.
 
 ### Fixed

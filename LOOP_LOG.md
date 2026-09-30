@@ -20,7 +20,7 @@ This file is its memory. **Read the whole file before doing anything, and append
 | `tests` | Find behavior without a test (start with the list in the Backlog), add tests, then break the code on purpose to see that the test fails (mutation check). Fix a real bug you find, in its own commit. |
 | `research` | Look at similar programs (see Research targets) and compare with what jumpspace does. Write findings and concrete, small ideas into the Backlog with URLs. Do not copy code; note the license of anything you might reuse. |
 | `health` | `npm outdated`, `npm audit`, the Electron patch releases, CI status, README/CHANGELOG matching the code. Update within the same major version when tests stay green. |
-| `a11y-ux` | Keyboard use, labels, contrast, empty and error states, small UI bugs. Verify in the app. |
+| `ux` | UI/UX improvement: walk through the real app (screenshots), fix small UI bugs, improve keyboard use, labels, contrast, empty/error states, feedback and wording. One or two small, visible improvements per run; check the result in the app. Do not add features or new screens. |
 
 ### Rules
 
@@ -54,9 +54,12 @@ Compare features, UX and pitfalls. Read their docs and issues, not just the land
 
 Ordered roughly by value. Move an item to the log when it is done.
 
-### Ideas from the owner's own use (already done are struck out in the log)
-- Popovers do not close with Escape (only by clicking outside).
-- Right click node menu (Rete context menu) is translucent, low contrast on white.
+### UX candidates
+- Popovers opened with the keyboard do not move the focus into themselves; Tab goes on behind them.
+- Right click on an empty canvas while the editor is locked does nothing and says nothing; a hint ("Unlock the editor to add nodes") would help.
+- A node without an icon shows an empty grey frame; a neutral default icon would look finished.
+- Deleting a node from the context menu has no confirmation and no undo.
+- Lock button tooltip stays visible after a click (mouse still over it).
 - The canvas can only be panned inside 1024x1024 (`translateExtent` in `components/editor/index.vue`); nodes placed further cannot be reached except by zooming out.
 
 ### Code hot spots
@@ -88,6 +91,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Did: created this file and the hourly routine (see Routine below). Baseline: about 4,200 lines of source and 1,600 lines of tests, 161 tests, lint and build green, CI green on Ubuntu and Windows.
 - Result: baseline commit only.
 - Next: start the rotation with `research` (prior art), then `refactor` of `main-navigator.vue`.
+
+### #1 2026-09-30 04:5x UTC · ux (run by hand at the owner's request, not by the trigger)
+- Did: node popovers (settings, port forwarding) now close with Escape and give the focus back to their button (`closePopoverOnEscape` in `utils/dismiss.js`, 3 tests). The right click menu is opaque with dark text and hover highlight, and its useless search box (one node type) is hidden. The plugin styles are scoped, so overriding needs `div.context-menu div.item` (specificity 0,2,2 beats `.item[data-v-x]`); a plain `.context-menu .item` lost.
+- Result: tests 164 passed, lint ok, build ok. Checked in the real app (Escape + focus return for both popovers, computed colors, screenshot).
+- Found / next: see "UX candidates" in the Backlog. Removed the two finished items from it. Rotation renamed `a11y-ux` -> `ux`.
 
 ## Routine
 

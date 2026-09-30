@@ -36,7 +36,8 @@
       <v-popover
         ref="popover"
         placement="auto-end"
-        @hide="$emit('hide')"
+        @apply-show="onPopoverShow"
+        @hide="onPopoverHide(); $emit('hide')"
       >
         <button
           type="button"
@@ -192,11 +193,13 @@
 </template>
 
 <script>
+import { closePopoverOnEscape } from '@/utils/dismiss'
 import { activeForwards, portState } from '@/utils/forward'
 
 // 노드의 포트포워딩 목록(v-model)과 시작 버튼. 목록은 항상 새 배열로 바꿔서 부모에게 돌려준다.
 export default {
   name: 'ForwardMenu',
+  mixins: [closePopoverOnEscape],
   props: {
     // [{ checked, from, host, to }]
     value: {

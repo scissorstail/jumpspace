@@ -22,3 +22,27 @@ export const dismissOnEscape = {
     this.stopListeningEscape?.()
   }
 }
+
+// v-popover(ref="popover")가 열려 있는 동안 Esc로 닫고, 포커스를 열었던 버튼으로 돌려준다.
+// 팝오버의 show/hide 이벤트에 onPopoverShow / onPopoverHide를 연결해서 쓴다.
+export const closePopoverOnEscape = {
+  methods: {
+    onPopoverShow() {
+      this.stopListeningPopoverEscape?.()
+      this.stopListeningPopoverEscape = onEscape(() => {
+        const popover = this.$refs.popover
+        if (popover && popover.isOpen) {
+          popover.hide()
+          popover.$el.querySelector('button')?.focus()
+        }
+      })
+    },
+    onPopoverHide() {
+      this.stopListeningPopoverEscape?.()
+      this.stopListeningPopoverEscape = null
+    }
+  },
+  beforeDestroy() {
+    this.stopListeningPopoverEscape?.()
+  }
+}
