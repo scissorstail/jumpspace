@@ -9,8 +9,6 @@ import {
   BIconDash,
   BIconPlus,
   BIconGear,
-  BIconArrowLeftShort,
-  BIconArrowRightShort,
   BIconKeyFill,
   BIconX,
   BIconThreeDots,
@@ -35,8 +33,6 @@ Vue.component('BIconLink45deg', BIconLink45deg)
 Vue.component('BIconDash', BIconDash)
 Vue.component('BIconPlus', BIconPlus)
 Vue.component('BIconGear', BIconGear)
-Vue.component('BIconArrowLeftShort', BIconArrowLeftShort)
-Vue.component('BIconArrowRightShort', BIconArrowRightShort)
 Vue.component('BIconKeyFill', BIconKeyFill)
 Vue.component('BIconX', BIconX)
 Vue.component('BIconThreeDots', BIconThreeDots)

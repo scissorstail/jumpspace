@@ -2,40 +2,55 @@
   <!-- header-menu의 flex 항목으로 그대로 이어지도록 wrapper는 레이아웃에 참여하지 않는다 -->
   <div class="forward-menu">
     <!-- 켜져 있는 포워딩을 바로 시작한다 -->
-    <a
+    <span
       v-if="activeCount > 0"
       class="menu-item forward-start"
     >
-      <b-icon
-        :style="{ opacity: plan.mode ? 1 : 0.4 }"
+      <button
+        type="button"
+        class="menu-button"
+        :class="{ 'menu-button-off': !plan.mode }"
+        :aria-label="startTitle"
         :title="startTitle"
-        class="menu-item-icon"
-        icon="arrow-left-right"
-        font-scale="2"
+        :aria-disabled="plan.mode ? null : 'true'"
         @click="start"
-      />
+      >
+        <b-icon
+          icon="arrow-left-right"
+          font-scale="2"
+          aria-hidden="true"
+        />
+      </button>
       <b-badge
         class="forward-badge"
         pill
         variant="primary"
+        aria-hidden="true"
       >
         {{ activeCount }}
       </b-badge>
-    </a>
+    </span>
 
     <!-- 포워딩 목록 -->
-    <a class="menu-item">
+    <span class="menu-item">
       <v-popover
         ref="popover"
         placement="auto-end"
         @hide="$emit('hide')"
       >
-        <b-icon
+        <button
+          type="button"
+          class="menu-button"
+          aria-label="Port forwarding"
           title="Port forwarding"
-          class="menu-item-icon"
-          icon="link45deg"
-          font-scale="2"
-        />
+          aria-haspopup="dialog"
+        >
+          <b-icon
+            icon="link45deg"
+            font-scale="2"
+            aria-hidden="true"
+          />
+        </button>
         <template slot="popover">
           <div class="forward-panel p-3">
             <div class="forward-title">
@@ -69,7 +84,8 @@
                 <b-form-checkbox
                   :checked="forward.checked"
                   class="forward-check"
-                  title="Enable"
+                  :aria-label="`Enable forward ${index + 1}`"
+                  :title="`Enable forward ${index + 1}`"
                   :disabled="disabled"
                   @change="change(index, { checked: $event })"
                 />
@@ -78,6 +94,7 @@
                   trim
                   maxlength="5"
                   placeholder="8080"
+                  aria-label="Local port"
                   :state="portState(forward.from, forward.checked)"
                   size="sm"
                   :disabled="disabled"
@@ -92,6 +109,7 @@
                   :value="forward.host"
                   trim
                   :placeholder="plan.defaultHost"
+                  aria-label="Target host"
                   size="sm"
                   :disabled="disabled"
                   @update="change(index, { host: $event })"
@@ -102,6 +120,7 @@
                   trim
                   maxlength="5"
                   placeholder="80"
+                  aria-label="Target port"
                   :state="portState(forward.to, forward.checked)"
                   size="sm"
                   :disabled="disabled"
@@ -110,7 +129,8 @@
                 <b-button
                   size="sm"
                   variant="outline-secondary"
-                  title="Remove"
+                  aria-label="Remove forward"
+                  title="Remove forward"
                   :disabled="disabled"
                   @click="remove(index)"
                 >
@@ -167,7 +187,7 @@
           </div>
         </template>
       </v-popover>
-    </a>
+    </span>
   </div>
 </template>
 
@@ -266,7 +286,7 @@ export default {
   .forward-hint {
     margin-bottom: 0.75rem;
     font-size: 0.8rem;
-    color: #6c757d;
+    color: #565e64;
 
     &.forward-hint-blocked {
       color: #8a5a00;
@@ -284,7 +304,7 @@ export default {
   .forward-labels {
     margin-bottom: 2px;
     font-size: 0.7rem;
-    color: #6c757d;
+    color: #565e64;
   }
 
   .forward-check {
@@ -300,19 +320,19 @@ export default {
 
   .forward-colon {
     text-align: center;
-    color: #6c757d;
+    color: #565e64;
   }
 
   .forward-empty {
     padding: 0.5rem 0;
     font-size: 0.8rem;
-    color: #6c757d;
+    color: #565e64;
   }
 
   .forward-locked {
     margin-top: 0.25rem;
     font-size: 0.75rem;
-    color: #6c757d;
+    color: #565e64;
   }
 
   .forward-actions {

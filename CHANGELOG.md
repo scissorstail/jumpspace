@@ -12,6 +12,7 @@ Everything since 0.2.2-beta.
 - **Copy SSH config** copies a node (previous nodes as `ProxyJump`, forwards as `LocalForward`, `Exec` as `RemoteCommand`) in `~/.ssh/config` format.
 - Port inputs show only invalid values; enabled forwards with missing ports are flagged.
 - **The canvas position and zoom are remembered** for each item and restored when it is opened again, also after restarting the app.
+- **Icon picker.** The node image is chosen from a grid of all icons instead of stepping through them one by one. It works with the keyboard too (arrow keys, Home, End).
 - Unit tests, tests that run the generated scripts under bash, and CI on Ubuntu and Windows.
 
 ### Changed
@@ -22,6 +23,7 @@ Everything since 0.2.2-beta.
 - The Forward and ProxyJump buttons no longer need a key on the previous node. They are available when every previous node has user, host and port.
 - A key given for a hop is the only key offered to it (`IdentitiesOnly`). A busy local port now makes a forward fail visibly.
 - Popovers are opaque.
+- Accessibility: the icon-only controls (node menu, sidebar, header, forwards) are real buttons with names for screen readers and tooltips, keyboard focus is visible and reveals the node menu, and the grey helper texts are darker.
 
 ### Fixed
 

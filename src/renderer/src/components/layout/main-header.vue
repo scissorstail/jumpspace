@@ -15,6 +15,7 @@
       <b-dropdown
         size="sm"
         variant="light"
+        :toggle-attrs="{ 'aria-label': 'Menu' }"
         toggle-class="text-decoration-none"
         no-caret
         right

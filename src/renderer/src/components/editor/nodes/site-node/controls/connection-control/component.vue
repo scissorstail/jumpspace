@@ -1,24 +1,24 @@
 <template>
   <div class="component">
     <div class="header-menu">
-      <a class="menu-item">
-        <b-icon
-          v-if="isProxyJumpReady"
-          title="ProxyJump"
-          class="menu-item-icon"
-          icon="terminal"
-          font-scale="2"
-          @click="proxyJump"
-        />
-        <b-icon
-          v-else-if="isConnectable && !isProxyJumpReady"
-          title="Connect"
-          class="menu-item-icon"
-          icon="terminal"
-          font-scale="2"
-          @click="connect"
-        />
-      </a>
+      <span
+        v-if="isConnectable"
+        class="menu-item"
+      >
+        <button
+          type="button"
+          class="menu-button"
+          :aria-label="connectLabel"
+          :title="connectLabel"
+          @click="isProxyJumpReady ? proxyJump() : connect()"
+        >
+          <b-icon
+            icon="terminal"
+            font-scale="2"
+            aria-hidden="true"
+          />
+        </button>
+      </span>
       <ForwardMenu
         v-model="forwards"
         :disabled="isLocked"
@@ -31,6 +31,7 @@
         :value="connectionFields"
         :disabled="isLocked"
         :diagrams="diagramFilenames"
+        :diagram-base="diagramBase"
         :copied="isCopied"
         @input="applyConnectionFields"
         @copy="copyConfig"
@@ -42,7 +43,8 @@
       class="info-block"
     >
       <img
-        :src="diagram ? `${baseUrl}img/diagram/servers/${diagram}` : null"
+        :src="diagram ? `${diagramBase}${diagram}` : null"
+        alt=""
         class="info-diagram mb-1"
         height="40%"
         width="40%"
@@ -169,6 +171,15 @@ export default {
     isProxyJumpReady() {
       return this.isConnectable && this.isChained
     },
+    diagramBase() {
+      return `${this.baseUrl}img/diagram/servers/`
+    },
+    // 접속 버튼의 이름. 아이콘만 있는 버튼이라 스크린 리더와 툴팁에 쓴다.
+    connectLabel() {
+      const target = this.name || this.host || 'this node'
+
+      return this.isProxyJumpReady ? `Connect to ${target} through the previous nodes (ProxyJump)` : `Connect to ${target}`
+    },
     // 이 노드의 포트포워딩을 어떻게 열 수 있는지 (utils/forward.js)
     forwardPlan() {
       return forwardPlan(this.connectionOf(this.$data), this.prevNodeDataList)
@@ -269,7 +280,9 @@ export default {
   padding: 16px;
   z-index: 1;
 
-  &:hover {
+  // 키보드로 메뉴 버튼에 포커스가 가도 메뉴가 보이게 한다.
+  &:hover,
+  &:focus-within {
     .header-menu {
       opacity: 1;
     }
@@ -293,6 +306,30 @@ export default {
   background-color: transparent;
   border: 1px solid transparent;
   margin: 1px;
+}
+
+// 아이콘만 있는 메뉴 버튼. 키보드로도 누를 수 있고 포커스가 보인다.
+.menu-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #007bff;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    color: #0056b3;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #0056b3;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  &.menu-button-off {
+    opacity: 0.4;
+  }
 }
 
 .info {
@@ -333,7 +370,7 @@ export default {
   &-forward {
     font-size: 0.8rem;
     font-weight: normal;
-    color: #6c757d;
+    color: #565e64;
   }
 
   &-item {

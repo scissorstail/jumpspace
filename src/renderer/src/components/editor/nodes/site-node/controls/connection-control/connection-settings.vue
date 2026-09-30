@@ -1,51 +1,38 @@
 <template>
-  <a class="menu-item">
+  <span class="menu-item">
     <v-popover
       placement="auto-end"
+      @apply-show="$nextTick(() => $refs.picker && $refs.picker.scrollToSelected())"
       @hide="$emit('hide')"
     >
-      <b-icon
-        title="Setting"
-        class="menu-item-icon"
-        icon="gear"
-        font-scale="2"
-      />
+      <button
+        type="button"
+        class="menu-button"
+        aria-label="Node settings"
+        title="Node settings"
+        aria-haspopup="dialog"
+      >
+        <b-icon
+          icon="gear"
+          font-scale="2"
+          aria-hidden="true"
+        />
+      </button>
       <template slot="popover">
         <div class="p-3">
           <div
             class="info-list"
             style="width: 280px;"
           >
-            <div class="info-item mb-3">
-              <b-button
-                size="sm"
-                :disabled="disabled"
-                @click="changeDiagram(-1)"
-              >
-                <b-icon
-                  class="menu-item-icon"
-                  icon="arrow-left-short"
-                />
-              </b-button>
-              <b-form-input
-                :value="value.diagram"
-                trim
-                size="sm"
-                style="margin: 0 3px;"
-                :disabled="disabled"
-                @update="set('diagram', $event)"
-              />
-              <b-button
-                size="sm"
-                :disabled="disabled"
-                @click="changeDiagram(1)"
-              >
-                <b-icon
-                  class="menu-item-icon"
-                  icon="arrow-right-short"
-                />
-              </b-button>
-            </div>
+            <IconPicker
+              ref="picker"
+              class="mb-3"
+              :value="value.diagram"
+              :icons="diagrams"
+              :base="diagramBase"
+              :disabled="disabled"
+              @input="set('diagram', $event)"
+            />
             <b-form-group
               class="mb-0"
               label="Name"
@@ -113,6 +100,8 @@
                 <template #append>
                   <b-button
                     size="sm"
+                    aria-label="Choose a key file"
+                    title="Choose a key file"
                     :disabled="disabled"
                     @click="selectKeyFile"
                   >
@@ -152,7 +141,8 @@
                 <template #append>
                   <b-button
                     size="sm"
-                    title="Show/hide password"
+                    :aria-label="isPasswordVisible ? 'Hide password' : 'Show password'"
+                    :title="isPasswordVisible ? 'Hide password' : 'Show password'"
                     @click="isPasswordVisible = !isPasswordVisible"
                   >
                     <b-icon
@@ -194,16 +184,17 @@
         </div>
       </template>
     </v-popover>
-  </a>
+  </span>
 </template>
 
 <script>
-import { cycle } from '@/utils/cycle'
 import { portState } from '@/utils/forward'
+import IconPicker from './icon-picker'
 
 // 노드의 접속 정보 입력(이름, user, host, port, 키, 비밀번호, exec, 이미지). 값은 v-model로 주고받고, 항상 새 객체로 돌려준다.
 export default {
   name: 'ConnectionSettings',
+  components: { IconPicker },
   props: {
     // { diagram, name, user, host, port, keyPath, password, exec }
     value: {
@@ -215,10 +206,14 @@ export default {
       type: Boolean,
       default: false
     },
-    // 고를 수 있는 이미지 파일 이름들
+    // 고를 수 있는 이미지 파일 이름들과, 그 파일이 있는 주소
     diagrams: {
       type: Array,
       default: () => []
+    },
+    diagramBase: {
+      type: String,
+      default: ''
     },
     // 방금 SSH config를 복사했는지 (버튼 표시용)
     copied: {
@@ -235,9 +230,6 @@ export default {
     portState,
     set(key, value) {
       this.$emit('input', { ...this.value, [key]: value })
-    },
-    changeDiagram(step) {
-      this.set('diagram', cycle(this.diagrams, this.value.diagram, step))
     },
     async selectKeyFile() {
       const path = await window.preload.selectKeyFile()

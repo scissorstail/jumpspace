@@ -12,6 +12,7 @@
         <b-button
           v-b-toggle.main-sidebar
           size="sm"
+          aria-label="Toggle sidebar"
           class=""
           variant="light"
         >
@@ -28,7 +29,8 @@
         <b-button
           v-b-tooltip.hover.v-light.dh0.noninteractive
           size="sm"
-          :title="isEditorLocked? 'locked' : 'unlocked'"
+          :title="isEditorLocked ? 'Unlock editor' : 'Lock editor'"
+          :aria-label="isEditorLocked ? 'Unlock editor' : 'Lock editor'"
           variant="light"
           @click="isEditorLocked = !isEditorLocked"
         >
@@ -306,7 +308,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6c757d;
+  color: #495057;
   pointer-events: none;
 }
 

@@ -9,6 +9,7 @@
       <b-button
         size="sm"
         variant="light"
+        aria-label="Close sidebar"
         @click="$emit('hide')"
       >
         <b-icon
@@ -25,6 +26,8 @@
       <b-button
         size="sm"
         variant="light"
+        aria-label="New item"
+        title="New item"
         :disabled="isSelecting"
         @click="addNewItem"
       >
@@ -40,6 +43,7 @@
       <b-dropdown
         size="sm"
         variant="light"
+        :toggle-attrs="{ 'aria-label': 'More actions' }"
         toggle-class="text-decoration-none"
         no-caret
         right
@@ -90,6 +94,7 @@
         </b-input-group-prepend>
         <b-form-input
           v-model="keyword"
+          aria-label="Search items"
           :debounce="150"
           type="search"
         />
@@ -158,6 +163,7 @@
                   v-if="!isSelecting"
                   size="sm"
                   variant="outline-white"
+                  :toggle-attrs="{ 'aria-label': `Menu for ${item.name || '(untitled)'}` }"
                   toggle-class="text-decoration-none"
                   right
                   no-caret
