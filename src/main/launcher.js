@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process'
+import { spawn as nodeSpawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises'
@@ -46,13 +46,13 @@ function waitForSpawn(child) {
   })
 }
 
-export async function launch(kind, payload, { tempDir, gitBashPath }) {
-  const bash = expandEnv(gitBashPath || '')
-  if (!bash || !existsSync(bash)) {
-    throw new Error(`Git Bash was not found: ${bash || '(not set)'}\nCheck "Git Bash path" in Settings.`)
+// kind: 'connect' | 'forward' | 'proxyJump'. payload는 kind별 요청 내용(ssh.js의 빌더 참고)이다.
+// spawn은 테스트에서 바꿀 수 있게 열어 둔다.
+export async function launch(kind, payload, { tempDir, gitBashPath, spawn = nodeSpawn }) {
+  const builders = { connect: buildConnect, forward: buildForward, proxyJump: buildProxyJump }
+  if (!Object.hasOwn(builders, kind)) {
+    throw new Error(`Unknown command: ${kind}`)
   }
-
-  await mkdir(tempDir, { recursive: true })
 
   const id = randomBytes(8).toString('hex')
   const scriptFile = join(tempDir, `${id}.sh`)
@@ -60,11 +60,15 @@ export async function launch(kind, payload, { tempDir, gitBashPath }) {
   const paths = { scriptPath: toUnixPath(scriptFile), configPath: toUnixPath(configFile) }
   assertSafePath(paths.scriptPath)
 
-  const builders = { connect: buildConnect, forward: buildForward, proxyJump: buildProxyJump }
-  if (!Object.hasOwn(builders, kind)) {
-    throw new Error(`Unknown command: ${kind}`)
-  }
+  // 입력 검증도 여기서 끝난다. 잘못된 요청이면 디스크에 아무것도 만들지 않는다.
   const { script, config, env } = builders[kind](payload, paths)
+
+  const bash = expandEnv(gitBashPath || '')
+  if (!bash || !existsSync(bash)) {
+    throw new Error(`Git Bash was not found: ${bash || '(not set)'}\nCheck "Git Bash path" in Settings.`)
+  }
+
+  await mkdir(tempDir, { recursive: true })
 
   // 이 스크립트는 ssh의 SSH_ASKPASS로도 실행되므로 실행 권한이 필요하다.
   await writeFile(scriptFile, script, { encoding: 'utf-8', mode: 0o700 })

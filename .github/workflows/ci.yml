@@ -19,3 +19,21 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  # 앱은 Windows + Git Bash에서 쓰는 것이라, 단위 테스트를 Windows에서도 돌린다.
+  # ssh-script.test.js가 생성된 스크립트를 Git Bash로 실행해서(서버 없이) 스크립트 실행 권한,
+  # 환경변수 전달, 경로 인용, SSH_ASKPASS 동작을 확인한다.
+  windows:
+    runs-on: windows-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      JUMPSPACE_TEST_BASH: C:\Program Files\Git\bin\bash.exe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
