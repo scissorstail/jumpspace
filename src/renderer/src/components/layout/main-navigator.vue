@@ -376,6 +376,7 @@ export default {
         index: this.itemIndex++,
         name: item.name,
         data: cloneDeep(item.data),
+        view: item.view ? { ...item.view } : undefined,
         isMenuShown: false,
         isSelected: false,
         isEditing: true
@@ -461,13 +462,20 @@ export default {
       return items.map((x) => ({ ...x, isMenuShown: false, isSelected: false, isEditing: false, index: this.itemIndex++ }))
     },
     getProjectDataFromItems(items) {
-      return items.map(x => ({ name: x.name, data: x.data }))
+      return items.map(x => ({ name: x.name, data: x.data, ...(x.view && { view: x.view }) }))
     },
     updateItemEditorData({ data, index }) {
       // 에디터에 열린 item 정보 업데이트 시 외부에서 호출 후 정보 업데이트
       const updatedItem = this.items[index]
       if (updatedItem) {
         this.items[index].data = data
+      }
+    },
+    updateItemView({ view, index }) {
+      // 캔버스의 마지막 위치와 확대 상태를 item에 기억해 둔다.
+      const item = this.items[index]
+      if (item) {
+        this.$set(item, 'view', view)
       }
     },
     onClickOutside() {

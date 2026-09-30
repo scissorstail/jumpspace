@@ -99,3 +99,21 @@ describe('parseItems', () => {
     expect(() => parseItems('null')).toThrow('The file does not look like a jumpspace export.')
   })
 })
+
+describe('normalizeItems: canvas view', () => {
+  const item = view => ({ name: 'a', data: { nodes: {} }, view })
+
+  it('keeps a valid view of the canvas', () => {
+    expect(normalizeItems([item({ k: 0.5, x: -10, y: 20 })])[0].view).toEqual({ k: 0.5, x: -10, y: 20 })
+  })
+
+  it('drops a view that cannot be used, and adds none when it is missing', () => {
+    for (const view of [undefined, null, 'x', {}, { k: 9, x: 0, y: 0 }, { k: 1, x: 'a', y: 0 }, { k: 1, x: NaN, y: 0 }]) {
+      expect(normalizeItems([item(view)])[0]).toEqual({ name: 'a', data: { nodes: {} } })
+    }
+  })
+
+  it('does not keep extra keys of the view', () => {
+    expect(normalizeItems([item({ k: 1, x: 0, y: 0, evil: 1 })])[0].view).toEqual({ k: 1, x: 0, y: 0 })
+  })
+})

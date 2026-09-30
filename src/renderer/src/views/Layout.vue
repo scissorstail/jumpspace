@@ -67,6 +67,7 @@
         :editor-data="editorData"
         :is-locked="isEditorLocked"
         :class="[!editorData && 'layout-inactive']"
+        @view-change="updateView"
       />
 
       <!-- 열려 있는 item이 없을 때 -->
@@ -92,6 +93,7 @@ import InfoPopup from '../components/layout/popup/info-popup'
 import SettingPopup from '../components/layout/popup/setting-popup'
 import { hasSavedPassword, EXPORT_PASSWORD_WARNING } from '../utils/project'
 import { toastError } from '../utils/notify'
+import { DEFAULT_VIEW, sanitizeView } from '../utils/view'
 
 /*
 
@@ -146,8 +148,15 @@ export default {
       }
     }
   },
+  created() {
+    this.isRestoringView = false
+    this.saveViewTimer = null
+  },
   mounted() {
     this.loadProject()
+  },
+  beforeDestroy() {
+    clearTimeout(this.saveViewTimer)
   },
   methods: {
     loadEditor({ item, index, isLocked }) {
@@ -156,9 +165,26 @@ export default {
       this.openedItemIndex = index
       this.isEditorLocked = isLocked // Call after update 'openedItemIndex'
 
-      // default
-      this.$refs.editorRef.editor.view.area.zoom(0.85, 0, 0)
-      this.$refs.editorRef.editor.view.area.translate(0, 0)
+      // 마지막으로 보던 위치와 확대 상태로 열고, 기록이 없으면 기본값을 쓴다.
+      const view = sanitizeView(item.view) || DEFAULT_VIEW
+      const area = this.$refs.editorRef.editor.view.area
+      this.isRestoringView = true // 복원하면서 생기는 변경은 다시 저장하지 않는다
+      area.zoom(view.k, 0, 0)
+      area.translate(view.x, view.y)
+      this.isRestoringView = false
+    },
+    // 캔버스를 옮기거나 확대/축소했을 때. 열려 있는 item에 기억해 두고, 잠시 뒤에 저장한다.
+    updateView(view) {
+      const item = this.isRestoringView || this.openedItemIndex === null ? null : this.projectData?.[this.openedItemIndex]
+      if (!item) {
+        return
+      }
+
+      item.view = view
+      this.$refs.mainNavigator?.updateItemView({ view, index: this.openedItemIndex })
+
+      clearTimeout(this.saveViewTimer)
+      this.saveViewTimer = setTimeout(() => this.saveProject(), 400)
     },
     clearEditor() {
       this.editorData = null

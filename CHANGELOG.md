@@ -11,6 +11,7 @@ Everything since 0.2.2-beta.
 - **A different authentication per hop.** Key, password, key + password, or neither can be mixed in one path. `keyboard-interactive` password prompts are answered as well; key passphrases and one-time codes are asked in the terminal.
 - **Copy SSH config** copies a node (previous nodes as `ProxyJump`, forwards as `LocalForward`, `Exec` as `RemoteCommand`) in `~/.ssh/config` format.
 - Port inputs show only invalid values; enabled forwards with missing ports are flagged.
+- **The canvas position and zoom are remembered** for each item and restored when it is opened again, also after restarting the app.
 - Unit tests, tests that run the generated scripts under bash, and CI on Ubuntu and Windows.
 
 ### Changed

@@ -17,6 +17,7 @@ import AreaPlugin from 'rete-area-plugin'
 import ReadonlyPlugin from 'rete-readonly-plugin'
 
 import SiteNode from './nodes/site-node'
+import { viewOf } from '@/utils/view'
 
 export default {
   name: 'EditorIndex',
@@ -127,6 +128,11 @@ export default {
         await this.compile()
       }
     )
+
+    // 캔버스를 옮기거나 확대/축소할 때마다 알린다. (저장은 Layout이 한다)
+    this.editor.on(['translated', 'zoomed'], () => {
+      this.$emit('view-change', viewOf(this.editor.view.area.transform))
+    })
 
     this.editor.on(
       [

@@ -29,7 +29,7 @@ note: This currently only works on Windows
    - terminal: **Connect** opens Git Bash and runs `ssh` to the node. When the node has previous nodes it is **ProxyJump** instead, which connects through the whole chain.
    - link: **Port forwarding**, see below. The button with a counter next to it starts the enabled forwards.
    - gear: **Setting** (image, name, user, host, port, key, password, exec) and *Copy SSH config*.
-4. Lock the editor to save. You can start connections while it is locked. Items can be exported and imported as JSON from the sidebar menu.
+4. The canvas position and zoom of each item are remembered and restored when you open it again. Lock the editor to save changes to the diagram. You can start connections while it is locked. Items can be exported and imported as JSON from the sidebar menu.
 
 *Exec* is a command that runs on the server after login, the shell stays open afterwards.
 
