@@ -45,8 +45,6 @@ This file is its memory. **Read the whole file before doing anything, and append
 Ordered roughly by value. Move an item to the log when it is done.
 
 ### UX candidates
-- Popovers opened with the keyboard do not move the focus into themselves; Tab goes on behind them.
-- Right click on an empty canvas while the editor is locked does nothing and says nothing; a hint ("Unlock the editor to add nodes") would help.
 - A node without an icon shows an empty grey frame; a neutral default icon would look finished.
 - Lock button tooltip stays visible after a click (mouse still over it).
 
@@ -129,6 +127,12 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Did: last CI run (033bfee) was green. `npm outdated`: electron 44.4.5 -> 44.5.1 and sass 1.105.0 -> 1.105.1 were the only updates inside the current majors; applied them with `npm update electron sass` (lockfile only, `package.json` ranges unchanged). `npm update` did not fetch the Electron binary by itself; `node node_modules/electron/install.js` did. README, CHANGELOG and CLAUDE.md name Electron only by major (44), so they stay true. Rewrote the Dependencies section of the Backlog.
 - Result: tests 183 passed, lint ok, build ok. The scratch UI scripts (items, import/export, settings, node menu and forwarding, canvas view, icon picker, Escape, old forwards migration and delete confirm) all pass on Electron 44.5.1.
 - Found / next: the audit numbers are unchanged (only fixable with Vue 3). Every activity has now run once; the oldest is `ux` (#1), next is `ux`, then `refactor`.
+
+### #10 2026-09-30 09:2x UTC · ux (scheduled run)
+- Did: (1) A popover opened with Enter/Space now takes the focus (a mouse click does not), so Tab goes on inside it (`isKeyboardClick` + `onTriggerClick` in `utils/dismiss.js`, 3 tests, mutation checked). (2) While the editor is locked the right click menus are not shown and a short toast says to unlock the editor (Rete `showcontextmenu` returning false); before, the canvas menu appeared and its "Site" did nothing.
+- **Correction of entry #2:** I wrote that the second "Delete" item in the node menu was harmless. It was not: the plugin keeps its own "Delete" unless `nodeItems.Delete === false`, so my custom "Delete" (with the confirmation) was an extra item and the first one deleted without asking. Fixed by removing the custom item and confirming in the `noderemove` event instead (cancel, ask, then remove again; removals while a diagram loads are `silent` and are not blocked).
+- Result: tests 186 passed, lint ok, build ok. Last CI run (fc11529) was green. In the app: keyboard vs mouse opening for both popovers, Escape and focus return, the locked hint (once per 4 s), menu absent while locked, one Delete/Duplicate menu, confirm/cancel/empty node, loading other items after a delete. The older scratch script `t6_more` now stops at the new confirmation, as intended.
+- Found / next: UX candidates left: the empty grey frame for a node without icon, the lock button tooltip that stays after a click. Scratch scripts that click "Delete" must confirm the dialog. Next activity by age: `refactor` (`views/Layout.vue` or the sidebar header actions).
 
 ## Routine
 

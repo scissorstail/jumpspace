@@ -23,7 +23,7 @@ Everything since 0.2.2-beta.
 - The Forward and ProxyJump buttons no longer need a key on the previous node. They are available when every previous node has user, host and port.
 - A key given for a hop is the only key offered to it (`IdentitiesOnly`). A busy local port now makes a forward fail visibly.
 - The canvas can be panned without a limit (it was stuck inside 1024x1024). Deleting a node that has content asks first.
-- Popovers are opaque and close with Escape. The right click menu has dark text on a white background.
+- Popovers opened with the keyboard take the focus, so Tab continues inside them. Popovers are opaque and close with Escape. The right click menu has dark text on a white background.
 - Accessibility: the icon-only controls (node menu, sidebar, header, forwards) are real buttons with names for screen readers and tooltips, keyboard focus is visible and reveals the node menu, and the grey helper texts are darker.
 
 ### Fixed
@@ -37,6 +37,7 @@ Everything since 0.2.2-beta.
 - The port forwarding and settings popovers were pushed out of the window when their node was near the right edge, and never lined up with their icon.
 - Sidebar: the search ignores case, long names stay on one line (full name as tooltip), Escape cancels a rename instead of saving it later, and adding an item clears the search so it does not disappear.
 - The window title follows the opened item. Before, a new item showed the name of another item, and renaming or removing the opened item left the old name.
+- The node right click menu showed two "Delete" entries, one of which skipped the confirmation for nodes with content. There is one now, and it asks. While the editor is locked the right click menus (which did nothing) are replaced by a short hint to unlock the editor.
 - An empty screen says what to do, the Info and Settings popups close with Escape, and the Info popup no longer credits the removed Vue CLI plugin.
 - Importing a file that is not JSON, or not a jumpspace export, says so instead of showing an internal error.
 - An empty "Git Bash path" in Settings means the default. Before, the screen showed the default but Connect failed with "Git Bash was not found".

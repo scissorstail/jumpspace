@@ -45,6 +45,7 @@
           aria-label="Port forwarding"
           title="Port forwarding"
           aria-haspopup="dialog"
+          @click="onTriggerClick"
         >
           <b-icon
             icon="link45deg"

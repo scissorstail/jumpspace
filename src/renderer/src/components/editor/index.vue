@@ -48,6 +48,8 @@ export default {
   created() {
     this.editor = null
     this.engine = null
+    this.lastLockedHintAt = 0
+    this.confirmedRemoval = null
   },
   mounted() {
     // Node
@@ -71,18 +73,6 @@ export default {
     this.editor.use(ContextMenuPlugin, {
       delay: 250,
       nodeItems: {
-        // 내용이 있는 노드는 지우기 전에 확인한다. (잠글 때까지 저장되지 않지만, 실수로 지우기 쉽다)
-        Delete: async ({ node }) => {
-          const view = node.controls.get('connection').vueContext
-          const filled = ['name', 'user', 'host', 'port', 'keyPath', 'password', 'exec'].some(key => view[key]) || (view.forwards || []).length > 0
-          const label = view.name || view.host || '(untitled)'
-
-          if (filled && !(await this.$bvModal.msgBoxConfirm(`Delete "${label}"?`, { title: 'Delete node', okVariant: 'danger', okTitle: 'Delete' }))) {
-            return
-          }
-
-          this.editor.removeNode(node)
-        },
         Duplicate: async (args) => {
           const {
             name,
@@ -99,6 +89,25 @@ export default {
         },
         Clone: false // or Clone item
       }
+    })
+
+    // 잠겨 있으면 우클릭 메뉴를 열지 않고 이유를 알려준다.
+    this.editor.on('showcontextmenu', () => {
+      if (this.isLocked) {
+        this.showLockedHint()
+        return false
+      }
+    })
+
+    // 내용이 있는 노드는 지우기 전에 확인한다. (잠글 때까지 저장되지 않지만, 실수로 지우기 쉽다)
+    // 삭제를 일단 취소하고, 확인을 받으면 다시 지운다. 불러오기 중(silent)의 삭제는 막지 않는다.
+    this.editor.on('noderemove', node => {
+      if (this.editor.silent || this.confirmedRemoval === node || !this.nodeHasContent(node)) {
+        return true
+      }
+
+      this.confirmRemoval(node)
+      return false
     })
 
     this.editor.use(AreaPlugin, {
@@ -161,6 +170,37 @@ export default {
     )
   },
   methods: {
+    // 연달아 누르면 한 번만 알린다.
+    showLockedHint() {
+      const now = Date.now()
+      if (!this.editorData || now - this.lastLockedHintAt < 4000) {
+        return
+      }
+
+      this.lastLockedHintAt = now
+      this.$bvToast.toast('Unlock the editor (lock icon) to add or delete nodes.', {
+        variant: 'secondary',
+        solid: true,
+        noCloseButton: true,
+        autoHideDelay: 2500,
+        toaster: 'b-toaster-bottom-center'
+      })
+    },
+    nodeHasContent(node) {
+      const view = node.controls.get('connection').vueContext
+
+      return ['name', 'user', 'host', 'port', 'keyPath', 'password', 'exec'].some(key => view[key]) || (view.forwards || []).length > 0
+    },
+    async confirmRemoval(node) {
+      const view = node.controls.get('connection').vueContext
+      const label = view.name || view.host || '(untitled)'
+
+      if (await this.$bvModal.msgBoxConfirm(`Delete "${label}"?`, { title: 'Delete node', okVariant: 'danger', okTitle: 'Delete' })) {
+        this.confirmedRemoval = node
+        this.editor.removeNode(node)
+        this.confirmedRemoval = null
+      }
+    },
     async load(editorSaveData) {
       await this.editor.fromJSON(JSON.parse(editorSaveData))
       await this.compile()

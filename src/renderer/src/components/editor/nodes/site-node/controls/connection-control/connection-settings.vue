@@ -12,6 +12,7 @@
         aria-label="Node settings"
         title="Node settings"
         aria-haspopup="dialog"
+        @click="onTriggerClick"
       >
         <b-icon
           icon="gear"

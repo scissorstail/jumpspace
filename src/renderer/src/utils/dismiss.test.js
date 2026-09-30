@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { closePopoverOnEscape, dismissOnEscape, onEscape } from './dismiss'
+import { closePopoverOnEscape, dismissOnEscape, isKeyboardClick, onEscape } from './dismiss'
 
 // 테스트는 DOM 없이 돌기 때문에 document 대신 리스너 목록만 흉내 낸다.
 let listeners
@@ -125,5 +125,44 @@ describe('closePopoverOnEscape', () => {
 
     destroy()
     expect(listeners.size).toBe(0)
+  })
+})
+
+describe('isKeyboardClick', () => {
+  it('tells a click made with Enter/Space (detail 0) from a mouse click', () => {
+    expect(isKeyboardClick({ detail: 0 })).toBe(true)
+    expect(isKeyboardClick({ detail: 1 })).toBe(false)
+    expect(isKeyboardClick({ detail: 2 })).toBe(false)
+  })
+})
+
+describe('closePopoverOnEscape: focus when opened by keyboard', () => {
+  const create = () => {
+    const inner = { focus: vi.fn() }
+    const vm = { $refs: { popover: { isOpen: true, hide: vi.fn(), $el: { querySelector: () => null }, $refs: { popover: inner } } }, $nextTick: fn => fn() }
+    const { onTriggerClick, onPopoverShow } = closePopoverOnEscape.methods
+    return { inner, click: event => onTriggerClick.call(vm, event), show: () => onPopoverShow.call(vm), created: () => closePopoverOnEscape.created.call(vm) }
+  }
+
+  it('moves the focus into the popover after a keyboard click, once', () => {
+    const { inner, click, show, created } = create()
+    created()
+
+    click({ detail: 0 })
+    show()
+    expect(inner.focus).toHaveBeenCalledTimes(1)
+
+    show() // 다음에 마우스 없이 다시 열려도 새 클릭 없이는 옮기지 않는다
+    expect(inner.focus).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves the focus alone after a mouse click', () => {
+    const { inner, click, show, created } = create()
+    created()
+
+    click({ detail: 1 })
+    show()
+
+    expect(inner.focus).not.toHaveBeenCalled()
   })
 })
