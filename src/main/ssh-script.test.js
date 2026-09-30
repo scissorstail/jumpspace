@@ -1,10 +1,10 @@
 import { spawnSync } from 'node:child_process'
 import { closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { delimiter, join } from 'node:path'
-import { afterAll, describe, expect, it } from 'vitest'
+import { join } from 'node:path'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { launch } from './launcher.js'
-import { buildConnect, buildForward, buildProxyJump, toUnixPath } from './ssh.js'
+import { buildConnect, buildForward, buildProxyJump, sq, toUnixPath } from './ssh.js'
 
 // 생성된 스크립트를 실제 bash에서 실행해 본다. ssh는 받은 인자를 기록하고, SSH_ASKPASS를 진짜 ssh처럼 직접 실행하는 가짜로 바꾼다.
 //   Linux/macOS: /bin/bash
@@ -39,7 +39,7 @@ exit "\${FAKE_SSH_EXIT:-0}"
 
 // bash를 실행하고 출력을 (파이프가 아니라) 파일로 받는다. 타임아웃으로 bash를 종료해도 그 자식 프로세스(가짜 ssh, ssh-agent 등)가
 // 파이프를 붙잡고 있으면 spawnSync가 끝나지 않을 수 있는데, 파일로 받으면 bash가 끝나는 즉시 돌아온다. (특히 Windows)
-function spawnBash(args, { env, cwd, input = '', timeout = 30000, base }) {
+function spawnBash(args, { env, cwd, input = '', timeout = 15000, base }) {
   writeFileSync(`${base}.stdin`, input)
   const fds = [openSync(`${base}.stdin`, 'r'), openSync(`${base}.stdout`, 'w'), openSync(`${base}.stderr`, 'w')]
 
@@ -51,14 +51,25 @@ function spawnBash(args, { env, cwd, input = '', timeout = 30000, base }) {
   }
 }
 
-const pathKey = Object.keys(process.env).find(k => k.toLowerCase() === 'path') || 'PATH'
 const read = file => (existsSync(file) ? readFileSync(file, 'utf-8') : null)
 const aliasesOf = config => [...config.matchAll(/^Host (\w+)$/gm)].map(x => x[1])
+
+// JUMPSPACE_TEST_VERBOSE=1: 각 테스트의 시작을 바로 출력한다. (vitest는 파일이 끝나야 결과를 보여주므로, 멈춘 테스트를 찾는 데 쓴다)
+if (process.env.JUMPSPACE_TEST_VERBOSE) {
+  beforeEach(({ task }) => { console.log(`[${new Date().toISOString()}] start: ${task.name}`) })
+}
 
 const root = mkdtempSync(join(tmpdir(), 'jumpspace-script-'))
 const binDir = join(root, 'bin')
 mkdirSync(binDir)
-writeFileSync(join(binDir, 'ssh'), FAKE_SSH, { mode: 0o755 })
+const fakeSsh = join(binDir, 'ssh')
+writeFileSync(fakeSsh, FAKE_SSH, { mode: 0o755 })
+
+// 스크립트가 부르는 ssh를 가짜로 바꾸는 방법: PATH 순서에 기대지 않고 BASH_ENV로 bash 함수를 정의한다.
+// (Windows의 Git Bash는 자기 /usr/bin을 PATH 앞에 두기 때문에, PATH에 가짜를 넣어도 진짜 ssh.exe가 먼저 실행된다.
+//  함수는 PATH보다 먼저 찾으므로 어느 환경에서나 가짜가 실행된다.)
+const bashEnv = join(root, 'bashenv.sh')
+writeFileSync(bashEnv, `ssh() { ${sq(toUnixPath(fakeSsh))} "$@"; }\n`)
 afterAll(() => rmSync(root, { recursive: true, force: true }))
 
 const node = { name: 'web', user: 'deploy', host: 'example.com', port: '22', keyPath: '/keys/a', exec: '' }
@@ -83,12 +94,13 @@ function run(built, { out, paths }, { prompts = '', exit = '', input = '' } = {}
     env: {
       ...process.env,
       ...built.env,
-      [pathKey]: `${binDir}${delimiter}${process.env[pathKey]}`,
+      BASH_ENV: toUnixPath(bashEnv),
       FAKE_SSH_OUT: out,
       FAKE_SSH_PROMPTS: prompts,
       FAKE_SSH_EXIT: exit
     },
-    input
+    input,
+    timeout: 15000
   })
 
   const args = read(`${out}.args`)
@@ -135,6 +147,12 @@ ssh-add -l
 })
 
 describe.skipIf(!canRun)('generated scripts run under bash', () => {
+  // 진짜 ssh가 실행되면 테스트가 서버에 접속하려고 오래 걸린다. 그런 경우를 바로 알 수 있게 먼저 확인한다.
+  it('runs the fake ssh instead of a real one', () => {
+    const r = spawnBash(['-c', 'type -t ssh'], { base: join(root, 'type-ssh'), cwd: root, env: { ...process.env, BASH_ENV: toUnixPath(bashEnv) }, timeout: 10000 })
+    expect(r.stdout.trim()).toBe('function')
+  })
+
   describe('connect', () => {
     it('runs ssh with the expected arguments and removes the script afterwards', () => {
       const r = newRun()
@@ -251,8 +269,8 @@ describe.skipIf(!canRun)('generated scripts run under bash', () => {
       const dir = join(root, dirName)
       mkdirSync(dir, { recursive: true })
       const out = join(dir, 'result')
-      const saved = { path: process.env[pathKey], out: process.env.FAKE_SSH_OUT }
-      process.env[pathKey] = `${binDir}${delimiter}${saved.path}`
+      const saved = { bashEnv: process.env.BASH_ENV, out: process.env.FAKE_SSH_OUT }
+      process.env.BASH_ENV = toUnixPath(bashEnv)
       process.env.FAKE_SSH_OUT = out
 
       try {
@@ -260,21 +278,22 @@ describe.skipIf(!canRun)('generated scripts run under bash', () => {
         const args = await waitFor(() => read(`${out}.args`))
         return args === null ? null : args.split('\0').slice(0, -1)
       } finally {
-        process.env[pathKey] = saved.path
-        if (saved.out === undefined) delete process.env.FAKE_SSH_OUT
-        else process.env.FAKE_SSH_OUT = saved.out
+        for (const [key, value] of [['BASH_ENV', saved.bashEnv], ['FAKE_SSH_OUT', saved.out]]) {
+          if (value === undefined) delete process.env[key]
+          else process.env[key] = value
+        }
       }
     }
 
     it('starts the generated script', async () => {
       const args = await launchAndRead('plain', node)
       expect(args).toEqual(expect.arrayContaining(['-p', '22', '--', 'deploy@example.com']))
-    })
+    }, 30000)
 
     // Windows 사용자 이름에 공백이 있는 경우(C:\Users\John Doe\...)를 흉내낸다.
     it('works when the temp directory path contains spaces', async () => {
       const args = await launchAndRead('with space dir', node)
       expect(args).toEqual(expect.arrayContaining(['--', 'deploy@example.com']))
-    })
+    }, 30000)
   })
 })

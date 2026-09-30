@@ -39,5 +39,7 @@ jobs:
       - run: npx vitest run --exclude "**/ssh-script.test.js"
       - name: Scripts under Git Bash
         timeout-minutes: 5
+        env:
+          JUMPSPACE_TEST_VERBOSE: '1'
         run: npx vitest run src/main/ssh-script.test.js --reporter=verbose
       - run: npm run build
