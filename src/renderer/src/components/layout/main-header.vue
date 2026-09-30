@@ -5,6 +5,14 @@
   >
     <slot name="main-navigator-toggle" />
 
+    <!-- 열려 있는 item의 이름 -->
+    <div
+      class="header-title"
+      :title="title"
+    >
+      {{ title }}
+    </div>
+
     <div class="ml-auto align-self-center">
       <slot name="main-navigator-toolbar" />
 
@@ -58,6 +66,12 @@
 <script>
 export default {
   name: 'MainHeader',
+  props: {
+    title: {
+      type: String,
+      default: ''
+    }
+  },
   methods: {
     reload() {
       window.preload.reloadApp()
@@ -73,6 +87,20 @@ export default {
 #main-header {
   display: flex;
   font-size: large;
+
+  .header-title {
+    flex: 1;
+    min-width: 0;
+    padding: 0 12px;
+    align-self: center;
+    overflow: hidden;
+    color: #495057;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
   .btn-divider {
     height: 1.5em;

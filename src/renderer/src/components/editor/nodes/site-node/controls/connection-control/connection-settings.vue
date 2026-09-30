@@ -16,7 +16,7 @@
       >
         <b-icon
           icon="gear"
-          font-scale="2"
+          font-scale="1.3"
           aria-hidden="true"
         />
       </button>
@@ -170,6 +170,7 @@
             <div class="info-action mt-2">
               <b-button
                 size="sm"
+                variant="outline-secondary"
                 title="Copy as SSH config (previous nodes become ProxyJump, enabled forwards become LocalForward)"
                 @click="$emit('copy')"
               >

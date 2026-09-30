@@ -542,7 +542,7 @@ export default {
             border: 1px solid #80bdff;
           }
 
-          &.btn:hover:not(.editing):not(.selected) {
+          &.btn:hover:not(.editing):not(.selected):not(.active) {
             background-color: #f1f3f5;
           }
 
@@ -608,6 +608,22 @@ export default {
 
 .disable-transition {
   transition: none !important;
+}
+
+/* 검색 칸: 알약 모양 */
+.list-search {
+  ::v-deep .input-group-text {
+    padding-right: 4px;
+    border-right: 0;
+    border-radius: 999px 0 0 999px;
+    background-color: white;
+    color: #6c757d;
+  }
+
+  ::v-deep .form-control {
+    border-left: 0;
+    border-radius: 0 999px 999px 0;
+  }
 }
 
 /* 얇고 둥근 스크롤바 */

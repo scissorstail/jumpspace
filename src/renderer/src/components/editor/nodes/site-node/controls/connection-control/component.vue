@@ -14,7 +14,7 @@
         >
           <b-icon
             icon="terminal"
-            font-scale="2"
+            font-scale="1.3"
             aria-hidden="true"
           />
         </button>
@@ -316,20 +316,29 @@ export default {
 .menu-item {
   background-color: transparent;
   border: 1px solid transparent;
-  margin: 1px;
+  margin: 1px 3px;
 }
 
-// 아이콘만 있는 메뉴 버튼. 키보드로도 누를 수 있고 포커스가 보인다.
+// 노드 위에 뜨는 아이콘 버튼: 흰 원형 칩. 키보드로도 누를 수 있고 포커스가 보인다.
 .menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
   padding: 0;
   border: 0;
-  background: transparent;
-  color: #007bff;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  color: #495057;
   line-height: 1;
   cursor: pointer;
+  transition: color 0.12s, box-shadow 0.12s;
 
   &:hover {
-    color: #0056b3;
+    color: #0d6efd;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
   }
 
   &:focus-visible {

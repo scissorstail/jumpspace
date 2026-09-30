@@ -120,7 +120,7 @@ export default {
     this.editor.use(ConnectionPathPlugin, {
       type: ConnectionPathPlugin.DEFAULT, // DEFAULT or LINEAR transformer
       // curve: ConnectionPathPlugin.curveStep, // curve identifier
-      arrow: { color: 'black', marker: 'M-5,-10 L-5,10 L20,0 z' }
+      arrow: { color: '#495057', marker: 'M-5,-8 L-5,8 L16,0 z' }
     })
 
     this.editor.use(ReadonlyPlugin, { enabled: true })
@@ -241,16 +241,23 @@ export default {
 
   .node.site {
     background-color: white;
-    border: 3px solid black;
-    border-radius: 24px;
+    border: 2px solid #2f343b;
+    border-radius: 22px;
     padding-bottom: 0;
     min-width: initial;
-    color: black;
+    color: #212529;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.15s;
 
+    &:hover {
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+    }
+
+    // 선택한 노드: 어두운 덮개 대신 파란 테두리 링
     &.selected {
       background-color: white;
-      border: 3px solid black;
-      box-shadow: inset 0px 0px 400px 110px rgb(0 0 0 / 10%);
+      border: 2px solid #0d6efd;
+      box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.18);
     }
 
     & > .input {
@@ -288,12 +295,12 @@ export default {
       transform: translateY(-2px);
 
       &.input {
-        border: 3px dashed black;
+        border: 3px dashed #2f343b;
         margin-left: -32px;
       }
 
       &.output {
-        border: 3px solid black;
+        border: 3px solid #2f343b;
         margin-right: -32px;
       }
     }
@@ -308,8 +315,8 @@ export default {
 
   .connection {
     .main-path {
-      stroke-width: 3px;
-      stroke: black;
+      stroke-width: 2.5px;
+      stroke: #495057;
     }
   }
 

@@ -143,7 +143,13 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Result: tests 186 passed, lint ok, build ok. Scratch UI scripts (items, import/export, settings, node menu, canvas view, icon picker, Escape, delete, hint, menus) all pass; `t15` now checks that the `<img>` is absent for "No icon".
 - Found / next: the lock button tooltip that stays after a click is the only UX candidate left. Nothing was changed in the layout of the node itself (sockets, border, arrows keep the original look on purpose).
 
+### #13 2026-09-30 10:2x UTC · ux: second polish pass, then the routine was stopped (by hand, at the owner's request)
+- Did: node card (2px `#2f343b` border, radius 22, shadow that grows on hover, blue ring when selected), connections 2.5px `#495057` with a smaller arrow, the node menu as 34px round white buttons (icons 1.3x), the opened item's name centered in the header (`MainHeader` prop `title`), pill shaped sidebar search, the active sidebar item keeps its blue highlight while hovered, modals and toasts as rounded cards (`App.vue`), "Copy SSH config" as an outline button. The owner said "there is still a lot to change" without details, so more visual work is expected.
+- Result: tests 186 passed, lint ok, build ok; ten scratch UI scripts pass; screenshots of the new look were checked.
+- **The hourly trigger was disabled** at 10:18 UTC (`update_trigger` with `enabled: false`), so no run happens at 10:17. The last scheduled run was #10 (09:17).
+- Found / next: ideas for the next visual pass: the sidebar header (three tiny buttons), the empty state, the node text under the icon, a consistent primary colour (Bootstrap blue is used as is), dark mode is not planned.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
-- To stop it: `update_trigger` with `enabled: false`, or `delete_trigger`.
+- **Stopped on 2026-09-30 10:18 UTC** at the owner's request (`enabled: false`). To start it again: `update_trigger` with `enabled: true`; to remove it: `delete_trigger`.

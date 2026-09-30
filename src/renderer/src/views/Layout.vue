@@ -1,6 +1,7 @@
 <template>
   <div id="layout">
     <MainHeader
+      :title="openedItemName"
       @export="exportProject"
       @info="isShowInfoPopup = true"
       @setting="isShowSettingPopup = true"

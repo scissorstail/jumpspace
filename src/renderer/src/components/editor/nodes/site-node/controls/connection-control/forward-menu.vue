@@ -17,7 +17,7 @@
       >
         <b-icon
           icon="arrow-left-right"
-          font-scale="2"
+          font-scale="1.3"
           aria-hidden="true"
         />
       </button>
@@ -49,7 +49,7 @@
         >
           <b-icon
             icon="link45deg"
-            font-scale="2"
+            font-scale="1.3"
             aria-hidden="true"
           />
         </button>
@@ -273,8 +273,8 @@ export default {
 
 .forward-badge {
   position: absolute;
-  top: -3px;
-  right: -7px;
+  top: -4px;
+  right: -6px;
   font-size: 0.65rem;
   pointer-events: none;
 }
