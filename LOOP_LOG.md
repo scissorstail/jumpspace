@@ -189,6 +189,10 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Result: no behavior change, tests unchanged (212 passed, the setting test only moved), lint ok, build ok; in the app: view restore, settings, background setting, live paths (scratch t9, t12, t14, t35, t39) pass.
 - Found / next: `main-navigator.vue` and `Layout.vue` remain the big hot spots.
 
+### #22 2026-09-30 · halos in Vivid (by hand, at the owner's request)
+- Did: the owner found Vivid too loud and suggested a blurred border around the main nodes and elements, only in that mode. `#editor-area` now carries `backdrop-<name>`; in Vivid each node gets a `::before` plate behind it that also covers its name and address (blur 10px via `backdrop-filter`, darkened, faded out with a radial mask), the name/address block a dark `drop-shadow`, and connections a dark `drop-shadow` outline. Other modes are unchanged. A first try with a small square frosted plate looked like a smudge; the larger round plate reads as a halo.
+- Result: CSS and one class binding, no logic change. Tests 212 passed, lint ok, build ok. In the app (scratch t40): no halo in Depth, halo in Vivid, the halo does not catch clicks (hit test lands on the canvas), nodes still select and drag; checked in all three palettes.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

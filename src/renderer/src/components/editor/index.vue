@@ -428,6 +428,32 @@ export default {
   }
 }
 
+// Vivid 배경에서만: 풍경이 선명해서 노드와 글자가 묻히므로, 노드 둘레의 풍경을 흐리게 가리고
+// 이름표/주소와 연결선에 어두운 번짐 테두리를 둘러 떼어 놓는다.
+.backdrop-vivid #rete {
+  // 노드와 그 아래의 이름표/주소까지 덮는 둥근 판. 가운데는 풍경을 흐리고 어둡게, 가장자리로 갈수록 사라진다.
+  .node.site::before {
+    content: '';
+    position: absolute;
+    inset: -34px -64px -120px;
+    z-index: -1;
+    background: color-mix(in srgb, var(--js-bg) 72%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    -webkit-mask-image: radial-gradient(closest-side, #000 55%, transparent);
+    mask-image: radial-gradient(closest-side, #000 55%, transparent);
+    pointer-events: none;
+  }
+
+  .info-field {
+    filter: drop-shadow(0 0 2px var(--js-bg)) drop-shadow(0 0 8px var(--js-bg));
+  }
+
+  .connection .main-path {
+    filter: drop-shadow(0 0 3px var(--js-bg)) drop-shadow(0 0 8px var(--js-bg)) drop-shadow(0 0 8px var(--js-bg));
+  }
+}
+
 @keyframes connection-flow {
   from {
     stroke-dashoffset: 24;

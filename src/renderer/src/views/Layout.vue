@@ -81,7 +81,10 @@
       </b-sidebar>
 
       <div id="workspace">
-        <div id="editor-area">
+        <div
+          id="editor-area"
+          :class="`backdrop-${backdrop}`"
+        >
           <!-- 배경 풍경: 밤하늘, 별, 줄무늬 해, 도시, 네온 격자 바닥 (장식) -->
           <div
             class="scene"
