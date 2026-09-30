@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validatePassword, validateExec, validateForwards, validateHost, validateKeyPath, validateNode, validatePort, validateUser } from './validate.js'
+import { sanitizeName, validatePassword, validateExec, validateForwards, validateHost, validateKeyPath, validateNode, validatePort, validateUser } from './validate.js'
 
 describe('validate', () => {
   it('accepts normal values', () => {
@@ -37,6 +37,16 @@ describe('validate', () => {
     expect(validateKeyPath("C:\\Users\\o'brien\\.ssh\\id rsa")).toBe("C:\\Users\\o'brien\\.ssh\\id rsa")
     expect(() => validateKeyPath('a"b')).toThrow()
     expect(() => validateKeyPath('a\nb')).toThrow()
+  })
+
+  // 회귀: g 플래그 정규식의 lastIndex 때문에, 한 번 거부된 뒤에는 앞쪽 위치의 제어문자를 놓쳤다.
+  it('rejects control characters every time, not only the first time', () => {
+    for (const value of ['aaaa\nbbbb', 'a\nb', 'a\nb', 'x\ry', '\u0000', 'ok\tno']) {
+      expect(() => validateKeyPath(value), JSON.stringify(value)).toThrow()
+    }
+    expect(validateKeyPath('C:\\keys\\id_rsa')).toBe('C:\\keys\\id_rsa')
+    expect(sanitizeName('a\nb\nc')).toBe('a b c')
+    expect(sanitizeName('a\nb\nc')).toBe('a b c')
   })
 
   it('keeps passwords as they are', () => {

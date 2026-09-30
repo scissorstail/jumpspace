@@ -2,8 +2,12 @@
 
 const USER_RE = /^[A-Za-z0-9._@\\][A-Za-z0-9._@\\-]{0,127}$/
 const HOST_RE = /^[A-Za-z0-9._:%[\]][A-Za-z0-9._:%[\]-]{0,254}$/
+// 검사(test)용과 치환(replace)용을 나눈다. g 플래그가 붙은 정규식으로 test()를 하면 lastIndex가 남아서
+// 이전 호출에서 거부한 값의 위치 때문에 다음 값의 제어문자를 놓칠 수 있다.
 // eslint-disable-next-line no-control-regex
-const CONTROL_RE = /[\u0000-\u001f\u007f]/g
+const CONTROL_RE = /[\u0000-\u001f\u007f]/
+// eslint-disable-next-line no-control-regex
+const CONTROL_ALL_RE = /[\u0000-\u001f\u007f]/g
 
 function str(value) {
   return typeof value === 'string' ? value.trim() : ''
@@ -41,7 +45,6 @@ export function validateKeyPath(value) {
   if (keyPath.length > 1024 || CONTROL_RE.test(keyPath) || keyPath.includes('"')) {
     throw new Error('Invalid key path.')
   }
-  CONTROL_RE.lastIndex = 0
   return keyPath
 }
 
@@ -56,7 +59,7 @@ export function validateExec(value) {
 
 // 화면 표시(echo)용 이름. 제어문자는 공백으로 바꾼다.
 export function sanitizeName(value) {
-  return str(value).replace(CONTROL_RE, ' ').slice(0, 200)
+  return str(value).replace(CONTROL_ALL_RE, ' ').slice(0, 200)
 }
 
 // 비밀번호는 그대로 사용한다. (trim하지 않는다) 줄바꿈이 있으면 prompt 응답이 잘리므로 막는다.
