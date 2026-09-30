@@ -119,6 +119,8 @@ src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
                   the node: component.vue coordinates, forward-menu.vue and
                   connection-settings.vue are its two popovers (the latter uses
                   icon-picker.vue)
+  src/components/layout/scene-backdrop.vue
+                  the synthwave scenery behind the canvas and its background effects
   src/components/terminal/terminal-panel.vue
                   the terminal panel (xterm.js), one tab per session
 ```

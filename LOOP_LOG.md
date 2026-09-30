@@ -54,7 +54,7 @@ Ordered roughly by value. Move an item to the log when it is done.
 
 ### Code hot spots
 - `src/renderer/src/components/layout/main-navigator.vue` (about 640 lines): list, drag, select, rename, import/export all in one. A candidate to split (item list vs. actions).
-- `src/renderer/src/views/Layout.vue`: item state, project load/save, view saving are mixed.
+- `src/renderer/src/views/Layout.vue` (about 420 lines after the scene moved out): item state, project load/save, view saving are mixed.
 - `src/main/index.js`: IPC handlers could move into small modules like `launcher.js` (the trust check moved to `trust.js`).
 
 ### Missing or thin tests
@@ -268,6 +268,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: walked the sidebar (add, rename, search) and node settings. A search without results left the list blank with no explanation, and an empty list had no hint either. New `listEmptyText(items, keyword)` in `utils/project.js` ("No items yet. Add one with +." / "No item matches "…"." / null; an item being renamed counts as visible) with tests; the sidebar shows it as a muted status line.
 - Result: tests 227 passed (+4, mutation checked), lint exit 0, build exit 0. In the app (scratch t50, t51): no message while items are visible, the no-match text, the empty-list text; t3, t10, t18, t29 pass.
 - Phase: this ux run found a real (small) gap, so the polish phase continues; the feature run waits for two quiet polish runs in a row.
+
+### #37 2026-09-30 22:2x UTC · refactor (scheduled run, polish phase)
+- Did: `views/Layout.vue` was 602 lines, a third of it the background scene's CSS. The scene (markup and all `.scene*` styles, unchanged) moved to `components/layout/scene-backdrop.vue` with a `backdrop` prop (default from `src/shared/setting.js`); Layout keeps `#editor-area` with the `backdrop-*` / `node-glass` classes. Layout.vue is now 420 lines.
+- Result: no behavior change. lint exit 0, tests 227 passed, build exit 0. Screenshots of all five backgrounds (empty screen and canvas, animations stopped) before and after are byte-identical; t9, t39, t43 pass. README layout and CLAUDE.md point to the new file.
+- Phase: a refactor with a result, so the polish phase continues.
 
 ## Routine
 
