@@ -264,6 +264,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: comments only. lint exit 0, tests 223 passed, build exit 0.
 - Phase: this run found nothing worthwhile. If the next polish run (ux or style) also finds nothing, the run after it is the first `feature` run.
 
+### #36 2026-09-30 21:2x UTC · ux (scheduled run, polish phase)
+- Did: walked the sidebar (add, rename, search) and node settings. A search without results left the list blank with no explanation, and an empty list had no hint either. New `listEmptyText(items, keyword)` in `utils/project.js` ("No items yet. Add one with +." / "No item matches "…"." / null; an item being renamed counts as visible) with tests; the sidebar shows it as a muted status line.
+- Result: tests 227 passed (+4, mutation checked), lint exit 0, build exit 0. In the app (scratch t50, t51): no message while items are visible, the no-match text, the empty-list text; t3, t10, t18, t29 pass.
+- Phase: this ux run found a real (small) gap, so the polish phase continues; the feature run waits for two quiet polish runs in a row.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

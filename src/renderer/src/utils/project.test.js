@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hasSavedPassword, matchesKeyword } from './project'
+import { hasSavedPassword, listEmptyText, matchesKeyword } from './project'
 
 const item = connection => ({ name: 'a', data: { nodes: { 1: { data: { connection } } } } })
 
@@ -39,5 +39,27 @@ describe('matchesKeyword', () => {
   it('works with Korean names', () => {
     expect(matchesKeyword('운영 서버', '서버')).toBe(true)
     expect(matchesKeyword('운영 서버', '개발')).toBe(false)
+  })
+})
+
+describe('listEmptyText', () => {
+  const items = [{ name: 'Production' }, { name: 'Staging' }]
+
+  it('is null while at least one item is visible', () => {
+    expect(listEmptyText(items, '')).toBe(null)
+    expect(listEmptyText(items, 'stag')).toBe(null)
+  })
+
+  it('invites to add an item when the list is empty', () => {
+    expect(listEmptyText([], '')).toBe('No items yet. Add one with +.')
+    expect(listEmptyText(undefined, 'x')).toBe('No items yet. Add one with +.')
+  })
+
+  it('says that the search found nothing', () => {
+    expect(listEmptyText(items, '  zzz ')).toBe('No item matches "zzz".')
+  })
+
+  it('counts an item being renamed as visible', () => {
+    expect(listEmptyText([{ name: '', isEditing: true }], 'zzz')).toBe(null)
   })
 })

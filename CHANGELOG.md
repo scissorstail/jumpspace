@@ -44,6 +44,7 @@ Everything since 0.2.2-beta.
 - Failed launches show the reason instead of a generic alert.
 - Removing items asks for confirmation, and removing unselected items no longer closes the open editor.
 - The port forwarding and settings popovers were pushed out of the window when their node was near the right edge, and never lined up with their icon.
+- Sidebar: an empty list says how to add an item, and a search without results says so instead of showing nothing.
 - Sidebar: the search ignores case, long names stay on one line (full name as tooltip), Escape cancels a rename instead of saving it later, and adding an item clears the search so it does not disappear.
 - The window title follows the opened item. Before, a new item showed the name of another item, and renaming or removing the opened item left the old name.
 - The node right click menu showed two "Delete" entries, one of which skipped the confirmation for nodes with content. There is one now, and it asks. While the editor is locked the right click menus (which did nothing) are replaced by a short hint to unlock the editor.

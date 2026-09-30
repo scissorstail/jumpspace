@@ -227,6 +227,14 @@
             />
           </template>
         </draggable>
+        <!-- 보이는 항목이 없을 때: 목록이 비었거나 검색에 맞는 항목이 없다 -->
+        <p
+          v-if="emptyText"
+          class="list-empty"
+          role="status"
+        >
+          {{ emptyText }}
+        </p>
       </b-button-toolbar>
     </div>
 
@@ -241,7 +249,7 @@
 import draggable from 'vuedraggable'
 import cloneDeep from 'lodash/cloneDeep'
 import isEmpty from 'lodash/isEmpty'
-import { hasSavedPassword, matchesKeyword, EXPORT_PASSWORD_WARNING } from '@/utils/project'
+import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNING } from '@/utils/project'
 import { createNavigatorItem, emptyItemData, toProjectItems } from '@/utils/navigator-items'
 import { toastError } from '@/utils/notify'
 
@@ -276,6 +284,9 @@ export default {
     }
   },
   computed: {
+    emptyText() {
+      return listEmptyText(this.items, this.keyword)
+    },
     selectedItems() {
       return this.items.filter(x => x.isSelected)
     },
@@ -520,6 +531,14 @@ export default {
 
       .list-search {
         width: 100%;
+      }
+
+      .list-empty {
+        width: 100%;
+        margin: 6px 0 0;
+        padding: 0 4px;
+        color: var(--js-text-muted);
+        font-size: 0.85rem;
       }
 
       .list-container {

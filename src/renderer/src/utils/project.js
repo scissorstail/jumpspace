@@ -12,4 +12,13 @@ export function matchesKeyword(name, keyword) {
   return needle === '' || String(name ?? '').toLowerCase().includes(needle)
 }
 
+// 사이드바 목록에 보이는 항목이 하나도 없을 때 보여줄 글. 보이는 항목이 있으면 null.
+// (이름을 바꾸는 중인 항목은 검색과 상관없이 보인다)
+export function listEmptyText(items, keyword) {
+  const list = items || []
+  if (list.some(x => x.isEditing || matchesKeyword(x.name, keyword))) return null
+  if (list.length === 0) return 'No items yet. Add one with +.'
+  return `No item matches "${String(keyword).trim()}".`
+}
+
 export const EXPORT_PASSWORD_WARNING = 'Some nodes have a saved password. The exported file will contain it as plain text. Continue?'
