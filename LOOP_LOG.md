@@ -134,6 +134,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Result: tests 186 passed, lint ok, build ok. Last CI run (fc11529) was green. In the app: keyboard vs mouse opening for both popovers, Escape and focus return, the locked hint (once per 4 s), menu absent while locked, one Delete/Duplicate menu, confirm/cancel/empty node, loading other items after a delete. The older scratch script `t6_more` now stops at the new confirmation, as intended.
 - Found / next: UX candidates left: the empty grey frame for a node without icon, the lock button tooltip that stays after a click. Scratch scripts that click "Delete" must confirm the dialog. Next activity by age: `refactor` (`views/Layout.vue` or the sidebar header actions).
 
+### #11 2026-09-30 · ux: right click menu redesign (by hand, at the owner's request)
+- Did: the right click menus got their own stylesheet `components/editor/context-menu.scss`: white card, 10px radius, soft shadow, 12 px fade-in (off with `prefers-reduced-motion`), the menu opens with its top-left corner at the cursor (the plugin centered it above), items with Bootstrap Icons (trash, files, plus) drawn as CSS masks, a red *Delete*, and the canvas entry renamed *Add node* (plugin option `rename`). Menu items have no classes, so the icons and the red Delete are picked by position: node menu = Delete (first child), Duplicate (second); canvas menu = the hidden `.search` box, then the entry. If a menu item is ever added or reordered, check those selectors.
+- Result: tests 186 passed, lint ok, build ok. In the app: both menus, hover states, a menu at the bottom-right corner stays inside the window, Delete/confirm flows and the locked hint still pass. Scratch UI scripts now click "Add node" instead of "Site".
+- Found / next: none.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

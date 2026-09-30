@@ -72,6 +72,7 @@ export default {
 
     this.editor.use(ContextMenuPlugin, {
       delay: 250,
+      rename: () => 'Add node',
       nodeItems: {
         Duplicate: async (args) => {
           const {
@@ -219,30 +220,7 @@ export default {
 </script>
 
 <style lang="scss">
-// 우클릭 메뉴(rete-context-menu-plugin). 기본 스타일은 반투명 파랑 위에 흰 글자라 읽기 어렵다.
-// 플러그인의 스타일은 scoped라서 선택자를 더 구체적으로(div.) 써야 덮어쓸 수 있다.
-div.context-menu {
-  border: 1px solid #ced4da;
-  border-radius: 5px;
-  background: white;
-  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.15);
-
-  // 노드 종류가 하나뿐이라 검색 칸은 쓸모가 없다.
-  div.search {
-    display: none;
-  }
-
-  div.item {
-    border-bottom: 1px solid #e9ecef;
-    background-color: white;
-    color: #212529;
-    padding: 6px 12px;
-  }
-
-  div.item:hover {
-    background-color: #e7f1ff;
-  }
-}
+@import './context-menu.scss';
 
 #rete {
   height: 100%;

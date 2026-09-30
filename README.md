@@ -25,7 +25,7 @@ note: This currently only works on Windows
 ### nodes and paths
 
 1. Open the sidebar, add an item (a diagram) and give it a name.
-2. Unlock the editor (lock icon), right-click the canvas to add a `Site` node, and drag from a node's right socket to another node's left socket to chain them (jump hosts).
+2. Unlock the editor (lock icon), right-click the canvas and choose *Add node*, and drag from a node's right socket to another node's left socket to chain them (jump hosts).
 3. Hover a node to open its menu:
    - terminal: **Connect** opens Git Bash and runs `ssh` to the node. When the node has previous nodes and every one of them has a user, host and port, it is **ProxyJump** instead, which connects through the whole chain.
    - link: **Port forwarding**, see below. The button with a counter next to it starts the enabled forwards.

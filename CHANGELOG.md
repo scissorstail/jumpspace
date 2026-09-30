@@ -23,7 +23,7 @@ Everything since 0.2.2-beta.
 - The Forward and ProxyJump buttons no longer need a key on the previous node. They are available when every previous node has user, host and port.
 - A key given for a hop is the only key offered to it (`IdentitiesOnly`). A busy local port now makes a forward fail visibly.
 - The canvas can be panned without a limit (it was stuck inside 1024x1024). Deleting a node that has content asks first.
-- Popovers opened with the keyboard take the focus, so Tab continues inside them. Popovers are opaque and close with Escape. The right click menu has dark text on a white background.
+- Popovers opened with the keyboard take the focus, so Tab continues inside them. Popovers are opaque and close with Escape. The right click menus are redesigned: white card with rounded corners, icons, a red *Delete*, a short fade-in, and the canvas entry reads *Add node*.
 - Accessibility: the icon-only controls (node menu, sidebar, header, forwards) are real buttons with names for screen readers and tooltips, keyboard focus is visible and reveals the node menu, and the grey helper texts are darker.
 
 ### Fixed
