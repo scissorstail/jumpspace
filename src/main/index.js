@@ -159,9 +159,9 @@ function main() {
   }
 
   // 접속 정보를 ~/.ssh/config 형식으로 클립보드에 복사한다.
-  handle('ssh:copyConfig', (event, nodes) => {
+  handle('ssh:copyConfig', (event, request) => {
     try {
-      clipboard.writeText(buildSshConfig(nodes))
+      clipboard.writeText(buildSshConfig(request?.nodes, { forwards: request?.forwards }))
       return { ok: true }
     } catch (e) {
       return { ok: false, error: e.message }

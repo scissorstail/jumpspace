@@ -10,11 +10,12 @@ note: This currently only works on Windows
 
 1. Open the sidebar, add an item (a diagram) and give it a name.
 2. Unlock the editor, right-click the canvas to add a `Site` node, and drag from a node's right socket to another node's left socket to chain them (jump hosts).
-3. Hover a node to open its menu: **Setting** (name, user, host, port, key, password, exec), **Forward list**, and the terminal button.
+3. Hover a node to open its menu: **Setting** (name, user, host, port, key, password, exec), **Port forwarding**, and the terminal button.
    - **Connect** opens Git Bash and runs `ssh` to the node.
    - **ProxyJump** is shown instead when the node has a previous node; it connects through the whole chain of previous nodes.
-   - **Forward** opens `ssh -L` port forwards to this node's host, tunnelled through the whole chain of previous nodes (every hop is reached through the hops before it).
-   - In **Setting**, *Copy SSH config* copies the node in `~/.ssh/config` format (previous nodes become `ProxyJump`). Passwords are never included.
+   - **Port forwarding** (link icon): add rows of `local port -> target host : target port`, tick the ones you want and press **Start** (or the button with the counter that appears on the node). The tunnel is opened through this node, and through every previous node before it, each with its own authentication. Leave the target host empty for `localhost`, that is a service running on the node itself.
+   - A node without a port (the older way: an extra node that only holds the target host) still works. It forwards to its own host through the previous nodes.
+   - In **Setting**, *Copy SSH config* copies the node in `~/.ssh/config` format (previous nodes become `ProxyJump`, enabled forwards become `LocalForward`). Passwords are never included.
    - **Password**: instead of a key you can sign in with a password. It is stored as **plain text** in `projects.json` and included when you export the item (you are asked to confirm). It is passed to `ssh` through `SSH_ASKPASS`, not through the command line or a file.
 4. Each node has its **own authentication**, so a path can mix them freely (for example key -> password -> key + password).
    - *Key*: only that key is offered to that hop (`IdentitiesOnly`).

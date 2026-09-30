@@ -19,106 +19,14 @@
           @click="connect"
         />
       </a>
-      <a
-        v-show="isForwardable"
-        class="menu-item"
-      >
-        <b-icon
-          :style="{opacity: isForwardable && forwards.some(x => x.checked) ? 1.0 : 0.5}"
-          title="Forward (through all previous nodes)"
-          class="menu-item-icon"
-          icon="arrow-left-right"
-          font-scale="2"
-          @click="isForwardable && forwards.some(x => x.checked) ? openForward() : ''"
-        />
-      </a>
-      <a class="menu-item">
-        <!-- forward popover-->
-        <v-popover
-          ref="popover2"
-          placement="auto-end"
-          @hide="save"
-        >
-          <b-icon
-            title="Forward list"
-            class="menu-item-icon"
-            icon="link45deg"
-            font-scale="2"
-          />
-          <template slot="popover">
-            <div class="p-3">
-              <div
-                class="info-list"
-                style="width: 225px;"
-              >
-                <div
-                  v-for="(forward, index) in forwards"
-                  :key="index"
-                  class="info-item mb-1"
-                >
-                  <b-form-checkbox
-                    v-model="forward.checked"
-                    class="middle"
-                    size="lg"
-                    :disabled="isLocked"
-                  />
-                  <b-form-input
-                    v-model.trim="forward.from"
-                    class="mr-2"
-                    maxlength="5"
-                    :state="portState(forward.from)"
-                    size="sm"
-                    :disabled="isLocked"
-                  />
-                  <span
-                    :style="{ opacity: forward.checked ? 1.0 : 0.1 }"
-                    class="middle"
-                  >
-                    <b-icon
-                      icon="arrow-left-right"
-                      font-scale="1"
-                    />
-                  </span>
-                  <b-form-input
-                    v-model.trim="forward.to"
-                    class="ml-2"
-                    maxlength="5"
-                    :state="portState(forward.to)"
-                    size="sm"
-                    :disabled="isLocked"
-                  />
-                  <b-button
-                    class="ml-2"
-                    size="sm"
-                    title="Remove Forward"
-                    :disabled="isLocked"
-                    @click="removeForward(forward)"
-                  >
-                    <b-icon
-                      icon="dash"
-                    />
-                  </b-button>
-                </div>
-              </div>
-              <div
-                class="info-action"
-              >
-                <b-button
-                  class="mr-1 mt-2"
-                  size="sm"
-                  title="Add Forward"
-                  :disabled="isLocked"
-                  @click="addForward"
-                >
-                  <b-icon
-                    icon="plus"
-                  />
-                </b-button>
-              </div>
-            </div>
-          </template>
-        </v-popover>
-      </a>
+      <ForwardMenu
+        v-model="forwards"
+        :disabled="isLocked"
+        :plan="forwardPlan"
+        :hint="forwardHint"
+        @start="openForward"
+        @hide="save"
+      />
       <a class="menu-item">
         <!-- setting popover -->
         <v-popover
@@ -210,7 +118,6 @@
                 >
                   <b-form-input
                     v-model.trim="port"
-                    placeholder="(To blank when Forwarding)"
                     :state="portState(port)"
                     size="sm"
                     :disabled="isLocked"
@@ -338,6 +245,17 @@
         >
           {{ port || '' }}
         </div>
+        <div
+          v-if="forwardSummaryText"
+          class="info-text info-forward"
+          :title="forwardSummaryText.title"
+        >
+          <b-icon
+            icon="arrow-left-right"
+            font-scale="0.85"
+            class="mr-1"
+          />{{ forwardSummaryText.text }}
+        </div>
       </div>
     </div>
   </div>
@@ -348,8 +266,20 @@ import head from 'lodash/head'
 import pick from 'lodash/pick'
 import store from '../../../../../../store'
 import mixin from '../../../../../../mixin'
+import {
+  configRequest,
+  forwardEntries,
+  forwardHint,
+  forwardPlan,
+  forwardSummary,
+  isRoutable,
+  normalizeForward,
+  portState
+} from '../../../../../../utils/forward'
+import ForwardMenu from './forward-menu'
 
 export default {
+  components: { ForwardMenu },
   mixins: [mixin],
   props: {
     readonly: {
@@ -396,17 +326,27 @@ export default {
   },
   computed: {
     isConnectable() {
-      return this.user && this.host && this.port
+      return isRoutable(this)
     },
     // 앞에 노드가 있고, 그 경로의 모든 노드가 접속에 필요한 정보(user/host/port)를 가지고 있어야 한다.
     // 키/비밀번호는 노드마다 다를 수 있고, 둘 다 없으면 ssh-agent나 기본 키, 터미널 입력으로 진행한다.
-    isForwardable() {
+    isChained() {
       const prevNodeDataList = this.prevNodeDataList || []
 
-      return prevNodeDataList.length > 0 && prevNodeDataList.every(x => x.host && x.user && x.port)
+      return prevNodeDataList.length > 0 && prevNodeDataList.every(isRoutable)
     },
     isProxyJumpReady() {
-      return this.isConnectable && this.isForwardable
+      return this.isConnectable && this.isChained
+    },
+    // 이 노드의 포트포워딩을 어떻게 열 수 있는지 (utils/forward.js)
+    forwardPlan() {
+      return forwardPlan(this.connectionOf(this.$data), this.prevNodeDataList)
+    },
+    forwardHint() {
+      return forwardHint(this.forwardPlan, this.connectionOf(this.$data))
+    },
+    forwardSummaryText() {
+      return forwardSummary(this.forwards, this.forwardPlan)
     }
   },
   created() {
@@ -437,11 +377,7 @@ export default {
         this.diagram = head(this.diagramFilenames)
       }
     },
-    // 값이 비어있으면 표시하지 않고, 입력했다면 1~65535 범위의 숫자인지 알려준다.
-    portState(value) {
-      if (!value) return null
-      return /^\d{1,5}$/.test(value) && Number(value) >= 1 && Number(value) <= 65535
-    },
+    portState,
     // ssh 실행 요청에 넘길 수 있는 순수한 값만 추린다. (실제 명령어는 main 프로세스에서 검증 후 만든다)
     connectionOf(data) {
       return pick(data, ['name', 'user', 'host', 'port', 'keyPath', 'password', 'exec'])
@@ -461,16 +397,15 @@ export default {
       return this.run(() => window.preload.ssh.connect(this.connectionOf(this.$data)))
     },
     openForward() {
-      const prevNodeDataList = this.prevNodeDataList || []
-      if (prevNodeDataList.length === 0) {
+      const plan = this.forwardPlan
+      if (!plan.mode) {
         return
       }
 
-      // 앞선 모든 노드를 순서대로 거쳐서(각자의 인증으로) 마지막 앞 노드에 접속하고, 이 노드의 host:port로 포워딩한다.
+      // plan.via의 마지막 노드에 접속하고(앞 노드들은 각자의 인증으로 거친다), 그 서버에서 바라본 host:port로 포워딩한다.
       return this.run(() => window.preload.ssh.forward({
-        via: prevNodeDataList.map(x => this.connectionOf(x)),
-        node: this.connectionOf(this.$data),
-        forwards: this.forwards.map(({ checked, from, to }) => ({ checked, from, to }))
+        via: plan.via.map(x => this.connectionOf(x)),
+        forwards: forwardEntries(this.forwards, plan)
       }))
     },
     proxyJump() {
@@ -478,19 +413,12 @@ export default {
 
       return this.run(() => window.preload.ssh.proxyJump(nodes))
     },
-    addForward() {
-      this.forwards.push({
-        checked: false,
-        from: null,
-        to: null
-      })
-    },
-    removeForward(forward) {
-      this.forwards = this.forwards.filter((x) => x !== forward)
-    },
     async copyConfig() {
-      const nodes = (this.prevNodeDataList || []).concat(this.$data).map(x => this.connectionOf(x))
-      const result = await window.preload.ssh.copyConfig(nodes)
+      const request = configRequest(this.connectionOf(this.$data), this.prevNodeDataList, this.forwards, this.forwardPlan)
+      const result = await window.preload.ssh.copyConfig({
+        nodes: request.nodes.map(x => this.connectionOf(x)),
+        forwards: request.forwards
+      })
 
       if (!result.ok) {
         this.$bvModal.msgBoxOk(result.error, { title: 'Failed to copy' })
@@ -516,6 +444,8 @@ export default {
         }
       }
 
+      // 이전 버전에서 저장한 항목에는 대상 host가 없다.
+      this.forwards = (this.forwards || []).map(normalizeForward)
       this.prevNodeDataList = prevNodeDataList
     },
     save() {
@@ -604,6 +534,12 @@ export default {
     white-space: nowrap;
   }
 
+  &-forward {
+    font-size: 0.8rem;
+    font-weight: normal;
+    color: #6c757d;
+  }
+
   &-item {
     display: flex;
     align-items: center;
@@ -631,7 +567,8 @@ export default {
 
   &[aria-hidden='false'] {
     visibility: visible;
-    opacity: 0.9;
+    // 뒤에 있는 노드가 비쳐서 글자를 읽기 어려우므로 불투명하게 둔다.
+    opacity: 1;
     transition: opacity 0.15s;
   }
 

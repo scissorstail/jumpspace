@@ -12,6 +12,11 @@ export function toUnixPath(value) {
   return String(value).replaceAll('\\', '/')
 }
 
+// IPv6 주소는 -L / LocalForward에서 대괄호로 감싸야 포트와 구분된다.
+export function bracketHost(host) {
+  return host.includes(':') && !host.startsWith('[') ? `[${host}]` : host
+}
+
 function md5(value) {
   return createHash('md5').update(value).digest('hex')
 }
@@ -137,22 +142,20 @@ function hostConfig(nodes, aliases) {
   ].join('\n') + '\n').join('\n') + '\n'
 }
 
-// via: 앞선 노드들(순서대로). 마지막 노드에 접속하고, 그 앞의 노드들은 ProxyJump로 거친다.
-// node: 목적지 노드. 포트포워딩의 도착지(host:to)로만 쓰이고 ssh로 접속하지는 않는다.
-export function buildForward({ via, node, forwards }, { scriptPath, configPath }) {
+// 포트포워딩. via의 마지막 노드에 ssh로 접속하고(앞의 노드들은 ProxyJump로 거친다), 그 서버에서 바라본 host:port로 연결한다.
+//   via: ssh로 거치는 노드들(순서대로, 1개 이상). 노드마다 자기 인증을 쓴다.
+//   forwards: [{ checked, from, host, to }] 켜진 항목만 사용한다. host가 비어 있으면 접속한 서버 자신(localhost)이다.
+export function buildForward({ via, forwards }, { scriptPath, configPath }) {
   if (!Array.isArray(via) || via.length === 0) {
-    throw new Error('Forward needs at least one previous node.')
+    throw new Error('Forward needs at least one node to connect through.')
   }
 
   const hops = via.map(x => validateNode(x))
-  // 도착지는 host만 쓰인다. (user/port는 이 노드에 ssh로 접속할 때만 필요하다)
-  const destNode = validateNode(node, { partial: true })
   const list = validateForwards(forwards)
 
   const aliases = hostAliases(hops)
   const config = hostConfig(hops, aliases)
   const jumps = aliases.slice(0, -1).join(',')
-  const destHost = destNode.host.includes(':') && !destNode.host.startsWith('[') ? `[${destNode.host}]` : destNode.host
 
   const ssh = [
     SSH_BASE,
@@ -161,13 +164,12 @@ export function buildForward({ via, node, forwards }, { scriptPath, configPath }
     '-N',
     // 로컬 포트가 이미 사용 중이면 조용히 무시하지 않고 오류로 끝낸다.
     '-o ExitOnForwardFailure=yes',
-    ...list.map(x => `-L ${sq(`localhost:${x.from}:${destHost}:${x.to}`)}`),
+    ...list.map(x => `-L ${sq(`localhost:${x.from}:${bracketHost(x.host)}:${x.to}`)}`),
     '--',
     sq(aliases[aliases.length - 1])
   ].filter(Boolean).join(' ')
 
-  const route = [...hops.map(x => `${x.user}@${x.host}:${x.port} (${x.name})`), `${destNode.host} (${destNode.name})`]
-  const lastHop = hops[hops.length - 1]
+  const server = hops[hops.length - 1]
 
   return {
     ...wrap({
@@ -175,8 +177,8 @@ export function buildForward({ via, node, forwards }, { scriptPath, configPath }
       lines: [
         banner(
           'Forward...',
-          `localhost -> ${route.join(' -> ')}`,
-          ...list.map(x => `localhost:${x.from} <-> ${lastHop.name} <-> ${destNode.name}:${x.to}`),
+          `localhost -> ${hops.map(x => `${x.user}@${x.host}:${x.port} (${x.name})`).join(' -> ')}`,
+          ...list.map(x => `localhost:${x.from} -> ${x.host}:${x.to}  (as seen from ${server.name || server.host})`),
           ''
         ),
         ssh

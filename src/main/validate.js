@@ -9,6 +9,9 @@ const CONTROL_RE = /[\u0000-\u001f\u007f]/
 // eslint-disable-next-line no-control-regex
 const CONTROL_ALL_RE = /[\u0000-\u001f\u007f]/g
 
+// 포워딩 대상 host를 비웠을 때 쓰는 값. (접속한 서버 자신)
+export const DEFAULT_FORWARD_HOST = 'localhost'
+
 function str(value) {
   return typeof value === 'string' ? value.trim() : ''
 }
@@ -29,10 +32,10 @@ export function validateUser(value) {
   return user
 }
 
-export function validateHost(value) {
+export function validateHost(value, label = 'host') {
   const host = str(value)
   if (!HOST_RE.test(host)) {
-    throw new Error(`Invalid host: "${host}"`)
+    throw new Error(`Invalid ${label}: "${host}"`)
   }
   return host
 }
@@ -92,19 +95,36 @@ export function validateNode(node, { partial = false } = {}) {
   }
 }
 
-export function validateForwards(forwards) {
+// 포워딩 항목 { checked, from, host, to } 중 켜진(checked) 것만 검증해서 { from, host, to } 목록으로 돌려준다.
+//   from: 이 컴퓨터에서 열 포트, host/to: 접속한 서버에서 바라본 대상 주소. host를 비우면 localhost(= 접속한 서버 자신)이다.
+// 오류 메시지의 번호는 화면에 보이는 목록의 순서(1부터)와 같다.
+export function validateForwards(forwards, { allowEmpty = false } = {}) {
   if (!Array.isArray(forwards)) {
     throw new Error('Invalid forward list.')
   }
 
-  const list = forwards
-    .filter(x => x && x.checked && x.from && x.to)
-    .map(x => ({
-      from: validatePort(x.from, 'Forward port'),
-      to: validatePort(x.to, 'Forward port')
-    }))
+  const list = []
+  forwards.forEach((x, index) => {
+    if (!x || !x.checked) return
 
-  if (list.length === 0) {
+    const n = index + 1
+    list.push({
+      from: validatePort(x.from, `Local port (forward ${n})`),
+      host: str(x.host) ? validateHost(x.host, `target host (forward ${n})`) : DEFAULT_FORWARD_HOST,
+      to: validatePort(x.to, `Target port (forward ${n})`)
+    })
+  })
+
+  // 같은 로컬 포트를 두 번 열 수 없다.
+  const ports = new Set()
+  for (const { from } of list) {
+    if (ports.has(from)) {
+      throw new Error(`Local port ${from} is used by more than one forward.`)
+    }
+    ports.add(from)
+  }
+
+  if (list.length === 0 && !allowEmpty) {
     throw new Error('No forward is selected.')
   }
 

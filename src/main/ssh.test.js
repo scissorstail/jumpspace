@@ -57,59 +57,84 @@ describe('buildConnect', () => {
 })
 
 describe('buildForward', () => {
-  const forwards = [{ checked: true, from: '15432', to: '5432' }, { checked: false, from: '1', to: '2' }]
-  const db = { ...node, host: '10.0.0.5', name: 'db' }
+  const forwards = [{ checked: true, from: '15432', host: 'db.internal', to: '5432' }, { checked: false, from: '1', to: '2' }]
 
-  it('opens -L through the previous node', () => {
-    const { script, config } = buildForward({ via: [node], node: db, forwards }, paths)
+  it('opens -L on the node it connects to, towards the target as seen from that node', () => {
+    const { script, config } = buildForward({ via: [node], forwards }, paths)
     const [alias] = aliasesOf(config)
 
-    expect(script).toContain(`-F 'C:/tmp/jumpspace/a.jmp' -N -o ExitOnForwardFailure=yes -L 'localhost:15432:10.0.0.5:5432' -- '${alias}'`)
+    expect(script).toContain(`-F 'C:/tmp/jumpspace/a.jmp' -N -o ExitOnForwardFailure=yes -L 'localhost:15432:db.internal:5432' -- '${alias}'`)
     expect(script).not.toContain(' -J ')
     expect(script).not.toContain(':1:')
     expect(script).toContain("rm -f -- 'C:/tmp/jumpspace/a.sh' 'C:/tmp/jumpspace/a.jmp'")
   })
 
-  it('goes through every earlier node (ProxyJump) before opening the forward', () => {
+  it('uses localhost when the target host is left blank (a service on the node itself)', () => {
+    const { script } = buildForward({ via: [node], forwards: [{ checked: true, from: '8080', host: '', to: '80' }] }, paths)
+    expect(script).toContain("-L 'localhost:8080:localhost:80'")
+  })
+
+  it('opens several forwards in one ssh', () => {
+    const { script } = buildForward({
+      via: [node],
+      forwards: [
+        { checked: true, from: '8080', to: '80' },
+        { checked: true, from: '15432', host: '10.0.0.5', to: '5432' }
+      ]
+    }, paths)
+    expect(script).toContain("-L 'localhost:8080:localhost:80' -L 'localhost:15432:10.0.0.5:5432'")
+  })
+
+  it('goes through every earlier node (ProxyJump) and forwards on the last one', () => {
     const hop2 = { ...node, name: 'hop2', host: 'hop2.example.com' }
     const hop3 = { ...node, name: 'hop3', host: 'hop3.example.com' }
-    const { script, config } = buildForward({ via: [node, hop2, hop3], node: db, forwards }, paths)
+    const { script, config } = buildForward({ via: [node, hop2, hop3], forwards }, paths)
     const [a1, a2, a3] = aliasesOf(config)
 
     expect(aliasesOf(config)).toHaveLength(3)
     expect(script).toContain(`-J '${a1},${a2}'`)
-    expect(script).toContain(`-L 'localhost:15432:10.0.0.5:5432' -- '${a3}'`)
-    // 포워딩 도착지는 ssh 접속 대상이 아니므로 config에 들어가지 않는다.
-    expect(config).not.toContain('10.0.0.5')
+    expect(script).toContain(`-L 'localhost:15432:db.internal:5432' -- '${a3}'`)
+    // 포워딩 대상은 ssh 접속 대상이 아니므로 config에 들어가지 않는다.
+    expect(config).not.toContain('db.internal')
   })
 
   it('shares host aliases with ProxyJump for the same path (known_hosts entries are reused)', () => {
     const hop2 = { ...node, name: 'hop2', host: 'hop2.example.com' }
-    const forward = buildForward({ via: [node, hop2], node: db, forwards }, paths)
-    const jump = buildProxyJump([node, hop2, db], paths)
+    const forward = buildForward({ via: [node, hop2], forwards }, paths)
+    const jump = buildProxyJump([node, hop2, { ...node, host: '10.0.0.5' }], paths)
 
     expect(aliasesOf(forward.config)).toEqual(aliasesOf(jump.config).slice(0, 2))
   })
 
-  it('brackets an IPv6 destination', () => {
-    const { script } = buildForward({ via: [node], node: { ...db, host: 'fe80::1' }, forwards }, paths)
+  it('brackets an IPv6 target', () => {
+    const { script } = buildForward({ via: [node], forwards: [{ checked: true, from: '15432', host: 'fe80::1', to: '5432' }] }, paths)
     expect(script).toContain("-L 'localhost:15432:[fe80::1]:5432'")
   })
 
-  it('needs a previous node and something to forward', () => {
-    expect(() => buildForward({ via: [], node: db, forwards }, paths)).toThrow()
-    expect(() => buildForward({ node: db, forwards }, paths)).toThrow()
-    expect(() => buildForward({ via: [node], node: db, forwards: [] }, paths)).toThrow()
+  it('describes the route and every forward in the window', () => {
+    const { script } = buildForward({ via: [node, { ...node, name: 'inner', host: 'inner.example.com' }], forwards }, paths)
+    expect(script).toContain('deploy@example.com:22 (web) -> deploy@inner.example.com:22 (inner)')
+    expect(script).toContain('localhost:15432 -> db.internal:5432  (as seen from inner)')
   })
 
-  it('only needs a host on the destination node', () => {
-    const { script } = buildForward({ via: [node], node: { host: '10.0.0.5' }, forwards }, paths)
-    expect(script).toContain("-L 'localhost:15432:10.0.0.5:5432'")
-    expect(() => buildForward({ via: [node], node: { user: 'u' }, forwards }, paths)).toThrow()
+  it('needs a node to connect through and something to forward', () => {
+    expect(() => buildForward({ via: [], forwards }, paths)).toThrow()
+    expect(() => buildForward({ forwards }, paths)).toThrow()
+    expect(() => buildForward({ via: [node], forwards: [] }, paths)).toThrow()
+    expect(() => buildForward({ via: [node], forwards: [{ checked: true, from: '1', to: '' }] }, paths)).toThrow()
+  })
+
+  it('rejects hostile target hosts and duplicate local ports', () => {
+    expect(() => buildForward({ via: [node], forwards: [{ checked: true, from: '1', host: "x'; rm -rf ~; '", to: '2' }] }, paths)).toThrow()
+    expect(() => buildForward({ via: [node], forwards: [{ checked: true, from: '1', host: '-oProxyCommand=x', to: '2' }] }, paths)).toThrow()
+    expect(() => buildForward({
+      via: [node],
+      forwards: [{ checked: true, from: '1', to: '2' }, { checked: true, from: '1', to: '3' }]
+    }, paths)).toThrow()
   })
 
   it('does not need explicit auth on the hops (ssh-agent / default keys / prompts are fine)', () => {
-    expect(() => buildForward({ via: [{ ...node, keyPath: '' }], node: db, forwards }, paths)).not.toThrow()
+    expect(() => buildForward({ via: [{ ...node, keyPath: '' }], forwards }, paths)).not.toThrow()
   })
 })
 
@@ -142,10 +167,9 @@ describe('password auth', () => {
     expect(script).not.toContain('SSH_ASKPASS')
   })
 
-  it('forwards through a password-only previous node', () => {
+  it('forwards through a password-only node', () => {
     const { script, config, env } = buildForward({
       via: [withPw],
-      node: { ...node, host: '10.0.0.5' },
       forwards: [{ checked: true, from: '1', to: '2' }]
     }, paths)
     const [alias] = aliasesOf(config)
@@ -212,8 +236,7 @@ describe('a different authentication per hop', () => {
   it('Forward through the same hops uses the same per-hop auth', () => {
     const { config, env } = buildForward({
       via: chain,
-      node: { name: 'db', user: 'x', host: '10.0.0.9', port: '22' },
-      forwards: [{ checked: true, from: '1000', to: '2000' }]
+      forwards: [{ checked: true, from: '1000', host: '10.0.0.9', to: '2000' }]
     }, paths)
     expectPerHopAuth(config, env, aliasesOf(config))
   })

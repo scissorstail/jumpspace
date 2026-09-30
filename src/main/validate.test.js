@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sanitizeName, validatePassword, validateExec, validateForwards, validateHost, validateKeyPath, validateNode, validatePort, validateUser } from './validate.js'
+import { DEFAULT_FORWARD_HOST, sanitizeName, validatePassword, validateExec, validateForwards, validateHost, validateKeyPath, validateNode, validatePort, validateUser } from './validate.js'
 
 describe('validate', () => {
   it('accepts normal values', () => {
@@ -63,6 +63,38 @@ describe('validate', () => {
     expect(() => validateExec('a\u0000b')).toThrow()
   })
 
+  describe('forwards', () => {
+    it('defaults the target host to localhost', () => {
+      expect(DEFAULT_FORWARD_HOST).toBe('localhost')
+      expect(validateForwards([{ checked: true, from: '1', host: '', to: '2' }])[0].host).toBe('localhost')
+      expect(validateForwards([{ checked: true, from: '1', host: null, to: '2' }])[0].host).toBe('localhost')
+    })
+
+    it('numbers errors like the list on screen and rejects incomplete or hostile rows', () => {
+      const rows = [
+        { checked: false, from: '', to: '' },
+        { checked: true, from: '', to: '80' }
+      ]
+      expect(() => validateForwards(rows)).toThrow(/Local port \(forward 2\)/)
+      expect(() => validateForwards([{ checked: true, from: '1', to: '' }])).toThrow(/Target port \(forward 1\)/)
+      for (const host of ['-oProxyCommand=x', 'a b', "a'b", 'a;b', '$(id)']) {
+        expect(() => validateForwards([{ checked: true, from: '1', host, to: '2' }]), host).toThrow(/target host \(forward 1\)/)
+      }
+    })
+
+    it('rejects the same local port twice', () => {
+      expect(() => validateForwards([
+        { checked: true, from: '8080', to: '80' },
+        { checked: true, from: '8080', host: 'other', to: '81' }
+      ])).toThrow(/8080/)
+      // 꺼진 항목은 겹쳐도 된다
+      expect(validateForwards([
+        { checked: true, from: '8080', to: '80' },
+        { checked: false, from: '8080', to: '81' }
+      ])).toHaveLength(1)
+    })
+  })
+
   it('validates node and forwards', () => {
     expect(validateNode({ name: 'a\nb', user: 'u', host: 'h', port: '22' }).name).toBe('a b')
     expect(() => validateNode(null)).toThrow()
@@ -76,9 +108,13 @@ describe('validate', () => {
     expect(validateForwards([
       { checked: true, from: '8080', to: '80' },
       { checked: false, from: '1', to: '1' },
-      { checked: true, from: '', to: '80' }
-    ])).toEqual([{ from: '8080', to: '80' }])
+      { checked: true, from: '9090', host: ' db.internal ', to: '5432' }
+    ])).toEqual([
+      { from: '8080', host: 'localhost', to: '80' },
+      { from: '9090', host: 'db.internal', to: '5432' }
+    ])
     expect(() => validateForwards([])).toThrow()
+    expect(validateForwards([], { allowEmpty: true })).toEqual([])
     expect(() => validateForwards([{ checked: true, from: 'x', to: '80' }])).toThrow()
   })
 })
