@@ -5,10 +5,6 @@
   >
     <slot name="main-navigator-toggle" />
 
-    <div class="align-self-center">
-      <!-- left button -->
-    </div>
-
     <div class="ml-auto align-self-center">
       <slot name="main-navigator-toolbar" />
 
@@ -61,11 +57,6 @@
 <script>
 export default {
   name: 'MainHeader',
-  data() {
-    return {
-      isLocked: true
-    }
-  },
   methods: {
     reload() {
       window.preload.reloadApp()

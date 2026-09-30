@@ -66,12 +66,18 @@
 
         <b-card-text>
           <div>
-            Electron Build made by
+            Built with
             <a
-              href="https://nklayman.github.io/vue-cli-plugin-electron-builder/"
+              href="https://electron-vite.org/"
               target="_blank"
-              title="Vue CLI Plugin Electron Builder"
-            >Vue CLI Plugin Electron Builder</a>
+              title="electron-vite"
+            >electron-vite</a>
+            and
+            <a
+              href="https://www.electron.build/"
+              target="_blank"
+              title="electron-builder"
+            >electron-builder</a>
           </div>
         </b-card-text>
 
@@ -90,8 +96,11 @@
 </template>
 
 <script>
+import { dismissOnEscape } from '@/utils/dismiss'
+
 export default {
   name: 'InfoPopup',
+  mixins: [dismissOnEscape],
   props: {
     show: {
       type: Boolean,

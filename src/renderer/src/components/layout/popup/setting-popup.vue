@@ -73,9 +73,11 @@
 
 <script>
 import { mapActions, mapGetters } from 'vuex'
+import { dismissOnEscape } from '@/utils/dismiss'
 
 export default {
   name: 'SettingPopup',
+  mixins: [dismissOnEscape],
   props: {
     show: {
       type: Boolean,
@@ -92,8 +94,10 @@ export default {
     ...mapGetters(['setting'])
   },
   watch: {
-    show() {
-      this.init()
+    show(shown) {
+      if (shown) {
+        this.init()
+      }
     }
   },
   methods: {
