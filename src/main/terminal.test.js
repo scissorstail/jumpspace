@@ -92,6 +92,7 @@ describe('createTerminalManager', () => {
     expect(existsSync(args[0])).toBe(true)
     expect(options).toMatchObject({ cols: 120, rows: 30, name: 'xterm-256color' })
     expect(options.env.TERM).toBe('xterm-256color')
+    expect(options.env.JUMPSPACE_IN_APP).toBe('1')
     // 비밀번호는 환경변수로만 넘어가고 인자에는 없다.
     expect(Object.values(options.env)).toContain('pw')
     expect(args.join(' ')).not.toContain('pw')

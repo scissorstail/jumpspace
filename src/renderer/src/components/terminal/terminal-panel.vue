@@ -20,7 +20,7 @@
         v-for="session in sessions"
         :key="session.key"
         class="terminal-tab"
-        :class="{ active: session.key === activeKey, [`is-${session.status}`]: true }"
+        :class="{ active: session.key === activeKey, [`is-${session.status}`]: true, 'has-error': session.status === 'exited' && !!session.exitCode }"
         role="tab"
         :aria-selected="session.key === activeKey ? 'true' : 'false'"
         tabindex="0"
@@ -358,7 +358,8 @@ export default {
     background: var(--js-live);
   }
 
-  .is-failed & {
+  .is-failed &,
+  .has-error & {
     background: var(--js-danger);
   }
 }

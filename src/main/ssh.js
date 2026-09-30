@@ -87,7 +87,8 @@ function wrap({ prelude = [], lines, cleanupPaths, env = {} }) {
     ...lines,
     'rc=$?',
     // ssh 자체의 오류(255)는 창이 바로 닫히면 확인할 수 없으므로 잠시 멈춘다.
-    'if [ "$rc" -eq 255 ]; then printf \'\\nssh failed (exit status 255). Press Enter to close.\'; read -r _; fi',
+    // 앱 안의 터미널(JUMPSPACE_IN_APP)은 끝난 뒤에도 탭이 남으므로 멈추지 않고 바로 끝낸다. (멈추면 실패한 접속이 열린 세션처럼 보인다)
+    'if [ "$rc" -eq 255 ] && [ -z "${JUMPSPACE_IN_APP:-}" ]; then printf \'\\nssh failed (exit status 255). Press Enter to close.\'; read -r _; fi',
     'exit "$rc"',
     ''
   ].join('\n')

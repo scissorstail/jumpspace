@@ -35,6 +35,7 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- A connection that failed in the app terminal (for example *Connection refused*) waited for Enter and looked like an open session: the tab stayed "running" and the path stayed lit. The session now ends right away; the tab shows the exit status and a red dot.
 - The "previous image" button could not return to the first image.
 - The generated script ignored a hang-up: after its window was closed it could still run its last lines. It now exits on HUP and TERM.
 - A key path with a control character could pass validation after an earlier value had been rejected (shared global regex).

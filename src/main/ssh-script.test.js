@@ -84,7 +84,7 @@ function newRun(dir = root) {
   }
 }
 
-function run(built, { out, paths }, { prompts = '', exit = '', input = '' } = {}) {
+function run(built, { out, paths }, { prompts = '', exit = '', input = '', env = {} } = {}) {
   writeFileSync(paths.scriptPath, built.script, { mode: 0o700 })
   if (built.config) writeFileSync(paths.configPath, built.config)
 
@@ -97,7 +97,8 @@ function run(built, { out, paths }, { prompts = '', exit = '', input = '' } = {}
       BASH_ENV: toUnixPath(bashEnv),
       FAKE_SSH_OUT: out,
       FAKE_SSH_PROMPTS: prompts,
-      FAKE_SSH_EXIT: exit
+      FAKE_SSH_EXIT: exit,
+      ...env
     },
     input,
     timeout: 15000
@@ -222,6 +223,14 @@ describe.skipIf(!canRun)('generated scripts run under bash', () => {
       const failed = run(buildConnect(node, two.paths), two, { exit: '255', input: '\n' })
       expect(failed.status).toBe(255)
       expect(failed.stdout).toContain('ssh failed (exit status 255)')
+    })
+
+    it('does not wait in the app terminal, whose tab stays open anyway', () => {
+      const r = newRun()
+      const failed = run(buildConnect(node, r.paths), r, { exit: '255', env: { JUMPSPACE_IN_APP: '1' } })
+
+      expect(failed.status).toBe(255)
+      expect(failed.stdout).not.toContain('Press Enter')
     })
 
     it('hands the password to ssh through SSH_ASKPASS, which the script itself answers', () => {

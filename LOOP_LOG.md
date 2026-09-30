@@ -241,6 +241,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 ### #30 2026-09-30 · routine: polish, then a feature (by hand, at the owner's request)
 - The owner wants the routine to alternate: polish until it is good enough, then add one feature, then polish again. Protocol step 2 now defines the cycle and when polish is "good enough", a new `feature` activity takes the top item of the new **Feature queue** (reconnect an ended tab, connection state on the canvas, terminal font size, scrollback search, find a node, Windows installer build in CI), and the rules say which features still need the owner (Proposals). The trigger prompt was updated to match.
 
+### #31 2026-09-30 16:2x UTC · ux (scheduled run, polish phase)
+- Phase: polish (the last polish runs #23 and #29 both found real things, so not yet "good enough" for a feature run).
+- Did: walked the terminal panel with three sessions (ended, refused, running) and a narrow window. Bug: a refused connection kept the tab "Running" with a green dot and the node lit, because the generated script pauses with "Press Enter to close" after ssh exits with 255 (meant for the Git Bash window, which would close). The app terminal now sets `JUMPSPACE_IN_APP=1` and the script skips the pause there; the tab of a session that ended with a non-zero status gets a red dot.
+- Result: tests 219 passed (+1 in ssh-script.test.js, +1 assertion in terminal.test.js; both mutation checked), lint ok, build ok. In the app (scratch t48): refused connection -> tab ended with "exit status 255", red dot, no "Press Enter", node not lit; t25, t35, t44, t45 pass.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

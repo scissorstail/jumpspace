@@ -71,7 +71,8 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
           name: 'xterm-256color',
           cols: isSize(cols) ? cols : 80,
           rows: isSize(rows) ? rows : 24,
-          env: { ...process.env, ...prepared.env, TERM: 'xterm-256color', COLORTERM: 'truecolor' }
+          // JUMPSPACE_IN_APP: 스크립트가 ssh 실패 뒤 Enter를 기다리지 않는다 (ssh.js)
+          env: { ...process.env, ...prepared.env, TERM: 'xterm-256color', COLORTERM: 'truecolor', JUMPSPACE_IN_APP: '1' }
         })
       } catch (e) {
         await prepared.cleanup()
