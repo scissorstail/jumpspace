@@ -452,7 +452,10 @@ body {
   opacity: 0.8;
 }
 
-.b-toast .toast {
+// 토스트: bootstrap-vue의 variant 규칙(.b-toast-secondary.b-toast-solid .toast, .b-toast-danger .toast .toast-header)이
+// 더 구체적이라 같은 구체성으로 맞춘다. (이 파일이 나중에 읽혀서 같은 구체성이면 이긴다)
+.b-toast .toast,
+.b-toast.b-toast-solid .toast {
   border: 2px solid var(--js-secondary);
   border-radius: 0;
   background: var(--js-surface);
@@ -460,7 +463,8 @@ body {
   box-shadow: var(--js-drop);
 }
 
-.toast-header {
+.toast-header,
+.b-toast .toast .toast-header {
   border-bottom: 2px solid var(--js-line);
   background: var(--js-surface-2);
   color: var(--js-secondary);
@@ -470,7 +474,11 @@ body {
   text-transform: uppercase;
 }
 
-.b-toast-danger .toast-header {
+.b-toast.b-toast-danger .toast {
+  border-color: var(--js-danger);
+}
+
+.b-toast.b-toast-danger .toast .toast-header {
   background: var(--js-danger);
   color: var(--js-on-primary);
 }

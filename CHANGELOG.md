@@ -35,6 +35,7 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- The hint toast (for example "Unlock the editor ...") was a light grey box with white text; toasts now use the theme colors, error toasts with a red header.
 - A connection that failed in the app terminal (for example *Connection refused*) waited for Enter and looked like an open session: the tab stayed "running" and the path stayed lit. The session now ends right away; the tab shows the exit status and a red dot.
 - The "previous image" button could not return to the first image.
 - The generated script ignored a hang-up: after its window was closed it could still run its last lines. It now exits on HUP and TERM.

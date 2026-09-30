@@ -274,6 +274,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: no behavior change. lint exit 0, tests 227 passed, build exit 0. Screenshots of all five backgrounds (empty screen and canvas, animations stopped) before and after are byte-identical; t9, t39, t43 pass. README layout and CLAUDE.md point to the new file.
 - Phase: a refactor with a result, so the polish phase continues.
 
+### #38 2026-09-30 23:2x UTC · style (scheduled run, polish phase)
+- Did: screenshots of the info popup, a selected node with the locked-editor hint and the error dialog in all three palettes. The hint toast ("Unlock the editor ...") was a light grey box with white text, nearly unreadable: bootstrap-vue's variant rules (`.b-toast-secondary.b-toast-solid .toast`, `.b-toast-danger .toast .toast-header`) were more specific than the theme's toast rules. The theme rules now use the same specificity (theme.scss is read later, so it wins); the danger variant keeps a red border and header.
+- Result: CSS only. lint exit 0, tests 227 passed, build exit 0. Hint toast background is the surface color with white text; hint and error toasts checked in all three palettes (scratch t53, t54, t55).
+- Phase: a real (visible) fix, so the polish phase continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
