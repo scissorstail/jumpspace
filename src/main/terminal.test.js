@@ -206,6 +206,42 @@ describe.skipIf(!BASH || !existsSync(BASH))('a real pty', () => {
     expect(exit).toBe(0)
   }, 30000)
 
+  // 한글(멀티바이트 UTF-8)이 키 입력으로 프로그램까지 그대로 가고, 출력으로 그대로 돌아오는지.
+  // Windows에서는 ConPTY와 Git의 bash.exe를 거치므로 CI의 Windows 잡에서 확인한다.
+  it('passes Korean text through the pty in both directions', async () => {
+    const { spawn } = await import('node-pty')
+    const bashEnv = join(root, 'bashenv-hangul.sh')
+    writeFileSync(bashEnv, 'ssh() { printf "READY\\n"; IFS= read -r line; printf "GOT[%s]" "$line"; printf "%s" "$line" | od -An -tx1 | tr -d " \\n"; printf "\\nEND\\n"; }\n')
+
+    const output = []
+    let exit = null
+    const tempDir = mkdtempSync(join(root, 'hangul-'))
+    const manager = createTerminalManager({
+      tempDir,
+      getBash: () => BASH,
+      spawnPty: (file, args, options) => spawn(file, args, { ...options, env: { ...options.env, BASH_ENV: toUnixPath(bashEnv) } }),
+      send: (owner, channel, id, value) => (channel === 'terminal:data' ? output.push(value) : (exit = value))
+    })
+    const text = () => output.join('')
+    const waitFor = async (check, ms = 15000) => {
+      const end = Date.now() + ms
+      while (!check()) {
+        if (Date.now() > end) throw new Error(`timed out; output so far: ${JSON.stringify(text())}`)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+    }
+
+    const id = await manager.open('connect', node, { owner: 1 })
+    await waitFor(() => text().includes('READY'))
+    manager.write(id, 1, '한글 입력\r')
+    await waitFor(() => text().includes('END'))
+
+    // 받은 바이트: 한 글 (공백) 입 력 in UTF-8
+    expect(text()).toContain('ed959ceab88020ec9e85eba0a5')
+    expect(text()).toContain('GOT[한글 입력]')
+    await waitFor(() => exit !== null)
+  }, 30000)
+
   it.skipIf(process.platform === 'win32')('closing a session also ends the program that runs in it', async () => {
     const { spawn } = await import('node-pty')
     const bashEnv = join(root, 'bashenv-sleep.sh')
