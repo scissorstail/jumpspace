@@ -6,7 +6,7 @@ This file is its memory. **Read the whole file before doing anything, and append
 ## Protocol (every run)
 
 1. **Orient.** `git fetch origin claude/cool-bardeen-9x9ymz`, check `git status -sb`, read this file (Backlog and the last few log entries). If CI is reachable (GitHub MCP `actions_list`), look at the last run of the branch; a red run is the first thing to fix.
-2. **Pick one activity** from the rotation below. Prefer the one that was not done for the longest time (see the log). Do exactly one, small and finished, in about an hour at most.
+2. **Pick one activity** from the rotation below. Prefer the one that was not done for the longest time (see the log). Since 2026-09-30 the owner wants steady small improvements of the app: at least every other run is `ux` or `style` (unless CI is red or a real bug is waiting). Do exactly one, small and finished, in about an hour at most.
 3. **Verify before every commit:** `npm run lint`, `npx vitest run`, `npm run build`. A UI change is also tried in the real app when practical (Playwright + Electron under `xvfb-run`; the old scripts lived in the session scratchpad and are not in the repo, so write a small new one if needed).
 4. **Commit and push** to `claude/cool-bardeen-9x9ymz` only. Small commits with a message that says why, ending with the trailer lines the session asks for (`Co-Authored-By:` with the model the session names, and `Claude-Session: <the session URL>`). No pull requests, no force push, no other branches.
 5. **Append a log entry** (template below) and commit it too. Keep entries short and factual. If nothing worthwhile was found, log that and stop; do not invent work.
@@ -19,6 +19,7 @@ This file is its memory. **Read the whole file before doing anything, and append
 | `refactor` | Split what is too big or does two things (see the size hot spots in the Backlog), without changing behavior. Tests first if there are none. |
 | `tests` | Find behavior without a test (start with the list in the Backlog), add tests, then break the code on purpose to see that the test fails (mutation check). Fix a real bug you find, in its own commit. |
 | `health` | `npm outdated`, `npm audit`, the Electron patch releases, CI status, README/CHANGELOG matching the code. Update within the same major version when tests stay green. |
+| `style` | Visual polish of the synthwave theme (flat, high contrast, solid colors, hard shadows; no glow, blur or gradients except the background scene; no logos or other brands' artwork). One small visible improvement per run (spacing, alignment, sizes, colors of one part, a rough edge), checked with screenshots in **all three palettes**. No new screens or features. |
 | `ux` | UI/UX improvement: walk through the real app (screenshots), fix small UI bugs, improve keyboard use, labels, contrast, empty/error states, feedback and wording. One or two small, visible improvements per run; check the result in the app. Do not add features or new screens. |
 
 ### Rules
@@ -174,4 +175,4 @@ Ordered roughly by value. Move an item to the log when it is done.
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
-- **Stopped on 2026-09-30 10:18 UTC** at the owner's request (`enabled: false`). To start it again: `update_trigger` with `enabled: true`; to remove it: `delete_trigger`.
+- Stopped on 2026-09-30 10:18 UTC at the owner's request, **started again on 2026-09-30 11:40 UTC** at the owner's request ("small steady improvements"), with the new `style` activity. To stop it: `update_trigger` with `enabled: false`; to remove it: `delete_trigger`.
