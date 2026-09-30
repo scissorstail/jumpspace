@@ -18,7 +18,11 @@ Vue.use(VTooltip, {
     // bootstrap-vue와 v-tooltip 클래스 충돌 방지
     defaultBaseClass: 'vt-tooltip vt-popover',
     defaultInnerClass: 'vt-tooltip-inner vt-popover-inner',
-    defaultArrowClass: 'vt-tooltip-arrow vt-popover-arrow'
+    defaultArrowClass: 'vt-tooltip-arrow vt-popover-arrow',
+    // 화살표 요소에는 스타일이 없어서 popper가 화살표 크기를 팝오버 너비로 계산하고, 그만큼 팝오버를 밀어내 창 밖으로 나가게 한다.
+    // 화살표는 그리지 않으므로 끄고, 팝오버는 창 안에 머물게 한다.
+    defaultPopperOptions: { modifiers: { arrow: { enabled: false } } },
+    defaultBoundariesElement: 'viewport'
   }
 })
 Vue.use(vClickOutside)
