@@ -21,7 +21,8 @@ import {
   BIconEye,
   BIconEyeSlash,
   BIconArrowRight,
-  BIconPlayFill
+  BIconPlayFill,
+  BIconHddNetwork
 } from 'bootstrap-vue'
 // import { BootstrapVueIcons } from 'bootstrap-vue' // To use all icons
 
@@ -46,5 +47,6 @@ Vue.component('BIconEye', BIconEye)
 Vue.component('BIconEyeSlash', BIconEyeSlash)
 Vue.component('BIconArrowRight', BIconArrowRight)
 Vue.component('BIconPlayFill', BIconPlayFill)
+Vue.component('BIconHddNetwork', BIconHddNetwork)
 
 // Vue.use(BootstrapVueIcons) // To use all icons

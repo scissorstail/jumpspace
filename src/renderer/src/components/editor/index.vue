@@ -229,27 +229,14 @@ export default {
   margin: 0;
   padding: 0;
 
+  // 캔버스 배경: 눈에 덜 띄는 점 격자
   .background {
     z-index: -5;
 
-    background-position: 0px 0px, 10px 10px;
+    background-color: #f7f8fa;
+    background-image: radial-gradient(circle, #cfd4db 1px, transparent 1.3px);
     background-size: 20px 20px;
-    background-image: linear-gradient(
-        45deg,
-        #eee 25%,
-        transparent 25%,
-        transparent 75%,
-        #eee 75%,
-        #eee 100%
-      ),
-      linear-gradient(
-        45deg,
-        #eee 25%,
-        white 25%,
-        white 75%,
-        #eee 75%,
-        #eee 100%
-      );
+    background-position: 10px 10px;
   }
 
   .node.site {

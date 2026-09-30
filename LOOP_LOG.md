@@ -45,7 +45,6 @@ This file is its memory. **Read the whole file before doing anything, and append
 Ordered roughly by value. Move an item to the log when it is done.
 
 ### UX candidates
-- A node without an icon shows an empty grey frame; a neutral default icon would look finished.
 - Lock button tooltip stays visible after a click (mouse still over it).
 
 ### Code hot spots
@@ -138,6 +137,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Did: the right click menus got their own stylesheet `components/editor/context-menu.scss`: white card, 10px radius, soft shadow, 12 px fade-in (off with `prefers-reduced-motion`), the menu opens with its top-left corner at the cursor (the plugin centered it above), items with Bootstrap Icons (trash, files, plus) drawn as CSS masks, a red *Delete*, and the canvas entry renamed *Add node* (plugin option `rename`). Menu items have no classes, so the icons and the red Delete are picked by position: node menu = Delete (first child), Duplicate (second); canvas menu = the hidden `.search` box, then the entry. If a menu item is ever added or reordered, check those selectors.
 - Result: tests 186 passed, lint ok, build ok. In the app: both menus, hover states, a menu at the bottom-right corner stays inside the window, Delete/confirm flows and the locked hint still pass. Scratch UI scripts now click "Add node" instead of "Site".
 - Found / next: none.
+
+### #12 2026-09-30 · ux: overall polish (by hand, at the owner's request)
+- Did: visual pass over the whole UI, CSS only plus one icon: canvas background is a dot grid (`#f7f8fa`) instead of the checkerboard; node text has a hierarchy (name 1rem/600, the rest 0.85rem grey); a node without an image shows a grey `hdd-network` symbol (the old empty `<img>` frame is gone); popovers, Settings and Info are white 10-12px cards with the same shadow as the right click menu; the sidebar highlights the open item and shows the blue frame only for `:focus-visible`; scrollbars are 8px and light; labels in the node settings are 0.85rem. The Settings dialog is at most 520px wide.
+- Result: tests 186 passed, lint ok, build ok. Scratch UI scripts (items, import/export, settings, node menu, canvas view, icon picker, Escape, delete, hint, menus) all pass; `t15` now checks that the `<img>` is absent for "No icon".
+- Found / next: the lock button tooltip that stays after a click is the only UX candidate left. Nothing was changed in the layout of the node itself (sockets, border, arrows keep the original look on purpose).
 
 ## Routine
 

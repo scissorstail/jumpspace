@@ -43,12 +43,23 @@
       class="info-block"
     >
       <img
-        :src="diagram ? `${diagramBase}${diagram}` : null"
+        v-if="diagram"
+        :src="`${diagramBase}${diagram}`"
         alt=""
         class="info-diagram mb-1"
         height="40%"
         width="40%"
       >
+      <div
+        v-else
+        class="info-diagram info-diagram-empty mb-1"
+      >
+        <b-icon
+          icon="hdd-network"
+          font-scale="2.6"
+          aria-hidden="true"
+        />
+      </div>
       <div class="info-field">
         <div
           class="info-text"
@@ -337,12 +348,18 @@ export default {
     .form-row {
       align-items: center;
     }
+
+    // 입력칸(sm)보다 라벨이 커 보이지 않게 한다.
+    legend,
+    label {
+      color: #495057;
+      font-size: 0.85rem;
+    }
   }
 
   &-block {
-    font-weight: bold;
     text-align: center;
-    color: black;
+    color: #212529;
   }
 
   &-diagram {
@@ -361,10 +378,30 @@ export default {
     padding-top: 10px;
   }
 
+  // 이름은 굵게, user / host / port는 한 단계 낮춰서 보인다.
   &-text {
-    text-overflow: ellipsis;
     overflow: hidden;
+    color: #565e64;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    text-overflow: ellipsis;
     white-space: nowrap;
+
+    &:first-child {
+      color: #212529;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+  }
+
+  // 이미지를 고르지 않은 노드의 자리
+  &-diagram-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    margin-right: auto;
+    color: #c3c9d1;
   }
 
   &-forward {
@@ -400,11 +437,13 @@ export default {
     transition: opacity 0.15s;
   }
 
+  // 우클릭 메뉴와 같은 카드 모양
   &-inner {
-    background: #f9f9f9;
-    color: black;
-    border-radius: 5px;
-    box-shadow: 0 5px 30px rgba(black, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    background: white;
+    color: #212529;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08);
   }
 }
 </style>

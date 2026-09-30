@@ -542,8 +542,14 @@ export default {
             border: 1px solid #80bdff;
           }
 
+          &.btn:hover:not(.editing):not(.selected) {
+            background-color: #f1f3f5;
+          }
+
+          // 열려 있는 항목
           &.active {
-            font-weight: bold;
+            background-color: #e7f1ff;
+            font-weight: 600;
           }
 
           &.selected {
@@ -558,11 +564,16 @@ export default {
             box-shadow: inset 0 0 0 0.2rem rgb(0 123 255 / 25%);
           }
 
+          // 마우스로 누른 뒤에는 테두리를 두지 않고, 키보드로 포커스가 온 항목과 이름 입력창만 표시한다.
           &.btn:focus,
           &.editing:focus,
           &.btn:active:focus {
             outline: none;
             box-shadow: none;
+          }
+
+          &.btn:focus-visible,
+          &.editing:focus {
             border: 1px solid #80bdff;
           }
 
@@ -599,23 +610,22 @@ export default {
   transition: none !important;
 }
 
-/* width */
+/* 얇고 둥근 스크롤바 */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
+  height: 8px;
 }
 
-/* Track */
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
 
-/* Handle */
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  border-radius: 4px;
+  background: #c4c9d0;
 }
 
-/* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #a3aab3;
 }
 </style>

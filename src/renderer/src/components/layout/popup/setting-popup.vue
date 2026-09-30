@@ -13,7 +13,7 @@
         v-if="show"
         header="Settings"
         bg-variant="light"
-        style="width: 90vw"
+        style="width: 90vw; max-width: 520px"
       >
         <b-card-text class="mb-3">
           <b-row class="mb-3">
@@ -22,7 +22,7 @@
                 class="mb-0"
                 label="Git Bash path"
                 label-align="left"
-                label-cols-sm="3"
+                label-cols-sm="4"
               >
                 <b-form-input
                   v-model="gitBashPath"
@@ -37,7 +37,7 @@
                 label-align="left"
                 class="text-left"
                 label="Close to system tray"
-                label-cols-sm="3"
+                label-cols-sm="4"
               >
                 <b-form-checkbox
                   v-model="isHideToTrayOnClose"
@@ -123,4 +123,25 @@ export default {
     align-items: center;
   }
 }
+
+// 팝업 카드: 둥근 모서리, 흰 바탕, 굵은 제목
+::v-deep {
+  .card {
+    overflow: hidden;
+    border: 0;
+    border-radius: 12px;
+    background-color: white !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  }
+
+  .card-header {
+    background-color: white;
+    font-weight: 600;
+  }
+
+  .card-footer {
+    background-color: #f8f9fa;
+  }
+}
+
 </style>
