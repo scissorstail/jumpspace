@@ -329,7 +329,7 @@ export default {
   }
 
   .is-running & {
-    background: #3dff8a;
+    background: var(--js-live);
   }
 
   .is-failed & {

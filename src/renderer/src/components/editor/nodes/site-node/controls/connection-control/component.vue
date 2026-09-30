@@ -230,15 +230,22 @@ export default {
       }
     },
     // 설정에 따라 앱 안의 터미널 또는 Git Bash 창에서 연다.
-    launch(kind, payload, hops = 0) {
+    // route: 세션이 지나가는 노드들(경로 순서). 앱 안의 터미널이 열려 있는 동안 캔버스가 그 연결선을 움직여 보인다.
+    launch(kind, payload, route, hops = 0) {
       if (this.$store.getters.setting.openIn === 'window') {
         return this.run(() => window.preload.ssh[kind](payload))
       }
 
-      this.$store.dispatch('terminalOpen', { kind, payload, title: terminalTitle(kind, this.$data, hops) })
+      this.$store.dispatch('terminalOpen', { kind, payload, route, title: terminalTitle(kind, this.$data, hops) })
+    },
+    // 앞 노드들과 이 노드
+    routeToHere() {
+      return (this.prevNodeDataList || []).concat(this.$data).map(x => this.connectionOf(x))
     },
     connect() {
-      return this.launch('connect', this.connectionOf(this.$data))
+      const connection = this.connectionOf(this.$data)
+
+      return this.launch('connect', connection, [connection])
     },
     openForward() {
       const plan = this.forwardPlan
@@ -247,15 +254,16 @@ export default {
       }
 
       // plan.via의 마지막 노드에 접속하고(앞 노드들은 각자의 인증으로 거친다), 그 서버에서 바라본 host:port로 포워딩한다.
+      // 터널은 앞 노드들을 거쳐 이 노드(또는 이 노드의 host)까지 이어진다.
       return this.launch('forward', {
         via: plan.via.map(x => this.connectionOf(x)),
         forwards: forwardEntries(this.forwards, plan)
-      })
+      }, this.routeToHere())
     },
     proxyJump() {
-      const nodes = (this.prevNodeDataList || []).concat(this.$data).map(x => this.connectionOf(x))
+      const nodes = this.routeToHere()
 
-      return this.launch('proxyJump', nodes, nodes.length - 1)
+      return this.launch('proxyJump', nodes, nodes, nodes.length - 1)
     },
     async copyConfig() {
       const request = configRequest(this.connectionOf(this.$data), this.prevNodeDataList, this.forwards, this.forwardPlan)

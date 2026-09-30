@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createOutputRouter, terminalTitle } from './terminal-sessions'
+import { createOutputRouter, hopKey, liveRoutes, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -58,5 +58,49 @@ describe('createOutputRouter', () => {
     router.register(1, again)
     expect(again).toHaveBeenCalledWith('ater') // 'later'을 4자로 자른 것
     expect(write).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('hopKey', () => {
+  it('identifies a server by user, host and port only', () => {
+    expect(hopKey({ user: 'deploy', host: 'web', port: '22', password: 'secret', keyPath: '/k' })).toBe('deploy@web:22')
+    expect(hopKey({ user: ' deploy ', host: 'web', port: 22 })).toBe('deploy@web:22')
+    expect(hopKey({ host: 'db.internal' })).toBe('@db.internal:')
+    expect(hopKey(null)).toBe('@:')
+  })
+})
+
+describe('liveRoutes', () => {
+  const a = 'u@a:22'
+  const b = 'u@b:22'
+  const c = 'u@c:22'
+
+  it('marks the nodes and the links along every open session', () => {
+    const { nodes, links } = liveRoutes([
+      { status: 'running', hops: [a, b, c] },
+      { status: 'starting', hops: [a] }
+    ])
+
+    expect([...nodes].sort()).toEqual([a, b, c])
+    expect([...links].sort()).toEqual([`${a}>${b}`, `${b}>${c}`])
+  })
+
+  it('ignores ended and failed sessions, and sessions without a route', () => {
+    const { nodes, links } = liveRoutes([
+      { status: 'exited', hops: [a, b] },
+      { status: 'failed', hops: [b, c] },
+      { status: 'running' }
+    ])
+
+    expect(nodes.size).toBe(0)
+    expect(links.size).toBe(0)
+    expect(liveRoutes(undefined).links.size).toBe(0)
+  })
+
+  it('keeps the direction of a link', () => {
+    const { links } = liveRoutes([{ status: 'running', hops: [a, b] }])
+
+    expect(links.has(`${a}>${b}`)).toBe(true)
+    expect(links.has(`${b}>${a}`)).toBe(false)
   })
 })

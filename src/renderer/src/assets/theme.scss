@@ -44,6 +44,7 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-secondary: #00e5ff;
   --js-on-secondary: #0d0221;
   --js-sun: #ffd319;
+  --js-signal: #ffd319; // 열린 경로 위를 흐르는 신호
   --js-danger: #ff3864;
   // 배경 풍경
   --js-sky-2: #2b1055;
@@ -64,6 +65,7 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-secondary: #ffb845;
   --js-on-secondary: #1a0633;
   --js-sun: #ff8a3d;
+  --js-signal: #ffe45c; // 열린 경로 위를 흐르는 신호
   --js-danger: #ff4d6d;
   --js-sky-2: #4a1552;
   --js-city: #10032a;
@@ -83,6 +85,7 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-secondary: #6ff7e8;
   --js-on-secondary: #070b2e;
   --js-sun: #b47cff;
+  --js-signal: #6ff7e8; // 열린 경로 위를 흐르는 신호
   --js-danger: #ff5c8a;
   --js-sky-2: #1a1f5e;
   --js-city: #03061f;
@@ -91,6 +94,8 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
 
 :root {
   --js-border: var(--js-line);
+  // 열려 있는 세션 (터미널 탭의 점, 캔버스의 LIVE 표)
+  --js-live: #3dff8a;
   --js-hover: rgba(255, 255, 255, 0.08);
   --js-primary-soft: color-mix(in srgb, var(--js-primary) 22%, transparent);
   --js-secondary-soft: color-mix(in srgb, var(--js-secondary) 16%, transparent);

@@ -18,6 +18,7 @@ import ReadonlyPlugin from 'rete-readonly-plugin'
 
 import SiteNode from './nodes/site-node'
 import { viewOf } from '@/utils/view'
+import { hopKey, liveRoutes } from '@/utils/terminal-sessions'
 
 export default {
   name: 'EditorIndex',
@@ -35,6 +36,13 @@ export default {
     return {}
   },
   watch: {
+    // 터미널 세션이 열리거나 끝나면 캔버스의 경로 표시를 바꾼다.
+    '$store.getters.terminalSessions': {
+      deep: true,
+      handler() {
+        this.markLiveRoutes()
+      }
+    },
     async editorData() {
       if (this.editorData) {
         await this.engine.abort()
@@ -219,6 +227,21 @@ export default {
         this.confirmedRemoval = null
       }
     },
+    // 앱 안의 터미널에서 열려 있는 세션이 지나가는 노드와 연결선에 is-live를 붙인다. (신호가 흐르는 모양은 CSS)
+    // 노드와 세션은 user@host:port로 맞춰 본다. 그래서 다른 item의 같은 서버 경로도 함께 표시된다.
+    markLiveRoutes() {
+      if (!this.editor) return
+
+      const { nodes, links } = liveRoutes(this.$store.getters.terminalSessions)
+      const keyOf = node => hopKey(node.controls.get('connection')?.vueContext)
+
+      for (const [node, view] of this.editor.view.nodes) {
+        view.el.classList.toggle('is-live', nodes.has(keyOf(node)))
+      }
+      for (const [connection, view] of this.editor.view.connections) {
+        view.el.classList.toggle('is-live', links.has(`${keyOf(connection.output.node)}>${keyOf(connection.input.node)}`))
+      }
+    },
     async load(editorSaveData) {
       await this.editor.fromJSON(JSON.parse(editorSaveData))
       await this.compile()
@@ -229,6 +252,7 @@ export default {
       await this.engine.abort()
       await this.engine.process(this.editor.toJSON())
       await this.engine.abort()
+      this.markLiveRoutes()
 
       return this.editor.toJSON()
     }
@@ -332,26 +356,62 @@ export default {
     }
   }
 
-  // 연결선: 단색 청록 선 위로 분홍 신호가 흐른다.
+  // 연결선: 쉬는 동안은 단색 청록 선과 분홍 화살표.
+  // 그 경로로 앱 안의 터미널 세션이 열려 있으면(.is-live) 분홍 선 위로 네모 신호(--js-signal)가 앞 노드에서 다음 노드로 흐른다.
   .connection {
     .main-path {
       stroke-width: 3px;
       stroke: var(--js-secondary);
+      transition: stroke 0.15s;
     }
 
     .flow-path {
+      display: none;
       fill: none;
-      stroke: var(--js-primary);
-      stroke-width: 3px;
+      stroke: var(--js-signal);
+      stroke-width: 7px;
       stroke-linecap: butt;
-      stroke-dasharray: 8 16;
+      stroke-dasharray: 7 17;
       pointer-events: none;
-      animation: connection-flow 1s linear infinite;
+      animation: connection-flow 0.6s linear infinite;
     }
 
     .marker {
       fill: var(--js-primary);
     }
+  }
+
+  .is-live .connection {
+    .main-path {
+      stroke: var(--js-primary);
+      stroke-width: 4px;
+    }
+
+    .flow-path {
+      display: inline;
+    }
+
+    .marker {
+      fill: var(--js-signal);
+    }
+  }
+
+  // 열린 세션이 지나가는 노드: 왼쪽 위에 깜박이는 LIVE 표
+  .is-live .node.site::after {
+    content: 'LIVE';
+    position: absolute;
+    top: -12px;
+    left: -10px;
+    padding: 0 5px;
+    background: var(--js-live);
+    box-shadow: 2px 2px 0 #000;
+    color: #000;
+    font-family: var(--js-font-display);
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    pointer-events: none;
+    animation: live-blink 1.2s steps(1) infinite;
   }
 
   &.locked {
@@ -378,8 +438,15 @@ export default {
   }
 }
 
+@keyframes live-blink {
+  50% {
+    opacity: 0.6;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  #rete .connection .flow-path {
+  #rete .connection .flow-path,
+  #rete .is-live .node.site::after {
     animation: none;
   }
 
