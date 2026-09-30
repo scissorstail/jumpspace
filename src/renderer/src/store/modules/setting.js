@@ -5,7 +5,8 @@ const defaultSetting = {
   gitBashPath: '%ProgramFiles%\\Git\\git-bash.exe',
   isHideToTrayOnClose: false,
   openIn: 'app',
-  theme: 'neon-night'
+  theme: 'neon-night',
+  backdrop: 'depth'
 }
 
 export default {

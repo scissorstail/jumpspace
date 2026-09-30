@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SETTING, normalizeSetting, THEMES } from './setting.js'
+import { BACKDROPS, DEFAULT_SETTING, normalizeSetting, THEMES } from './setting.js'
 
 describe('normalizeSetting', () => {
   it('keeps valid values', () => {
-    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue' }))
-      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue' })
+    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt' }))
+      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt' })
   })
 
   it('uses the default path when it is empty, blank or not a string', () => {
@@ -49,5 +49,16 @@ describe('normalizeSetting: theme', () => {
     }
     expect(normalizeSetting({ theme: 'url(javascript:x)' }).theme).toBe('neon-night')
     expect(normalizeSetting({ theme: null }).theme).toBe('neon-night')
+  })
+})
+
+describe('normalizeSetting: backdrop', () => {
+  it('blurs the background scene by default and accepts only known effects', () => {
+    expect(normalizeSetting({}).backdrop).toBe('depth')
+    for (const backdrop of BACKDROPS) {
+      expect(normalizeSetting({ backdrop }).backdrop).toBe(backdrop)
+    }
+    expect(normalizeSetting({ backdrop: 'x" onload="y' }).backdrop).toBe('depth')
+    expect(normalizeSetting({ backdrop: 3 }).backdrop).toBe('depth')
   })
 })

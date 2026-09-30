@@ -65,6 +65,25 @@
               </b-form-group>
             </b-col>
           </b-row>
+          <b-row class="mb-3">
+            <b-col>
+              <b-form-group
+                class="mb-0"
+                label="Background"
+                label-align="left"
+                label-cols-sm="4"
+                description="Only the scenery behind the canvas. Depth blurs it, CRT adds scan lines."
+              >
+                <b-form-radio-group
+                  v-model="backdrop"
+                  :options="backdropOptions"
+                  buttons
+                  button-variant="outline-primary"
+                  size="sm"
+                />
+              </b-form-group>
+            </b-col>
+          </b-row>
           <b-row>
             <b-col>
               <b-form-group
@@ -129,6 +148,14 @@ export default {
         { text: 'Sunset drive', value: 'sunset-drive' },
         { text: 'Vapor blue', value: 'vapor-blue' }
       ],
+      backdrop: 'depth',
+      backdropOptions: [
+        { text: 'Vivid', value: 'vivid' },
+        { text: 'Soft', value: 'soft' },
+        { text: 'Depth', value: 'depth' },
+        { text: 'CRT', value: 'crt' },
+        { text: 'Off', value: 'off' }
+      ],
       openInOptions: [
         { text: 'This app', value: 'app' },
         { text: 'Git Bash window', value: 'window' }
@@ -152,13 +179,15 @@ export default {
       this.isHideToTrayOnClose = this.setting.isHideToTrayOnClose
       this.openIn = this.setting.openIn || 'app'
       this.theme = this.setting.theme || 'neon-night'
+      this.backdrop = this.setting.backdrop || 'depth'
     },
     async saveSetting() {
       await this.settingSave({
         gitBashPath: this.gitBashPath,
         isHideToTrayOnClose: this.isHideToTrayOnClose,
         openIn: this.openIn,
-        theme: this.theme
+        theme: this.theme,
+        backdrop: this.backdrop
       })
       this.$emit('update:show', false)
     }
