@@ -301,6 +301,29 @@ body {
   background-color: var(--js-bg);
 }
 
+// 스위치(설정의 on/off)도 네모난 단색으로: 꺼지면 흐린 칸, 켜지면 분홍 바탕에 어두운 칸
+.custom-switch .custom-control-label::before,
+.custom-switch .custom-control-label::after {
+  border-radius: 0;
+}
+
+.custom-switch .custom-control-label::after {
+  background-color: var(--js-text-muted);
+}
+
+.custom-switch .custom-control-input:checked ~ .custom-control-label::after {
+  background-color: var(--js-on-primary);
+}
+
+.custom-control-input:focus ~ .custom-control-label::before {
+  box-shadow: none;
+}
+
+.custom-control-input:focus-visible ~ .custom-control-label::before {
+  outline: 2px solid var(--js-sun);
+  outline-offset: 2px;
+}
+
 .dropdown-menu {
   border: 2px solid var(--js-secondary);
   border-radius: 0;

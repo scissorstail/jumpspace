@@ -341,7 +341,7 @@ export default {
 .terminal-hide {
   padding: 2px 6px;
   border: 0;
-  border-radius: 4px;
+  border-radius: 0;
   background: transparent;
   color: inherit;
   line-height: 1;
@@ -350,6 +350,17 @@ export default {
     background: var(--js-hover);
     color: var(--js-text);
   }
+
+  &:focus-visible {
+    outline: 2px solid var(--js-sun);
+    outline-offset: -2px;
+  }
+}
+
+// 분홍 바탕의 활성 탭 위에서는 어둡게 눌러 보인다.
+.terminal-tab.active .terminal-tab-close:hover {
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--js-on-primary);
 }
 
 .terminal-body {
