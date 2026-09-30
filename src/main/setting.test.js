@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SETTING, normalizeSetting } from './setting.js'
+import { DEFAULT_SETTING, normalizeSetting, THEMES } from './setting.js'
 
 describe('normalizeSetting', () => {
   it('keeps valid values', () => {
-    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window' }))
-      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window' })
+    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue' }))
+      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue' })
   })
 
   it('uses the default path when it is empty, blank or not a string', () => {
@@ -38,5 +38,16 @@ describe('normalizeSetting: openIn', () => {
     expect(normalizeSetting({ openIn: 'app' }).openIn).toBe('app')
     expect(normalizeSetting({ openIn: 'cmd.exe' }).openIn).toBe('app')
     expect(normalizeSetting({ openIn: 1 }).openIn).toBe('app')
+  })
+})
+
+describe('normalizeSetting: theme', () => {
+  it('uses the neon night colors by default and accepts only known themes', () => {
+    expect(normalizeSetting({}).theme).toBe('neon-night')
+    for (const theme of THEMES) {
+      expect(normalizeSetting({ theme }).theme).toBe(theme)
+    }
+    expect(normalizeSetting({ theme: 'url(javascript:x)' }).theme).toBe('neon-night')
+    expect(normalizeSetting({ theme: null }).theme).toBe('neon-night')
   })
 })

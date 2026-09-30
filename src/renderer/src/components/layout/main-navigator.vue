@@ -534,10 +534,9 @@ export default {
           border-radius: 0;
           color: var(--js-text);
           font-family: var(--js-font-display);
-          font-size: 1.05rem;
-          font-style: italic;
-          font-weight: 700;
-          letter-spacing: 0.04em;
+          font-size: 1.45rem;
+          letter-spacing: 0.05em;
+          line-height: 1.1;
           text-transform: uppercase;
 
           &:hover:not(.editing),
@@ -550,18 +549,18 @@ export default {
           // 메뉴가 열린 항목은 아래 항목들보다 위에 그린다. (항목이 position을 가지므로 메뉴가 뒤로 가려진다)
           &.dropdown-shown {
             z-index: 5;
-            border: 1px solid var(--js-accent);
+            border: 1px solid var(--js-secondary);
           }
 
           &.btn:hover:not(.editing):not(.selected):not(.active) {
             background-color: var(--js-hover);
           }
 
-          // 열려 있는 항목: 뒤에 기울인 빨간 띠 (글자는 기울이지 않는다)
+          // 열려 있는 항목: 분홍 띠, 어두운 글자
           &.active {
             z-index: 0;
             background-color: transparent;
-            color: white;
+            color: var(--js-on-primary);
 
             &.dropdown-shown {
               z-index: 5;
@@ -570,16 +569,15 @@ export default {
             &::before {
               content: '';
               position: absolute;
-              inset: 1px -4px 1px 4px;
+              inset: 1px 0;
               z-index: -1;
-              background: var(--js-red);
-              box-shadow: 4px 4px 0 var(--js-accent);
-              transform: skewX(-14deg);
+              background: var(--js-primary);
+              box-shadow: 3px 3px 0 #000;
             }
           }
 
           &.selected {
-            background-color: rgba(255, 138, 0, 0.22);
+            background-color: var(--js-secondary-soft);
           }
 
           &.btn-block + .btn-block {
@@ -600,7 +598,7 @@ export default {
 
           &.btn:focus-visible,
           &.editing:focus {
-            border: 1px solid var(--js-accent);
+            border: 1px solid var(--js-secondary);
           }
 
           &.editing {
@@ -664,24 +662,5 @@ export default {
       box-shadow: none;
     }
   }
-}
-
-/* 얇고 둥근 스크롤바 */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  border-radius: 4px;
-  background: rgba(255, 138, 0, 0.35);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 138, 0, 0.6);
 }
 </style>

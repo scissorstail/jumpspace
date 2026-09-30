@@ -82,6 +82,28 @@ import { createOutputRouter } from '@/utils/terminal-sessions'
 
 const MIN_HEIGHT = 140
 
+// 터미널 색: 지금 고른 테마(assets/theme.scss의 CSS 변수)에서 읽는다.
+function terminalTheme() {
+  const style = getComputedStyle(document.documentElement)
+  const color = name => style.getPropertyValue(name).trim()
+
+  return {
+    background: color('--js-bg'),
+    foreground: color('--js-text'),
+    cursor: color('--js-primary'),
+    cursorAccent: color('--js-bg'),
+    selectionBackground: color('--js-line'),
+    red: color('--js-danger'),
+    green: '#3dff8a',
+    yellow: color('--js-sun'),
+    blue: '#5aa9ff',
+    magenta: color('--js-primary'),
+    cyan: color('--js-secondary'),
+    white: color('--js-text'),
+    brightBlack: color('--js-text-muted')
+  }
+}
+
 // 하단의 터미널 패널. 탭마다 xterm.js 화면을 하나씩 두고, main의 pty와 키 입력/출력을 주고받는다.
 export default {
   name: 'TerminalPanel',
@@ -94,6 +116,12 @@ export default {
     ...mapGetters({ sessions: 'terminalSessions', activeKey: 'activeTerminalKey', isOpen: 'isTerminalPanelOpen' })
   },
   watch: {
+    // 테마를 바꾸면 열린 터미널의 색도 바꾼다.
+    '$store.getters.setting.theme'() {
+      this.$nextTick(() => {
+        for (const [, entry] of this.terms) entry.term.options.theme = terminalTheme()
+      })
+    },
     // 새 탭: 화면을 만들고 main에 세션을 연다.
     sessions(list) {
       this.$nextTick(() => list.filter(x => x.request && !this.terms.has(x.key)).forEach(x => this.start(x)))
@@ -135,19 +163,7 @@ export default {
         fontFamily: '"JetBrains Mono", Consolas, "Cascadia Mono", "DejaVu Sans Mono", monospace',
         fontSize: 13,
         scrollback: 5000,
-        theme: {
-          background: '#030304',
-          foreground: '#e8e8e8',
-          cursor: '#ff8a00',
-          cursorAccent: '#030304',
-          selectionBackground: 'rgba(255, 138, 0, 0.35)',
-          red: '#ff3b42',
-          green: '#39ff6a',
-          yellow: '#ffb347',
-          blue: '#5aa9ff',
-          magenta: '#ff5ec4',
-          cyan: '#3ee6e6'
-        }
+        theme: terminalTheme()
       })
       const fit = new FitAddon()
       term.loadAddon(fit)
@@ -241,8 +257,8 @@ export default {
   flex: none;
   flex-direction: column;
   border-top: 4px solid transparent;
-  border-image: var(--js-stripes) 1;
-  background: #030304;
+  border-image: var(--js-bands) 1;
+  background: var(--js-bg);
 }
 
 .terminal-resize {
@@ -262,8 +278,8 @@ export default {
   min-height: 34px;
   padding: 3px 8px 0 14px;
   overflow-x: auto;
-  background: #000;
-  border-bottom: 2px solid var(--js-red);
+  background: var(--js-bg-raised);
+  border-bottom: 2px solid var(--js-primary);
 }
 
 .terminal-tab {
@@ -272,29 +288,26 @@ export default {
   gap: 8px;
   max-width: 220px;
   padding: 0 8px 0 14px;
-  background: #16161b;
+  background: var(--js-surface);
   color: var(--js-text-muted);
   font-family: var(--js-font-display);
-  font-size: 0.95rem;
-  font-style: italic;
-  font-weight: 700;
+  font-size: 1.3rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
   user-select: none;
-  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
 
   &:hover {
     color: var(--js-text);
   }
 
   &.active {
-    background: var(--js-red);
-    color: white;
+    background: var(--js-primary);
+    color: var(--js-on-primary);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--js-accent);
+    outline: 2px solid var(--js-secondary);
     outline-offset: -2px;
   }
 }
@@ -309,20 +322,18 @@ export default {
   flex: none;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
-  background: #55555d;
+  background: var(--js-line);
 
   .is-starting & {
-    background: #facc15;
+    background: var(--js-sun);
   }
 
   .is-running & {
-    background: #39ff6a;
-    box-shadow: 0 0 6px #39ff6a;
+    background: #3dff8a;
   }
 
   .is-failed & {
-    background: #ef4444;
+    background: var(--js-danger);
   }
 }
 

@@ -4,7 +4,8 @@ import isNil from 'lodash/isNil'
 const defaultSetting = {
   gitBashPath: '%ProgramFiles%\\Git\\git-bash.exe',
   isHideToTrayOnClose: false,
-  openIn: 'app'
+  openIn: 'app',
+  theme: 'neon-night'
 }
 
 export default {

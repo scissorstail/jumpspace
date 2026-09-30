@@ -284,11 +284,11 @@ export default {
   width: 440px;
 
   .forward-title {
+    color: var(--js-sun);
     font-family: var(--js-font-display);
-    font-size: 1.3rem;
-    font-style: italic;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+    font-size: 1.9rem;
+    letter-spacing: 0.06em;
+    line-height: 1;
     text-transform: uppercase;
   }
 
@@ -298,7 +298,7 @@ export default {
     color: var(--js-text-muted);
 
     &.forward-hint-blocked {
-      color: var(--js-accent);
+      color: var(--js-secondary);
     }
   }
 
@@ -313,7 +313,7 @@ export default {
   .forward-labels {
     margin-bottom: 2px;
     font-family: var(--js-font-display);
-    font-size: 0.75rem;
+    font-size: 1.05rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--js-text-muted);
@@ -328,7 +328,7 @@ export default {
 
   .forward-arrow {
     justify-self: center;
-    color: var(--js-accent);
+    color: var(--js-secondary);
   }
 
   .forward-colon {

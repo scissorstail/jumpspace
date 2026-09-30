@@ -1,45 +1,110 @@
-// 앱 전체의 모양. 게임/애니메이션의 HUD처럼 강렬한 테마:
-// 거의 검은 바탕, 주황(계기판 선과 데이터)과 빨강(선택과 강조), 흰 글자,
-// 기울인 굵은 압축 서체, 모서리를 자른 각진 패널, 경고 줄무늬.
-// 서체는 OFL 라이선스의 Barlow Condensed(제목, 라벨)와 JetBrains Mono(주소, 포트, 터미널)를 앱에 넣어서 쓴다.
-@import '@fontsource/barlow-condensed/500.css';
-@import '@fontsource/barlow-condensed/700.css';
-@import '@fontsource/barlow-condensed/700-italic.css';
+// 앱 전체의 모양: 신스웨이브 / 베이퍼웨이브 풍의 평평하고 대비가 강한 네온 테마.
+// 짙은 밤하늘색 바탕, 네온 분홍(선택과 강조)과 네온 청록(선과 데이터), 해 노랑.
+// 그림자는 흐리지 않은 단색 오프셋이고, 빛 번짐과 그라데이션 없이 단색 면으로 그린다. (배경 풍경만 예외)
+// 서체는 OFL 라이선스의 VT323(픽셀풍 제목, 이름표)과 JetBrains Mono(주소, 포트, 터미널)를 앱에 넣어서 쓴다.
+// 색 묶음은 세 가지이고 <html data-theme="...">로 고른다. (설정 > Theme)
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/700.css';
 
+// VT323은 같은 크기에서 다른 글꼴보다 눈에 띄게 작으므로 size-adjust로 키운 이름('JS Pixel')으로 쓴다.
+// 라틴 문자만 담겨 있어서 한글은 다음 글꼴로 넘어간다.
+$vt323: '../../../../node_modules/@fontsource/vt323/files';
+
+@font-face {
+  font-family: 'JS Pixel';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  size-adjust: 128%;
+  src: url('#{$vt323}/vt323-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'JS Pixel';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  size-adjust: 128%;
+  src: url('#{$vt323}/vt323-latin-ext-400-normal.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+1EF2-1EFF, U+20A0-20AB, U+20AD-20C0, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root,
+:root[data-theme='neon-night'] {
+  --js-bg: #0d0221;
+  --js-bg-raised: #140632;
+  --js-surface: #1d0b45;
+  --js-surface-2: #2a1262;
+  --js-line: #4d3499;
+  --js-text: #ffffff;
+  --js-text-muted: #c9bdf5;
+  --js-primary: #ff2e97;
+  --js-on-primary: #0d0221;
+  --js-secondary: #00e5ff;
+  --js-on-secondary: #0d0221;
+  --js-sun: #ffd319;
+  --js-danger: #ff3864;
+  // 배경 풍경
+  --js-sky-2: #2b1055;
+  --js-city: #07011a;
+  --js-grid: #ff2e97;
+}
+
+:root[data-theme='sunset-drive'] {
+  --js-bg: #1a0633;
+  --js-bg-raised: #210840;
+  --js-surface: #2e0e54;
+  --js-surface-2: #3e1670;
+  --js-line: #6b2f93;
+  --js-text: #fff6ef;
+  --js-text-muted: #f0c6dc;
+  --js-primary: #ff6f91;
+  --js-on-primary: #1a0633;
+  --js-secondary: #ffb845;
+  --js-on-secondary: #1a0633;
+  --js-sun: #ff8a3d;
+  --js-danger: #ff4d6d;
+  --js-sky-2: #4a1552;
+  --js-city: #10032a;
+  --js-grid: #ff8a3d;
+}
+
+:root[data-theme='vapor-blue'] {
+  --js-bg: #070b2e;
+  --js-bg-raised: #0b1140;
+  --js-surface: #131b55;
+  --js-surface-2: #1c2770;
+  --js-line: #3647a8;
+  --js-text: #f5f7ff;
+  --js-text-muted: #b3c0f5;
+  --js-primary: #f96cff;
+  --js-on-primary: #070b2e;
+  --js-secondary: #6ff7e8;
+  --js-on-secondary: #070b2e;
+  --js-sun: #b47cff;
+  --js-danger: #ff5c8a;
+  --js-sky-2: #1a1f5e;
+  --js-city: #03061f;
+  --js-grid: #6ff7e8;
+}
+
 :root {
-  --js-bg: #070708;
-  --js-bg-raised: #0e0e11;
-  --js-surface: #121216;
-  --js-line: #2a2a31;
-  --js-border: rgba(255, 138, 0, 0.3);
-  --js-text: #f4f4f5;
-  --js-text-muted: #9a9aa3;
-  --js-accent: #ff8a00;
-  --js-accent-soft: rgba(255, 138, 0, 0.14);
-  --js-red: #e5171f;
-  --js-red-soft: rgba(229, 23, 31, 0.18);
-  --js-hover: rgba(255, 255, 255, 0.06);
-  --js-font-display: 'Barlow Condensed', 'Spoqa Han Sans Neo', sans-serif;
+  --js-border: var(--js-line);
+  --js-hover: rgba(255, 255, 255, 0.08);
+  --js-primary-soft: color-mix(in srgb, var(--js-primary) 22%, transparent);
+  --js-secondary-soft: color-mix(in srgb, var(--js-secondary) 16%, transparent);
+  --js-font-display: 'JS Pixel', 'Spoqa Han Sans Neo', monospace;
   --js-font-mono: 'JetBrains Mono', Consolas, 'DejaVu Sans Mono', monospace;
-  --js-stripes: repeating-linear-gradient(-45deg, #ff8a00 0 7px, #070708 7px 14px);
-  // 모서리를 자른 패널 (오른쪽 위, 왼쪽 아래)
-  --js-cut: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  // 세 가지 색 띠 (평평한 신스웨이브 줄)
+  --js-bands: linear-gradient(90deg, var(--js-primary) 0 33.4%, var(--js-sun) 33.4% 66.7%, var(--js-secondary) 66.7%);
+  // 흐리지 않은 단색 그림자
+  --js-drop: 4px 4px 0 #000;
 }
 
 body {
   background: var(--js-bg);
   color: var(--js-text);
-}
-
-// 제목과 라벨: 기울인 굵은 압축 서체, 대문자
-.js-display {
-  font-family: var(--js-font-display) !important;
-  font-style: italic;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 // 헤더와 사이드바의 밝은 버튼(variant light / white)을 어두운 배경에 맞춘다.
@@ -59,92 +124,133 @@ body {
     &.active,
     &:not(:disabled):not(.disabled):active {
       background-color: var(--js-hover);
-      color: var(--js-accent);
+      color: var(--js-secondary);
     }
   }
 }
 
 #main-sidebar.b-sidebar {
-  border-right: 2px solid var(--js-red);
+  border-right: 3px solid var(--js-primary);
   background-color: var(--js-bg-raised) !important;
   color: var(--js-text);
-  box-shadow: 12px 0 40px rgba(0, 0, 0, 0.7) !important;
+  box-shadow: 6px 0 0 #000 !important;
 }
 
-// ---- Bootstrap 부품을 어두운 테마에 맞춘다 ----
+// ---- Bootstrap 부품을 평평한 네온 테마에 맞춘다 ----
 
 .btn {
+  border-width: 2px;
   border-radius: 0;
   font-family: var(--js-font-display);
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
   text-transform: uppercase;
+
+  &:focus,
+  &.focus {
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--js-sun);
+    outline-offset: 2px;
+  }
 }
 
 .btn-primary,
 .btn-danger {
-  border-color: var(--js-red);
-  background: var(--js-red);
+  border-color: var(--js-primary);
+  background: var(--js-primary);
+  color: var(--js-on-primary);
+  box-shadow: var(--js-drop);
 
   &:hover,
   &:focus,
   &:not(:disabled):not(.disabled):active {
-    border-color: #ff3b42;
-    background: #ff3b42;
-    box-shadow: 0 0 16px rgba(229, 23, 31, 0.55);
+    border-color: var(--js-sun);
+    background: var(--js-sun);
+    color: var(--js-on-primary);
+    box-shadow: var(--js-drop);
   }
 
   &:disabled {
-    border-color: #5a1a1d;
-    background: #5a1a1d;
-    color: #b9b9be;
+    border-color: var(--js-line);
+    background: var(--js-surface-2);
+    color: var(--js-text-muted);
+    box-shadow: none;
   }
+}
+
+.btn-danger {
+  border-color: var(--js-danger);
+  background: var(--js-danger);
 }
 
 .btn-secondary {
   border-color: var(--js-line);
-  background: #1c1c22;
+  background: var(--js-surface-2);
   color: var(--js-text);
 
   &:hover,
-  &:focus {
-    border-color: var(--js-accent);
-    background: #26262d;
-    color: var(--js-accent);
+  &:focus,
+  &.focus,
+  &:not(:disabled):not(.disabled):active {
+    border-color: var(--js-secondary);
+    background: var(--js-surface-2);
+    color: var(--js-secondary);
+    box-shadow: none;
+  }
+
+  &:disabled,
+  &.disabled {
+    border-color: var(--js-line);
+    background: var(--js-surface);
+    color: var(--js-text-muted);
   }
 }
 
 .btn-outline-secondary,
 .btn-outline-primary {
-  border-color: var(--js-line);
-  color: var(--js-text);
+  border-color: var(--js-secondary);
+  color: var(--js-secondary);
 
   &:hover,
   &:focus {
-    border-color: var(--js-accent);
-    background: var(--js-accent-soft);
-    color: var(--js-accent);
+    border-color: var(--js-secondary);
+    background: var(--js-secondary);
+    color: var(--js-on-secondary);
   }
 
   &:disabled {
-    color: #6b6b73;
+    border-color: var(--js-line);
+    color: var(--js-text-muted);
   }
 }
 
 .btn-outline-primary:not(:disabled):not(.disabled).active,
 .btn-outline-primary:not(:disabled):not(.disabled):active {
-  border-color: var(--js-red);
-  background: var(--js-red);
-  color: white;
+  border-color: var(--js-primary);
+  background: var(--js-primary);
+  color: var(--js-on-primary);
 }
 
 .form-control,
 .custom-select,
 .input-group-text {
-  border-color: var(--js-line);
+  border: 2px solid var(--js-line);
   border-radius: 0;
-  background-color: #0b0b0e;
+  background-color: var(--js-bg);
   color: var(--js-text);
+}
+
+// 입력칸 이름표: 픽셀 글꼴의 대문자
+.col-form-label {
+  color: var(--js-text-muted);
+  font-family: var(--js-font-display);
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .form-control {
@@ -152,60 +258,68 @@ body {
   font-size: 0.8rem;
 
   &::placeholder {
-    color: #5c5c64;
+    color: var(--js-text-muted);
+    opacity: 0.6;
   }
 
   &:focus {
-    border-color: var(--js-accent);
-    background-color: #0b0b0e;
+    border-color: var(--js-secondary);
+    background-color: var(--js-bg);
     color: var(--js-text);
-    box-shadow: 0 0 0 1px var(--js-accent), 0 0 12px rgba(255, 138, 0, 0.35);
+    box-shadow: none;
   }
 
   &:disabled {
-    background-color: #141418;
-    color: #8a8a92;
+    border-color: var(--js-surface-2);
+    background-color: var(--js-surface);
+    color: var(--js-text-muted);
   }
 
   &.is-invalid {
-    border-color: var(--js-red);
+    border-color: var(--js-danger);
   }
 }
 
 .input-group-append .btn,
 .input-group-prepend .btn {
   border-color: var(--js-line);
+  box-shadow: none;
 }
 
 .custom-control-input:checked ~ .custom-control-label::before {
-  border-color: var(--js-red);
-  background-color: var(--js-red);
+  border-color: var(--js-primary);
+  background-color: var(--js-primary);
 }
 
 .custom-control-label::before {
-  border-color: #55555d;
-  background-color: #0b0b0e;
+  border: 2px solid var(--js-line);
+  background-color: var(--js-bg);
 }
 
 .dropdown-menu {
-  border: 1px solid var(--js-border);
+  border: 2px solid var(--js-secondary);
   border-radius: 0;
   background: var(--js-surface);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--js-drop);
 }
 
 .dropdown-item {
   color: var(--js-text);
+  font-family: var(--js-font-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 
   &:hover,
   &:focus {
-    background: var(--js-red);
-    color: white;
+    background: var(--js-primary);
+    color: var(--js-on-primary);
   }
 
   &.disabled,
   &:disabled {
-    color: #5c5c64;
+    color: var(--js-text-muted);
+    opacity: 0.5;
   }
 }
 
@@ -215,86 +329,116 @@ body {
 
 .badge-primary {
   border-radius: 0;
-  background: var(--js-red);
+  background: var(--js-primary);
+  color: var(--js-on-primary);
 }
 
-// 확인창, 설정/정보 창, 토스트: 경고 줄무늬를 두른 검은 패널
+// 확인창, 설정/정보 창, 토스트: 위에 세 가지 색 띠를 두른 단색 패널
 .modal-content,
 .card {
-  border: 1px solid var(--js-border);
+  border: 2px solid var(--js-secondary);
   border-radius: 0;
   background: var(--js-surface);
   color: var(--js-text);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75);
+  box-shadow: 8px 8px 0 #000;
 }
 
 .modal-content::before,
 .card::before {
   content: '';
   display: block;
-  height: 5px;
-  background: var(--js-stripes);
+  height: 6px;
+  background: var(--js-bands);
 }
 
 .modal-header,
 .card-header {
-  border-bottom: 1px solid var(--js-line);
+  border-bottom: 2px solid var(--js-line);
   background: transparent;
 }
 
 .modal-title,
 .card-header {
+  color: var(--js-sun);
   font-family: var(--js-font-display);
-  font-size: 1.35rem;
-  font-style: italic;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 1.9rem;
+  letter-spacing: 0.06em;
+  line-height: 1;
   text-transform: uppercase;
 }
 
 .modal-footer,
 .card-footer {
-  border-top: 1px solid var(--js-line);
+  border-top: 2px solid var(--js-line);
   background: transparent;
+}
+
+.modal-backdrop {
+  background: var(--js-bg);
 }
 
 .close {
   color: var(--js-text);
   text-shadow: none;
+  opacity: 0.8;
 }
 
 .b-toast .toast {
-  border: 1px solid var(--js-border);
+  border: 2px solid var(--js-secondary);
   border-radius: 0;
   background: var(--js-surface);
   color: var(--js-text);
+  box-shadow: var(--js-drop);
 }
 
 .toast-header {
-  border-bottom-color: var(--js-line);
-  background: #19191e;
-  color: var(--js-accent);
+  border-bottom: 2px solid var(--js-line);
+  background: var(--js-surface-2);
+  color: var(--js-secondary);
   font-family: var(--js-font-display);
-  letter-spacing: 0.04em;
+  font-size: 1.2rem;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .b-toast-danger .toast-header {
-  background: var(--js-red);
-  color: white;
+  background: var(--js-danger);
+  color: var(--js-on-primary);
 }
 
 .tooltip-inner {
   border-radius: 0;
+  background: var(--js-sun);
+  color: var(--js-on-primary);
   font-family: var(--js-font-display);
+  font-size: 1.05rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 a {
-  color: var(--js-accent);
+  color: var(--js-secondary);
 
   &:hover {
-    color: #ffb04d;
+    color: var(--js-sun);
   }
+}
+
+// 얇은 네모 스크롤바 (앱 전체)
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--js-line);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--js-secondary);
 }

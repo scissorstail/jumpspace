@@ -1,11 +1,10 @@
 <template>
   <b-overlay
     :show="show"
-    blur="3px"
+    :blur="null"
+    bg-color="var(--js-bg)"
     no-wrap
-    opacity="0.6"
-    rounded="sm"
-    variant="dark"
+    opacity="0.82"
     z-index="1050"
   >
     <template #overlay>

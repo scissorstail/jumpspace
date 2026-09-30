@@ -121,7 +121,7 @@ export default {
   overflow-y: auto;
   padding: 4px;
   border: 1px solid var(--js-line);
-  background: #0b0b0e;
+  background: var(--js-bg);
 }
 
 .icon-picker-item {
@@ -142,7 +142,7 @@ export default {
   }
 
   &:focus-visible {
-    outline: 2px solid var(--js-accent);
+    outline: 2px solid var(--js-secondary);
     outline-offset: 1px;
   }
 
@@ -152,8 +152,9 @@ export default {
   }
 
   &.icon-picker-selected {
-    border-color: var(--js-red);
-    background: var(--js-red-soft);
+    border-color: var(--js-primary);
+    background: var(--js-primary-soft);
+    box-shadow: 2px 2px 0 #000;
   }
 }
 

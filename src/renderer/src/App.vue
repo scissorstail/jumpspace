@@ -6,6 +6,19 @@
 
 <script>
 export default {
+  computed: {
+    theme() {
+      return this.$store.getters.setting.theme || 'neon-night'
+    }
+  },
+  watch: {
+    theme: {
+      immediate: true,
+      handler(theme) {
+        document.documentElement.dataset.theme = theme
+      }
+    }
+  },
   created() {
     window.preload.setWindowTitle('')
   }
@@ -66,8 +79,11 @@ body {
       format('woff2');
 }
 
-// 터미널(xterm.js)은 고정폭 글꼴로 글자 폭을 재므로 제외한다.
-*:not(.xterm):not(.xterm *) {
-  font-family: 'Spoqa Han Sans Neo', 'sans-serif';
+// 기본 글꼴은 body에 두고 상속시킨다. (모든 요소에 직접 주면 제목용 글꼴을 지정한 단추 안의 글자까지 덮어쓴다)
+// 터미널(xterm.js)은 자기 고정폭 글꼴을 직접 지정한다. Bootstrap은 .tooltip, .popover에 글꼴을 따로 준다.
+body,
+.tooltip,
+.popover {
+  font-family: 'Spoqa Han Sans Neo', sans-serif;
 }
 </style>

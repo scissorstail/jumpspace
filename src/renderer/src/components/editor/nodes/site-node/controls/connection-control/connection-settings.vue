@@ -24,7 +24,7 @@
         <div class="p-3">
           <div
             class="info-list"
-            style="width: 310px;"
+            style="width: 340px;"
           >
             <IconPicker
               ref="picker"
@@ -39,7 +39,7 @@
               class="mb-0"
               label="Name"
               label-align="left"
-              label-cols-sm="3"
+              label-cols-sm="4"
             >
               <b-form-input
                 :value="value.name"
@@ -53,7 +53,7 @@
               class="mb-0"
               label="User"
               label-align="left"
-              label-cols-sm="3"
+              label-cols-sm="4"
             >
               <b-form-input
                 :value="value.user"
@@ -67,7 +67,7 @@
               class="mb-0"
               label="Host"
               label-align="left"
-              label-cols-sm="3"
+              label-cols-sm="4"
             >
               <b-form-input
                 :value="value.host"
@@ -81,7 +81,7 @@
               class="mb-0"
               label="Port"
               label-align="left"
-              label-cols-sm="3"
+              label-cols-sm="4"
             >
               <b-form-input
                 :value="value.port"
@@ -96,7 +96,7 @@
               class="mb-0"
               label="Key"
               label-align="left"
-              label-cols-sm="3"
+              label-cols-sm="4"
             >
               <b-input-group size="sm">
                 <template #append>
@@ -125,7 +125,7 @@
               class="mb-0"
               label="Password"
               label-align="left"
-              label-cols-sm="3"
+              label-cols-sm="4"
             >
               <b-input-group size="sm">
                 <!-- 비밀번호는 앞뒤 공백도 그대로 저장한다 (trim하지 않는다) -->
@@ -157,7 +157,7 @@
               class="mb-0"
               label="Exec"
               label-align="left"
-              label-cols-sm="3"
+              label-cols-sm="4"
             >
               <b-form-input
                 :value="value.exec"

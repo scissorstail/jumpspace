@@ -328,37 +328,31 @@ export default {
   margin: 1px 3px;
 }
 
-// 노드 위에 뜨는 아이콘 버튼: 기울인 검은 칩, 올리면 빨갛게. 키보드로도 누를 수 있고 포커스가 보인다.
+// 노드 위에 뜨는 아이콘 버튼: 네모난 단색 칩, 올리면 분홍. 키보드로도 누를 수 있고 포커스가 보인다.
 .menu-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 30px;
+  width: 34px;
+  height: 32px;
   padding: 0;
-  border: 1px solid var(--js-accent);
-  background: #0b0b0e;
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.8);
-  color: var(--js-accent);
+  border: 2px solid var(--js-secondary);
+  background: var(--js-bg);
+  box-shadow: 3px 3px 0 #000;
+  color: var(--js-secondary);
   line-height: 1;
   cursor: pointer;
-  transform: skewX(-12deg);
-  transition: color 0.1s, background-color 0.1s, border-color 0.1s;
-
-  svg {
-    transform: skewX(12deg);
-  }
+  transition: color 0.08s, background-color 0.08s, border-color 0.08s;
 
   &:hover {
-    border-color: var(--js-red);
-    background: var(--js-red);
-    color: white;
+    border-color: var(--js-primary);
+    background: var(--js-primary);
+    color: var(--js-on-primary);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--js-accent);
+    outline: 2px solid var(--js-sun);
     outline-offset: 2px;
-    border-radius: 4px;
   }
 
   &.menu-button-off {
@@ -377,7 +371,7 @@ export default {
     label {
       color: var(--js-text-muted);
       font-family: var(--js-font-display);
-      font-size: 0.85rem;
+      font-size: 1.15rem;
       letter-spacing: 0.06em;
       text-transform: uppercase;
     }
@@ -388,30 +382,26 @@ export default {
     color: var(--js-text);
   }
 
-  // 이름: 기울인 빨간 띠 위의 흰 글자 (게임 메뉴의 이름표처럼)
+  // 이름: 분홍 이름표 위의 어두운 픽셀 글자
   &-name {
     display: inline-block;
     max-width: 100%;
     margin-bottom: 4px;
-    padding: 1px 12px;
-    background: var(--js-red);
+    padding: 0 10px;
+    background: var(--js-primary);
     box-shadow: 3px 3px 0 #000;
-    color: white;
+    color: var(--js-on-primary);
     font-family: var(--js-font-display);
-    font-size: 1.15rem;
-    font-style: italic;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    line-height: 1.25;
+    font-size: 1.45rem;
+    letter-spacing: 0.04em;
+    line-height: 1.15;
     text-transform: uppercase;
-    transform: skewX(-12deg);
 
     > span {
       display: block;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      transform: skewX(12deg);
     }
   }
 
@@ -433,12 +423,17 @@ export default {
     padding-top: 10px;
   }
 
-  // user / host / port: 계기판의 숫자처럼 고정폭 주황 글자
+  // user / host / port: 고정폭 청록 글자. 배경 풍경 위에서도 읽히도록 어두운 바탕을 깐다.
   &-text {
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 5px;
     overflow: hidden;
-    color: var(--js-accent);
+    background: var(--js-bg);
+    color: var(--js-secondary);
     font-family: var(--js-font-mono);
-    font-size: 0.72rem;
+    font-size: 0.74rem;
     line-height: 1.5;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -451,12 +446,13 @@ export default {
     justify-content: center;
     margin-left: auto;
     margin-right: auto;
-    color: #4a4a52;
+    color: var(--js-text-muted);
+    opacity: 0.55;
     filter: none;
   }
 
   &-forward {
-    color: var(--js-text);
+    color: var(--js-sun);
     font-size: 0.72rem;
     font-weight: normal;
   }
@@ -472,7 +468,7 @@ export default {
   z-index: 10000;
 
   &:focus {
-    outline: 1px dashed var(--js-accent);
+    outline: 1px dashed var(--js-secondary);
   }
 
   &[aria-hidden='true'] {
@@ -488,19 +484,20 @@ export default {
     transition: opacity 0.15s;
   }
 
-  // 검은 패널, 위에 경고 줄무늬
+  // 단색 패널, 위에 세 가지 색 띠
   &-inner {
-    border: 1px solid var(--js-border);
+    border: 2px solid var(--js-secondary);
     border-top: 0;
     background: var(--js-surface);
     color: var(--js-text);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(0, 0, 0, 0.6);
+    box-shadow: 8px 8px 0 #000;
 
     &::before {
       content: '';
       display: block;
-      height: 5px;
-      background: var(--js-stripes);
+      height: 6px;
+      margin: 0 -2px;
+      background: var(--js-bands);
     }
   }
 }

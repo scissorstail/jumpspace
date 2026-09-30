@@ -120,7 +120,7 @@ export default {
     this.editor.use(ConnectionPathPlugin, {
       type: ConnectionPathPlugin.DEFAULT, // DEFAULT or LINEAR transformer
       // curve: ConnectionPathPlugin.curveStep, // curve identifier
-      arrow: { color: '#ff8a00', marker: 'M-4,-8 L-4,8 L14,0 z' }
+      arrow: { color: '#ff2e97', marker: 'M-4,-8 L-4,8 L14,0 z' }
     })
 
     this.editor.use(ReadonlyPlugin, { enabled: true })
@@ -239,6 +239,7 @@ export default {
 <style lang="scss">
 @import './context-menu.scss';
 
+// 캔버스는 투명하다. 뒤의 밤하늘 풍경은 Layout(#editor-area)이 그린다.
 #rete {
   height: 100%;
   width: 100%;
@@ -246,79 +247,34 @@ export default {
   margin: 0;
   padding: 0;
 
-  // 화면에 고정된 층: 위쪽 주황 빛, 아래쪽 붉은 빛, 옅은 주사선
-  background-color: var(--js-bg);
-  background-image:
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px),
-    radial-gradient(ellipse 60% 45% at 50% 0%, rgba(255, 138, 0, 0.1), transparent 70%),
-    radial-gradient(ellipse 55% 45% at 0% 100%, rgba(229, 23, 31, 0.12), transparent 70%);
-
-  // 캔버스와 함께 움직이는 층: 계기판 격자 (굵은 칸 120px, 가는 칸 24px)
+  // 캔버스와 함께 움직이는 점 격자 (위치를 가늠하는 용도)
   .background {
     z-index: -5;
 
-    background-image:
-      linear-gradient(rgba(255, 138, 0, 0.09) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 138, 0, 0.09) 1px, transparent 1px),
-      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+    background-image: radial-gradient(circle, color-mix(in srgb, var(--js-text-muted) 30%, transparent) 1px, transparent 1.5px);
+    background-size: 24px 24px;
   }
 
-  // 노드: 각진 검은 패널에 짙은 그림자. 올리거나 고르면 네 모서리에 조준선이 뜬다.
+  // 노드: 단색 패널, 청록 테두리, 흐리지 않은 검은 그림자. 선택하면 분홍 테두리와 노란 그림자.
   .node.site {
-    --bracket: var(--js-accent);
-
-    border: 1px solid rgba(255, 138, 0, 0.55);
+    border: 2px solid var(--js-secondary);
     border-radius: 0;
     padding-bottom: 0;
     min-width: initial;
-    background: linear-gradient(135deg, #1a1a20 0%, #0a0a0c 70%);
+    background: var(--js-surface);
     color: var(--js-text);
-    box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.85);
-    transition: border-color 0.12s, box-shadow 0.12s;
-
-    // 조준선 (모서리 네 개의 ㄱ자)
-    &::before {
-      content: '';
-      position: absolute;
-      inset: -8px;
-      pointer-events: none;
-      opacity: 0;
-      background:
-        linear-gradient(var(--bracket), var(--bracket)) top left / 14px 2px,
-        linear-gradient(var(--bracket), var(--bracket)) top left / 2px 14px,
-        linear-gradient(var(--bracket), var(--bracket)) top right / 14px 2px,
-        linear-gradient(var(--bracket), var(--bracket)) top right / 2px 14px,
-        linear-gradient(var(--bracket), var(--bracket)) bottom left / 14px 2px,
-        linear-gradient(var(--bracket), var(--bracket)) bottom left / 2px 14px,
-        linear-gradient(var(--bracket), var(--bracket)) bottom right / 14px 2px,
-        linear-gradient(var(--bracket), var(--bracket)) bottom right / 2px 14px;
-      background-repeat: no-repeat;
-      transition: opacity 0.12s, inset 0.12s;
-    }
+    box-shadow: 6px 6px 0 #000;
+    transition: transform 0.1s, box-shadow 0.1s;
 
     &:hover {
-      border-color: var(--js-accent);
-      box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.85), 0 0 24px rgba(255, 138, 0, 0.35);
-
-      &::before {
-        inset: -6px;
-        opacity: 1;
-      }
+      box-shadow: 8px 8px 0 #000;
+      transform: translate(-2px, -2px);
     }
 
     &.selected {
-      --bracket: var(--js-red);
-
-      border-color: var(--js-red);
-      background: linear-gradient(135deg, #2a1012 0%, #0a0a0c 70%);
-      box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.85), 0 0 30px rgba(229, 23, 31, 0.5);
-
-      &::before {
-        inset: -6px;
-        opacity: 1;
-      }
+      border-color: var(--js-primary);
+      background: var(--js-surface-2);
+      box-shadow: 6px 6px 0 var(--js-sun);
     }
 
     & > .input {
@@ -349,24 +305,22 @@ export default {
       display: none;
     }
 
-    // 소켓: 마름모. 들어오는 쪽은 비어 있고, 나가는 쪽은 채워져 있다.
+    // 소켓: 픽셀 같은 네모. 들어오는 쪽은 비어 있고, 나가는 쪽은 채워져 있다.
     .socket {
       height: 16px;
       width: 16px;
       border-radius: 0;
       background: var(--js-bg);
-      transform: rotate(45deg);
 
       &.input {
-        border: 2px solid var(--js-accent);
+        border: 3px solid var(--js-secondary);
         margin-left: -28px;
       }
 
       &.output {
-        border: 2px solid var(--js-accent);
+        border: 3px solid var(--js-secondary);
         margin-right: -28px;
-        background: var(--js-accent);
-        box-shadow: 0 0 10px rgba(255, 138, 0, 0.7);
+        background: var(--js-secondary);
       }
     }
 
@@ -378,35 +332,37 @@ export default {
     }
   }
 
-  // 연결선: 굵은 주황 선 위로 짧은 신호가 흐른다.
+  // 연결선: 단색 청록 선 위로 분홍 신호가 흐른다.
   .connection {
     .main-path {
-      stroke-width: 4px;
-      stroke: rgba(255, 138, 0, 0.28);
+      stroke-width: 3px;
+      stroke: var(--js-secondary);
     }
 
     .flow-path {
       fill: none;
-      stroke: #ffb347;
-      stroke-width: 2.5px;
+      stroke: var(--js-primary);
+      stroke-width: 3px;
       stroke-linecap: butt;
-      stroke-dasharray: 6 10;
-      filter: drop-shadow(0 0 3px rgba(255, 138, 0, 0.9));
+      stroke-dasharray: 8 16;
       pointer-events: none;
-      animation: connection-flow 1.1s linear infinite;
+      animation: connection-flow 1s linear infinite;
+    }
+
+    .marker {
+      fill: var(--js-primary);
     }
   }
 
   &.locked {
     .node.site .socket {
-      &.input {
-        border-color: #4a4a52;
+      &.input,
+      &.output {
+        border-color: var(--js-line);
       }
 
       &.output {
-        border-color: #4a4a52;
-        background: #4a4a52;
-        box-shadow: none;
+        background: var(--js-line);
       }
     }
   }
@@ -414,7 +370,7 @@ export default {
 
 @keyframes connection-flow {
   from {
-    stroke-dashoffset: 16;
+    stroke-dashoffset: 24;
   }
 
   to {
@@ -427,8 +383,8 @@ export default {
     animation: none;
   }
 
-  #rete .node.site::before {
-    transition: none;
+  #rete .node.site:hover {
+    transform: none;
   }
 }
 </style>

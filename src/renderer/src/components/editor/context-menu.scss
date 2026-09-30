@@ -21,13 +21,12 @@ $icon-plus: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%
 
 div.context-menu {
   // 플러그인은 메뉴를 커서 가운데 위쪽에 놓는다. 보통의 메뉴처럼 왼쪽 위 모서리를 커서에 둔다.
-  width: 176px;
+  min-width: 176px;
   margin: 2px 0 0;
   padding: 4px;
-  border: 1px solid var(--js-border);
-  border-left: 4px solid var(--js-accent);
+  border: 2px solid var(--js-secondary);
   background: var(--js-surface);
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);
+  box-shadow: 6px 6px 0 #000;
   transform-origin: top left;
   animation: context-menu-in 0.12s ease-out;
 
@@ -46,9 +45,7 @@ div.context-menu {
     background-color: transparent;
     color: var(--js-text);
     font-family: var(--js-font-display);
-    font-size: 1rem;
-    font-style: italic;
-    font-weight: 700;
+    font-size: 1.1rem;
     letter-spacing: 0.05em;
     line-height: 1.3;
     text-transform: uppercase;
@@ -60,8 +57,8 @@ div.context-menu {
     }
 
     &:hover {
-      background-color: var(--js-red);
-      color: white;
+      background-color: var(--js-primary);
+      color: var(--js-on-primary);
     }
 
     &::before {
@@ -87,8 +84,8 @@ div.context-menu {
     color: #ff4d4d;
 
     &:hover {
-      background-color: var(--js-red);
-      color: white;
+      background-color: var(--js-primary);
+      color: var(--js-on-primary);
     }
 
     &::before {

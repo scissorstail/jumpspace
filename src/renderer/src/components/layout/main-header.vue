@@ -93,9 +93,9 @@ export default {
   position: relative;
   display: flex;
   font-size: large;
-  background-color: #000;
+  background-color: var(--js-bg-raised);
 
-  // 아래 가장자리의 경고 줄무늬
+  // 아래 가장자리의 세 가지 색 줄
   &::after {
     content: '';
     position: absolute;
@@ -103,8 +103,7 @@ export default {
     bottom: -4px;
     left: 0;
     height: 4px;
-    background: var(--js-stripes);
-    opacity: 0.85;
+    background: var(--js-bands);
     z-index: 2;
     pointer-events: none;
   }
@@ -117,37 +116,32 @@ export default {
     min-width: 0;
     padding: 0 12px;
     font-family: var(--js-font-display);
-    font-style: italic;
-    font-weight: 700;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
   }
 
-  // 열린 다이어그램 이름: 기울인 빨간 이름표
+  // 열린 다이어그램 이름: 분홍 이름표
   .header-title-tag {
     max-width: 60%;
-    padding: 0 22px;
-    background: var(--js-red);
-    box-shadow: 4px 4px 0 var(--js-accent);
-    color: white;
-    font-size: 1.15rem;
-    line-height: 1.55;
-    transform: skewX(-14deg);
+    padding: 0 16px;
+    background: var(--js-primary);
+    box-shadow: 3px 3px 0 #000;
+    color: var(--js-on-primary);
+    font-size: 1.6rem;
+    line-height: 1.2;
 
     > span {
       display: block;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      transform: skewX(14deg);
     }
   }
 
   .header-brand {
-    color: var(--js-accent);
-    font-size: 1.2rem;
-    letter-spacing: 0.3em;
-    opacity: 0.8;
+    color: var(--js-secondary);
+    font-size: 1.7rem;
+    letter-spacing: 0.35em;
   }
 
   .btn-divider {

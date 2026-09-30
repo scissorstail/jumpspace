@@ -1,18 +1,17 @@
 <template>
   <b-overlay
     :show="show"
-    blur="3px"
+    :blur="null"
+    bg-color="var(--js-bg)"
     no-wrap
-    opacity="0.6"
-    rounded="sm"
-    variant="dark"
+    opacity="0.82"
     z-index="1050"
   >
     <template #overlay>
       <b-card
         v-if="show"
         header="Settings"
-        style="width: 90vw; max-width: 520px"
+        style="width: 90vw; max-width: 600px"
       >
         <b-card-text class="mb-3">
           <b-row class="mb-3">
@@ -41,6 +40,24 @@
                 <b-form-radio-group
                   v-model="openIn"
                   :options="openInOptions"
+                  buttons
+                  button-variant="outline-primary"
+                  size="sm"
+                />
+              </b-form-group>
+            </b-col>
+          </b-row>
+          <b-row class="mb-3">
+            <b-col>
+              <b-form-group
+                class="mb-0"
+                label="Theme"
+                label-align="left"
+                label-cols-sm="4"
+              >
+                <b-form-radio-group
+                  v-model="theme"
+                  :options="themeOptions"
                   buttons
                   button-variant="outline-primary"
                   size="sm"
@@ -106,6 +123,12 @@ export default {
       gitBashPath: null,
       isHideToTrayOnClose: false,
       openIn: 'app',
+      theme: 'neon-night',
+      themeOptions: [
+        { text: 'Neon night', value: 'neon-night' },
+        { text: 'Sunset drive', value: 'sunset-drive' },
+        { text: 'Vapor blue', value: 'vapor-blue' }
+      ],
       openInOptions: [
         { text: 'This app', value: 'app' },
         { text: 'Git Bash window', value: 'window' }
@@ -128,12 +151,14 @@ export default {
       this.gitBashPath = this.setting.gitBashPath
       this.isHideToTrayOnClose = this.setting.isHideToTrayOnClose
       this.openIn = this.setting.openIn || 'app'
+      this.theme = this.setting.theme || 'neon-night'
     },
     async saveSetting() {
       await this.settingSave({
         gitBashPath: this.gitBashPath,
         isHideToTrayOnClose: this.isHideToTrayOnClose,
-        openIn: this.openIn
+        openIn: this.openIn,
+        theme: this.theme
       })
       this.$emit('update:show', false)
     }
