@@ -61,10 +61,10 @@ Ordered roughly by value. Move an item to the log when it is done.
 - `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts.
 - A Playwright + Electron smoke test in the repo was considered and turned down by the owner (decision 6).
 
-### Dependencies (checked 2026-09-30)
-- `npm audit --omit=dev`: 0 vulnerabilities. Dev tooling may report more.
-- Held back on purpose: Vue 2.7 (3.x needs bootstrap-vue replacement), Rete v1 plugins (v2 is a rewrite), Bootstrap 4, vue-router 3, vuex 3. Proposals only.
-- Minor updates available: electron 44.4.5 -> 44.5.0, sass 1.105.0 -> 1.105.1.
+### Dependencies (checked 2026-09-30 08:2x UTC)
+- `npm audit --omit=dev`: 0 vulnerabilities. `npm audit` (dev tooling included) reports 4 (2 low, 2 high), all through `vue` 2 and `rete-vue-render-plugin`; the only fix is Vue 3 (`--force`), so they stay (decision 5).
+- Held back on purpose (major versions): Vue 2.7, Rete v1 plugins, Bootstrap 4, vue-router 3, vuex 3. Not checked or updated by the routine: eslint 10, vite 8, vitest 5 and `@eslint/js` 10 are newer majors; look at them only if something needs them, with tests and a build first.
+- Up to date inside their ranges: electron 44.5.1, sass 1.105.1.
 
 ### Decisions by the owner (2026-09-30)
 1. **Passwords:** keep plain text for now. Storing them with Electron `safeStorage` (Windows DPAPI) stays an optional idea: it ties the passwords to this PC and user, so exported files could not carry them. Do not implement unless the owner asks.
@@ -124,6 +124,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Did: scanned for unused dependencies (every dependency is referenced by the sources or configs), unused exports, files nobody imports, CSS classes without a user, stale words (vue-cli, webpack, upath, TODO) and leftover files. Found and removed only small things: a commented-out `console.log` in the node worker, two `menu-item-icon` classes with no style, and the `.info-item` rule that the icon picker made unused. Last CI run (273272b) was green.
 - Result: tests 183 passed, lint ok, build ok; rechecked the node settings and forwarding UI in the app (icon picker, fresh node, connect error): unchanged.
 - Found / next: the code is otherwise tidy. Exports that only tests use (`validate*`, `sq`, `expandEnv`, `DEFAULT_SETTING`, `onEscape`, `SELF_HOST`) are kept on purpose. `.prettierrc` has no tool behind it in `package.json`, but it matches the lint style and helps editors, so it stays. Every activity has now been done once; next pick the one with the oldest entry (`health`: outdated packages, docs), then `ux`.
+
+### #9 2026-09-30 08:2x UTC · health (scheduled run)
+- Did: last CI run (033bfee) was green. `npm outdated`: electron 44.4.5 -> 44.5.1 and sass 1.105.0 -> 1.105.1 were the only updates inside the current majors; applied them with `npm update electron sass` (lockfile only, `package.json` ranges unchanged). `npm update` did not fetch the Electron binary by itself; `node node_modules/electron/install.js` did. README, CHANGELOG and CLAUDE.md name Electron only by major (44), so they stay true. Rewrote the Dependencies section of the Backlog.
+- Result: tests 183 passed, lint ok, build ok. The scratch UI scripts (items, import/export, settings, node menu and forwarding, canvas view, icon picker, Escape, old forwards migration and delete confirm) all pass on Electron 44.5.1.
+- Found / next: the audit numbers are unchanged (only fixable with Vue 3). Every activity has now run once; the oldest is `ux` (#1), next is `ux`, then `refactor`.
 
 ## Routine
 
