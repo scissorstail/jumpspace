@@ -9,7 +9,7 @@ This file is its memory. **Read the whole file before doing anything, and append
 2. **Pick one activity** from the rotation below. Prefer the one that was not done for the longest time (see the log). Do exactly one, small and finished, in about an hour at most.
    - **Cycle (owner, 2026-09-30):** polish, then one feature, then polish again. In the *polish phase* at least every other run is `ux` or `style`. The polish phase is "good enough" when CI is green, no real bug is known, and the last two polish runs found nothing worthwhile (or the UX candidates are empty and a walk through the app finds only trivia). Then the next run is a `feature` run: take the **top item of the Feature queue**. After a feature, go back to the polish phase (the first polish run looks at the new feature).
    - CI red or a real bug always comes first, in any phase.
-3. **Verify before every commit:** `npm run lint`, `npx vitest run`, `npm run build`. A UI change is also tried in the real app when practical (Playwright + Electron under `xvfb-run`; the old scripts lived in the session scratchpad and are not in the repo, so write a small new one if needed).
+3. **Verify before every commit:** `npm run lint`, `npx vitest run`, `npm run build`, and look at their **exit codes** (not only the last line of output: ESLint prints a blank last line, which hid an error in #31). A UI change is also tried in the real app when practical (Playwright + Electron under `xvfb-run`; the old scripts lived in the session scratchpad and are not in the repo, so write a small new one if needed).
 4. **Commit and push** to `claude/cool-bardeen-9x9ymz` only. Small commits with a message that says why, ending with the trailer lines the session asks for (`Co-Authored-By:` with the model the session names, and `Claude-Session: <the session URL>`). No pull requests, no force push, no other branches.
 5. **Append a log entry** (template below) and commit it too. Keep entries short and factual. If nothing worthwhile was found, log that and stop; do not invent work.
 
@@ -245,6 +245,10 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Phase: polish (the last polish runs #23 and #29 both found real things, so not yet "good enough" for a feature run).
 - Did: walked the terminal panel with three sessions (ended, refused, running) and a narrow window. Bug: a refused connection kept the tab "Running" with a green dot and the node lit, because the generated script pauses with "Press Enter to close" after ssh exits with 255 (meant for the Git Bash window, which would close). The app terminal now sets `JUMPSPACE_IN_APP=1` and the script skips the pause there; the tab of a session that ended with a non-zero status gets a red dot.
 - Result: tests 219 passed (+1 in ssh-script.test.js, +1 assertion in terminal.test.js; both mutation checked), lint ok, build ok. In the app (scratch t48): refused connection -> tab ended with "exit status 255", red dot, no "Press Enter", node not lit; t25, t35, t44, t45 pass.
+
+### #32 2026-09-30 17:2x UTC · CI fix (scheduled run)
+- CI run 47 (commit of #31) failed on Ubuntu: ESLint `no-template-curly-in-string` for `${JUMPSPACE_IN_APP:-}` inside a JS string in `ssh.js`. My own check had piped `npm run lint` into `tail -1`, and ESLint ends with a blank line, so the error was not seen. The script line now uses `"$JUMPSPACE_IN_APP"` (the script has no `set -u`, so an unset variable is empty). Protocol step 3 now says to check exit codes.
+- Result: lint exit 0, tests 219 passed, build exit 0. The feature phase waits: this run was the CI fix.
 
 ## Routine
 
