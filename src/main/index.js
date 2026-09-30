@@ -17,16 +17,12 @@ import Store from 'electron-store'
 import info from '../../package.json'
 import icon from '../../resources/icon.png?asset'
 import { launch, sweepTempDir } from './launcher.js'
+import { normalizeSetting } from './setting.js'
 import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
 
 const isMac = process.platform === 'darwin'
 const APP_ORIGIN = 'app://.'
-
-const DEFAULT_SETTING = {
-  gitBashPath: '%ProgramFiles%\\Git\\git-bash.exe',
-  isHideToTrayOnClose: false
-}
 
 let win = null
 let tray = null
@@ -54,18 +50,14 @@ function main() {
 
   function getSetting() {
     try {
-      const stored = JSON.parse(store.get('setting') || '{}')
-      return { ...DEFAULT_SETTING, ...stored }
+      return normalizeSetting(JSON.parse(store.get('setting') || '{}'))
     } catch {
-      return { ...DEFAULT_SETTING }
+      return normalizeSetting()
     }
   }
 
   function setSetting(data) {
-    const setting = {
-      gitBashPath: typeof data?.gitBashPath === 'string' ? data.gitBashPath : DEFAULT_SETTING.gitBashPath,
-      isHideToTrayOnClose: Boolean(data?.isHideToTrayOnClose)
-    }
+    const setting = normalizeSetting(data)
     store.set('setting', JSON.stringify(setting))
     return setting
   }
