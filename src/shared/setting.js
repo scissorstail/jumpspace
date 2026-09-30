@@ -1,3 +1,5 @@
+// 앱 설정의 기본값과 검증. main(저장/읽기)과 renderer(store의 초기값)가 함께 쓴다. Node 모듈을 쓰지 않는다.
+
 // openIn: ssh를 어디서 여는지. 'app' = 앱 안의 터미널, 'window' = Git Bash 창
 export const OPEN_IN = ['app', 'window']
 

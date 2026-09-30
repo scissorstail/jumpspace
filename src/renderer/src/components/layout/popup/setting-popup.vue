@@ -141,14 +141,14 @@ export default {
     return {
       gitBashPath: null,
       isHideToTrayOnClose: false,
-      openIn: 'app',
-      theme: 'neon-night',
+      openIn: null,
+      theme: null,
       themeOptions: [
         { text: 'Neon night', value: 'neon-night' },
         { text: 'Sunset drive', value: 'sunset-drive' },
         { text: 'Vapor blue', value: 'vapor-blue' }
       ],
-      backdrop: 'depth',
+      backdrop: null,
       backdropOptions: [
         { text: 'Vivid', value: 'vivid' },
         { text: 'Soft', value: 'soft' },
@@ -177,9 +177,9 @@ export default {
     init() {
       this.gitBashPath = this.setting.gitBashPath
       this.isHideToTrayOnClose = this.setting.isHideToTrayOnClose
-      this.openIn = this.setting.openIn || 'app'
-      this.theme = this.setting.theme || 'neon-night'
-      this.backdrop = this.setting.backdrop || 'depth'
+      this.openIn = this.setting.openIn
+      this.theme = this.setting.theme
+      this.backdrop = this.setting.backdrop
     },
     async saveSetting() {
       await this.settingSave({

@@ -20,7 +20,7 @@ import icon from '../../resources/icon.png?asset'
 import { spawn as spawnPty } from 'node-pty'
 import { launch, sweepTempDir } from './launcher.js'
 import { createTerminalManager, terminalBash } from './terminal.js'
-import { normalizeSetting } from './setting.js'
+import { normalizeSetting } from '../shared/setting.js'
 import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
 

@@ -52,7 +52,6 @@ Ordered roughly by value. Move an item to the log when it is done.
 - `src/renderer/src/components/layout/main-navigator.vue` (about 640 lines): list, drag, select, rename, import/export all in one. A candidate to split (item list vs. actions).
 - `src/renderer/src/views/Layout.vue`: item state, project load/save, view saving are mixed.
 - `src/main/index.js`: IPC handlers could move into small modules like `launcher.js`.
-- Duplicated constants between renderer and main: canvas view limits (`utils/view.js` and `storage.js`), default settings (`store/modules/setting.js` and `setting.js`).
 
 ### Missing or thin tests
 - No component tests (Vue) at all; logic lives in `utils/` on purpose. Consider `@vue/test-utils` only if it stays cheap.
@@ -184,6 +183,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 ### #20 2026-09-30 · background effects (by hand, at the owner's request)
 - Did: the owner wanted the background a little less prominent, with more depth so the nodes read better, and suggested blur, glare or CRT scan lines on the background only, selectable in Settings if hard to choose. The scene is split into `.scene-art` (picture) and `.scene-fx` (overlays); five modes as `.scene-<name>`: vivid (as before), soft (faded + vignette), depth (blur 3px, faded, vignette, haze at the horizon), crt (scan lines, a slow rolling band that stops for reduced motion, strong vignette, 0.6px blur), off. New setting `backdrop` (validated in `setting.js`, default depth) with a button group in Settings. Tried `brightness()` first: the dimmed yellow sun turned olive; switched to opacity and a sun mixed toward pink in the dimmed modes. Help text under form fields now uses the muted theme color instead of Bootstrap's grey.
 - Result: tests 212 passed (+ backdrop normalization; mutation checked), lint ok, build ok. In the app: default depth, choosing CRT is saved and kept after reload, Off hides the scene; depth and CRT checked in all three palettes; scratch scripts t9, t12, t16, t24, t35, t39 pass.
+
+### #21 2026-09-30 13:2x UTC · refactor (scheduled run)
+- Did: removed the duplicated constants between main and renderer (a Backlog hot spot, which had grown with the new settings). New `src/shared/`: `setting.js` (moved from `src/main`, with its test) is now also the renderer store's default, and `view.js` holds the zoom range and `sanitizeView`, used by `storage.js` (its private copy is gone), `utils/view.js` (re-export) and the editor's `scaleExtent`. The `|| 'neon-night'` / `|| 'depth'` / `|| 'app'` fallbacks in App, Layout and the settings popup went away (the store always holds a complete setting). README layout and CLAUDE.md updated.
+- Result: no behavior change, tests unchanged (212 passed, the setting test only moved), lint ok, build ok; in the app: view restore, settings, background setting, live paths (scratch t9, t12, t14, t35, t39) pass.
+- Found / next: `main-navigator.vue` and `Layout.vue` remain the big hot spots.
 
 ## Routine
 

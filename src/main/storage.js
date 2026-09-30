@@ -1,6 +1,7 @@
 import { copyFile, readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { migrateLegacyForwards } from './legacy-forwards.js'
+import { sanitizeView } from '../shared/view.js'
 
 const FILE_VERSION = 1
 
@@ -18,16 +19,6 @@ function stripDerivedData(data) {
   return { ...data, nodes }
 }
 
-// 캔버스의 마지막 위치와 확대 상태. 쓸 수 없는 값이면 버린다. (범위는 renderer의 utils/view.js와 같다)
-function normalizeView(view) {
-  if (!view || typeof view !== 'object') return null
-
-  const { k, x, y } = view
-  if (![k, x, y].every(Number.isFinite) || k < 0.1 || k > 2) return null
-
-  return { k, x, y }
-}
-
 // 저장 파일/import 파일에서 읽은 내용을 [{ name, data }] 형태로 정리한다.
 export function normalizeItems(value) {
   const items = Array.isArray(value) ? value : value?.items
@@ -39,7 +30,8 @@ export function normalizeItems(value) {
     if (!x || typeof x !== 'object' || typeof x.data !== 'object' || x.data === null) {
       throw new Error('Invalid project item.')
     }
-    const view = normalizeView(x.view)
+    // 캔버스의 마지막 위치와 확대 상태. 쓸 수 없는 값이면 버린다.
+    const view = sanitizeView(x.view)
     return { name: typeof x.name === 'string' ? x.name : '', data: migrateLegacyForwards(stripDerivedData(x.data)), ...(view && { view }) }
   })
 }

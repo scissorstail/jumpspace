@@ -8,7 +8,7 @@
 export default {
   computed: {
     theme() {
-      return this.$store.getters.setting.theme || 'neon-night'
+      return this.$store.getters.setting.theme
     }
   },
   watch: {

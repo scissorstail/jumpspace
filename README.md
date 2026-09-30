@@ -107,7 +107,10 @@ src/main/       Electron main process
   validate.js     validation of every value that ends up in a command
   storage.js      projects.json (atomic write, .bak), import parsing
   legacy-forwards.js  moves forwards saved by older versions to their current place
-  setting.js      the app settings (Git Bash path, tray, where ssh opens, theme, background)
+src/shared/     pure modules used by both main and renderer
+  setting.js      the app settings and their defaults (Git Bash path, tray,
+                  where ssh opens, theme, background)
+  view.js         the canvas zoom range and the check of a saved view
 src/preload/    the small API exposed to the renderer (window.preload)
 src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
   src/utils/      pure logic with unit tests (forwarding rules, canvas view, ...)

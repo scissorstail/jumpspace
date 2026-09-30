@@ -17,7 +17,7 @@ import AreaPlugin from 'rete-area-plugin'
 import ReadonlyPlugin from 'rete-readonly-plugin'
 
 import SiteNode from './nodes/site-node'
-import { viewOf } from '@/utils/view'
+import { MAX_ZOOM, MIN_ZOOM, viewOf } from '@/utils/view'
 import { hopKey, liveRoutes } from '@/utils/terminal-sessions'
 
 export default {
@@ -122,7 +122,7 @@ export default {
     this.editor.use(AreaPlugin, {
       background,
       snap: true,
-      scaleExtent: { min: 0.1, max: 2 }
+      scaleExtent: { min: MIN_ZOOM, max: MAX_ZOOM }
     })
 
     this.editor.use(ConnectionPathPlugin, {

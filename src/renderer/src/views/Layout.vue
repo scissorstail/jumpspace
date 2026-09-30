@@ -178,7 +178,7 @@ export default {
   computed: {
     // 배경 풍경의 효과 (설정 > Background)
     backdrop() {
-      return this.$store.getters.setting.backdrop || 'depth'
+      return this.$store.getters.setting.backdrop
     },
     terminalCount() {
       return this.$store.getters.terminalSessions.length

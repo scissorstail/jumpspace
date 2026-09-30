@@ -1,13 +1,6 @@
 import omitBy from 'lodash/omitBy'
 import isNil from 'lodash/isNil'
-
-const defaultSetting = {
-  gitBashPath: '%ProgramFiles%\\Git\\git-bash.exe',
-  isHideToTrayOnClose: false,
-  openIn: 'app',
-  theme: 'neon-night',
-  backdrop: 'depth'
-}
+import { DEFAULT_SETTING as defaultSetting } from '../../../../shared/setting.js'
 
 export default {
   state: {
