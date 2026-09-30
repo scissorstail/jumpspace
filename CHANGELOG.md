@@ -38,5 +38,6 @@ Everything since 0.2.2-beta.
 ### Notes for upgrading
 
 - Password sign-in needs OpenSSH 8.4 or newer (`SSH_ASKPASS_REQUIRE`), which current Git for Windows includes.
-- Diagrams that use the older way to forward (an extra node with an empty port) keep working unchanged.
+- Diagrams that use the older way to forward (an extra node that only holds the target host, with an empty port) keep working unchanged.
+- One behaviour change: a node that has a user, host **and** port and also has forwards saved by an older version now opens them through itself, with `localhost` as the target. Before, such forwards went to the node's host through the previous node. To keep the old behaviour, clear the node's port (it becomes a forward target again), or move the forwards to the previous node and set their target host to this node's host.
 - Development needs Node.js 20.19+ or 22.12+.

@@ -52,7 +52,7 @@ Open the link icon of a node and add rows of `local port -> target host : target
 
 - The tunnel is opened through this node and through every previous node before it, each with its own authentication.
 - The target host is seen from this node. Leave it empty for `localhost`, that is a service running on the node itself.
-- A node without a port (the older way: an extra node that only holds the target host) still works. It forwards to its own host through the previous nodes.
+- A node without a port (the older way: an extra node that only holds the target host) still works. It forwards to its own host through the previous nodes. A node that has a user, host and port always forwards through itself.
 - The node shows the enabled forwards under its name.
 
 ### copy SSH config
