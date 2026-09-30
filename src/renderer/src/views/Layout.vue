@@ -68,6 +68,14 @@
         :is-locked="isEditorLocked"
         :class="[!editorData && 'layout-inactive']"
       />
+
+      <!-- 열려 있는 item이 없을 때 -->
+      <div
+        v-if="!editorData"
+        class="layout-empty"
+      >
+        Select an item in the sidebar, or add a new one.
+      </div>
     </div>
 
     <InfoPopup :show.sync="isShowInfoPopup" />
@@ -117,7 +125,18 @@ export default {
       isProjectLoadFailed: false
     }
   },
+  computed: {
+    // 열려 있는 item의 이름. 창 제목에 쓴다.
+    openedItemName() {
+      const item = this.openedItemIndex === null ? null : this.projectData?.[this.openedItemIndex]
+
+      return item?.name || ''
+    }
+  },
   watch: {
+    openedItemName(name) {
+      window.preload.setWindowTitle(name)
+    },
     async isEditorLocked() {
       this.$refs.editorRef.editor.trigger('readonly', this.isEditorLocked)
 
@@ -140,11 +159,6 @@ export default {
       // default
       this.$refs.editorRef.editor.view.area.zoom(0.85, 0, 0)
       this.$refs.editorRef.editor.view.area.translate(0, 0)
-
-      const selectedItem = this.projectData[this.openedItemIndex]
-      if (selectedItem) {
-        window.preload.setWindowTitle(selectedItem.name)
-      }
     },
     clearEditor() {
       this.editorData = null
@@ -249,11 +263,25 @@ export default {
 }
 
 #main-content {
+  position: relative;
   display: flex;
   flex-direction: row;
   flex: 1;
   overflow: hidden;
   background-color: #eee;
+}
+
+.layout-empty {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  pointer-events: none;
 }
 
 #main-sidebar {
