@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { delimiter, join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
@@ -37,6 +37,20 @@ fi
 exit "\${FAKE_SSH_EXIT:-0}"
 `
 
+// bash를 실행하고 출력을 (파이프가 아니라) 파일로 받는다. 타임아웃으로 bash를 종료해도 그 자식 프로세스(가짜 ssh, ssh-agent 등)가
+// 파이프를 붙잡고 있으면 spawnSync가 끝나지 않을 수 있는데, 파일로 받으면 bash가 끝나는 즉시 돌아온다. (특히 Windows)
+function spawnBash(args, { env, cwd, input = '', timeout = 30000, base }) {
+  writeFileSync(`${base}.stdin`, input)
+  const fds = [openSync(`${base}.stdin`, 'r'), openSync(`${base}.stdout`, 'w'), openSync(`${base}.stderr`, 'w')]
+
+  try {
+    const r = spawnSync(BASH, args, { cwd, env, stdio: fds, timeout })
+    return { status: r.status, stdout: read(`${base}.stdout`) ?? '', stderr: read(`${base}.stderr`) ?? '' }
+  } finally {
+    fds.forEach(fd => closeSync(fd))
+  }
+}
+
 const pathKey = Object.keys(process.env).find(k => k.toLowerCase() === 'path') || 'PATH'
 const read = file => (existsSync(file) ? readFileSync(file, 'utf-8') : null)
 const aliasesOf = config => [...config.matchAll(/^Host (\w+)$/gm)].map(x => x[1])
@@ -63,7 +77,8 @@ function run(built, { out, paths }, { prompts = '', exit = '', input = '' } = {}
   writeFileSync(paths.scriptPath, built.script, { mode: 0o700 })
   if (built.config) writeFileSync(paths.configPath, built.config)
 
-  const r = spawnSync(BASH, [paths.scriptPath], {
+  const r = spawnBash([paths.scriptPath], {
+    base: `${out}.run`,
     cwd: root,
     env: {
       ...process.env,
@@ -73,9 +88,7 @@ function run(built, { out, paths }, { prompts = '', exit = '', input = '' } = {}
       FAKE_SSH_PROMPTS: prompts,
       FAKE_SSH_EXIT: exit
     },
-    encoding: 'utf-8',
-    input,
-    timeout: 30000
+    input
   })
 
   const args = read(`${out}.args`)
@@ -113,7 +126,7 @@ ssh-add '${key}' < /dev/null
 ssh-add -l
 `, { mode: 0o700 })
 
-    const r = spawnSync(BASH, [script], { cwd: root, encoding: 'utf-8', input: '', timeout: 60000 })
+    const r = spawnBash([script], { base: join(root, 'askpass-driver'), cwd: root, env: process.env, timeout: 60000 })
 
     expect(r.stderr).not.toMatch(/Permission denied|exec\(/)
     expect(r.stdout).toMatch(/ED25519/)

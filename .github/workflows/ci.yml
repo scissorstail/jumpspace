@@ -25,6 +25,7 @@ jobs:
   # 환경변수 전달, 경로 인용, SSH_ASKPASS 동작을 확인한다.
   windows:
     runs-on: windows-latest
+    timeout-minutes: 15
     env:
       ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       JUMPSPACE_TEST_BASH: C:\Program Files\Git\bin\bash.exe
@@ -35,5 +36,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test
+      - run: npx vitest run --exclude "**/ssh-script.test.js"
+      - name: Scripts under Git Bash
+        timeout-minutes: 5
+        run: npx vitest run src/main/ssh-script.test.js --reporter=verbose
       - run: npm run build
