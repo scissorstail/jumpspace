@@ -1,5 +1,6 @@
 import { copyFile, readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { migrateLegacyForwards } from './legacy-forwards.js'
 
 const FILE_VERSION = 1
 
@@ -39,7 +40,7 @@ export function normalizeItems(value) {
       throw new Error('Invalid project item.')
     }
     const view = normalizeView(x.view)
-    return { name: typeof x.name === 'string' ? x.name : '', data: stripDerivedData(x.data), ...(view && { view }) }
+    return { name: typeof x.name === 'string' ? x.name : '', data: migrateLegacyForwards(stripDerivedData(x.data)), ...(view && { view }) }
   })
 }
 

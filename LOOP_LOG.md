@@ -58,7 +58,64 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Popovers opened with the keyboard do not move the focus into themselves; Tab goes on behind them.
 - Right click on an empty canvas while the editor is locked does nothing and says nothing; a hint ("Unlock the editor to add nodes") would help.
 - A node without an icon shows an empty grey frame; a neutral default icon would look finished.
-- Deleting a node from the context menu has no confirmation and no undo.
+- Lock button tooltip stays visible after a click (mouse still over it).
+
+### Code hot spots
+- `src/renderer/src/components/layout/main-navigator.vue` (about 640 lines): list, drag, select, rename, import/export all in one. A candidate to split (item list vs. actions).
+- `src/renderer/src/views/Layout.vue`: item state, project load/save, view saving are mixed.
+- `src/main/index.js`: IPC handlers could move into small modules like `launcher.js`.
+- Duplicated constants between renderer and main: canvas view limits (`utils/view.js` and `storage.js`), default settings (`store/modules/setting.js` and `setting.js`).
+
+### Missing or thin tests
+- No component tests (Vue) at all; logic lives in `utils/` on purpose. Consider `@vue/test-utils` only if it stays cheap.
+- `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts.
+- A small Playwright + Electron smoke test in the repo (needs xvfb in CI) would keep the UI honest. Weigh the CI time.
+
+### Dependencies (checked 2026-09-30)
+- `npm audit --omit=dev`: 0 vulnerabilities. Dev tooling may report more.
+- Held back on purpose: Vue 2.7 (3.x needs bootstrap-vue replacement), Rete v1 plugins (v2 is a rewrite), Bootstrap 4, vue-router 3, vuex 3. Proposals only.
+- Minor updates available: electron 44.4.5 -> 44.5.0, sass 1.105.0 -> 1.105.1.
+
+### Decisions by the owner (2026-09-30)
+1. **Passwords:** keep plain text for now. Storing them with Electron `safeStorage` (Windows DPAPI) stays an optional idea: it ties the passwords to this PC and user, so exported files could not carry them. Do not implement unless the owner asks.
+2. **Old forwards on a node with user/host/port:** migrate automatically (done, `src/main/legacy-forwards.js`).
+3. **Canvas pan limit:** removed (done).
+4. **Deleting a node:** confirm only when the node has content (done). No undo for now.
+5. **Vue 3 / Bootstrap-vue-next / Rete 2 migration:** on hold. Do not start it; do not re-propose it in the loop unless something breaks that needs it.
+6. **Playwright + Electron smoke test in the repo:** not now. Keep the UI checks as scratch scripts and the unit tests in the repo.
+
+### Proposals for the owner (need a decision)
+- (none open)
+
+### Questions for the owner
+- (none yet)
+
+## Log entry template
+
+```
+### #N YYYY-MM-DD HH:MM UTC · activity
+- Did: ...
+- Result: tests X passed, lint ok/failed, build ok/failed, commit(s) abc1234
+- Found / next: ...
+```
+
+## Research targets (similar programs)
+
+Compare features, UX and pitfalls. Read their docs and issues, not just the landing page.
+
+- Connection managers: Termius, Royal TSX / Royal TS, MobaXterm, Remmina, PuTTY / KiTTY / Windows Terminal profiles, Tabby, WindTerm, Electerm, Xpipe, Sshfs-win-manager.
+- Config based tools: `~/.ssh/config` editors, `sshs`, `ssh-manager` style CLIs, Ansible inventory graph tools, Teleport / Boundary style bastion workflows.
+- Diagram / node editors for the same job: Rete based tools, Node-RED like editors, draw.io style network diagrams that can launch sessions.
+- Topics: multi-hop ProxyJump UX, per-hop auth, port forward management (start/stop/status), password storage (OS keychain vs plain text), host key handling, import/export of `ssh_config`, Windows specifics (OpenSSH, Git Bash, Windows Terminal).
+
+## Backlog
+
+Ordered roughly by value. Move an item to the log when it is done.
+
+### UX candidates
+- Popovers opened with the keyboard do not move the focus into themselves; Tab goes on behind them.
+- Right click on an empty canvas while the editor is locked does nothing and says nothing; a hint ("Unlock the editor to add nodes") would help.
+- A node without an icon shows an empty grey frame; a neutral default icon would look finished.
 - Lock button tooltip stays visible after a click (mouse still over it).
 - The canvas can only be panned inside 1024x1024 (`translateExtent` in `components/editor/index.vue`); nodes placed further cannot be reached except by zooming out.
 
@@ -96,6 +153,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 - Did: node popovers (settings, port forwarding) now close with Escape and give the focus back to their button (`closePopoverOnEscape` in `utils/dismiss.js`, 3 tests). The right click menu is opaque with dark text and hover highlight, and its useless search box (one node type) is hidden. The plugin styles are scoped, so overriding needs `div.context-menu div.item` (specificity 0,2,2 beats `.item[data-v-x]`); a plain `.context-menu .item` lost.
 - Result: tests 164 passed, lint ok, build ok. Checked in the real app (Escape + focus return for both popovers, computed colors, screenshot).
 - Found / next: see "UX candidates" in the Backlog. Removed the two finished items from it. Rotation renamed `a11y-ux` -> `ux`.
+
+### #2 2026-09-30 · owner decisions (by hand, not by the trigger)
+- Did: applied decisions 2-4 above. Migration of old forwards on load/import (`legacy-forwards.js`, 8 tests + an integration test, mutation checked): entries without a `host` key on a node with user/host/port move to the previous node with `host` = this node's host (same tunnel as the old version); they stay only when the previous node uses the same local port or there is no previous node. Pan limit removed (Rete: no `translateExtent` means no restriction). Node delete asks when the node has content.
+- Result: tests 172 passed, lint ok, build ok. Checked in the app with an old-format file (summary shows on the previous node, the saved file is migrated), delete confirm (cancel/confirm/empty node) and far panning.
+- Found / next: the context menu can end up with two "Delete" items in the DOM in scripts (use `.last()`); harmless for users. Back to the rotation.
 
 ## Routine
 

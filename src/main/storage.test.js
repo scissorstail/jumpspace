@@ -117,3 +117,18 @@ describe('normalizeItems: canvas view', () => {
     expect(normalizeItems([item({ k: 1, x: 0, y: 0, evil: 1 })])[0].view).toEqual({ k: 1, x: 0, y: 0 })
   })
 })
+
+describe('normalizeItems: old forwards', () => {
+  it('moves the forwards saved by an older version so they mean the same as before', () => {
+    const conn = (name, extra = {}) => ({ name, user: 'u', host: `${name}.example`, port: '22', forwards: [], ...extra })
+    const nodes = {
+      1: { id: 1, data: { connection: conn('bastion') }, inputs: { input1: { connections: [] } } },
+      2: { id: 2, data: { connection: conn('app', { forwards: [{ checked: true, from: '8080', to: '80' }] }) }, inputs: { input1: { connections: [{ node: 1 }] } } }
+    }
+
+    const [item] = normalizeItems([{ name: 'x', data: { nodes } }])
+
+    expect(item.data.nodes[2].data.connection.forwards).toEqual([])
+    expect(item.data.nodes[1].data.connection.forwards).toEqual([{ checked: true, from: '8080', to: '80', host: 'app.example' }])
+  })
+})

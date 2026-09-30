@@ -22,6 +22,7 @@ Everything since 0.2.2-beta.
 - **Projects live in `projects.json`** in the app data folder (atomic write, `.bak` backup) instead of the browser storage. Older data is migrated on first launch.
 - The Forward and ProxyJump buttons no longer need a key on the previous node. They are available when every previous node has user, host and port.
 - A key given for a hop is the only key offered to it (`IdentitiesOnly`). A busy local port now makes a forward fail visibly.
+- The canvas can be panned without a limit (it was stuck inside 1024x1024). Deleting a node that has content asks first.
 - Popovers are opaque and close with Escape. The right click menu has dark text on a white background.
 - Accessibility: the icon-only controls (node menu, sidebar, header, forwards) are real buttons with names for screen readers and tooltips, keyboard focus is visible and reveals the node menu, and the grey helper texts are darker.
 
@@ -48,5 +49,5 @@ Everything since 0.2.2-beta.
 
 - Password sign-in needs OpenSSH 8.4 or newer (`SSH_ASKPASS_REQUIRE`), which current Git for Windows includes.
 - Diagrams that use the older way to forward (an extra node that only holds the target host, with an empty port) keep working unchanged.
-- One behaviour change: a node that has a user, host **and** port and also has forwards saved by an older version now opens them through itself, with `localhost` as the target. Before, such forwards went to the node's host through the previous node. To keep the old behaviour, clear the node's port (it becomes a forward target again), or move the forwards to the previous node and set their target host to this node's host.
+- Forwards saved by an older version on a node that has a user, host and port are moved automatically when the data is loaded: they go to the previous node with this node's host as the target, which opens the same tunnel as before. (The previous version of the file stays as `projects.json.bak`.) An entry is left on its node, now pointing to `localhost`, only when the previous node already uses the same local port or there is no previous node.
 - Development needs Node.js 20.19+ or 22.12+.

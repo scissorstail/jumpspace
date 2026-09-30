@@ -71,6 +71,18 @@ export default {
     this.editor.use(ContextMenuPlugin, {
       delay: 250,
       nodeItems: {
+        // 내용이 있는 노드는 지우기 전에 확인한다. (잠글 때까지 저장되지 않지만, 실수로 지우기 쉽다)
+        Delete: async ({ node }) => {
+          const view = node.controls.get('connection').vueContext
+          const filled = ['name', 'user', 'host', 'port', 'keyPath', 'password', 'exec'].some(key => view[key]) || (view.forwards || []).length > 0
+          const label = view.name || view.host || '(untitled)'
+
+          if (filled && !(await this.$bvModal.msgBoxConfirm(`Delete "${label}"?`, { title: 'Delete node', okVariant: 'danger', okTitle: 'Delete' }))) {
+            return
+          }
+
+          this.editor.removeNode(node)
+        },
         Duplicate: async (args) => {
           const {
             name,
@@ -92,8 +104,7 @@ export default {
     this.editor.use(AreaPlugin, {
       background,
       snap: true,
-      scaleExtent: { min: 0.1, max: 2 },
-      translateExtent: { width: 1024, height: 1024 }
+      scaleExtent: { min: 0.1, max: 2 }
     })
 
     this.editor.use(ConnectionPathPlugin, {
