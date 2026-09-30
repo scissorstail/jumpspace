@@ -114,6 +114,37 @@ function run(built, { out, paths }, { prompts = '', exit = '', input = '' } = {}
   }
 }
 
+async function waitFor(check, ms = 15000) {
+  const end = Date.now() + ms
+  while (Date.now() < end) {
+    const value = check()
+    if (value) return value
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
+  return null
+}
+
+// launch()는 process.env를 그대로 물려주므로, 가짜 ssh가 쓸 값은 여기서 설정한다.
+async function launchAndRead(dirName, payload, gitBashPath = BASH) {
+  const dir = join(root, dirName)
+  mkdirSync(dir, { recursive: true })
+  const out = join(dir, 'result')
+  const saved = { bashEnv: process.env.BASH_ENV, out: process.env.FAKE_SSH_OUT }
+  process.env.BASH_ENV = toUnixPath(bashEnv)
+  process.env.FAKE_SSH_OUT = out
+
+  try {
+    await launch('connect', payload, { tempDir: join(dir, 'tmp'), gitBashPath })
+    const args = await waitFor(() => read(`${out}.args`))
+    return args === null ? null : args.split('\0').slice(0, -1)
+  } finally {
+    for (const [key, value] of [['BASH_ENV', saved.bashEnv], ['FAKE_SSH_OUT', saved.out]]) {
+      if (value === undefined) delete process.env[key]
+      else process.env[key] = value
+    }
+  }
+}
+
 // 진짜 OpenSSH(ssh-add)가 SSH_ASKPASS로 지정한 스크립트 "파일"을 직접 실행하는지 확인한다.
 // ssh-add는 ssh와 같은 방식(execlp)으로 askpass를 실행한다. 생성되는 스크립트처럼 스크립트가 스스로를 askpass로 지정한다.
 // Windows(Git Bash)에서 "셔뱅이 있는 파일을 askpass로 실행할 수 있는가"를 서버 없이 확인하는 방법이다.
@@ -254,37 +285,6 @@ describe.skipIf(!canRun)('generated scripts run under bash', () => {
   })
 
   describe('through launch() (bash -c "bash \'<script>\'", like Git Bash does)', () => {
-    async function waitFor(check, ms = 15000) {
-      const end = Date.now() + ms
-      while (Date.now() < end) {
-        const value = check()
-        if (value) return value
-        await new Promise(resolve => setTimeout(resolve, 100))
-      }
-      return null
-    }
-
-    // launch()는 process.env를 그대로 물려주므로, 가짜 ssh가 쓸 값은 여기서 설정한다.
-    async function launchAndRead(dirName, payload) {
-      const dir = join(root, dirName)
-      mkdirSync(dir, { recursive: true })
-      const out = join(dir, 'result')
-      const saved = { bashEnv: process.env.BASH_ENV, out: process.env.FAKE_SSH_OUT }
-      process.env.BASH_ENV = toUnixPath(bashEnv)
-      process.env.FAKE_SSH_OUT = out
-
-      try {
-        await launch('connect', payload, { tempDir: join(dir, 'tmp'), gitBashPath: BASH })
-        const args = await waitFor(() => read(`${out}.args`))
-        return args === null ? null : args.split('\0').slice(0, -1)
-      } finally {
-        for (const [key, value] of [['BASH_ENV', saved.bashEnv], ['FAKE_SSH_OUT', saved.out]]) {
-          if (value === undefined) delete process.env[key]
-          else process.env[key] = value
-        }
-      }
-    }
-
     it('starts the generated script', async () => {
       const args = await launchAndRead('plain', node)
       expect(args).toEqual(expect.arrayContaining(['-p', '22', '--', 'deploy@example.com']))
@@ -296,4 +296,15 @@ describe.skipIf(!canRun)('generated scripts run under bash', () => {
       expect(args).toEqual(expect.arrayContaining(['--', 'deploy@example.com']))
     }, 30000)
   })
+})
+
+// 앱이 실제로 실행하는 git-bash.exe(mintty를 띄우는 런처)로도 스크립트가 시작되는지 확인한다. Windows에서만 의미가 있다.
+// JUMPSPACE_TEST_GIT_BASH_EXE에 git-bash.exe 경로를 지정한다. (예: C:\Program Files\Git\git-bash.exe)
+const GIT_BASH_EXE = process.env.JUMPSPACE_TEST_GIT_BASH_EXE
+
+describe.skipIf(!GIT_BASH_EXE)('through git-bash.exe (the launcher the app really uses)', () => {
+  it('starts the generated script', async () => {
+    const args = await launchAndRead('git-bash-exe', node, GIT_BASH_EXE)
+    expect(args).toEqual(expect.arrayContaining(['-p', '22', '--', 'deploy@example.com']))
+  }, 60000)
 })

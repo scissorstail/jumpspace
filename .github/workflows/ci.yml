@@ -42,4 +42,13 @@ jobs:
         env:
           JUMPSPACE_TEST_VERBOSE: '1'
         run: npx vitest run src/main/ssh-script.test.js --reporter=verbose
+      # 앱이 실제로 실행하는 git-bash.exe(mintty를 띄우는 런처)로도 시작되는지 확인한다.
+      # 화면이 없는 러너에서는 실패할 수 있어서, 결과를 보기만 하고 CI를 실패시키지는 않는다.
+      - name: git-bash.exe launcher (informational)
+        continue-on-error: true
+        timeout-minutes: 3
+        env:
+          JUMPSPACE_TEST_GIT_BASH_EXE: C:\Program Files\Git\git-bash.exe
+          JUMPSPACE_TEST_VERBOSE: '1'
+        run: npx vitest run src/main/ssh-script.test.js -t "git-bash.exe" --reporter=verbose
       - run: npm run build
