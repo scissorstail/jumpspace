@@ -96,7 +96,13 @@
               icon="arrow-left-right"
               font-scale="0.85"
               class="mr-1"
-            />{{ forwardSummaryText.text }}
+            />
+            <!-- 첫 포워딩만 말줄임하고, 나머지 개수는 항상 보이게 둔다 -->
+            <span class="info-forward-first">{{ forwardSummaryText.first }}</span>
+            <span
+              v-if="forwardSummaryText.more"
+              class="info-forward-more"
+            >({{ forwardSummaryText.more }})</span>
           </div>
         </div>
       </div>
@@ -480,9 +486,26 @@ export default {
   }
 
   &-forward {
+    display: flex;
+    align-items: center;
     color: var(--js-sun);
     font-size: 0.72rem;
     font-weight: normal;
+
+    > svg {
+      flex: none;
+    }
+  }
+
+  &-forward-first {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &-forward-more {
+    flex: none;
+    margin-left: 0.4em;
   }
 
   &-action {

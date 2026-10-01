@@ -89,14 +89,19 @@ export function forwardEntries(forwards, plan) {
 }
 
 // 노드 아래에 보여줄 요약. 켜진 포워딩이 없으면 null.
+//   first: 첫 포워딩 (길면 화면에서 말줄임), more: 나머지 개수 ("+2", 없으면 ''), 따로 두어서 잘리지 않게 한다.
 export function forwardSummary(forwards, plan) {
   const active = activeForwards(forwards)
   if (active.length === 0) return null
 
   const describe = x => `:${x.from || '?'} → ${(x.host || '').trim() || plan.defaultHost}:${x.to || '?'}`
+  const first = describe(active[0])
+  const more = active.length > 1 ? `+${active.length - 1}` : ''
 
   return {
-    text: describe(active[0]) + (active.length > 1 ? ` (+${active.length - 1})` : ''),
+    first,
+    more,
+    text: more ? `${first} (${more})` : first,
     title: active.map(describe).join('\n')
   }
 }

@@ -384,6 +384,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: tests 252 passed (+4; mutation checked twice: exit status shown for 0, and the old `\n`-only replace each fail a test), lint exit 0, build exit 0. In the app: t73 (reconnect) passes; t48 (failed connection) passes after updating its outdated check (it treated the new "Press Enter to reconnect" as the script's old "Press Enter to close" pause); terminal background follows each palette (t83).
 - Phase: polish continues; the next run is ux or style.
 
+### #58 2026-10-01 16:2x UTC · ux (scheduled run, polish phase)
+- Did: walked extreme values on the canvas (scratch t84): a 43-character name, long user and host, six forwards with long target hosts. Name, user and host are capped at the text width under the node with an ellipsis and nothing overlaps. One loss: the forward line is "first forward (+N)" in one string, so a long first forward cut off the "(+5)" and the other forwards were invisible. `forwardSummary` now also returns `first` and `more` (`text` stays for other uses); the node shows them in two spans: only the first shrinks with an ellipsis, the count never does.
+- Result: tests 253 passed (+1, mutation checked: a wrong count fails), lint exit 0, build exit 0. In the app the count shows with long hosts (t84), and a short forward line has exactly the same position and size as before (t78: -22.9,174.2 138x15); t13, t43 pass.
+- Phase: polish continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

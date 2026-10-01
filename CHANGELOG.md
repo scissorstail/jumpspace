@@ -36,6 +36,7 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- With a long target host, the forward line under a node was cut before its count, so "(+5)" for the other forwards disappeared. The count now always shows; only the first forward is shortened.
 - Pointing at a sidebar item made it 2px taller (its `...` button was taller than the name), so every item below jumped. The button now fits the row.
 - Turning on *Node glass* moved the text under every node about 4px down (the panel's padding). The panel now grows outward around the text, so the text stays exactly where it is with the glass on or off.
 - Sidebar items picked with Ctrl+click were only tinted, so neighbours merged into one block and the focused one looked different. Each now has a bar on its left and a thin gap to the next.

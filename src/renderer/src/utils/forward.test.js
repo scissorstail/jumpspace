@@ -135,9 +135,16 @@ describe('forwardSummary', () => {
     expect(forwardSummary([{ checked: false, from: '1', to: '2' }], forwardPlan(server, []))).toBeNull()
   })
 
+  it('has no count when only one forward is enabled', () => {
+    const summary = forwardSummary([forwards[2]], forwardPlan(server, []))
+    expect(summary).toMatchObject({ first: ':8080 → localhost:80', more: '', text: ':8080 → localhost:80' })
+  })
+
   it('shows the first enabled forward, the number of the others and all of them in the tooltip', () => {
     const summary = forwardSummary(forwards, forwardPlan(server, []))
     expect(summary.text).toBe(':15432 → db.internal:5432 (+1)')
+    expect(summary.first).toBe(':15432 → db.internal:5432')
+    expect(summary.more).toBe('+1')
     expect(summary.title).toBe(':15432 → db.internal:5432\n:8080 → localhost:80')
   })
 
