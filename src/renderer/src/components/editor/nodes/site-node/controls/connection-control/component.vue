@@ -382,7 +382,7 @@ export default {
     .col-form-label {
       display: flex;
       align-items: center;
-      min-height: 31px;
+      min-height: 29px;
       padding-top: 0;
       padding-bottom: 0;
     }

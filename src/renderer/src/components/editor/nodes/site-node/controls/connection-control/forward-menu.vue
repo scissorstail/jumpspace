@@ -328,6 +328,15 @@ export default {
     }
   }
 
+  // 지우기 버튼은 옆의 입력칸과 같은 높이의 정사각형에 가깝게 (theme.scss의 작은 입력칸 높이)
+  .forward-row > .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 29px;
+    padding: 0;
+  }
+
   .forward-check {
     // 표 칸 안에서 위아래 여백 없이 가운데에 맞춘다.
     min-height: 0;

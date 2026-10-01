@@ -332,6 +332,25 @@ body {
   box-shadow: none;
 }
 
+// 작은 입력칸은 어디서나 같은 높이다. Bootstrap은 높이를 글꼴 크기로 계산하는데, 버튼이 붙은 입력칸
+// (.input-group-sm)에서는 글꼴을 다시 키워서 같은 줄의 칸들이 29/31/33px로 달랐다. 붙은 버튼도 같은 높이.
+$control-sm-height: 29px;
+
+.form-control-sm,
+.input-group-sm > .form-control {
+  height: $control-sm-height;
+  font-size: 0.8rem;
+}
+
+.input-group-sm > .input-group-append > .btn,
+.input-group-sm > .input-group-prepend > .btn {
+  display: flex;
+  align-items: center;
+  height: $control-sm-height;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 .custom-control-input:checked ~ .custom-control-label::before {
   border-color: var(--js-primary);
   background-color: var(--js-primary);
