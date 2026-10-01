@@ -280,10 +280,14 @@ export default {
   }
 
   // 노드: 단색 패널, 청록 테두리, 흐리지 않은 검은 그림자. 선택하면 분홍 테두리와 노란 그림자.
+  // 테두리는 border가 아니라 안쪽 outline이다. Rete는 소켓 위치를 offsetLeft/offsetTop으로 더해 구하는데
+  // 그 값에는 부모의 border 두께가 빠져서, 연결선 끝이 소켓 중심에서 2px 어긋났다. (padding이 그 두께를 대신한다)
   .node.site {
-    border: 2px solid var(--js-secondary);
+    border: 0;
     border-radius: 0;
-    padding-bottom: 0;
+    padding: 2px;
+    outline: 2px solid var(--js-secondary);
+    outline-offset: -2px;
     min-width: initial;
     background: var(--js-surface);
     color: var(--js-text);
@@ -296,7 +300,7 @@ export default {
     }
 
     &.selected {
-      border-color: var(--js-primary);
+      outline-color: var(--js-primary);
       background: var(--js-surface-2);
       box-shadow: 6px 6px 0 var(--js-sun);
     }
@@ -336,14 +340,15 @@ export default {
       border-radius: 0;
       background: var(--js-bg);
 
+      // 입출력 칸이 이제 노드 바깥 가장자리에서 시작하므로(테두리 안쪽이 아니라) 2px 덜 내민다.
       &.input {
         border: 3px solid var(--js-secondary);
-        margin-left: -28px;
+        margin-left: -26px;
       }
 
       &.output {
         border: 3px solid var(--js-secondary);
-        margin-right: -28px;
+        margin-right: -26px;
         background: var(--js-secondary);
       }
     }
@@ -401,8 +406,8 @@ export default {
   .is-live .node.site::after {
     content: '';
     position: absolute;
-    top: 6px;
-    left: 6px;
+    top: 8px;
+    left: 8px;
     width: 9px;
     height: 9px;
     background: var(--js-live);
