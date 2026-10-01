@@ -409,6 +409,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: tests 257 passed (tooltip test extended; mutation checked: the old "Running" text fails it), lint exit 0, build exit 0. In the app: waiting for a password = yellow tab + yellow path, logged in = green tab + live path; t48, t73, t87 pass. README and the CHANGELOG entry of the feature say so.
 - Phase: polish continues.
 
+### #63 2026-10-01 21:2x UTC · tests (scheduled run, polish phase)
+- Did: pinned the safety property of #61 with two script tests (fake ssh, `JUMPSPACE_IN_APP=1`): for ProxyJump and Forward the login marker options are on the command line (before `-F` for ProxyJump) and the generated `-F` config never contains `LocalCommand`, because the `-W` helpers ProxyJump starts read that config and their output is the tunnel. The Connect case was already covered in #61.
+- Result: tests 259 passed (+2; mutation checked: writing `LocalCommand` into the Host blocks fails both), lint exit 0, build exit 0. No app change.
+- Phase: polish continues; the next run is ux or style.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

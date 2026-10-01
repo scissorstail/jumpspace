@@ -312,6 +312,32 @@ describe.skipIf(!canRun)('generated scripts run under bash', () => {
     })
   })
 
+  // 앱 안의 터미널의 로그인 표시는 맨 앞 ssh의 명령줄에만 있어야 한다. -F config에 들어가면 ProxyJump가 띄우는
+  // ssh -W(출력이 곧 터널)도 LocalCommand를 실행해서 터널에 글자가 섞인다.
+  describe('login marker with a path (app terminal)', () => {
+    const localCommandArgs = args => args.filter((x, i) => x === 'PermitLocalCommand=yes' || x.startsWith('LocalCommand=') || (x === '-o' && /LocalCommand/.test(args[i + 1] || '')))
+
+    it('is on the command line of ProxyJump, before -F, and never in the config', () => {
+      const r = newRun()
+      const built = buildProxyJump([node, { ...node, name: 'inner', host: 'inner.example.com' }], r.paths)
+      const result = run(built, r, { env: { JUMPSPACE_IN_APP: '1' } })
+
+      expect(localCommandArgs(result.args)).toHaveLength(4)
+      expect(result.args.indexOf('PermitLocalCommand=yes')).toBeLessThan(result.args.indexOf('-F'))
+      expect(result.config).not.toMatch(/LocalCommand/i)
+    })
+
+    it('is on the command line of a forward and never in the config', () => {
+      const r = newRun()
+      const built = buildForward({ via: [node, { ...node, name: 'inner', host: 'inner.example.com' }], forwards: [{ checked: true, from: '8080', to: '80' }] }, r.paths)
+      const result = run(built, r, { env: { JUMPSPACE_IN_APP: '1' } })
+
+      expect(localCommandArgs(result.args)).toHaveLength(4)
+      expect(result.args).toContain('-N')
+      expect(result.config).not.toMatch(/LocalCommand/i)
+    })
+  })
+
   describe('through launch() (bash -c "bash \'<script>\'", like Git Bash does)', () => {
     it('starts the generated script', async () => {
       const args = await launchAndRead('plain', node)
