@@ -64,7 +64,7 @@ Ordered roughly by value. Move an item to the log when it is done.
 - `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts.
 - A Playwright + Electron smoke test in the repo was considered and turned down by the owner (decision 6).
 
-### Dependencies (checked 2026-10-01 07:2x UTC)
+### Dependencies (checked 2026-10-01 17:2x UTC)
 - `npm audit --omit=dev`: 0 vulnerabilities. `npm audit` (dev tooling included) reports 4 (2 low, 2 high), all through `vue` 2 and `rete-vue-render-plugin`; the only fix is Vue 3 (`--force`), so they stay (decision 5).
 - Held back on purpose (major versions): Vue 2.7, Rete v1 plugins, Bootstrap 4, vue-router 3, vuex 3. Not checked or updated by the routine: eslint 10, vite 8, vitest 5 and `@eslint/js` 10 are newer majors; look at them only if something needs them, with tests and a build first.
 - Up to date inside their ranges (2026-10-01): everything; electron 44.5.1, node-pty 1.1.0, @xterm/xterm 6.0.0 are the latest releases.
@@ -388,6 +388,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: walked extreme values on the canvas (scratch t84): a 43-character name, long user and host, six forwards with long target hosts. Name, user and host are capped at the text width under the node with an ellipsis and nothing overlaps. One loss: the forward line is "first forward (+N)" in one string, so a long first forward cut off the "(+5)" and the other forwards were invisible. `forwardSummary` now also returns `first` and `more` (`text` stays for other uses); the node shows them in two spans: only the first shrinks with an ellipsis, the count never does.
 - Result: tests 253 passed (+1, mutation checked: a wrong count fails), lint exit 0, build exit 0. In the app the count shows with long hosts (t84), and a short forward line has exactly the same position and size as before (t78: -22.9,174.2 138x15); t13, t43 pass.
 - Phase: polish continues.
+
+### #59 2026-10-01 17:2x UTC · health (scheduled run, polish phase)
+- Did: CI run 74 green. `npm outdated`: nothing behind inside its range (only the held-back majors). `npm audit --omit=dev` 0, with dev tooling the known 4 through Vue 2. CHANGELOG (Unreleased: Added, Changed, Fixed, Removed) and README match the last runs (reconnect, terminal panel helpers, forward count, layout fixes).
+- Result: nothing worthwhile found; log only. lint/tests/build untouched (no code change).
+- Phase: this polish run found nothing. If the next one (ux or style) also finds nothing worthwhile, the run after it is the next `feature` run (top of the queue: connection state on the canvas).
 
 ## Routine
 
