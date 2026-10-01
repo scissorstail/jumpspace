@@ -23,7 +23,8 @@ import {
   BIconArrowRight,
   BIconPlayFill,
   BIconHddNetwork,
-  BIconChevronDown
+  BIconChevronDown,
+  BIconArrowClockwise
 } from 'bootstrap-vue'
 // import { BootstrapVueIcons } from 'bootstrap-vue' // To use all icons
 
@@ -50,5 +51,6 @@ Vue.component('BIconArrowRight', BIconArrowRight)
 Vue.component('BIconPlayFill', BIconPlayFill)
 Vue.component('BIconHddNetwork', BIconHddNetwork)
 Vue.component('BIconChevronDown', BIconChevronDown)
+Vue.component('BIconArrowClockwise', BIconArrowClockwise)
 
 // Vue.use(BootstrapVueIcons) // To use all icons
