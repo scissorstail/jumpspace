@@ -300,6 +300,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: tests 235 passed (+4; mutation checked: going back to a plain merge fails), lint exit 0, build exit 0. In the app: scratch t12 (settings), t39 (background), t43 (node glass) pass.
 - Phase: a real (small) inconsistency fixed in the same run, so the polish phase continues; the next run is ux or style.
 
+### #43 2026-10-01 03:2x UTC · style (scheduled run, polish phase)
+- Did: screenshots of the sidebar `...` menu, the canvas and node right-click menus and the port forwarding popover with two rows, in all three palettes. (1) The forward column title "Local port" wrapped onto two lines (78px column); the titles no longer wrap and use the empty arrow column next to it. (2) *Delete* in the node menu used a hard-coded `#ff4d4d` and turned pink on hover like the harmless items; it now uses `--js-danger` and a red hover background with `--js-on-primary` text.
+- Result: CSS only. lint exit 0, tests 235 passed, build exit 0. Computed hover colors checked in all three palettes (scratch t59); t58 screenshots after the change. Note: screenshots of a hovered menu item under xvfb sometimes show a half-finished state; the computed style is the reliable check.
+- Phase: two small visual fixes, so the polish phase continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

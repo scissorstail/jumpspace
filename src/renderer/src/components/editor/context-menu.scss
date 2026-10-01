@@ -79,12 +79,12 @@ div.context-menu {
     mask-image: $icon-plus;
   }
 
-  // 노드 메뉴: Delete는 위험한 동작이라 붉게 표시한다.
+  // 노드 메뉴: Delete는 위험한 동작이라 붉게 표시하고, 가리키면 빨간 바탕이 된다. (색 묶음마다 --js-danger)
   div.item:first-child {
-    color: #ff4d4d;
+    color: var(--js-danger);
 
     &:hover {
-      background-color: var(--js-primary);
+      background-color: var(--js-danger);
       color: var(--js-on-primary);
     }
 

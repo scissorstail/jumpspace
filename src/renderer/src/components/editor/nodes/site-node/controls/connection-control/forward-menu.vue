@@ -321,6 +321,11 @@ export default {
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--js-text-muted);
+
+    // "Local port"는 좁은 칸보다 길어서 두 줄이 되었다. 옆의 빈 화살표 칸까지 한 줄로 쓴다.
+    span {
+      white-space: nowrap;
+    }
   }
 
   .forward-check {

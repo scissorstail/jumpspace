@@ -35,6 +35,7 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- The column title "Local port" in the port forwarding popover broke onto two lines. *Delete* in a node's right-click menu used a fixed red instead of the palette's, and turned pink like the other items when pointed at; it now turns red.
 - A user, host, key path or exec that the launch would reject was only reported when a connection started. The node settings now mark such a field while you type and say what is allowed (the same rules main checks).
 - The red dot of a terminal tab that ended with an error could not be seen while the tab was active (the active tab is pink); the dot now has a dark border there.
 - The fields in a node's settings were not tied to their labels: clicking a label now moves to its field, and screen readers announce the field's name.
