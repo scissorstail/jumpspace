@@ -385,6 +385,11 @@ export default {
     color: var(--js-on-primary);
   }
 
+  // 끝난 탭에는 다시 연결 단추가 하나 더 붙는다. 그만큼 넓혀서 제목이 더 짧게 잘리지 않게 한다.
+  &.is-exited {
+    max-width: 261px; // 220px + 단추와 간격
+  }
+
   &:focus-visible {
     outline: 2px solid var(--js-secondary);
     outline-offset: -2px;

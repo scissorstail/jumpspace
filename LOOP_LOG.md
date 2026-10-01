@@ -345,6 +345,12 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: tests 246 passed (+8: reopen x5, canReconnect, icons x2; mutation checked three ways in `terminal.js`: remembering user-closed sessions, not keeping the request after a failed reopen, not forgetting on close each fail a test), lint exit 0, build exit 0. In the app against the local sshd (scratch t73, all three palettes): connect, `exit`, reconnect button logs in again in the same tab with the path live again, typing reaches the new session, Enter in the ended terminal reconnects, a refused connection retried shows the error and the red dot again, closing an ended tab works, no page errors.
 - Next: back to the polish phase; the first polish run looks at this feature.
 
+### #51 2026-10-01 10:2x UTC · ux (scheduled run, polish phase, looking at the reconnect feature)
+- Did: walked the new reconnect against the local sshd (scratch t74): overlap audit and row alignment of tabs with long titles and both buttons (clean), keyboard order tab -> Reconnect -> Close, and four quick Enters in an ended terminal, counting login shells on the server: one session, no extra tab. One rough edge: the extra button took its room from the title of an ended tab (max-width 220px), so a long title was cut 11px shorter than while running. Ended tabs may now be 261px wide, the visible title stays the same (141px both ways, t75).
+- Note for scripts: killing Electron from a test script (process.exit) can leave its ssh sessions behind on the test sshd; `pkill -KILL -u hopkey` between runs. A normal quit closes them (`before-quit` -> `closeAll`).
+- Result: CSS only. lint exit 0, tests 246 passed, build exit 0; t73 passes.
+- Phase: polish continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
