@@ -38,7 +38,7 @@ The node menu also shows when one of its buttons has keyboard focus, and Escape 
 
 ### terminals
 
-Connect, ProxyJump and port forwarding open in a **terminal panel at the bottom of the app**, one tab per session. Password prompts are answered as described below; anything else (a key passphrase, a one-time code, host key questions) is typed into the tab. The dot on a tab shows the state (starting, running, ended). Closing a tab ends its ssh session; the arrow on the right hides the panel while the sessions keep running, and the terminal button in the header shows it again. Drag the top edge of the panel to resize it. Copy with Ctrl+Shift+C (or select and right click), paste with Ctrl+Shift+V, Shift+Insert or a right click; Ctrl+C is sent to the remote program. While a session is open, its path lights up on the canvas: signals flow along the connections it goes through and its nodes show a blinking green dot.
+Connect, ProxyJump and port forwarding open in a **terminal panel at the bottom of the app**, one tab per session. Password prompts are answered as described below; anything else (a key passphrase, a one-time code, host key questions) is typed into the tab. The dot on a tab shows the state (starting, running, ended); it turns red when the session ended with an error, and its tooltip gives the exit status. Closing a tab ends its ssh session; the arrow on the right hides the panel while the sessions keep running, and the terminal button in the header shows it again. Drag the top edge of the panel to resize it. Copy with Ctrl+Shift+C or Ctrl+Insert (or select and right click), paste with Ctrl+Shift+V, Shift+Insert or a right click; Ctrl+C is sent to the remote program. While a session is open, its path lights up on the canvas: signals flow along the connections it goes through and its nodes show a blinking green dot.
 
 *Settings > Open SSH in* switches back to opening a separate **Git Bash window** instead.
 
@@ -135,9 +135,8 @@ src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
 
 ### tests
 
-- `src/main/terminal.test.js` also runs a generated script in a real pty (node-pty) with a fake `ssh`, types into it and closes it, on Linux and in the Windows CI job (ConPTY and Git Bash).
 - `npm test` covers validation, script and config building, the askpass routing (it runs the generated script), the launcher (with a fake `spawn`), storage (including the migration of old forwards and the canvas view), the settings, the terminal session manager (with a fake pty) and the pure UI logic.
-- `src/main/terminal.test.js` also starts real sessions with `node-pty`: key strokes reach the program, closing a tab ends it, and Korean text passes through unchanged in both directions. On Windows this runs through ConPTY and Git's `bash.exe` (`JUMPSPACE_TEST_BASH`).
+- `src/main/terminal.test.js` also starts real sessions with `node-pty`: a generated script with a fake `ssh` runs in a real pty, key strokes reach the program, closing a tab ends it (checked outside Windows), and Korean text passes through unchanged in both directions. On Windows this runs through ConPTY and Git's `bash.exe` (`JUMPSPACE_TEST_BASH`).
 - `src/main/ssh-script.test.js` runs the generated scripts for real under bash with a fake `ssh`, and lets the real `ssh-add` run a script file as `SSH_ASKPASS`. It needs bash: `/bin/bash` on Linux and macOS, on Windows set `JUMPSPACE_TEST_BASH` to Git Bash (`C:\Program Files\Git\bin\bash.exe`), otherwise it is skipped.
 - CI runs lint, tests and the build on Ubuntu. On Windows it runs the tests and the build too, with the bash based tests under the Git Bash of the runner, plus one that starts a generated script through the real `git-bash.exe` (`JUMPSPACE_TEST_GIT_BASH_EXE`), the launcher the app uses.
 

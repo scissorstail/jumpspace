@@ -62,10 +62,10 @@ Ordered roughly by value. Move an item to the log when it is done.
 - `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts.
 - A Playwright + Electron smoke test in the repo was considered and turned down by the owner (decision 6).
 
-### Dependencies (checked 2026-09-30 08:2x UTC)
+### Dependencies (checked 2026-10-01 00:2x UTC)
 - `npm audit --omit=dev`: 0 vulnerabilities. `npm audit` (dev tooling included) reports 4 (2 low, 2 high), all through `vue` 2 and `rete-vue-render-plugin`; the only fix is Vue 3 (`--force`), so they stay (decision 5).
 - Held back on purpose (major versions): Vue 2.7, Rete v1 plugins, Bootstrap 4, vue-router 3, vuex 3. Not checked or updated by the routine: eslint 10, vite 8, vitest 5 and `@eslint/js` 10 are newer majors; look at them only if something needs them, with tests and a build first.
-- Up to date inside their ranges: electron 44.5.1, sass 1.105.1.
+- Up to date inside their ranges (2026-10-01): everything; electron 44.5.1, node-pty 1.1.0, @xterm/xterm 6.0.0 are the latest releases.
 
 ### Decisions by the owner (2026-09-30)
 1. **Passwords:** keep plain text for now. Storing them with Electron `safeStorage` (Windows DPAPI) stays an optional idea: it ties the passwords to this PC and user, so exported files could not carry them. Do not implement unless the owner asks.
@@ -278,6 +278,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: screenshots of the info popup, a selected node with the locked-editor hint and the error dialog in all three palettes. The hint toast ("Unlock the editor ...") was a light grey box with white text, nearly unreadable: bootstrap-vue's variant rules (`.b-toast-secondary.b-toast-solid .toast`, `.b-toast-danger .toast .toast-header`) were more specific than the theme's toast rules. The theme rules now use the same specificity (theme.scss is read later, so it wins); the danger variant keeps a red border and header.
 - Result: CSS only. lint exit 0, tests 227 passed, build exit 0. Hint toast background is the surface color with white text; hint and error toasts checked in all three palettes (scratch t53, t54, t55).
 - Phase: a real (visible) fix, so the polish phase continues.
+
+### #39 2026-10-01 00:2x UTC · health (scheduled run, polish phase)
+- Did: CI run 54 green. `npm outdated`: nothing behind inside its range (only the held-back majors). `npm audit --omit=dev` 0; with dev tooling still the 4 known ones through Vue 2 (decision 5). Compared the README with the code: the tab dot did not mention the red error state, copying with Ctrl+Insert was missing, and the tests section described `terminal.test.js` twice in two overlapping bullets (merged, with the group hang-up check marked as not on Windows).
+- Result: docs only. lint exit 0, tests 227 passed, build exit 0.
+- Phase: small doc drift only, nothing worthwhile in the code. If the next polish run (ux or style) also finds nothing worthwhile, the run after it is the first `feature` run.
 
 ## Routine
 
