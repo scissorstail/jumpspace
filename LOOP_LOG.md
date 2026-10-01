@@ -357,6 +357,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: tests 248 passed (+2), lint exit 0, build exit 0. No app change.
 - Phase: polish continues; the next run is ux or style.
 
+### #53 2026-10-01 12:2x UTC · style (scheduled run, polish phase)
+- Did: looked closely at the sidebar list states (open, hovered, Ctrl+click selected) in all three palettes (scratch t76). Selected items were only a translucent tint: two neighbours read as one block, and nothing marked them in the flat high-contrast way the rest uses. Selected items now get a 4px bar in `--js-secondary` on the left and their border in the sidebar color, which leaves a 1px gap between neighbours. The bar first vanished on the focused item (the `.btn:focus { box-shadow: none }` rule); the selector for selected items is now more specific than that rule.
+- Result: CSS only. lint exit 0, tests 248 passed, build exit 0; computed style checked for the focused and unfocused selected item in all three palettes; t3, t29, t65 pass.
+- Phase: polish continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

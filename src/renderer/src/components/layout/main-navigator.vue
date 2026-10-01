@@ -544,8 +544,14 @@ export default {
             }
           }
 
-          &.selected {
+          // Ctrl+클릭으로 고른 항목: 옅은 바탕에 왼쪽 막대. 이웃한 선택 항목이 한 덩어리로 보이지 않도록
+          // 테두리를 사이드바 바탕색으로 칠해 1px씩 띄운다.
+          // (포커스가 있어도 막대를 지우지 않도록 아래 :focus 규칙보다 구체적으로 쓴다)
+          &.selected,
+          &.selected.btn:focus {
+            border-color: var(--js-bg-raised);
             background-color: var(--js-secondary-soft);
+            box-shadow: inset 4px 0 0 var(--js-secondary);
           }
 
           &.btn-block + .btn-block {
