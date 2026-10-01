@@ -1,6 +1,4 @@
-import omitBy from 'lodash/omitBy'
-import isNil from 'lodash/isNil'
-import { DEFAULT_SETTING as defaultSetting } from '../../../../shared/setting.js'
+import { DEFAULT_SETTING as defaultSetting, normalizeSetting } from '../../../../shared/setting.js'
 
 export default {
   state: {
@@ -18,12 +16,8 @@ export default {
   },
   actions: {
     async settingLoad({ commit }) {
-      const storedSetting = omitBy( // Remove null, undefined, '', ' '
-        (await window.preload.getSetting()) || {},
-        x => isNil(x) || String(x).trim() === ''
-      )
-
-      commit('settingUpdate', { ...defaultSetting, ...storedSetting })
+      // main과 같은 규칙으로 맞춘다. (없거나 모르는 값은 기본값, 모르는 키는 버린다)
+      commit('settingUpdate', normalizeSetting(await window.preload.getSetting()))
     },
     async settingSave({ commit }, payload) {
       // main에서 검증/보정한 값을 그대로 반영한다.
