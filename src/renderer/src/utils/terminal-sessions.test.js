@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { canReconnect, createOutputRouter, hopKey, liveRoutes, terminalShortcut, terminalTitle } from './terminal-sessions'
+import { canReconnect, createOutputRouter, hopKey, routeStates, sessionPhase, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -70,35 +70,61 @@ describe('hopKey', () => {
   })
 })
 
-describe('liveRoutes', () => {
+describe('sessionPhase', () => {
+  it('is connecting until the login marker arrived, then connected', () => {
+    expect(sessionPhase({ status: 'starting' })).toBe('connecting')
+    expect(sessionPhase({ status: 'running', connected: false })).toBe('connecting')
+    expect(sessionPhase({ status: 'running', connected: true })).toBe('connected')
+  })
+
+  it('is failed when it could not start or ssh itself failed, and nothing after a normal end', () => {
+    expect(sessionPhase({ status: 'failed' })).toBe('failed')
+    expect(sessionPhase({ status: 'exited', exitCode: 255 })).toBe('failed')
+    expect(sessionPhase({ status: 'exited', exitCode: 0 })).toBeNull()
+    // 셸의 마지막 명령이 정한 종료 코드다 (ssh 오류가 아니다)
+    expect(sessionPhase({ status: 'exited', exitCode: 1 })).toBeNull()
+    expect(sessionPhase(null)).toBeNull()
+  })
+})
+
+describe('routeStates', () => {
   const a = 'u@a:22'
   const b = 'u@b:22'
   const c = 'u@c:22'
 
-  it('marks the nodes and the links along every open session', () => {
-    const { nodes, links } = liveRoutes([
-      { status: 'running', hops: [a, b, c] },
-      { status: 'starting', hops: [a] }
+  it('marks the nodes and the links along every session with its phase', () => {
+    const { nodes, links } = routeStates([
+      { status: 'running', connected: true, hops: [a, b, c] },
+      { status: 'exited', exitCode: 255, hops: [c] }
     ])
 
-    expect([...nodes].sort()).toEqual([a, b, c])
-    expect([...links].sort()).toEqual([`${a}>${b}`, `${b}>${c}`])
+    expect(Object.fromEntries(nodes)).toEqual({ [a]: 'connected', [b]: 'connected', [c]: 'connected' })
+    expect(Object.fromEntries(links)).toEqual({ [`${a}>${b}`]: 'connected', [`${b}>${c}`]: 'connected' })
   })
 
-  it('ignores ended and failed sessions, and sessions without a route', () => {
-    const { nodes, links } = liveRoutes([
-      { status: 'exited', hops: [a, b] },
-      { status: 'failed', hops: [b, c] },
-      { status: 'running' }
+  it('shows the best phase where routes share a node: connected, then connecting, then failed', () => {
+    const { nodes } = routeStates([
+      { status: 'exited', exitCode: 255, hops: [a, b] },
+      { status: 'starting', hops: [a] },
+      { status: 'failed', hops: [c] }
+    ])
+
+    expect(Object.fromEntries(nodes)).toEqual({ [a]: 'connecting', [b]: 'failed', [c]: 'failed' })
+  })
+
+  it('ignores sessions that ended normally and sessions without a route', () => {
+    const { nodes, links } = routeStates([
+      { status: 'exited', exitCode: 0, hops: [a, b] },
+      { status: 'running', connected: true }
     ])
 
     expect(nodes.size).toBe(0)
     expect(links.size).toBe(0)
-    expect(liveRoutes(undefined).links.size).toBe(0)
+    expect(routeStates(undefined).links.size).toBe(0)
   })
 
   it('keeps the direction of a link', () => {
-    const { links } = liveRoutes([{ status: 'running', hops: [a, b] }])
+    const { links } = routeStates([{ status: 'running', connected: true, hops: [a, b] }])
 
     expect(links.has(`${a}>${b}`)).toBe(true)
     expect(links.has(`${b}>${a}`)).toBe(false)

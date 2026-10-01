@@ -93,6 +93,7 @@ import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
 import { canReconnect, createOutputRouter, terminalShortcut } from '@/utils/terminal-sessions'
 import { endedLine, errorLine, RECONNECTING_LINE, sessionStatusText, terminalTheme } from '@/utils/terminal-view'
+import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 
 const MIN_HEIGHT = 140
 
@@ -182,6 +183,11 @@ export default {
         if (entry.id !== null) window.preload.terminal.write(entry.id, data)
       })
       this.enableClipboard(term, el)
+      // 로그인하면 ssh가 보이지 않는 표시를 보낸다 (main의 ssh.js). 받으면 캔버스의 경로가 "연결됨"이 된다.
+      term.parser.registerOscHandler(CONNECTED_OSC, data => {
+        if (data === CONNECTED_DATA) this.$store.commit('terminalUpdate', { key: session.key, connected: true })
+        return true
+      })
 
       const result = await window.preload.terminal.open(kind, payload, { cols: term.cols, rows: term.rows })
       if (!result.ok) {
@@ -239,7 +245,7 @@ export default {
 
       entry.reconnecting = true
       const { exitCode } = session
-      this.$store.commit('terminalUpdate', { key: session.key, status: 'starting', exitCode: null })
+      this.$store.commit('terminalUpdate', { key: session.key, status: 'starting', connected: false, exitCode: null })
       entry.term.write(RECONNECTING_LINE)
       const result = await window.preload.terminal.reopen(entry.id, { cols: entry.term.cols, rows: entry.term.rows })
       entry.reconnecting = false

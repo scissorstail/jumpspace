@@ -18,7 +18,7 @@ import ReadonlyPlugin from 'rete-readonly-plugin'
 
 import SiteNode from './nodes/site-node'
 import { MAX_ZOOM, MIN_ZOOM, viewOf } from '@/utils/view'
-import { hopKey, liveRoutes } from '@/utils/terminal-sessions'
+import { hopKey, routeStates } from '@/utils/terminal-sessions'
 
 export default {
   name: 'EditorIndex',
@@ -227,19 +227,25 @@ export default {
         this.confirmedRemoval = null
       }
     },
-    // 앱 안의 터미널에서 열려 있는 세션이 지나가는 노드와 연결선에 is-live를 붙인다. (신호가 흐르는 모양은 CSS)
+    // 앱 안의 터미널 세션이 지나가는 노드와 연결선에 상태를 붙인다: 연결 중(is-connecting), 연결됨(is-live), 실패(is-failed). 모양은 CSS.
     // 노드와 세션은 user@host:port로 맞춰 본다. 그래서 다른 item의 같은 서버 경로도 함께 표시된다.
     markLiveRoutes() {
       if (!this.editor) return
 
-      const { nodes, links } = liveRoutes(this.$store.getters.terminalSessions)
+      const { nodes, links } = routeStates(this.$store.getters.terminalSessions)
       const keyOf = node => hopKey(node.controls.get('connection')?.vueContext)
+      // 연결됨은 예전 이름 그대로 is-live (흐르는 신호와 초록 점), 연결 중은 is-connecting(노랑), 실패는 is-failed(빨강)
+      const mark = (el, phase) => {
+        el.classList.toggle('is-live', phase === 'connected')
+        el.classList.toggle('is-connecting', phase === 'connecting')
+        el.classList.toggle('is-failed', phase === 'failed')
+      }
 
       for (const [node, view] of this.editor.view.nodes) {
-        view.el.classList.toggle('is-live', nodes.has(keyOf(node)))
+        mark(view.el, nodes.get(keyOf(node)))
       }
       for (const [connection, view] of this.editor.view.connections) {
-        view.el.classList.toggle('is-live', links.has(`${keyOf(connection.output.node)}>${keyOf(connection.input.node)}`))
+        mark(view.el, links.get(`${keyOf(connection.output.node)}>${keyOf(connection.input.node)}`))
       }
     },
     async load(editorSaveData) {
@@ -401,9 +407,42 @@ export default {
     }
   }
 
+  // 연결 중: 노란 선 위로 신호가 천천히 흐른다. (로그인 표시가 오면 is-live로 바뀐다)
+  .is-connecting .connection {
+    .main-path {
+      stroke: var(--js-sun);
+      stroke-width: 4px;
+    }
+
+    .flow-path {
+      display: inline;
+      stroke: var(--js-sun);
+      animation-duration: 1.4s;
+    }
+
+    .marker {
+      fill: var(--js-sun);
+    }
+  }
+
+  // 실패: 빨간 점선, 흐르지 않는다. 탭을 닫거나 다시 연결할 때까지 남는다.
+  .is-failed .connection {
+    .main-path {
+      stroke: var(--js-danger);
+      stroke-width: 3px;
+      stroke-dasharray: 8 6;
+    }
+
+    .marker {
+      fill: var(--js-danger);
+    }
+  }
+
   // 열린 세션이 지나가는 노드: 안쪽 왼쪽 위에 깜박이는 작은 초록 네모 (터미널 탭의 점과 같은 모양)
   // 노드 위에 뜨는 메뉴 단추와 겹치지 않도록 노드 안에 둔다.
-  .is-live .node.site::after {
+  .is-live .node.site::after,
+  .is-connecting .node.site::after,
+  .is-failed .node.site::after {
     content: '';
     position: absolute;
     top: 8px;
@@ -414,6 +453,17 @@ export default {
     box-shadow: 1px 1px 0 #000;
     pointer-events: none;
     animation: live-blink 1.2s steps(1) infinite;
+  }
+
+  // 연결 중은 노란 점이 빠르게, 실패는 빨간 점이 깜박이지 않고 켜져 있다.
+  .is-connecting .node.site::after {
+    background: var(--js-sun);
+    animation-duration: 0.6s;
+  }
+
+  .is-failed .node.site::after {
+    background: var(--js-danger);
+    animation: none;
   }
 
   &.locked {
@@ -465,7 +515,8 @@ export default {
 
 @media (prefers-reduced-motion: reduce) {
   #rete .connection .flow-path,
-  #rete .is-live .node.site::after {
+  #rete .is-live .node.site::after,
+  #rete .is-connecting .node.site::after {
     animation: none;
   }
 

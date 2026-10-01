@@ -38,7 +38,7 @@ The node menu also shows when one of its buttons has keyboard focus. Enter opens
 
 ### terminals
 
-Connect, ProxyJump and port forwarding open in a **terminal panel at the bottom of the app**, one tab per session. Password prompts are answered as described below; anything else (a key passphrase, a one-time code, host key questions) is typed into the tab. The dot on a tab shows the state (starting, running, ended); it turns red when the session ended with an error, and its tooltip gives the exit status. An ended tab can be reconnected with its reconnect button or Enter in the terminal: the same connection starts again in the same tab. Closing a tab ends its ssh session; the arrow on the right hides the panel while the sessions keep running, and the terminal button in the header shows it again. Drag the top edge of the panel to resize it. Copy with Ctrl+Shift+C or Ctrl+Insert (or select and right click), paste with Ctrl+Shift+V, Shift+Insert or a right click; Ctrl+C is sent to the remote program. While a session is open, its path lights up on the canvas: signals flow along the connections it goes through and its nodes show a blinking green dot.
+Connect, ProxyJump and port forwarding open in a **terminal panel at the bottom of the app**, one tab per session. Password prompts are answered as described below; anything else (a key passphrase, a one-time code, host key questions) is typed into the tab. The dot on a tab shows the state (starting, running, ended); it turns red when the session ended with an error, and its tooltip gives the exit status. An ended tab can be reconnected with its reconnect button or Enter in the terminal: the same connection starts again in the same tab. Closing a tab ends its ssh session; the arrow on the right hides the panel while the sessions keep running, and the terminal button in the header shows it again. Drag the top edge of the panel to resize it. Copy with Ctrl+Shift+C or Ctrl+Insert (or select and right click), paste with Ctrl+Shift+V, Shift+Insert or a right click; Ctrl+C is sent to the remote program. The path of every session shows its state on the canvas: **connecting** (yellow line, a slow signal, a fast yellow dot) until ssh has logged in, **connected** (signals flow along the connections it goes through and its nodes show a blinking green dot), and **failed** (red dashed line and a red dot) when it could not start or ssh itself failed; the red stays until the tab is closed or reconnected, a normal end clears the path.
 
 *Settings > Open SSH in* switches back to opening a separate **Git Bash window** instead.
 
@@ -111,6 +111,7 @@ src/shared/     pure modules used by both main and renderer
   setting.js      the app settings and their defaults (Git Bash path, tray,
                   where ssh opens, theme, background, node glass)
   view.js         the canvas zoom range and the check of a saved view
+  terminal-marker.js  the invisible "logged in" marker the app terminal shows as "connected"
   validate.js     validation of every value that ends up in a command (main checks
                   before running; the node settings show the same rules while typing)
 src/preload/    the small API exposed to the renderer (window.preload)
@@ -132,7 +133,8 @@ src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
 2. `validate.js` (in `src/shared/`) checks every value (user, host, port, key path, exec, forwards) and rejects what could turn into an option or an injection into the shell or the ssh config.
 3. `ssh.js` builds a temporary bash script (values quoted with POSIX single quotes). A path also gets an `ssh -F` config with one `Host` block per node holding that node's own key / password options.
 4. `launcher.js` writes both into the OS temp folder. In the app, `terminal.js` runs the script with bash in a pseudo terminal (node-pty, ConPTY on Windows; Git's `bin\bash.exe` next to the configured `git-bash.exe`) and the panel exchanges key strokes and output with it; only the generated script is ever started, the window only sends key strokes. For a Git Bash window it runs `git-bash.exe -c "bash '<script>'"`. The script removes itself and the config when the session ends (also when its tab is closed), leftovers are swept on the next start.
-5. Passwords are passed as environment variables. The same script is also the `SSH_ASKPASS` program and answers only the prompts of the hop the password belongs to.
+5. In the app terminal the script also gives ssh `PermitLocalCommand` and a `LocalCommand` that prints an invisible OSC marker once ssh has logged in; the panel reads it to switch the path from connecting to connected. These are command-line options, so the ProxyJump helper processes (whose output is the tunnel) never run it.
+6. Passwords are passed as environment variables. The same script is also the `SSH_ASKPASS` program and answers only the prompts of the hop the password belongs to.
 
 ### tests
 

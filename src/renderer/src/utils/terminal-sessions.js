@@ -16,21 +16,47 @@ export function hopKey(connection) {
   return `${text(connection?.user)}@${text(connection?.host)}:${text(connection?.port)}`
 }
 
-const LIVE_STATUSES = ['starting', 'running']
+// 세션 하나가 캔버스에 보이는 상태
+//   connecting: 시작했지만 아직 로그인 표시(ssh의 LocalCommand, shared/terminal-marker.js)가 오지 않았다
+//   connected : 로그인했고 세션이 열려 있다
+//   failed    : 시작하지 못했거나 ssh 자체의 오류(255)로 끝났다. 탭을 닫거나 다시 연결할 때까지 남는다.
+//   null      : 정상으로 끝났다 (표시하지 않는다)
+export function sessionPhase(session) {
+  switch (session?.status) {
+    case 'starting':
+      return 'connecting'
+    case 'running':
+      return session.connected ? 'connected' : 'connecting'
+    case 'failed':
+      return 'failed'
+    case 'exited':
+      return session.exitCode === 255 ? 'failed' : null
+    default:
+      return null
+  }
+}
 
-// 열려 있는 세션이 지나가는 노드와 연결선. 연결선은 'from>to' 키로 준다.
-//   sessions: [{ status, hops: [hopKey, ...] }] (hops는 경로 순서: 첫 홉 -> 마지막 노드)
-export function liveRoutes(sessions) {
-  const nodes = new Set()
-  const links = new Set()
+// 같은 노드를 여러 세션이 지나가면 더 좋은 상태를 보여준다.
+const PHASE_RANK = { failed: 1, connecting: 2, connected: 3 }
+
+// 세션들이 지나가는 노드와 연결선의 상태. 연결선은 'from>to' 키로 준다.
+//   sessions: [{ status, connected, exitCode, hops: [hopKey, ...] }] (hops는 경로 순서: 첫 홉 -> 마지막 노드)
+//   돌려주는 값: { nodes: Map(hopKey -> phase), links: Map('from>to' -> phase) }
+export function routeStates(sessions) {
+  const nodes = new Map()
+  const links = new Map()
+  const mark = (map, key, phase) => {
+    if (!map.has(key) || PHASE_RANK[phase] > PHASE_RANK[map.get(key)]) map.set(key, phase)
+  }
 
   for (const session of sessions || []) {
-    if (!LIVE_STATUSES.includes(session.status)) continue
+    const phase = sessionPhase(session)
+    if (!phase) continue
 
     const hops = session.hops || []
     hops.forEach((hop, i) => {
-      nodes.add(hop)
-      if (i > 0) links.add(`${hops[i - 1]}>${hop}`)
+      mark(nodes, hop, phase)
+      if (i > 0) mark(links, `${hops[i - 1]}>${hop}`, phase)
     })
   }
   return { nodes, links }

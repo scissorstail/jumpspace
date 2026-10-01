@@ -80,11 +80,10 @@ Ordered roughly by value. Move an item to the log when it is done.
 
 ### Feature queue (owner, 2026-09-30; top first)
 The routine takes the top item in a `feature` run. The owner may reorder, add or remove items.
-1. **Connection state on the canvas.** Connecting (yellow) -> connected (green) -> failed (red) instead of "a terminal is open". Idea: ssh `PermitLocalCommand`/`LocalCommand` prints an invisible OSC marker after login, and the script prints another one when ssh exits with 255; the panel reads them with `term.parser.registerOscHandler`. Touches `ssh.js`, so tests for the generated script first.
-2. **Terminal font size** with Ctrl +/- / Ctrl 0 on the terminal, remembered in the settings.
-3. **Search in the terminal scrollback** (Ctrl+Shift+F, `@xterm/addon-search`).
-4. **Find a node** by name, user or host on the canvas and center it.
-5. **Windows installer build in CI** (electron-builder `--win --dir`) and a start check of the packaged app, so the native `node-pty` in the package is covered.
+1. **Terminal font size** with Ctrl +/- / Ctrl 0 on the terminal, remembered in the settings.
+2. **Search in the terminal scrollback** (Ctrl+Shift+F, `@xterm/addon-search`).
+3. **Find a node** by name, user or host on the canvas and center it.
+4. **Windows installer build in CI** (electron-builder `--win --dir`) and a start check of the packaged app, so the native `node-pty` in the package is covered.
 
 ### Proposals for the owner (need a decision)
 - (none open)
@@ -398,6 +397,12 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: measured positions before/after more state changes (scratch t85, t86): the Node glass slider and its value label at 0/1/8/20 px ("Off" vs "20px"), the settings dialog when switching themes, the node menu with the editor locked vs unlocked, a terminal tab going starting -> running -> ended against the local sshd, and the node contents when its path goes live and back. Everything stayed put to the tenth of a pixel.
 - Result: nothing worthwhile found; no code change.
 - Phase: the last two polish runs (#59 health, #60 style) found nothing, the UX candidates are empty, CI is green. **The next run is a `feature` run: "Connection state on the canvas"** (top of the Feature queue).
+
+### #61 2026-10-01 19:2x UTC · feature: connection state on the canvas (scheduled run)
+- Phase: #59 and #60 found nothing, so this was a `feature` run (top of the queue).
+- Did: in the app terminal (`JUMPSPACE_IN_APP`) the generated script puts `-o PermitLocalCommand=yes -o LocalCommand=printf '\033]7701;connected\007'` into `"$@"` (set with `set --` after the askpass prelude, so no `${...}` in the JS strings) and every ssh call passes `"$@"`. Checked by hand against the local sshd first: the marker arrives after login and before the MOTD for Connect, ProxyJump (two hops) and Forward (`-N`, the tunnel still answers), never when the connection is refused, never outside the app. Command-line options are not handed to the ProxyJump `-W` helpers, whose stdout is the tunnel. The constant lives in `src/shared/terminal-marker.js`. Renderer: the store keeps `connected` per session (reset on reconnect), the panel registers an OSC handler for 7701, `utils/terminal-sessions.js` has `sessionPhase` (connecting / connected / failed: could not start or exit 255 / none) and `routeStates` (best phase per node and link: connected > connecting > failed), replacing `liveRoutes`. The editor sets `is-connecting` / `is-live` / `is-failed`; connecting is the yellow line with a slower signal and a fast yellow dot, failed a red dashed line and a steady red dot, connected is unchanged.
+- Result: tests 257 passed (+9; mutation checked: options outside the app and a wrong marker text each fail), lint exit 0, build exit 0. In the app against the local sshd (scratch t87, all three palettes): ProxyJump goes connecting -> connected, a login waiting for a keyboard-interactive password stays connecting, a refused port turns failed, a normal `exit` clears the path, closing the failed tab clears the red, reconnecting returns to connected; the failed line is red and dashed in each palette (t88). Not verified on Windows: Git for Windows' ssh runs `LocalCommand` through its shell like on Linux, but only the script/fake-ssh tests run there in CI.
+- Next: back to polishing; the first polish run looks at this feature.
 
 ## Routine
 
