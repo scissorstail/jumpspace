@@ -22,7 +22,7 @@ This file is its memory. **Read the whole file before doing anything, and append
 | `refactor` | Split what is too big or does two things (see the size hot spots in the Backlog), without changing behavior. Tests first if there are none. |
 | `tests` | Find behavior without a test (start with the list in the Backlog), add tests, then break the code on purpose to see that the test fails (mutation check). Fix a real bug you find, in its own commit. |
 | `health` | `npm outdated`, `npm audit`, the Electron patch releases, CI status, README/CHANGELOG matching the code. Update within the same major version when tests stay green. |
-| `style` | Visual polish of the synthwave theme (flat, high contrast, solid colors, hard shadows; no glow, blur or gradients except the background scene; no logos or other brands' artwork). One small visible improvement per run (spacing, alignment, sizes, colors of one part, a rough edge), checked with screenshots in **all three palettes**. No new screens or features. |
+| `style` | Visual polish of the synthwave theme (flat, high contrast, solid colors, hard shadows; no glow, blur or gradients except the background scene; no logos or other brands' artwork). One small visible improvement per run (spacing, alignment, sizes, colors of one part, a rough edge), checked with screenshots in **all three palettes**. No new screens or features. Small things count (owner, 2026-10-01): when a setting or state is switched (glass on/off, selected, active, hover, a badge appearing), text and controls that stay must not move; measure their positions before and after instead of judging by eye. |
 | `ux` | UI/UX improvement: walk through the real app (screenshots), fix small UI bugs, improve keyboard use, labels, contrast, empty/error states, feedback and wording. One or two small, visible improvements per run; check the result in the app. Do not add features or new screens. |
 | `feature` | Only when the polish phase is good enough (see step 2). Implement the top item of the **Feature queue**, one per run, finished within the run: pure logic in `utils/` or `src/main` with tests (and a mutation check), the UI checked in the real app, CHANGELOG and README updated. If it does not fit in one run, split it in the queue and do the first part. Then move it to the log. |
 
@@ -367,6 +367,12 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: after the reconnect feature, the reconnect button borrowed the class `terminal-tab-close`; both tab buttons now share `terminal-tab-button` (same rules). The store comment now says that the request for reconnecting lives in main, not in the store. Re-ran the checks for exports and style classes nobody uses (none) and refreshed the size hot spots in the Backlog (terminal-panel.vue grew to about 470 lines and is listed).
 - Result: no behavior change. lint exit 0, tests 248 passed, build exit 0; t73 and t74 (reconnect, tab rows) pass.
 - Phase: small cleanup; the next run is ux or style.
+
+### #55 2026-10-01 · node glass no longer moves the text (by hand, at the owner's request)
+- Owner: "텍스트 뒤에 사각형 블러를 놓았을 때 패딩 때문에 글자 전체 위치가 살짝 아래로 내려가는걸 똑같이 맞춰주세요. 그런 사소한것도 봐주세요."
+- Did: measured the text under nodes with *Node glass* off and on (scratch t78): every line moved 4.3px down (4px padding + 1px border, at the canvas zoom); horizontally nothing moved (centered). The glass panel now has a negative margin equal to its padding and border (`margin: -5px -9px -7px`), so it grows outward and the text stays put: all positions identical to the tenth of a pixel. The panel still starts below the node box.
+- Then looked for the same kind of shift elsewhere (scratch t79, positions before/after): header when unlocking, node contents when selected, sidebar names when another item opens, terminal tab titles when the active tab changes: all identical. The node menu re-centers (18px) when the tunnel button appears after enabling a forward; that is one more button in a centered row, left as is. The `style` activity now says to measure such shifts.
+- Result: CSS only. lint exit 0, tests 248 passed, build exit 0; t43 (node glass) passes.
 
 ## Routine
 

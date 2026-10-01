@@ -432,7 +432,9 @@ export default {
 
 // 노드 아래 글자(이름, 주소, 포워딩)를 덮는 반투명 유리판 (설정 > Node glass, 0이면 없음).
 // 뒤의 풍경을 밝게 흐려서 글자가 풍경과 구분된다. 노드 상자 쪽은 그대로 둔다.
+// 판은 글자 바깥으로만 넓힌다: 안쪽 여백 + 테두리만큼 음수 margin을 주어, 유리판을 켜도 글자가 제자리에 있다.
 .node-glass #rete .info-card {
+  margin: -5px -9px -7px;
   padding: 4px 8px 6px;
   border: 1px solid color-mix(in srgb, #fff 20%, transparent);
   background: color-mix(in srgb, #fff 7%, transparent);

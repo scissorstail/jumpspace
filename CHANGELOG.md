@@ -36,6 +36,7 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- Turning on *Node glass* moved the text under every node about 4px down (the panel's padding). The panel now grows outward around the text, so the text stays exactly where it is with the glass on or off.
 - Sidebar items picked with Ctrl+click were only tinted, so neighbours merged into one block and the focused one looked different. Each now has a bar on its left and a thin gap to the next.
 - The warning shown when you open another item while the editor is unlocked had a whole question as its title (two lines in the pixel font) and a short, unexplained body. It is now titled *Unsaved changes* and says that changes are saved only when the editor is locked again.
 - Opening a node's *Port forwarding* or *Setting* popover with the keyboard left the focus on its button, so Tab went through the other node buttons first. The focus now moves into the popover (it was moved while the popover was still hidden).
