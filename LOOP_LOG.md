@@ -54,7 +54,7 @@ Ordered roughly by value. Move an item to the log when it is done.
 - (none open)
 
 ### Code hot spots
-- `src/renderer/src/components/layout/main-navigator.vue` (about 640 lines): list, drag, select, rename, import/export all in one. A candidate to split (item list vs. actions).
+- `src/renderer/src/components/layout/main-navigator.vue` (about 630 lines, the item menu moved out in #46): list, drag, select, rename, import/export. Most of the rest is its scoped CSS; the next seam would be the header toolbar (new, more actions).
 - `src/renderer/src/views/Layout.vue` (about 420 lines after the scene moved out): item state, project load/save, view saving are mixed.
 - `src/main/index.js`: IPC handlers could move into small modules like `launcher.js` (the trust check moved to `trust.js`).
 
@@ -316,6 +316,12 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Fixed: (1) connection ends were 1.7-2px off the socket centers because Rete sums `offsetLeft/Top` and skips the node's 2px border; the frame is now an inset outline with 2px padding, sockets and the live dot keep their places. (2) The open sidebar covered the empty-state hint and the centered header title; both move beside it while it is open, the hidden toggle is hidden. (3) Small inputs were 29/31/33px depending on an attached button, the forward remove button 35px; all small controls are 29px now and the node settings labels match. (4) Settings dialog labels with a help text sat 23px below their control; the control column is now a grid whose first line is 33px and the label shares it.
 - Left as is (intended): the counter badge on the tunnel button sits on its corner; popovers cover the header or the canvas; a node's hover menu can cover the text of a node placed right above it (depends on where the user puts nodes).
 - Result: lint exit 0, tests 235 passed, build exit 0. Audit after the fixes: no overlaps except the intended ones above, all rows centered within 0.5px, settings labels 0px off in all three palettes; scratch t8, t12, t13, t20, t41, t43, t50 pass.
+
+### #46 2026-10-01 05:2x UTC · refactor (scheduled run, polish phase)
+- Did: `main-navigator.vue` (685 lines) carried a commented-out remove button and the full `...` menu of every item inline. The menu (Edit, Copy, Remove, Export) is now `components/layout/navigator-item-menu.vue`, which only emits; the navigator keeps the actions and the styles (in Vue 2 a child's root element also gets the parent's scoped attribute, so `.list-item-dropdown` still applies). The dead comment block is gone. 633 lines now.
+- Result: no behavior change. lint exit 0, tests 235 passed, build exit 0. New scratch t65 (menu entries, raised item while open, Copy, Edit, Remove with confirm, Export) passes on the old and the new build; the toggle's computed style is identical; t3, t10, t18, t19, t21, t29, t31, t51 pass. (A byte compare of the screenshots differed only by a stale hover background under xvfb.)
+- CI: run 61 (#45) was still running at the start of this run; green when checked before pushing.
+- Phase: polish continues; the next run is ux or style.
 
 ## Routine
 

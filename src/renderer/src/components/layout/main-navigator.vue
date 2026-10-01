@@ -142,71 +142,17 @@
                 class="list-item-name"
                 :title="item.name || null"
               >{{ item.name || '(untitled)' }}</span>
-              <!--
-              <div class="list-item-dropdown ml-auto">
-                <b-button
-
-                  v-if="!isSelecting"
-                  size="sm"
-                  variant="white"
-                  class="p-0"
-                  @click="removeItem(item)"
-                >
-                  <b-icon
-                    icon="dash"
-                  />
-                </b-button>
-              </div>
-              -->
               <div @click.stop>
-                <b-dropdown
+                <NavigatorItemMenu
                   v-if="!isSelecting"
-                  size="sm"
-                  variant="outline-white"
-                  :toggle-attrs="{ 'aria-label': `Menu for ${item.name || '(untitled)'}` }"
-                  toggle-class="text-decoration-none"
-                  right
-                  no-caret
-                  class="list-item-dropdown ignore-dragging"
+                  :name="item.name"
                   @shown="item.isMenuShown = true"
                   @hidden="item.isMenuShown = false"
-                >
-                  <template #button-content>
-                    <b-icon
-                      icon="three-dots"
-                    />
-                  </template>
-                  <b-dropdown-item
-                    @click="
-                      item.isMenuShown = false;
-                      editItem(item)
-                    "
-                  >
-                    <small>Edit</small>
-                  </b-dropdown-item>
-                  <b-dropdown-item
-                    @click="
-                      item.isMenuShown = false;
-                      copyItem(item)
-                    "
-                  >
-                    <small>Copy</small>
-                  </b-dropdown-item>
-                  <b-dropdown-item
-                    @click="
-                      item.isMenuShown = false;
-                      removeItem(item)
-                    "
-                  >
-                    <small>Remove</small>
-                  </b-dropdown-item>
-                  <b-dropdown-divider />
-                  <b-dropdown-item
-                    @click="exportItems([item])"
-                  >
-                    <small>Export</small>
-                  </b-dropdown-item>
-                </b-dropdown>
+                  @edit="item.isMenuShown = false; editItem(item)"
+                  @copy="item.isMenuShown = false; copyItem(item)"
+                  @remove="item.isMenuShown = false; removeItem(item)"
+                  @export="exportItems([item])"
+                />
               </div>
             </b-button>
             <b-form-input
@@ -252,11 +198,13 @@ import isEmpty from 'lodash/isEmpty'
 import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNING } from '@/utils/project'
 import { createNavigatorItem, emptyItemData, toProjectItems } from '@/utils/navigator-items'
 import { toastError } from '@/utils/notify'
+import NavigatorItemMenu from './navigator-item-menu'
 
 export default {
   name: 'MainNavigator',
   components: {
-    draggable
+    draggable,
+    NavigatorItemMenu
   },
   props: {
     projectData: {
