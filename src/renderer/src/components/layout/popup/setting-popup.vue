@@ -226,9 +226,36 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+// 라벨은 컨트롤의 첫 줄과 같은 높이에 둔다. 가운데 정렬이면 도움말이 붙은 줄(Background, Node glass,
+// Close to tray)에서 라벨이 컨트롤과 도움말 전체의 가운데로 내려가 버렸다.
+// 첫 줄의 높이는 버튼 묶음 높이이고, 더 낮은 컨트롤(입력칸, 스위치, 슬라이더)은 그 줄의 가운데에 놓인다.
+$setting-line: 33px;
+
 ::v-deep {
-  .form-group .form-row {
+  // label-for가 있으면 form-group 자신이 form-row가 된다. 두 모양 모두 맞춘다.
+  .form-row {
+    align-items: flex-start;
+  }
+
+  .form-row > .col-form-label {
+    display: flex;
     align-items: center;
+    min-height: $setting-line;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .form-row > div {
+    display: grid;
+    grid-template-rows: $setting-line;
+    grid-auto-rows: auto;
+    align-items: center;
+    justify-items: start;
+
+    > .form-control,
+    > .d-flex {
+      justify-self: stretch;
+    }
   }
 }
 
