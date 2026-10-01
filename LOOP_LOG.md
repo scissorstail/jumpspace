@@ -419,6 +419,12 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: CSS only. lint exit 0, tests 259 passed, build exit 0; computed colors and screenshots checked in all three palettes.
 - Phase: polish continues.
 
+### #65 2026-10-01 23:2x UTC · cleanup (scheduled run, polish phase)
+- Did: looked for leftovers after #61/#64 (stale names, unused exports, colors copied by hand). Found that the terminal's ANSI colors still used `--js-sun` for yellow (purple in Vapor Blue, next to a magenta that is purple too, so yellow and magenta output looked the same) and a hardcoded copy of `--js-live` for green. `terminalTheme` now reads `--js-connecting` and `--js-live`, so the terminal and the connection states share one yellow and one green. `OPEN_IN` in `shared/setting.js` is exported but only used in its file; left as is (it sits next to `THEMES`/`BACKDROPS`).
+- Result: tests 259 passed (terminalTheme test extended; mutation checked: `--js-sun` for yellow and the hardcoded green each fail it), lint exit 0, build exit 0, commit 2fbdd84. In the app against the local sshd (scratch t92, `printf` with ANSI 33/32/35): yellow rgb(255,211,25) and green rgb(61,255,138) in all three palettes, magenta still the palette's primary.
+- Noticed, not changed: in Sunset Drive the terminal's cyan is the palette's orange secondary (#ffb845), fairly close to the new yellow; a candidate for a later style run.
+- Phase: polish continues; the next run is ux or style.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
