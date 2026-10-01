@@ -35,6 +35,8 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- The red dot of a terminal tab that ended with an error could not be seen while the tab was active (the active tab is pink); the dot now has a dark border there.
+- The fields in a node's settings were not tied to their labels: clicking a label now moves to its field, and screen readers announce the field's name.
 - The hint toast (for example "Unlock the editor ...") was a light grey box with white text; toasts now use the theme colors, error toasts with a red header.
 - A connection that failed in the app terminal (for example *Connection refused*) waited for Enter and looked like an open session: the tab stayed "running" and the path stayed lit. The session now ends right away; the tab shows the exit status and a red dot.
 - The "previous image" button could not return to the first image.

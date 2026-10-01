@@ -38,10 +38,12 @@
             <b-form-group
               class="mb-0"
               label="Name"
+              :label-for="fieldId('name')"
               label-align="left"
               label-cols-sm="4"
             >
               <b-form-input
+                :id="fieldId('name')"
                 :value="value.name"
                 trim
                 size="sm"
@@ -52,10 +54,12 @@
             <b-form-group
               class="mb-0"
               label="User"
+              :label-for="fieldId('user')"
               label-align="left"
               label-cols-sm="4"
             >
               <b-form-input
+                :id="fieldId('user')"
                 :value="value.user"
                 trim
                 size="sm"
@@ -66,10 +70,12 @@
             <b-form-group
               class="mb-0"
               label="Host"
+              :label-for="fieldId('host')"
               label-align="left"
               label-cols-sm="4"
             >
               <b-form-input
+                :id="fieldId('host')"
                 :value="value.host"
                 trim
                 size="sm"
@@ -80,10 +86,12 @@
             <b-form-group
               class="mb-0"
               label="Port"
+              :label-for="fieldId('port')"
               label-align="left"
               label-cols-sm="4"
             >
               <b-form-input
+                :id="fieldId('port')"
                 :value="value.port"
                 trim
                 :state="portState(value.port)"
@@ -95,6 +103,7 @@
             <b-form-group
               class="mb-0"
               label="Key"
+              :label-for="fieldId('keyPath')"
               label-align="left"
               label-cols-sm="4"
             >
@@ -113,6 +122,7 @@
                   </b-button>
                 </template>
                 <b-form-input
+                  :id="fieldId('keyPath')"
                   :value="value.keyPath"
                   trim
                   size="sm"
@@ -124,12 +134,14 @@
             <b-form-group
               class="mb-0"
               label="Password"
+              :label-for="fieldId('password')"
               label-align="left"
               label-cols-sm="4"
             >
               <b-input-group size="sm">
                 <!-- 비밀번호는 앞뒤 공백도 그대로 저장한다 (trim하지 않는다) -->
                 <b-form-input
+                  :id="fieldId('password')"
                   :value="value.password"
                   :type="isPasswordVisible ? 'text' : 'password'"
                   autocomplete="off"
@@ -156,10 +168,12 @@
             <b-form-group
               class="mb-0"
               label="Exec"
+              :label-for="fieldId('exec')"
               label-align="left"
               label-cols-sm="4"
             >
               <b-form-input
+                :id="fieldId('exec')"
                 :value="value.exec"
                 trim
                 size="sm"
@@ -231,6 +245,10 @@ export default {
   },
   methods: {
     portState,
+    // 라벨을 눌러 입력칸으로 가고, 입력칸이 라벨을 이름으로 갖도록 노드마다 다른 id를 쓴다.
+    fieldId(key) {
+      return `node-${this._uid}-${key}`
+    },
     set(key, value) {
       this.$emit('input', { ...this.value, [key]: value })
     },

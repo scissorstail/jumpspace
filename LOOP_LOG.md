@@ -50,7 +50,7 @@ This file is its memory. **Read the whole file before doing anything, and append
 Ordered roughly by value. Move an item to the log when it is done.
 
 ### UX candidates
-- (none open)
+- Node settings: an invalid port turns red while typing, an invalid user or host (for example with a space or `;`) is only rejected when a connection starts. `src/main/validate.js` has no Node imports, so it could move to `src/shared/` and give the form the same `state` for user, host, key and exec (security code: tests stay as they are, only the import paths change).
 
 ### Code hot spots
 - `src/renderer/src/components/layout/main-navigator.vue` (about 640 lines): list, drag, select, rename, import/export all in one. A candidate to split (item list vs. actions).
@@ -283,6 +283,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: CI run 54 green. `npm outdated`: nothing behind inside its range (only the held-back majors). `npm audit --omit=dev` 0; with dev tooling still the 4 known ones through Vue 2 (decision 5). Compared the README with the code: the tab dot did not mention the red error state, copying with Ctrl+Insert was missing, and the tests section described `terminal.test.js` twice in two overlapping bullets (merged, with the group hang-up check marked as not on Windows).
 - Result: docs only. lint exit 0, tests 227 passed, build exit 0.
 - Phase: small doc drift only, nothing worthwhile in the code. If the next polish run (ux or style) also finds nothing worthwhile, the run after it is the first `feature` run.
+
+### #40 2026-10-01 01:2x UTC · ux (scheduled run, polish phase)
+- Did: walked six terminal tabs (refused connections, narrow window) and the node settings with invalid values. (1) The red dot of a tab that ended with an error vanished on the active tab: `--js-danger` is close to `--js-primary` in all three palettes. On the active tab the dot now has a hard 2px ring in `--js-on-primary`. (2) The node settings fields had no label of their own (`b-form-group` without `label-for` gives a fieldset only): clicking a label did nothing and the inputs had no accessible name. Each field now has an id per component (`fieldId`) tied to its label.
+- Result: lint exit 0, tests 227 passed, build exit 0. In the app (scratch t56): the ringed dot checked in all three palettes; every settings input has its label, clicking "Exec" focuses its field, ids are unique across nodes.
+- Found / next: a new UX candidate (live check of user/host in the settings form, see Backlog). Polish phase continues.
 
 ## Routine
 
