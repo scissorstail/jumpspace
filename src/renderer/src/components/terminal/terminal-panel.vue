@@ -36,7 +36,7 @@
         <button
           v-if="canReconnect(session)"
           type="button"
-          class="terminal-tab-close"
+          class="terminal-tab-button"
           :aria-label="`Reconnect ${session.title}`"
           title="Reconnect (or press Enter in the terminal)"
           @click.stop="reconnect(session)"
@@ -48,7 +48,7 @@
         </button>
         <button
           type="button"
-          class="terminal-tab-close"
+          class="terminal-tab-button"
           :aria-label="`Close ${session.title}`"
           title="Close"
           @click.stop="closeSession(session)"
@@ -427,7 +427,7 @@ export default {
   }
 }
 
-.terminal-tab-close,
+.terminal-tab-button,
 .terminal-hide {
   padding: 2px 6px;
   border: 0;
@@ -448,7 +448,7 @@ export default {
 }
 
 // 분홍 바탕의 활성 탭 위에서는 어둡게 눌러 보인다.
-.terminal-tab.active .terminal-tab-close:hover {
+.terminal-tab.active .terminal-tab-button:hover {
   background: rgba(0, 0, 0, 0.25);
   color: var(--js-on-primary);
 }

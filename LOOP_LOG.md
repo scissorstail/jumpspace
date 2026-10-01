@@ -54,8 +54,9 @@ Ordered roughly by value. Move an item to the log when it is done.
 - (none open)
 
 ### Code hot spots
-- `src/renderer/src/components/layout/main-navigator.vue` (about 630 lines, the item menu moved out in #46): list, drag, select, rename, import/export. Most of the rest is its scoped CSS; the next seam would be the header toolbar (new, more actions).
-- `src/renderer/src/views/Layout.vue` (about 420 lines after the scene moved out): item state, project load/save, view saving are mixed.
+- `src/renderer/src/components/layout/main-navigator.vue` (about 650 lines, the item menu moved out in #46): list, drag, select, rename, import/export. Most of the rest is its scoped CSS; the next seam would be the header toolbar (new, more actions).
+- `src/renderer/src/views/Layout.vue` (about 430 lines after the scene moved out)
+- `src/renderer/src/components/terminal/terminal-panel.vue` (about 470 lines since reconnect): session start, reconnect, clipboard and resize live in one component; the session handling could move into a small module with tests.: item state, project load/save, view saving are mixed.
 - `src/main/index.js`: IPC handlers could move into small modules like `launcher.js` (the trust check moved to `trust.js`).
 
 ### Missing or thin tests
@@ -361,6 +362,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: looked closely at the sidebar list states (open, hovered, Ctrl+click selected) in all three palettes (scratch t76). Selected items were only a translucent tint: two neighbours read as one block, and nothing marked them in the flat high-contrast way the rest uses. Selected items now get a 4px bar in `--js-secondary` on the left and their border in the sidebar color, which leaves a 1px gap between neighbours. The bar first vanished on the focused item (the `.btn:focus { box-shadow: none }` rule); the selector for selected items is now more specific than that rule.
 - Result: CSS only. lint exit 0, tests 248 passed, build exit 0; computed style checked for the focused and unfocused selected item in all three palettes; t3, t29, t65 pass.
 - Phase: polish continues.
+
+### #54 2026-10-01 13:2x UTC · cleanup (scheduled run, polish phase)
+- Did: after the reconnect feature, the reconnect button borrowed the class `terminal-tab-close`; both tab buttons now share `terminal-tab-button` (same rules). The store comment now says that the request for reconnecting lives in main, not in the store. Re-ran the checks for exports and style classes nobody uses (none) and refreshed the size hot spots in the Backlog (terminal-panel.vue grew to about 470 lines and is listed).
+- Result: no behavior change. lint exit 0, tests 248 passed, build exit 0; t73 and t74 (reconnect, tab rows) pass.
+- Phase: small cleanup; the next run is ux or style.
 
 ## Routine
 
