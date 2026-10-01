@@ -629,5 +629,13 @@ export default {
       box-shadow: none;
     }
   }
+
+  // 키보드로 검색칸에 오면 돋보기 칸과 함께 테두리가 청록으로 바뀐다. (다른 입력칸의 포커스 표시와 같다)
+  &:focus-within {
+    ::v-deep .input-group-text,
+    ::v-deep .form-control {
+      border-color: var(--js-secondary);
+    }
+  }
 }
 </style>

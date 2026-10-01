@@ -323,6 +323,12 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - CI: run 61 (#45) was still running at the start of this run; green when checked before pushing.
 - Phase: polish continues; the next run is ux or style.
 
+### #47 2026-10-01 06:2x UTC · ux (scheduled run, polish phase)
+- Did: a keyboard-only walk (scratch t67, t68): Tab through the canvas, header, sidebar, header menu and the node popovers, checking that the focused element is on screen, not covered, and marked. (1) Opening *Port forwarding* or *Setting* with Enter left the focus on the button: `closePopoverOnEscape` called `focus()` on the popover in `$nextTick`, while v-popover still had it at `visibility: hidden` (it shows it a frame later after placing it), so the call did nothing. New `focusWhenShown(getElement)` in `utils/dismiss.js` retries on the next frames until the element really has the focus (at most 20 tries, stops if the element is gone). (2) The sidebar search box had no focus mark (its scoped style pinned the border color); with `:focus-within` the box and its icon cell turn `--js-secondary`.
+- Result: tests 238 passed (+3; mutation checked: without the retry 2 tests fail), lint exit 0, build exit 0. In the app (scratch t70): Enter moves the focus into both popovers, Tab continues inside, Escape returns it to the button, a mouse click still leaves it on the button; search border checked in all three palettes (t71); t3, t13, t15, t16, t65 pass.
+- Left as is: while the sidebar is open, Tab can continue to node buttons that lie under it (the sidebar is a non-modal panel over the page; trapping the focus there would be a different behavior). Note for scripts: the popovers use the class `vt-popover`, not `popover`.
+- Phase: two real fixes, so the polish phase continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

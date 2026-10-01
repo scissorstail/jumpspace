@@ -35,6 +35,8 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- Opening a node's *Port forwarding* or *Setting* popover with the keyboard left the focus on its button, so Tab went through the other node buttons first. The focus now moves into the popover (it was moved while the popover was still hidden).
+- The sidebar search box showed no sign of having the keyboard focus; its border now lights up like other inputs.
 - Connection lines ended about 2px above and left of the socket centers (Rete measures sockets without the node's border). The node frame is now drawn as an inset outline, so lines meet the sockets exactly.
 - With the sidebar open, the "No diagram open" hint and the header title were partly hidden behind it; they now center in the visible part.
 - Small inputs had three different heights (29/31/33px) depending on whether a button was attached, and the remove button of a forward row was taller than its inputs. They now share one height.
