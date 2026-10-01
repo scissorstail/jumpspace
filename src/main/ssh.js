@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { validateNode, validateForwards } from './validate.js'
+import { validateNode, validateForwards } from '../shared/validate.js'
 
 // Git Bash에서 실행할 스크립트를 만든다.
 // 사용자 입력값은 전부 POSIX single-quote로 감싸서 스크립트 파일에 넣고, 명령어 문자열 인자로는 넘기지 않는다.

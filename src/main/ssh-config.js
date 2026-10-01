@@ -1,5 +1,5 @@
 import { bracketHost, toUnixPath } from './ssh.js'
-import { validateForwards, validateNode } from './validate.js'
+import { validateForwards, validateNode } from '../shared/validate.js'
 
 function toAlias(node, used) {
   const base = node.name.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^[-.]+|-+$/g, '') || node.host.replace(/[^A-Za-z0-9._-]/g, '-')
