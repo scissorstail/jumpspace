@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { closePopoverOnEscape, dismissOnEscape, isKeyboardClick, onEscape } from './dismiss'
+import { closePopoverOnEscape, dismissOnEscape, focusWhenShown, isKeyboardClick, onEscape } from './dismiss'
 
 // 테스트는 DOM 없이 돌기 때문에 document 대신 리스너 목록만 흉내 낸다.
 let listeners
@@ -138,7 +138,8 @@ describe('isKeyboardClick', () => {
 
 describe('closePopoverOnEscape: focus when opened by keyboard', () => {
   const create = () => {
-    const inner = { focus: vi.fn() }
+    const doc = {}
+    const inner = { ownerDocument: doc, focus: vi.fn(function () { doc.activeElement = this }) }
     const vm = { $refs: { popover: { isOpen: true, hide: vi.fn(), $el: { querySelector: () => null }, $refs: { popover: inner } } }, $nextTick: fn => fn() }
     const { onTriggerClick, onPopoverShow } = closePopoverOnEscape.methods
     return { inner, click: event => onTriggerClick.call(vm, event), show: () => onPopoverShow.call(vm), created: () => closePopoverOnEscape.created.call(vm) }
@@ -164,5 +165,48 @@ describe('closePopoverOnEscape: focus when opened by keyboard', () => {
     show()
 
     expect(inner.focus).not.toHaveBeenCalled()
+  })
+})
+
+describe('focusWhenShown', () => {
+  // 처음 hiddenFrames번은 숨겨져 있어서 focus()가 무시되는 요소
+  const element = hiddenFrames => {
+    const doc = { activeElement: null }
+    let calls = 0
+    return { ownerDocument: doc, focus: vi.fn(function () { if (++calls > hiddenFrames) doc.activeElement = this }) }
+  }
+  const frames = () => {
+    const queue = []
+    return { schedule: callback => queue.push(callback), run: () => { while (queue.length) queue.shift()() }, queue }
+  }
+
+  it('focuses right away when the element is visible', () => {
+    const el = element(0)
+    const { schedule, queue } = frames()
+    focusWhenShown(() => el, { schedule })
+    expect(el.ownerDocument.activeElement).toBe(el)
+    expect(queue).toHaveLength(0)
+  })
+
+  it('tries again on the next frames until the element takes the focus', () => {
+    const el = element(2)
+    const { schedule, run } = frames()
+    focusWhenShown(() => el, { schedule })
+    expect(el.ownerDocument.activeElement).toBe(null)
+    run()
+    expect(el.ownerDocument.activeElement).toBe(el)
+    expect(el.focus).toHaveBeenCalledTimes(3)
+  })
+
+  it('gives up after the given number of tries, and when the element is gone', () => {
+    const el = element(100)
+    const { schedule, run } = frames()
+    focusWhenShown(() => el, { schedule, tries: 5 })
+    run()
+    expect(el.focus).toHaveBeenCalledTimes(5)
+
+    const getElement = vi.fn(() => null)
+    focusWhenShown(getElement, { schedule })
+    expect(getElement).toHaveBeenCalledTimes(1)
   })
 })
