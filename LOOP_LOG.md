@@ -56,7 +56,7 @@ Ordered roughly by value. Move an item to the log when it is done.
 ### Code hot spots
 - `src/renderer/src/components/layout/main-navigator.vue` (about 650 lines, the item menu moved out in #46): list, drag, select, rename, import/export. Most of the rest is its scoped CSS; the next seam would be the header toolbar (new, more actions).
 - `src/renderer/src/views/Layout.vue` (about 430 lines after the scene moved out)
-- `src/renderer/src/components/terminal/terminal-panel.vue` (about 470 lines since reconnect): session start, reconnect, clipboard and resize live in one component; the session handling could move into a small module with tests.: item state, project load/save, view saving are mixed.
+- `src/renderer/src/components/terminal/terminal-panel.vue` (about 440 lines; its texts and colors moved to `utils/terminal-view.js` in #57): session start, reconnect, clipboard and resize still live in one component.: item state, project load/save, view saving are mixed.
 - `src/main/index.js`: IPC handlers could move into small modules like `launcher.js` (the trust check moved to `trust.js`).
 
 ### Missing or thin tests
@@ -378,6 +378,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: continued #55 with hover: measured every control of a row before and after pointing at one (scratch t80): header buttons, node menu buttons, sidebar `+`, settings theme buttons and Cancel do not move anything. A sidebar item did: its `...` button (1.5em = 27.6px) was taller than the name line (25.5px), so the hovered item grew 2.1px and every item below jumped. The button is now 24px high; the item stays 35.5px, only the name gets narrower to make room (its text does not move). The icon is still centered (screenshot with the menu open, t65).
 - Result: CSS only. lint exit 0, tests 248 passed, build exit 0; t3, t31, t65 pass.
 - Phase: polish continues.
+
+### #57 2026-10-01 15:2x UTC · refactor (scheduled run, polish phase)
+- Did: took the pure parts out of `terminal-panel.vue` into new `utils/terminal-view.js` with tests: `sessionStatusText` (tab tooltip), `endedLine` / `RECONNECTING_LINE` / `errorLine` (the lines written into xterm, with their ANSI colors) and `terminalTheme(color)` (the xterm colors from the theme variables; the panel passes a reader for the CSS variables). One deliberate detail: `errorLine` turns `\r\n` as well as `\n` into terminal line breaks (before, a `\r\n` from main would have become `\r\r\n`; harmless, but now pinned by a test). The panel has no raw escape strings left; 466 -> 444 lines.
+- Result: tests 252 passed (+4; mutation checked twice: exit status shown for 0, and the old `\n`-only replace each fail a test), lint exit 0, build exit 0. In the app: t73 (reconnect) passes; t48 (failed connection) passes after updating its outdated check (it treated the new "Press Enter to reconnect" as the script's old "Press Enter to close" pause); terminal background follows each palette (t83).
+- Phase: polish continues; the next run is ux or style.
 
 ## Routine
 

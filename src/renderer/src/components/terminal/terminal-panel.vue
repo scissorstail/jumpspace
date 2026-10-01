@@ -92,29 +92,14 @@ import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
 import { canReconnect, createOutputRouter, terminalShortcut } from '@/utils/terminal-sessions'
+import { endedLine, errorLine, RECONNECTING_LINE, sessionStatusText, terminalTheme } from '@/utils/terminal-view'
 
 const MIN_HEIGHT = 140
 
-// 터미널 색: 지금 고른 테마(assets/theme.scss의 CSS 변수)에서 읽는다.
-function terminalTheme() {
+// 터미널 색은 지금 고른 테마(assets/theme.scss의 CSS 변수)에서 읽는다.
+function currentTerminalTheme() {
   const style = getComputedStyle(document.documentElement)
-  const color = name => style.getPropertyValue(name).trim()
-
-  return {
-    background: color('--js-bg'),
-    foreground: color('--js-text'),
-    cursor: color('--js-primary'),
-    cursorAccent: color('--js-bg'),
-    selectionBackground: color('--js-line'),
-    red: color('--js-danger'),
-    green: '#3dff8a',
-    yellow: color('--js-sun'),
-    blue: '#5aa9ff',
-    magenta: color('--js-primary'),
-    cyan: color('--js-secondary'),
-    white: color('--js-text'),
-    brightBlack: color('--js-text-muted')
-  }
+  return terminalTheme(name => style.getPropertyValue(name).trim())
 }
 
 // 하단의 터미널 패널. 탭마다 xterm.js 화면을 하나씩 두고, main의 pty와 키 입력/출력을 주고받는다.
@@ -132,7 +117,7 @@ export default {
     // 테마를 바꾸면 열린 터미널의 색도 바꾼다.
     '$store.getters.setting.theme'() {
       this.$nextTick(() => {
-        for (const [, entry] of this.terms) entry.term.options.theme = terminalTheme()
+        for (const [, entry] of this.terms) entry.term.options.theme = currentTerminalTheme()
       })
     },
     // 새 탭: 화면을 만들고 main에 세션을 연다.
@@ -176,7 +161,7 @@ export default {
         fontFamily: '"JetBrains Mono", Consolas, "Cascadia Mono", "DejaVu Sans Mono", monospace',
         fontSize: 13,
         scrollback: 5000,
-        theme: terminalTheme()
+        theme: currentTerminalTheme()
       })
       const fit = new FitAddon()
       term.loadAddon(fit)
@@ -200,7 +185,7 @@ export default {
 
       const result = await window.preload.terminal.open(kind, payload, { cols: term.cols, rows: term.rows })
       if (!result.ok) {
-        term.write(`\x1b[31m${String(result.error).replace(/\n/g, '\r\n')}\x1b[0m\r\n`)
+        term.write(errorLine(result.error))
         this.$store.commit('terminalUpdate', { key: session.key, status: 'failed' })
         return
       }
@@ -241,7 +226,7 @@ export default {
       if (!session) return
 
       const entry = this.terms.get(session.key)
-      entry?.term.write(`\r\n\x1b[90m[session ended${exitCode ? `, exit status ${exitCode}` : ''}] Press Enter to reconnect.\x1b[0m\r\n`)
+      entry?.term.write(endedLine(exitCode))
       if (entry) entry.ended = true
       this.router.unregister(id)
       this.$store.commit('terminalUpdate', { key: session.key, status: 'exited', exitCode })
@@ -255,7 +240,7 @@ export default {
       entry.reconnecting = true
       const { exitCode } = session
       this.$store.commit('terminalUpdate', { key: session.key, status: 'starting', exitCode: null })
-      entry.term.write('\r\n\x1b[90m[reconnecting]\x1b[0m\r\n')
+      entry.term.write(RECONNECTING_LINE)
       const result = await window.preload.terminal.reopen(entry.id, { cols: entry.term.cols, rows: entry.term.rows })
       entry.reconnecting = false
 
@@ -265,7 +250,7 @@ export default {
         return
       }
       if (!result.ok) {
-        entry.term.write(`\x1b[31m${String(result.error).replace(/\n/g, '\r\n')}\x1b[0m\r\n`)
+        entry.term.write(errorLine(result.error))
         this.$store.commit('terminalUpdate', { key: session.key, status: 'exited', exitCode })
         return
       }
@@ -305,14 +290,7 @@ export default {
       this.fit(entry)
       if (focus) entry?.term.focus()
     },
-    statusText(session) {
-      return {
-        starting: 'Starting',
-        running: 'Running',
-        exited: session.exitCode ? `Ended (exit status ${session.exitCode})` : 'Ended',
-        failed: 'Could not start'
-      }[session.status]
-    },
+    statusText: sessionStatusText,
     startResize(event) {
       const startY = event.clientY
       const startHeight = this.height
