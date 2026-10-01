@@ -394,6 +394,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: nothing worthwhile found; log only. lint/tests/build untouched (no code change).
 - Phase: this polish run found nothing. If the next one (ux or style) also finds nothing worthwhile, the run after it is the next `feature` run (top of the queue: connection state on the canvas).
 
+### #60 2026-10-01 18:2x UTC · style (scheduled run, polish phase, layout shifts)
+- Did: measured positions before/after more state changes (scratch t85, t86): the Node glass slider and its value label at 0/1/8/20 px ("Off" vs "20px"), the settings dialog when switching themes, the node menu with the editor locked vs unlocked, a terminal tab going starting -> running -> ended against the local sshd, and the node contents when its path goes live and back. Everything stayed put to the tenth of a pixel.
+- Result: nothing worthwhile found; no code change.
+- Phase: the last two polish runs (#59 health, #60 style) found nothing, the UX candidates are empty, CI is green. **The next run is a `feature` run: "Connection state on the canvas"** (top of the Feature queue).
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
