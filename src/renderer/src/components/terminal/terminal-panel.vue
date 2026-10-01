@@ -362,6 +362,11 @@ export default {
   .has-error & {
     background: var(--js-danger);
   }
+
+  // 활성 탭의 분홍 바탕은 오류 빨강과 거의 같은 색이라, 점에 어두운 테두리를 둘러 구분한다.
+  .active & {
+    box-shadow: 0 0 0 2px var(--js-on-primary);
+  }
 }
 
 .terminal-tab-close,
