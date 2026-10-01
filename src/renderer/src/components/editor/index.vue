@@ -410,18 +410,18 @@ export default {
   // 연결 중: 노란 선 위로 신호가 천천히 흐른다. (로그인 표시가 오면 is-live로 바뀐다)
   .is-connecting .connection {
     .main-path {
-      stroke: var(--js-sun);
+      stroke: var(--js-connecting);
       stroke-width: 4px;
     }
 
     .flow-path {
       display: inline;
-      stroke: var(--js-sun);
+      stroke: var(--js-connecting);
       animation-duration: 1.4s;
     }
 
     .marker {
-      fill: var(--js-sun);
+      fill: var(--js-connecting);
     }
   }
 
@@ -457,7 +457,7 @@ export default {
 
   // 연결 중은 노란 점이 빠르게, 실패는 빨간 점이 깜박이지 않고 켜져 있다.
   .is-connecting .node.site::after {
-    background: var(--js-sun);
+    background: var(--js-connecting);
     animation-duration: 0.6s;
   }
 

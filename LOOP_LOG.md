@@ -414,6 +414,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: tests 259 passed (+2; mutation checked: writing `LocalCommand` into the Host blocks fails both), lint exit 0, build exit 0. No app change.
 - Phase: polish continues; the next run is ux or style.
 
+### #64 2026-10-01 22:2x UTC · style (scheduled run, polish phase)
+- Did: rendered connected, connecting and failed routes side by side in all three palettes (scratch t91, animations paused). The connecting color was `--js-sun`, which is the sun of each palette: yellow in Neon Night, orange in Sunset Drive, but purple in Vapor Blue, where it sat next to the magenta of a connected line. New `--js-connecting: #ffd319`, the same in every palette like `--js-live`, for the connecting line, signal, arrow, node dot and tab dot. Now yellow = connecting, green dot = connected, red dashed = failed everywhere.
+- Result: CSS only. lint exit 0, tests 259 passed, build exit 0; computed colors and screenshots checked in all three palettes.
+- Phase: polish continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

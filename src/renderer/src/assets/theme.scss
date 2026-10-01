@@ -96,6 +96,9 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-border: var(--js-line);
   // 열려 있는 세션 (터미널 탭의 점, 캔버스 노드의 초록 점)
   --js-live: #3dff8a;
+  // 연결 중(로그인 전)의 노랑. --js-live처럼 모든 색 묶음에서 같아서, 노랑=연결 중 / 초록=연결됨 / 빨강=실패가 어디서나 같다.
+  // (--js-sun은 색 묶음마다 해의 색이라 Vapor Blue에서는 보라였다)
+  --js-connecting: #ffd319;
   --js-hover: rgba(255, 255, 255, 0.08);
   --js-primary-soft: color-mix(in srgb, var(--js-primary) 22%, transparent);
   --js-secondary-soft: color-mix(in srgb, var(--js-secondary) 16%, transparent);

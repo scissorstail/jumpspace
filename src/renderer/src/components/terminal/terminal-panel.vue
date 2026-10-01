@@ -399,7 +399,7 @@ export default {
   // 시작 중이거나, 실행 중이지만 아직 로그인하지 않았다 (캔버스의 연결 중과 같은 노랑)
   .is-starting &,
   .is-running.is-connecting & {
-    background: var(--js-sun);
+    background: var(--js-connecting);
   }
 
   .is-failed &,
