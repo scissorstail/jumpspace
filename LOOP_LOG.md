@@ -63,7 +63,7 @@ Ordered roughly by value. Move an item to the log when it is done.
 - `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts.
 - A Playwright + Electron smoke test in the repo was considered and turned down by the owner (decision 6).
 
-### Dependencies (checked 2026-10-01 00:2x UTC)
+### Dependencies (checked 2026-10-01 07:2x UTC)
 - `npm audit --omit=dev`: 0 vulnerabilities. `npm audit` (dev tooling included) reports 4 (2 low, 2 high), all through `vue` 2 and `rete-vue-render-plugin`; the only fix is Vue 3 (`--force`), so they stay (decision 5).
 - Held back on purpose (major versions): Vue 2.7, Rete v1 plugins, Bootstrap 4, vue-router 3, vuex 3. Not checked or updated by the routine: eslint 10, vite 8, vitest 5 and `@eslint/js` 10 are newer majors; look at them only if something needs them, with tests and a build first.
 - Up to date inside their ranges (2026-10-01): everything; electron 44.5.1, node-pty 1.1.0, @xterm/xterm 6.0.0 are the latest releases.
@@ -328,6 +328,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: tests 238 passed (+3; mutation checked: without the retry 2 tests fail), lint exit 0, build exit 0. In the app (scratch t70): Enter moves the focus into both popovers, Tab continues inside, Escape returns it to the button, a mouse click still leaves it on the button; search border checked in all three palettes (t71); t3, t13, t15, t16, t65 pass.
 - Left as is: while the sidebar is open, Tab can continue to node buttons that lie under it (the sidebar is a non-modal panel over the page; trapping the focus there would be a different behavior). Note for scripts: the popovers use the class `vt-popover`, not `popover`.
 - Phase: two real fixes, so the polish phase continues.
+
+### #48 2026-10-01 07:2x UTC · health (scheduled run, polish phase)
+- Did: CI run 63 green. `npm outdated`: only `globals` 17.12.0 -> 17.13.0 inside its range (eslint's list of globals), updated in the lockfile; the rest are the held-back majors. `npm audit --omit=dev` 0, with dev tooling the known 4 through Vue 2 (decision 5). Docs: the README still said only "Escape closes its popovers"; it now says that Enter opens a popover and moves the focus into it and Escape returns it to the button (#47).
+- Result: lint exit 0, tests 238 passed, build exit 0.
+- Phase: maintenance only; the next run is ux or style.
 
 ## Routine
 

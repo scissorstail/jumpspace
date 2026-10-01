@@ -32,7 +32,7 @@ note: This currently only works on Windows
    - gear: **Setting** (icon picked from a grid, name, user, host, port, key, password, exec) and *Copy SSH config*. A value that ssh would not accept is marked while you type, with a note on what is allowed.
 4. The canvas position and zoom of each item are remembered and restored when you open it again. Lock the editor to save changes to the diagram. You can start connections while it is locked.
 
-The node menu also shows when one of its buttons has keyboard focus, and Escape closes its popovers. Right-click a node for **Duplicate** or **Delete** (a node with content asks first).
+The node menu also shows when one of its buttons has keyboard focus. Enter opens a popover and moves the focus into it; Escape closes it and returns the focus to its button. Right-click a node for **Duplicate** or **Delete** (a node with content asks first).
 
 *Exec* is a command that runs on the server after login, the shell stays open afterwards.
 
