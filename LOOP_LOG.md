@@ -79,12 +79,11 @@ Ordered roughly by value. Move an item to the log when it is done.
 
 ### Feature queue (owner, 2026-09-30; top first)
 The routine takes the top item in a `feature` run. The owner may reorder, add or remove items.
-1. **Reconnect an ended terminal tab.** A button (and Enter) on a tab whose session ended starts the same connection again in the same tab. The request with the password is not kept in the store; take it again from the node (by `hops`) or keep only what is needed in main.
-2. **Connection state on the canvas.** Connecting (yellow) -> connected (green) -> failed (red) instead of "a terminal is open". Idea: ssh `PermitLocalCommand`/`LocalCommand` prints an invisible OSC marker after login, and the script prints another one when ssh exits with 255; the panel reads them with `term.parser.registerOscHandler`. Touches `ssh.js`, so tests for the generated script first.
-3. **Terminal font size** with Ctrl +/- / Ctrl 0 on the terminal, remembered in the settings.
-4. **Search in the terminal scrollback** (Ctrl+Shift+F, `@xterm/addon-search`).
-5. **Find a node** by name, user or host on the canvas and center it.
-6. **Windows installer build in CI** (electron-builder `--win --dir`) and a start check of the packaged app, so the native `node-pty` in the package is covered.
+1. **Connection state on the canvas.** Connecting (yellow) -> connected (green) -> failed (red) instead of "a terminal is open". Idea: ssh `PermitLocalCommand`/`LocalCommand` prints an invisible OSC marker after login, and the script prints another one when ssh exits with 255; the panel reads them with `term.parser.registerOscHandler`. Touches `ssh.js`, so tests for the generated script first.
+2. **Terminal font size** with Ctrl +/- / Ctrl 0 on the terminal, remembered in the settings.
+3. **Search in the terminal scrollback** (Ctrl+Shift+F, `@xterm/addon-search`).
+4. **Find a node** by name, user or host on the canvas and center it.
+5. **Windows installer build in CI** (electron-builder `--win --dir`) and a start check of the packaged app, so the native `node-pty` in the package is covered.
 
 ### Proposals for the owner (need a decision)
 - (none open)
@@ -338,6 +337,13 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: screenshots and the overlap audit of the confirmation dialogs (Remove, Export with a saved password, opening another item while unlocked) in all three palettes. No overlaps, footer buttons all 36px. The unlocked warning was the odd one: its title was the whole question "Are you sure you want to continue?", which wraps to two lines in the pixel font, and its body "All unlocked changes will be lost" had no period and did not say why. Now titled *Unsaved changes* like the short titles of the others, the body explains that changes are saved only when the editor is locked again.
 - Result: text only. lint exit 0, tests 238 passed, build exit 0; checked in all three palettes (scratch t72); t3, t10, t18 pass.
 - Phase: one small fix. Polish continues; if the next run also finds nothing worthwhile, the feature run follows.
+
+### #50 2026-10-01 09:2x UTC · feature: reconnect an ended terminal tab (scheduled run)
+- Phase: the polish runs #48 (health) and #49 (style) found only small things and the UX candidates are empty, so this was the first `feature` run (top of the Feature queue).
+- Did: main keeps the request (`kind`, `payload`) of a session that ended by itself in `terminal.js` (`ended` map) until its tab is closed; `reopen(id, owner, size)` starts it again and returns a new id (only for the owner, only ended sessions, the request is kept if reopening fails, e.g. too many terminals; at most `2 x maxSessions` remembered, oldest forgotten; sessions the user closed are not remembered; `closeAll` clears them). IPC `terminal:reopen`, preload `terminal.reopen`. The panel: `canReconnect(session)` in `utils/terminal-sessions.js`; an ended tab shows a reconnect button (`arrow-clockwise`), Enter in its terminal reconnects, the line "[session ended] Press Enter to reconnect." tells how; the same tab and xterm continue, `hops` stay, so the path lights up again. Closing an ended tab now also tells main, which forgets the request. The request with the password is never put back into the store.
+- Found on the way: the reconnect icon was not registered in `assets/icons/index.js`, so the button rendered empty. Registered it, and new `assets/icons/icons.test.js` checks that every icon used in a component is registered (it fails on the old index).
+- Result: tests 246 passed (+8: reopen x5, canReconnect, icons x2; mutation checked three ways in `terminal.js`: remembering user-closed sessions, not keeping the request after a failed reopen, not forgetting on close each fail a test), lint exit 0, build exit 0. In the app against the local sshd (scratch t73, all three palettes): connect, `exit`, reconnect button logs in again in the same tab with the path live again, typing reaches the new session, Enter in the ended terminal reconnects, a refused connection retried shows the error and the red dot again, closing an ended tab works, no page errors.
+- Next: back to the polish phase; the first polish run looks at this feature.
 
 ## Routine
 

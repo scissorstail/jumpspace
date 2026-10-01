@@ -53,6 +53,8 @@ The app is checked in the real Electron with Playwright under `xvfb-run` (script
 - Rete v1 places connection ends with `offsetLeft/offsetTop` sums, which skip the borders of parent elements. The node frame is therefore an inset `outline` plus `padding`, not a `border` (`components/editor/index.vue`); a border on `.node.site` or the socket containers shifts every line off the socket centers.
 - The sidebar (`b-sidebar`, 320px) lies over the page instead of pushing it. Things centered on the window (the empty-state hint, the header title) are moved beside it while it is open (`isSidebarOpen` in `views/Layout.vue`).
 - Small controls share one height (`$control-sm-height` in `theme.scss`); Bootstrap computes it from the font size, which differs between a plain input and one with an attached button.
+- Icons are registered one by one in `assets/icons/index.js`; an unregistered `b-icon` renders an empty button. `assets/icons/icons.test.js` fails when a component uses one that is missing.
+- Reconnecting a terminal tab: main (`terminal.js`) keeps the request of a session that ended by itself until its tab is closed (`close` also forgets ended ids, `closeAll` clears them, at most `2 x maxSessions`); the renderer only asks `terminal:reopen` with the old id. Never put the request back into the store.
 - `b-form-input` with `trim` is fine for typing spaces; do not "fix" it.
 - On Windows Git Bash puts its own `/usr/bin` before `PATH`, so tests that fake `ssh` must use a bash function (`BASH_ENV`), not a fake binary on `PATH`.
 - Sidebar list items are positioned (for the highlight), so an item whose `...` menu is open needs a higher `z-index` or the menu hides behind the next items.

@@ -69,6 +69,11 @@ export function createOutputRouter({ maxPending = 256 * 1024 } = {}) {
 
 // 터미널에서 앱이 직접 처리하는 단축키. 붙여넣기(Ctrl+Shift+V, Shift+Insert)는 브라우저의 paste 이벤트로 이미 된다.
 //   'copy': Ctrl+Shift+C, Ctrl+Insert (Ctrl+C는 원격 프로그램에 보내는 인터럽트로 남긴다)
+// 끝난 세션은 같은 탭에서 다시 접속할 수 있다. (열지도 못한 세션은 main에 요청이 없다)
+export function canReconnect(session) {
+  return session?.status === 'exited' && session.id !== null && session.id !== undefined
+}
+
 export function terminalShortcut(event) {
   if (event?.type !== 'keydown' || !event.ctrlKey || event.altKey || event.metaKey) return null
   if (event.shiftKey && event.code === 'KeyC') return 'copy'

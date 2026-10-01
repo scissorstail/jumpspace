@@ -34,6 +34,19 @@
         />
         <span class="terminal-tab-title">{{ session.title }}</span>
         <button
+          v-if="canReconnect(session)"
+          type="button"
+          class="terminal-tab-close"
+          :aria-label="`Reconnect ${session.title}`"
+          title="Reconnect (or press Enter in the terminal)"
+          @click.stop="reconnect(session)"
+        >
+          <b-icon
+            icon="arrow-clockwise"
+            aria-hidden="true"
+          />
+        </button>
+        <button
           type="button"
           class="terminal-tab-close"
           :aria-label="`Close ${session.title}`"
@@ -78,7 +91,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
-import { createOutputRouter, terminalShortcut } from '@/utils/terminal-sessions'
+import { canReconnect, createOutputRouter, terminalShortcut } from '@/utils/terminal-sessions'
 
 const MIN_HEIGHT = 140
 
@@ -167,7 +180,7 @@ export default {
       })
       const fit = new FitAddon()
       term.loadAddon(fit)
-      const entry = { term, fit, id: null }
+      const entry = { term, fit, id: null, ended: false, reconnecting: false }
       this.terms.set(session.key, entry)
 
       const el = this.$refs[`term-${session.key}`]?.[0]
@@ -175,7 +188,14 @@ export default {
       this.fit(entry)
       term.focus()
 
-      term.onData(data => entry.id !== null && window.preload.terminal.write(entry.id, data))
+      term.onData(data => {
+        // 끝난 세션에서는 Enter가 다시 접속이다.
+        if (entry.ended) {
+          if (data === '\r') this.reconnect(this.sessions.find(x => x.key === session.key))
+          return
+        }
+        if (entry.id !== null) window.preload.terminal.write(entry.id, data)
+      })
       this.enableClipboard(term, el)
 
       const result = await window.preload.terminal.open(kind, payload, { cols: term.cols, rows: term.rows })
@@ -221,14 +241,47 @@ export default {
       if (!session) return
 
       const entry = this.terms.get(session.key)
-      entry?.term.write(`\r\n\x1b[90m[session ended${exitCode ? `, exit status ${exitCode}` : ''}]\x1b[0m\r\n`)
+      entry?.term.write(`\r\n\x1b[90m[session ended${exitCode ? `, exit status ${exitCode}` : ''}] Press Enter to reconnect.\x1b[0m\r\n`)
+      if (entry) entry.ended = true
       this.router.unregister(id)
       this.$store.commit('terminalUpdate', { key: session.key, status: 'exited', exitCode })
+    },
+    canReconnect,
+    // 끝난 세션을 같은 탭에서 같은 요청으로 다시 연다. 요청은 main이 갖고 있다. (store에는 비밀번호를 두지 않는다)
+    async reconnect(session) {
+      const entry = session && this.terms.get(session.key)
+      if (!entry || entry.reconnecting || !canReconnect(session)) return
+
+      entry.reconnecting = true
+      const { exitCode } = session
+      this.$store.commit('terminalUpdate', { key: session.key, status: 'starting', exitCode: null })
+      entry.term.write('\r\n\x1b[90m[reconnecting]\x1b[0m\r\n')
+      const result = await window.preload.terminal.reopen(entry.id, { cols: entry.term.cols, rows: entry.term.rows })
+      entry.reconnecting = false
+
+      // 기다리는 동안 탭이 닫혔으면 새 세션도 닫는다.
+      if (!this.terms.has(session.key)) {
+        if (result.ok) window.preload.terminal.close(result.id)
+        return
+      }
+      if (!result.ok) {
+        entry.term.write(`\x1b[31m${String(result.error).replace(/\n/g, '\r\n')}\x1b[0m\r\n`)
+        this.$store.commit('terminalUpdate', { key: session.key, status: 'exited', exitCode })
+        return
+      }
+
+      entry.id = result.id
+      entry.ended = false
+      this.router.register(result.id, data => entry.term.write(data))
+      this.$store.commit('terminalUpdate', { key: session.key, id: result.id, status: 'running' })
+      this.fit(entry, true)
+      entry.term.focus()
     },
     closeSession(session) {
       const entry = this.terms.get(session.key)
       if (entry) {
-        if (entry.id !== null && session.status === 'running') window.preload.terminal.close(entry.id)
+        // 실행 중이면 끝내고, 끝난 세션이면 main이 다시 접속용으로 기억해 둔 요청을 잊게 한다.
+        if (entry.id !== null) window.preload.terminal.close(entry.id)
         if (entry.id !== null) this.router.unregister(entry.id)
         entry.term.dispose()
         this.terms.delete(session.key)

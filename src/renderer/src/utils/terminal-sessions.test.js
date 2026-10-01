@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createOutputRouter, hopKey, liveRoutes, terminalShortcut, terminalTitle } from './terminal-sessions'
+import { canReconnect, createOutputRouter, hopKey, liveRoutes, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -120,5 +120,17 @@ describe('terminalShortcut', () => {
     expect(terminalShortcut(key('Insert', { shiftKey: true }, 'Insert'))).toBe(null)
     expect(terminalShortcut({ ...key('KeyC', { ctrlKey: true, shiftKey: true }, 'C'), type: 'keyup' })).toBe(null)
     expect(terminalShortcut(undefined)).toBe(null)
+  })
+})
+
+describe('canReconnect', () => {
+  it('is true only for a session that ran and ended', () => {
+    expect(canReconnect({ status: 'exited', id: 3 })).toBe(true)
+    expect(canReconnect({ status: 'exited', id: 3, exitCode: 255 })).toBe(true)
+    expect(canReconnect({ status: 'running', id: 3 })).toBe(false)
+    expect(canReconnect({ status: 'starting', id: null })).toBe(false)
+    expect(canReconnect({ status: 'failed', id: null })).toBe(false)
+    expect(canReconnect({ status: 'exited', id: null })).toBe(false)
+    expect(canReconnect(null)).toBe(false)
   })
 })
