@@ -55,11 +55,14 @@
               class="mb-0"
               label="User"
               :label-for="fieldId('user')"
+              :state="errors.user ? false : null"
+              :invalid-feedback="errors.user || ''"
               label-align="left"
               label-cols-sm="4"
             >
               <b-form-input
                 :id="fieldId('user')"
+                :state="errors.user ? false : null"
                 :value="value.user"
                 trim
                 size="sm"
@@ -71,11 +74,14 @@
               class="mb-0"
               label="Host"
               :label-for="fieldId('host')"
+              :state="errors.host ? false : null"
+              :invalid-feedback="errors.host || ''"
               label-align="left"
               label-cols-sm="4"
             >
               <b-form-input
                 :id="fieldId('host')"
+                :state="errors.host ? false : null"
                 :value="value.host"
                 trim
                 size="sm"
@@ -87,14 +93,16 @@
               class="mb-0"
               label="Port"
               :label-for="fieldId('port')"
+              :state="errors.port ? false : null"
+              :invalid-feedback="errors.port || ''"
               label-align="left"
               label-cols-sm="4"
             >
               <b-form-input
                 :id="fieldId('port')"
+                :state="errors.port ? false : null"
                 :value="value.port"
                 trim
-                :state="portState(value.port)"
                 size="sm"
                 :disabled="disabled"
                 @update="set('port', $event)"
@@ -104,6 +112,8 @@
               class="mb-0"
               label="Key"
               :label-for="fieldId('keyPath')"
+              :state="errors.keyPath ? false : null"
+              :invalid-feedback="errors.keyPath || ''"
               label-align="left"
               label-cols-sm="4"
             >
@@ -123,6 +133,7 @@
                 </template>
                 <b-form-input
                   :id="fieldId('keyPath')"
+                  :state="errors.keyPath ? false : null"
                   :value="value.keyPath"
                   trim
                   size="sm"
@@ -169,11 +180,14 @@
               class="mb-0"
               label="Exec"
               :label-for="fieldId('exec')"
+              :state="errors.exec ? false : null"
+              :invalid-feedback="errors.exec || ''"
               label-align="left"
               label-cols-sm="4"
             >
               <b-form-input
                 :id="fieldId('exec')"
+                :state="errors.exec ? false : null"
                 :value="value.exec"
                 trim
                 size="sm"
@@ -204,7 +218,7 @@
 
 <script>
 import { closePopoverOnEscape } from '@/utils/dismiss'
-import { portState } from '@/utils/forward'
+import { fieldError } from '@/utils/connection-field'
 import IconPicker from './icon-picker'
 
 // 노드의 접속 정보 입력(이름, user, host, port, 키, 비밀번호, exec, 이미지). 값은 v-model로 주고받고, 항상 새 객체로 돌려준다.
@@ -243,8 +257,17 @@ export default {
       isPasswordVisible: false
     }
   },
+  computed: {
+    // 칸마다 고쳐야 할 점(없으면 null). 접속할 때 main이 같은 규칙으로 다시 검사한다.
+    errors() {
+      const errors = {}
+      for (const key of ['user', 'host', 'port', 'keyPath', 'exec']) {
+        errors[key] = fieldError(key, this.value[key])
+      }
+      return errors
+    }
+  },
   methods: {
-    portState,
     // 라벨을 눌러 입력칸으로 가고, 입력칸이 라벨을 이름으로 갖도록 노드마다 다른 id를 쓴다.
     fieldId(key) {
       return `node-${this._uid}-${key}`

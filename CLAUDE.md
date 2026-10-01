@@ -23,7 +23,7 @@ Run lint, tests and build before every commit. Node 20.19+ or 22.12+. `.npmrc` s
 
 ## Rules that matter
 
-- **Nothing user-controlled reaches a shell unchecked.** Every value that ends up in an `ssh` command or config goes through `src/main/validate.js`; `ssh.js` builds a bash script with POSIX single-quoted values. Passwords travel only as environment variables and are answered through `SSH_ASKPASS` (the generated script is its own askpass). Never put passwords or keys into logs, docs or commit messages.
+- **Nothing user-controlled reaches a shell unchecked.** Every value that ends up in an `ssh` command or config goes through `src/shared/validate.js` (main checks before running; the node settings form shows the same rules while typing); `ssh.js` builds a bash script with POSIX single-quoted values. Passwords travel only as environment variables and are answered through `SSH_ASKPASS` (the generated script is its own askpass). Never put passwords or keys into logs, docs or commit messages.
 - **The repository is public (MIT).** No secrets, tokens, real hosts or personal data in files or commit messages.
 - **Behavior changes need a test.** After adding a test, break the code on purpose once and see it fail. Never skip or delete a failing test to get green.
 - The renderer is sandboxed with a narrow IPC API (`src/preload/index.js`). Keep logic that can be pure in `src/renderer/src/utils/` or `src/main/*.js` with tests; components stay thin. Values both processes need (setting defaults and validation, the canvas zoom range) live once in `src/shared/` (no Node modules there).

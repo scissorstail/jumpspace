@@ -29,7 +29,7 @@ note: This currently only works on Windows
 3. Hover a node to open its menu:
    - terminal: **Connect** runs `ssh` to the node in a terminal tab of the app (or in a Git Bash window, see *Settings > Open SSH in*). When the node has previous nodes and every one of them has a user, host and port, it is **ProxyJump** instead, which connects through the whole chain.
    - link: **Port forwarding**, see below. The button with a counter next to it starts the enabled forwards.
-   - gear: **Setting** (icon picked from a grid, name, user, host, port, key, password, exec) and *Copy SSH config*.
+   - gear: **Setting** (icon picked from a grid, name, user, host, port, key, password, exec) and *Copy SSH config*. A value that ssh would not accept is marked while you type, with a note on what is allowed.
 4. The canvas position and zoom of each item are remembered and restored when you open it again. Lock the editor to save changes to the diagram. You can start connections while it is locked.
 
 The node menu also shows when one of its buttons has keyboard focus, and Escape closes its popovers. Right-click a node for **Duplicate** or **Delete** (a node with content asks first).
@@ -105,13 +105,14 @@ src/main/       Electron main process
   launcher.js     writes the temp files and starts Git Bash (window)
   terminal.js     terminal sessions inside the app (node-pty), used by the terminal panel
   trust.js        is a URL the app's own page? (IPC sender check, navigation guard)
-  validate.js     validation of every value that ends up in a command
   storage.js      projects.json (atomic write, .bak), import parsing
   legacy-forwards.js  moves forwards saved by older versions to their current place
 src/shared/     pure modules used by both main and renderer
   setting.js      the app settings and their defaults (Git Bash path, tray,
                   where ssh opens, theme, background, node glass)
   view.js         the canvas zoom range and the check of a saved view
+  validate.js     validation of every value that ends up in a command (main checks
+                  before running; the node settings show the same rules while typing)
 src/preload/    the small API exposed to the renderer (window.preload)
 src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
   src/utils/      pure logic with unit tests (forwarding rules, canvas view, ...)
@@ -128,7 +129,7 @@ src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
 ### how ssh is started
 
 1. The UI never runs commands. It sends a small request (`connect`, `proxyJump`, `forward`) to the main process.
-2. `validate.js` checks every value (user, host, port, key path, exec, forwards) and rejects what could turn into an option or an injection into the shell or the ssh config.
+2. `validate.js` (in `src/shared/`) checks every value (user, host, port, key path, exec, forwards) and rejects what could turn into an option or an injection into the shell or the ssh config.
 3. `ssh.js` builds a temporary bash script (values quoted with POSIX single quotes). A path also gets an `ssh -F` config with one `Host` block per node holding that node's own key / password options.
 4. `launcher.js` writes both into the OS temp folder. In the app, `terminal.js` runs the script with bash in a pseudo terminal (node-pty, ConPTY on Windows; Git's `bin\bash.exe` next to the configured `git-bash.exe`) and the panel exchanges key strokes and output with it; only the generated script is ever started, the window only sends key strokes. For a Git Bash window it runs `git-bash.exe -c "bash '<script>'"`. The script removes itself and the config when the session ends (also when its tab is closed), leftovers are swept on the next start.
 5. Passwords are passed as environment variables. The same script is also the `SSH_ASKPASS` program and answers only the prompts of the hop the password belongs to.

@@ -373,8 +373,18 @@ export default {
 
 .info {
   &-list {
+    // 오류 문구가 입력칸 아래에 붙어도 라벨은 입력칸 줄에 머문다. (라벨 높이 = 작은 입력칸 높이)
     .form-row {
+      align-items: flex-start;
+      padding-bottom: 6px;
+    }
+
+    .col-form-label {
+      display: flex;
       align-items: center;
+      min-height: 31px;
+      padding-top: 0;
+      padding-bottom: 0;
     }
 
     // 입력칸(sm)보다 라벨이 커 보이지 않게 한다.
