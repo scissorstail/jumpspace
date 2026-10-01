@@ -36,6 +36,7 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- Pointing at a sidebar item made it 2px taller (its `...` button was taller than the name), so every item below jumped. The button now fits the row.
 - Turning on *Node glass* moved the text under every node about 4px down (the panel's padding). The panel now grows outward around the text, so the text stays exactly where it is with the glass on or off.
 - Sidebar items picked with Ctrl+click were only tinted, so neighbours merged into one block and the focused one looked different. Each now has a bar on its left and a thin gap to the next.
 - The warning shown when you open another item while the editor is unlocked had a whole question as its title (two lines in the pixel font) and a short, unexplained body. It is now titled *Unsaved changes* and says that changes are saved only when the editor is locked again.

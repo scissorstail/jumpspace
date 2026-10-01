@@ -374,6 +374,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Then looked for the same kind of shift elsewhere (scratch t79, positions before/after): header when unlocking, node contents when selected, sidebar names when another item opens, terminal tab titles when the active tab changes: all identical. The node menu re-centers (18px) when the tunnel button appears after enabling a forward; that is one more button in a centered row, left as is. The `style` activity now says to measure such shifts.
 - Result: CSS only. lint exit 0, tests 248 passed, build exit 0; t43 (node glass) passes.
 
+### #56 2026-10-01 14:2x UTC · style (scheduled run, polish phase, layout shifts)
+- Did: continued #55 with hover: measured every control of a row before and after pointing at one (scratch t80): header buttons, node menu buttons, sidebar `+`, settings theme buttons and Cancel do not move anything. A sidebar item did: its `...` button (1.5em = 27.6px) was taller than the name line (25.5px), so the hovered item grew 2.1px and every item below jumped. The button is now 24px high; the item stays 35.5px, only the name gets narrower to make room (its text does not move). The icon is still centered (screenshot with the menu open, t65).
+- Result: CSS only. lint exit 0, tests 248 passed, build exit 0; t3, t31, t65 pass.
+- Phase: polish continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

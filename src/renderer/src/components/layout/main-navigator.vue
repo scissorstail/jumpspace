@@ -593,8 +593,9 @@ export default {
             width: 2em;
             display: none;
             ::v-deep {
+              // 이름 줄(25.5px)보다 낮게: 높으면 마우스를 올릴 때마다 항목이 2px 커지고 아래 항목들이 밀렸다.
               button {
-                height: 1.5em;
+                height: 24px;
                 padding: 0px;
                 margin: 0px;
 
