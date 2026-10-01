@@ -173,6 +173,15 @@ function main() {
       return { ok: false, error: e.message }
     }
   })
+  // 끝난 탭을 같은 요청으로 다시 연다. 요청(비밀번호 포함)은 main만 갖고 있다.
+  handle('terminal:reopen', async (event, id, size) => {
+    try {
+      return { ok: true, id: await terminals.reopen(id, event.sender.id, { cols: size?.cols, rows: size?.rows }) }
+    } catch (e) {
+      console.error('terminal:reopen failed:', e)
+      return { ok: false, error: e.message }
+    }
+  })
   on('terminal:write', (event, id, data) => terminals.write(id, event.sender.id, data))
   on('terminal:resize', (event, id, cols, rows) => terminals.resize(id, event.sender.id, cols, rows))
   on('terminal:close', (event, id) => terminals.close(id, event.sender.id))

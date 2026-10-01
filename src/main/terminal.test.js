@@ -168,6 +168,77 @@ describe('createTerminalManager', () => {
   })
 })
 
+describe('createTerminalManager: reconnect', () => {
+  it('reopens an ended session with the same request and gives it a new id', async () => {
+    const { manager, spawnPty, ptys, send } = setup()
+    const id = await manager.open('connect', { ...node, password: 'pw' }, { owner: 3 })
+    ptys[0].emitExit(255)
+
+    const again = await manager.reopen(id, 3, { cols: 100, rows: 30 })
+    expect(again).not.toBe(id)
+    expect(spawnPty).toHaveBeenCalledTimes(2)
+    const options = spawnPty.mock.calls[1][2]
+    expect(options).toMatchObject({ cols: 100, rows: 30 })
+    expect(Object.values(options.env)).toContain('pw')
+
+    ptys[1].emitData('back')
+    expect(send).toHaveBeenCalledWith(3, 'terminal:data', again, 'back')
+    // 한 번 다시 열면 옛 id로는 다시 열 수 없다.
+    await expect(manager.reopen(id, 3)).rejects.toThrow(/can no longer be reconnected/)
+  })
+
+  it('only reopens for the window that owns it, and only ended sessions', async () => {
+    const { manager, ptys } = setup()
+    const id = await manager.open('connect', node, { owner: 1 })
+    await expect(manager.reopen(id, 1)).rejects.toThrow(/can no longer/) // 아직 실행 중
+    ptys[0].emitExit(0)
+    await expect(manager.reopen(id, 2)).rejects.toThrow(/can no longer/)
+    await expect(manager.reopen(999, 1)).rejects.toThrow(/can no longer/)
+    expect(await manager.reopen(id, 1)).toBeGreaterThan(id)
+  })
+
+  it('forgets the request when the tab is closed, when the user ended it, and when the window goes away', async () => {
+    const { manager, ptys } = setup()
+    const a = await manager.open('connect', node, { owner: 1 })
+    ptys[0].emitExit(0)
+    manager.close(a, 1) // 끝난 탭을 닫는다
+    await expect(manager.reopen(a, 1)).rejects.toThrow(/can no longer/)
+
+    const b = await manager.open('connect', node, { owner: 1 })
+    manager.close(b, 1) // 실행 중인 탭을 닫으면 pty가 끝나며 exit가 온다
+    ptys[1].emitExit(129)
+    await expect(manager.reopen(b, 1)).rejects.toThrow(/can no longer/)
+
+    const c = await manager.open('connect', node, { owner: 1 })
+    ptys[2].emitExit(0)
+    manager.closeAll(1)
+    await expect(manager.reopen(c, 1)).rejects.toThrow(/can no longer/)
+  })
+
+  it('keeps the request when reopening fails, so it can be tried again', async () => {
+    const { manager, ptys } = setup({ maxSessions: 1 })
+    const id = await manager.open('connect', node, { owner: 1 })
+    ptys[0].emitExit(0)
+    await manager.open('connect', node, { owner: 1 }) // 자리를 채운다
+
+    await expect(manager.reopen(id, 1)).rejects.toThrow(/Too many terminals/)
+    manager.close(2, 1)
+    expect(await manager.reopen(id, 1)).toBeGreaterThan(2)
+  })
+
+  it('remembers a bounded number of ended sessions', async () => {
+    const { manager, ptys } = setup({ maxSessions: 1 })
+    const ids = []
+    for (let i = 0; i < 3; i++) {
+      ids.push(await manager.open('connect', node, { owner: 1 }))
+      ptys[i].emitExit(0)
+    }
+    // maxSessions 1이면 2개까지 기억한다: 가장 오래된 것이 잊힌다.
+    await expect(manager.reopen(ids[0], 1)).rejects.toThrow(/can no longer/)
+    expect(await manager.reopen(ids[2], 1)).toBeGreaterThan(ids[2])
+  })
+})
+
 // 진짜 pty(node-pty)와 bash로 생성된 스크립트를 실행한다. ssh는 BASH_ENV로 정의한 가짜 함수로 바꾸고,
 // 키 입력이 프로그램까지 닿는지(한 줄을 읽어서 되돌려 준다) 확인한다.
 //   Windows: JUMPSPACE_TEST_BASH에 Git의 bin\bash.exe를 지정한다.

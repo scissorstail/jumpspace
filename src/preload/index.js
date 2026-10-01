@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('preload', {
   // 앱 안의 터미널. kind는 'connect' | 'forward' | 'proxyJump', payload는 ssh.*와 같다.
   terminal: {
     open: (kind, payload, size) => ipcRenderer.invoke('terminal:open', kind, payload, size),
+    reopen: (id, size) => ipcRenderer.invoke('terminal:reopen', id, size),
     write: (id, data) => ipcRenderer.send('terminal:write', id, data),
     resize: (id, cols, rows) => ipcRenderer.send('terminal:resize', id, cols, rows),
     close: id => ipcRenderer.send('terminal:close', id),

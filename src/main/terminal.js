@@ -42,8 +42,12 @@ const isSize = value => Number.isInteger(value) && value >= 2 && value <= 1000
 //   send(owner, channel, ...args): 화면으로 보내기 ('terminal:data', 'terminal:exit')
 //   spawnPty(file, args, options): node-pty의 spawn (테스트에서 바꾼다)
 //   getBash(): 실행할 bash 경로
+// 끝난 세션의 요청은 탭에서 다시 접속(reopen)할 수 있도록 탭이 닫힐 때까지 기억한다. (비밀번호가 들어 있어서
+// 화면(store)에는 다시 두지 않는다) 사용자가 닫은 세션은 기억하지 않는다.
 export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSessions = MAX_SESSIONS }) {
   const sessions = new Map()
+  const ended = new Map() // id -> { owner, kind, payload }
+  const maxEnded = maxSessions * 2
   let nextId = 1
 
   function owned(id, owner) {
@@ -51,42 +55,71 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
     return session && session.owner === owner ? session : null
   }
 
+  function remember(id, entry) {
+    ended.set(id, entry)
+    // 오래된 것부터 잊는다. (탭을 닫지 않고 계속 다시 여는 경우)
+    while (ended.size > maxEnded) ended.delete(ended.keys().next().value)
+  }
+
+  function forget(id, owner) {
+    const entry = ended.get(id)
+    if (entry && entry.owner === owner) ended.delete(id)
+  }
+
+  async function open(kind, payload, { owner, cols = 80, rows = 24 }) {
+    if (sessions.size >= maxSessions) {
+      throw new Error(`Too many terminals are open (at most ${maxSessions}). Close one first.`)
+    }
+
+    const prepared = prepareSession(kind, payload, { tempDir })
+    const bash = getBash()
+    await prepared.write()
+
+    let pty
+    try {
+      pty = spawnPty(bash, [prepared.scriptPath], {
+        name: 'xterm-256color',
+        cols: isSize(cols) ? cols : 80,
+        rows: isSize(rows) ? rows : 24,
+        // JUMPSPACE_IN_APP: 스크립트가 ssh 실패 뒤 Enter를 기다리지 않는다 (ssh.js)
+        env: { ...process.env, ...prepared.env, TERM: 'xterm-256color', COLORTERM: 'truecolor', JUMPSPACE_IN_APP: '1' }
+      })
+    } catch (e) {
+      await prepared.cleanup()
+      throw e
+    }
+
+    const id = nextId++
+    sessions.set(id, { owner, pty })
+    pty.onData(data => send(owner, 'terminal:data', id, data))
+    pty.onExit(({ exitCode }) => {
+      // 사용자가 닫은 세션(close/closeAll이 이미 지웠다)은 다시 열 일이 없다.
+      if (sessions.delete(id)) remember(id, { owner, kind, payload })
+      send(owner, 'terminal:exit', id, exitCode)
+    })
+    return id
+  }
+
   return {
     get size() {
       return sessions.size
     },
 
-    async open(kind, payload, { owner, cols = 80, rows = 24 }) {
-      if (sessions.size >= maxSessions) {
-        throw new Error(`Too many terminals are open (at most ${maxSessions}). Close one first.`)
+    open,
+
+    // 끝난 세션을 같은 요청으로 다시 연다. 새 세션의 id를 돌려준다.
+    async reopen(id, owner, { cols, rows } = {}) {
+      const entry = ended.get(id)
+      if (!entry || entry.owner !== owner) {
+        throw new Error('This session can no longer be reconnected. Start it again from its node.')
       }
-
-      const prepared = prepareSession(kind, payload, { tempDir })
-      const bash = getBash()
-      await prepared.write()
-
-      let pty
+      ended.delete(id)
       try {
-        pty = spawnPty(bash, [prepared.scriptPath], {
-          name: 'xterm-256color',
-          cols: isSize(cols) ? cols : 80,
-          rows: isSize(rows) ? rows : 24,
-          // JUMPSPACE_IN_APP: 스크립트가 ssh 실패 뒤 Enter를 기다리지 않는다 (ssh.js)
-          env: { ...process.env, ...prepared.env, TERM: 'xterm-256color', COLORTERM: 'truecolor', JUMPSPACE_IN_APP: '1' }
-        })
+        return await open(entry.kind, entry.payload, { owner, cols, rows })
       } catch (e) {
-        await prepared.cleanup()
+        remember(id, entry) // 다시 시도할 수 있게 남겨 둔다 (예: 터미널이 너무 많을 때)
         throw e
       }
-
-      const id = nextId++
-      sessions.set(id, { owner, pty })
-      pty.onData(data => send(owner, 'terminal:data', id, data))
-      pty.onExit(({ exitCode }) => {
-        sessions.delete(id)
-        send(owner, 'terminal:exit', id, exitCode)
-      })
-      return id
     },
 
     write(id, owner, data) {
@@ -103,7 +136,9 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
       }
     },
 
+    // 탭을 닫으면 세션을 끝내고, 끝난 세션이면 기억해 둔 요청을 잊는다.
     close(id, owner) {
+      forget(id, owner)
       const session = owned(id, owner)
       if (session) {
         sessions.delete(id)
@@ -113,6 +148,9 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
 
     // 창이 닫히거나 새로고침될 때 그 화면의 세션을 모두 끝낸다.
     closeAll(owner) {
+      for (const [id, entry] of ended) {
+        if (owner === undefined || entry.owner === owner) ended.delete(id)
+      }
       for (const [id, session] of sessions) {
         if (owner === undefined || session.owner === owner) {
           sessions.delete(id)
