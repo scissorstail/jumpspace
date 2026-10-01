@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, u
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { expandEnv, launch, sweepTempDir } from './launcher.js'
+import { expandEnv, launch, prepareSession, sweepTempDir } from './launcher.js'
 
 // 실제로 실행할 수 있는 "Git Bash" 대용. 파일이 존재하기만 하면 되고, spawn은 가짜로 바꾼다.
 const root = mkdtempSync(join(tmpdir(), 'jumpspace-launcher-'))
@@ -138,6 +138,41 @@ describe('launch', () => {
     await launch('connect', node, { tempDir, gitBashPath: fakeBash, spawn })
     await launch('connect', node, { tempDir, gitBashPath: fakeBash, spawn })
     expect(new Set(files(tempDir)).size).toBe(2)
+  })
+})
+
+describe('prepareSession', () => {
+  const unix = process.platform !== 'win32'
+
+  it('accepts only the three commands, also not names from the object prototype', () => {
+    const tempDir = mkdtempSync(join(root, 'kinds-'))
+    for (const kind of ['rm', 'toString', 'constructor', '__proto__', 'hasOwnProperty', '']) {
+      expect(() => prepareSession(kind, node, { tempDir })).toThrow(/Unknown command/)
+    }
+    expect(files(tempDir)).toEqual([])
+  })
+
+  it('writes nothing until write(), then the script (owner only, executable) and the config (owner only)', async () => {
+    const tempDir = join(mkdtempSync(join(root, 'modes-')), 'not-yet')
+    const session = prepareSession('proxyJump', [node, { ...node, name: 'db', host: 'db.internal' }], { tempDir })
+    expect(existsSync(tempDir)).toBe(false)
+
+    await session.write()
+    const written = files(tempDir).sort()
+    expect(written.map(name => name.replace(/^[0-9a-f]{16}/, 'ID'))).toEqual(['ID.jmp', 'ID.sh'])
+    const script = join(tempDir, written.find(name => name.endsWith('.sh')))
+    const config = join(tempDir, written.find(name => name.endsWith('.jmp')))
+    if (unix) {
+      expect(statSync(script).mode & 0o777).toBe(0o700)
+      expect(statSync(config).mode & 0o777).toBe(0o600)
+    }
+    // 비밀번호는 파일에 쓰지 않고 환경변수로만 넘긴다.
+    expect(readFileSync(script, 'utf8') + readFileSync(config, 'utf8')).not.toContain('S3cr3t')
+    expect(Object.values(session.env)).toContain('S3cr3t')
+
+    await session.cleanup()
+    expect(files(tempDir)).toEqual([])
+    await session.cleanup() // 이미 지워져 있어도 괜찮다
   })
 })
 
