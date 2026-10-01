@@ -310,6 +310,13 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: no behavior change. lint exit 0, tests 235 passed, build exit 0; in the app the forward host placeholder is still `localhost` (scratch t58).
 - Phase: a small cleanup with a result. The next run is ux or style.
 
+### #45 2026-10-01 · alignment and overlaps (by hand, at the owner's request)
+- Owner: "요소의 줄이나 간격이 맞지 않거나 어긋난 것과 서로 겹치는것들을 봐주세요" (look for lines and spacing that do not line up, and for elements that overlap).
+- How: two scratch helpers measure instead of eyeballing. `audit.cjs` collects the boxes of visible text (text ranges, clipped by `overflow` ancestors) and controls, and reports pairs that intersect within the same layer (popovers, dialogs and menus are their own layer) and text cut off without an ellipsis. `rows.cjs` compares heights and vertical centers of the items in one row. Ran over sidebar, header, canvas (hovering each node), node settings, port forwarding, header menu, settings, info and terminal panel, at 1100x700 and 760x560, plus the connection ends against the socket centers.
+- Fixed: (1) connection ends were 1.7-2px off the socket centers because Rete sums `offsetLeft/Top` and skips the node's 2px border; the frame is now an inset outline with 2px padding, sockets and the live dot keep their places. (2) The open sidebar covered the empty-state hint and the centered header title; both move beside it while it is open, the hidden toggle is hidden. (3) Small inputs were 29/31/33px depending on an attached button, the forward remove button 35px; all small controls are 29px now and the node settings labels match. (4) Settings dialog labels with a help text sat 23px below their control; the control column is now a grid whose first line is 33px and the label shares it.
+- Left as is (intended): the counter badge on the tunnel button sits on its corner; popovers cover the header or the canvas; a node's hover menu can cover the text of a node placed right above it (depends on where the user puts nodes).
+- Result: lint exit 0, tests 235 passed, build exit 0. Audit after the fixes: no overlaps except the intended ones above, all rows centered within 0.5px, settings labels 0px off in all three palettes; scratch t8, t12, t13, t20, t41, t43, t50 pass.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

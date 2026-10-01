@@ -35,6 +35,10 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- Connection lines ended about 2px above and left of the socket centers (Rete measures sockets without the node's border). The node frame is now drawn as an inset outline, so lines meet the sockets exactly.
+- With the sidebar open, the "No diagram open" hint and the header title were partly hidden behind it; they now center in the visible part.
+- Small inputs had three different heights (29/31/33px) depending on whether a button was attached, and the remove button of a forward row was taller than its inputs. They now share one height.
+- In the settings, a label whose control has a help text below it sat halfway down next to the help text instead of next to the control. Labels now line up with the first line of their control, here and in the node settings.
 - The column title "Local port" in the port forwarding popover broke onto two lines. *Delete* in a node's right-click menu used a fixed red instead of the palette's, and turned pink like the other items when pointed at; it now turns red.
 - A user, host, key path or exec that the launch would reject was only reported when a connection started. The node settings now mark such a field while you type and say what is allowed (the same rules main checks).
 - The red dot of a terminal tab that ended with an error could not be seen while the tab was active (the active tab is pink); the dot now has a dark border there.
