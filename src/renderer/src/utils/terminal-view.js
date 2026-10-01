@@ -27,6 +27,7 @@ export function errorLine(error) {
 }
 
 // 터미널 색: 지금 고른 테마의 CSS 변수에서 읽는다. color(name)은 그 변수의 값을 돌려준다.
+// 초록과 노랑은 모든 색 묶음에서 같은 --js-live / --js-connecting이다. (--js-sun은 Vapor Blue에서 보라라서 magenta와 구별되지 않았다)
 export function terminalTheme(color) {
   return {
     background: color('--js-bg'),
@@ -35,8 +36,8 @@ export function terminalTheme(color) {
     cursorAccent: color('--js-bg'),
     selectionBackground: color('--js-line'),
     red: color('--js-danger'),
-    green: '#3dff8a',
-    yellow: color('--js-sun'),
+    green: color('--js-live'),
+    yellow: color('--js-connecting'),
     blue: '#5aa9ff',
     magenta: color('--js-primary'),
     cyan: color('--js-secondary'),

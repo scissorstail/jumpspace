@@ -36,6 +36,7 @@ Everything since 0.2.2-beta.
 - Accessibility: the icon-only controls (node menu, sidebar, header, forwards) are real buttons with names for screen readers and tooltips, keyboard focus is visible and reveals the node menu, and the grey helper texts are darker.
 
 ### Fixed
+- **Terminal yellow in Vapor Blue.** Yellow text in the terminal took the sun color of the palette, which is purple in Vapor Blue and hard to tell from its magenta. Yellow and green in the terminal are now the same fixed yellow and green as the connection states, in every palette.
 
 - With a long target host, the forward line under a node was cut before its count, so "(+5)" for the other forwards disappeared. The count now always shows; only the first forward is shortened.
 - Pointing at a sidebar item made it 2px taller (its `...` button was taller than the name), so every item below jumped. The button now fits the row.

@@ -28,9 +28,9 @@ describe('terminal lines', () => {
 
 describe('terminalTheme', () => {
   it('maps the theme variables to xterm colors', () => {
-    const vars = { '--js-bg': '#000', '--js-text': '#fff', '--js-primary': '#f0f', '--js-line': '#333', '--js-danger': '#f00', '--js-sun': '#ff0', '--js-secondary': '#0ff', '--js-text-muted': '#999' }
+    const vars = { '--js-bg': '#000', '--js-text': '#fff', '--js-primary': '#f0f', '--js-line': '#333', '--js-danger': '#f00', '--js-live': '#0f0', '--js-connecting': '#ff0', '--js-sun': '#a0f', '--js-secondary': '#0ff', '--js-text-muted': '#999' }
     const theme = terminalTheme(name => vars[name])
-    expect(theme).toMatchObject({ background: '#000', foreground: '#fff', cursor: '#f0f', cursorAccent: '#000', red: '#f00', yellow: '#ff0', cyan: '#0ff', brightBlack: '#999' })
+    expect(theme).toMatchObject({ background: '#000', foreground: '#fff', cursor: '#f0f', cursorAccent: '#000', red: '#f00', green: '#0f0', yellow: '#ff0', cyan: '#0ff', brightBlack: '#999' })
     expect(Object.values(theme).every(Boolean)).toBe(true)
   })
 })
