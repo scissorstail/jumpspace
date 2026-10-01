@@ -305,6 +305,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: CSS only. lint exit 0, tests 235 passed, build exit 0. Computed hover colors checked in all three palettes (scratch t59); t58 screenshots after the change. Note: screenshots of a hovered menu item under xvfb sometimes show a half-finished state; the computed style is the reliable check.
 - Phase: two small visual fixes, so the polish phase continues.
 
+### #44 2026-10-01 04:2x UTC · cleanup (scheduled run, polish phase)
+- Did: looked for exports used nowhere, style classes no template uses, leftover `console.log`/TODO, stale references to the old `src/main/validate.js` and unused dependencies. One real duplicate: `utils/forward.js` had its own `SELF_HOST = 'localhost'`, the same value as `DEFAULT_FORWARD_HOST` that main uses when the target host is empty. Since `validate.js` is in `src/shared/` (#41), the renderer imports that constant instead, so the placeholder and the launch cannot disagree. Everything else checked out (exports used only by tests are there for the tests; `.site` is the Rete node class; eslint/sass/vite/vue-eslint-parser are tooling).
+- Result: no behavior change. lint exit 0, tests 235 passed, build exit 0; in the app the forward host placeholder is still `localhost` (scratch t58).
+- Phase: a small cleanup with a result. The next run is ux or style.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

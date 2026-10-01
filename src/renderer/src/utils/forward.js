@@ -7,7 +7,7 @@
 //   'target' : (이전 버전 방식) 이 노드는 포워딩 "대상"일 뿐 ssh로 접속하지 않는다. 앞 노드에 접속해서 이 노드의 host로 연결한다.
 //              port를 비워 둔 노드. 대상 host를 비우면 이 노드의 host이다.
 
-export const SELF_HOST = 'localhost'
+import { DEFAULT_FORWARD_HOST } from '../../../shared/validate.js'
 
 const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`
 
@@ -49,15 +49,15 @@ export function forwardPlan(node, prevs) {
 
   if (isRoutable(node)) {
     return chainReady
-      ? { mode: 'self', via: [...chain, node], defaultHost: SELF_HOST, reason: null }
-      : { mode: null, via: [], defaultHost: SELF_HOST, reason: chainReason }
+      ? { mode: 'self', via: [...chain, node], defaultHost: DEFAULT_FORWARD_HOST, reason: null }
+      : { mode: null, via: [], defaultHost: DEFAULT_FORWARD_HOST, reason: chainReason }
   }
 
   if (chain.length === 0) {
-    return { mode: null, via: [], defaultHost: SELF_HOST, reason: 'Enter a user, host and port to forward through this node.' }
+    return { mode: null, via: [], defaultHost: DEFAULT_FORWARD_HOST, reason: 'Enter a user, host and port to forward through this node.' }
   }
   if (!node?.host) {
-    return { mode: null, via: [], defaultHost: SELF_HOST, reason: 'Enter the host to forward to.' }
+    return { mode: null, via: [], defaultHost: DEFAULT_FORWARD_HOST, reason: 'Enter the host to forward to.' }
   }
   if (!chainReady) {
     return { mode: null, via: [], defaultHost: node.host, reason: chainReason }
