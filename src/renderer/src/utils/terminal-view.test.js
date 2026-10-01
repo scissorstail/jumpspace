@@ -4,7 +4,8 @@ import { endedLine, errorLine, RECONNECTING_LINE, sessionStatusText, terminalThe
 describe('sessionStatusText', () => {
   it('names every state and gives the exit status of a failed end', () => {
     expect(sessionStatusText({ status: 'starting' })).toBe('Starting')
-    expect(sessionStatusText({ status: 'running' })).toBe('Running')
+    expect(sessionStatusText({ status: 'running' })).toBe('Connecting (not logged in yet)')
+    expect(sessionStatusText({ status: 'running', connected: true })).toBe('Connected')
     expect(sessionStatusText({ status: 'exited', exitCode: 0 })).toBe('Ended')
     expect(sessionStatusText({ status: 'exited', exitCode: 255 })).toBe('Ended (exit status 255)')
     expect(sessionStatusText({ status: 'failed' })).toBe('Could not start')

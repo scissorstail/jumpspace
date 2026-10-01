@@ -4,11 +4,11 @@ const GRAY = '\x1b[90m'
 const RED = '\x1b[31m'
 const RESET = '\x1b[0m'
 
-// 탭에 마우스를 올렸을 때 보이는 상태
+// 탭에 마우스를 올렸을 때 보이는 상태. 실행 중이어도 로그인 표시가 오기 전에는 "연결 중"이다. (캔버스와 같다)
 export function sessionStatusText(session) {
   return {
     starting: 'Starting',
-    running: 'Running',
+    running: session?.connected ? 'Connected' : 'Connecting (not logged in yet)',
     exited: session?.exitCode ? `Ended (exit status ${session.exitCode})` : 'Ended',
     failed: 'Could not start'
   }[session?.status]

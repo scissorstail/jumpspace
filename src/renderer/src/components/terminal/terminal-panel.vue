@@ -20,7 +20,7 @@
         v-for="session in sessions"
         :key="session.key"
         class="terminal-tab"
-        :class="{ active: session.key === activeKey, [`is-${session.status}`]: true, 'has-error': session.status === 'exited' && !!session.exitCode }"
+        :class="{ active: session.key === activeKey, [`is-${session.status}`]: true, 'is-connecting': session.status === 'running' && !session.connected, 'has-error': session.status === 'exited' && !!session.exitCode }"
         role="tab"
         :aria-selected="session.key === activeKey ? 'true' : 'false'"
         tabindex="0"
@@ -392,12 +392,14 @@ export default {
   height: 8px;
   background: var(--js-line);
 
-  .is-starting & {
-    background: var(--js-sun);
-  }
-
   .is-running & {
     background: var(--js-live);
+  }
+
+  // 시작 중이거나, 실행 중이지만 아직 로그인하지 않았다 (캔버스의 연결 중과 같은 노랑)
+  .is-starting &,
+  .is-running.is-connecting & {
+    background: var(--js-sun);
   }
 
   .is-failed &,

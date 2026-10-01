@@ -404,6 +404,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: tests 257 passed (+9; mutation checked: options outside the app and a wrong marker text each fail), lint exit 0, build exit 0. In the app against the local sshd (scratch t87, all three palettes): ProxyJump goes connecting -> connected, a login waiting for a keyboard-interactive password stays connecting, a refused port turns failed, a normal `exit` clears the path, closing the failed tab clears the red, reconnecting returns to connected; the failed line is red and dashed in each palette (t88). Not verified on Windows: Git for Windows' ssh runs `LocalCommand` through its shell like on Linux, but only the script/fake-ssh tests run there in CI.
 - Next: back to polishing; the first polish run looks at this feature.
 
+### #62 2026-10-01 20:2x UTC · ux (scheduled run, polish phase, looking at #61)
+- Did: checked the new connection states against the terminal tab (scratch t89/t90). Before login the canvas said "connecting" (yellow) while the tab's dot was green with the tooltip "Running": two answers to the same question. The tab now uses the same state: `is-connecting` on a running tab without the login marker (yellow dot), tooltip "Connecting (not logged in yet)" / "Connected".
+- Result: tests 257 passed (tooltip test extended; mutation checked: the old "Running" text fails it), lint exit 0, build exit 0. In the app: waiting for a password = yellow tab + yellow path, logged in = green tab + live path; t48, t73, t87 pass. README and the CHANGELOG entry of the feature say so.
+- Phase: polish continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
