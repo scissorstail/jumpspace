@@ -441,8 +441,9 @@ export default {
       toastError(this, title, error)
     },
     confirmUnlockedChangeWillBeLost() {
-      return this.$bvModal.msgBoxConfirm('All unlocked changes will be lost', {
-        title: 'Are you sure you want to continue?',
+      // 제목은 다른 확인 창(Remove, Export)처럼 짧게 두고, 무엇을 잃는지는 본문에서 말한다.
+      return this.$bvModal.msgBoxConfirm('Changes made since you unlocked the editor are saved only when you lock it again. They will be lost. Continue?', {
+        title: 'Unsaved changes',
         okTitle: 'Continue',
         returnFocus: '[id^=list-item-].active'
       })

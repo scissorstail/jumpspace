@@ -334,6 +334,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: lint exit 0, tests 238 passed, build exit 0.
 - Phase: maintenance only; the next run is ux or style.
 
+### #49 2026-10-01 08:2x UTC · style (scheduled run, polish phase)
+- Did: screenshots and the overlap audit of the confirmation dialogs (Remove, Export with a saved password, opening another item while unlocked) in all three palettes. No overlaps, footer buttons all 36px. The unlocked warning was the odd one: its title was the whole question "Are you sure you want to continue?", which wraps to two lines in the pixel font, and its body "All unlocked changes will be lost" had no period and did not say why. Now titled *Unsaved changes* like the short titles of the others, the body explains that changes are saved only when the editor is locked again.
+- Result: text only. lint exit 0, tests 238 passed, build exit 0; checked in all three palettes (scratch t72); t3, t10, t18 pass.
+- Phase: one small fix. Polish continues; if the next run also finds nothing worthwhile, the feature run follows.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
