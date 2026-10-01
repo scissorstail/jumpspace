@@ -108,6 +108,16 @@ export default {
     pointer-events: none;
   }
 
+  // 사이드바(320px)는 헤더 왼쪽 위에 덮인다. 열려 있는 동안 제목은 보이는 쪽의 가운데에 두고,
+  // 가려진 사이드바 토글은 숨긴다. (사이드바에 닫기 버튼이 있다)
+  &.beside-sidebar {
+    padding-left: calc(320px + 0.5rem) !important;
+
+    > :first-child:not(.header-title) {
+      display: none;
+    }
+  }
+
   .header-title {
     display: flex;
     flex: 1;

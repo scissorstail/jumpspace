@@ -2,6 +2,7 @@
   <div id="layout">
     <MainHeader
       :title="openedItemName"
+      :class="{ 'beside-sidebar': isSidebarOpen }"
       @export="exportProject"
       @info="isShowInfoPopup = true"
       @setting="isShowSettingPopup = true"
@@ -64,6 +65,7 @@
         body-class="main-sidebar-list"
         no-header
         shadow
+        @change="isSidebarOpen = $event"
       >
         <template #default="{ hide }">
           <MainNavigator
@@ -101,6 +103,7 @@
           <div
             v-if="!editorData"
             class="layout-empty"
+            :class="{ 'layout-empty-beside': isSidebarOpen }"
           >
             <div class="layout-empty-title">
               No diagram open
@@ -165,7 +168,9 @@ export default {
       projectData: null,
       editorData: null,
       openedItemIndex: null,
-      isProjectLoadFailed: false
+      isProjectLoadFailed: false,
+      // 사이드바는 화면 위에 덮인다. 열려 있으면 빈 화면 안내를 그 옆으로 비켜 둔다.
+      isSidebarOpen: false
     }
   },
   computed: {
@@ -384,8 +389,15 @@ export default {
   align-items: center;
   flex-direction: column;
   justify-content: center;
+  padding: 0 16px;
   color: var(--js-text);
+  text-align: center;
   pointer-events: none;
+
+  // 사이드바(bootstrap-vue 기본 너비 320px)가 열려 있으면 가려지지 않는 쪽의 가운데에 둔다.
+  &.layout-empty-beside {
+    left: 320px;
+  }
 }
 
 .layout-empty-title {
