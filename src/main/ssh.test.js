@@ -23,7 +23,8 @@ describe('sq', () => {
 describe('buildConnect', () => {
   it('builds ssh command', () => {
     const script = buildConnect(node, paths).script
-    expect(script).toContain("ssh -o StrictHostKeyChecking=accept-new -i 'C:/Users/me/.ssh/id_rsa' -o IdentitiesOnly=yes -p '22' -- 'deploy@example.com'")
+    // "$@": 앱 안의 터미널에서만 채워지는 옵션 자리 (접속 표시)
+    expect(script).toContain("ssh -o StrictHostKeyChecking=accept-new \"$@\" -i 'C:/Users/me/.ssh/id_rsa' -o IdentitiesOnly=yes -p '22' -- 'deploy@example.com'")
     expect(script).not.toContain('-tt')
   })
 

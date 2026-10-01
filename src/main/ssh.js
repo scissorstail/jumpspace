@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { validateNode, validateForwards } from '../shared/validate.js'
+import { CONNECTED_DATA, CONNECTED_OSC } from '../shared/terminal-marker.js'
 
 // Git Bash에서 실행할 스크립트를 만든다.
 // 사용자 입력값은 전부 POSIX single-quote로 감싸서 스크립트 파일에 넣고, 명령어 문자열 인자로는 넘기지 않는다.
@@ -21,7 +22,20 @@ function md5(value) {
   return createHash('md5').update(value).digest('hex')
 }
 
-const SSH_BASE = 'ssh -o StrictHostKeyChecking=accept-new'
+// "$@"는 앱 안의 터미널에서만 채워지는 옵션이다 (아래 inAppOptions). 스크립트는 인자 없이 실행되므로
+// (askpass로 불릴 때는 위에서 이미 끝난다) 그 외에는 비어 있다.
+const SSH_BASE = 'ssh -o StrictHostKeyChecking=accept-new "$@"'
+
+// 앱 안의 터미널에 "로그인했다"고 알리는 표시. 화면에 보이지 않는 OSC 문자열이고, 패널(xterm)이 받아서 경로를 초록으로 바꾼다.
+// LocalCommand는 서버에 로그인한 뒤 로컬에서 한 번 실행된다. 명령줄 옵션이라 ProxyJump가 띄우는 ssh(-W, 출력이 터널)에는 넘어가지 않는다.
+const CONNECTED_COMMAND = `printf '\\033]${CONNECTED_OSC};${CONNECTED_DATA}\\007'`
+const inAppOptions = [
+  'if [ -n "$JUMPSPACE_IN_APP" ]; then',
+  `  set -- -o PermitLocalCommand=yes -o ${sq(`LocalCommand=${CONNECTED_COMMAND}`)}`,
+  'else',
+  '  set --',
+  'fi'
+]
 
 // 비밀번호 인증은 SSH_ASKPASS로 처리한다. 비밀번호는 파일에 쓰지 않고 환경변수(JS_PW_n)로만 넘긴다.
 // 같은 스크립트가 askpass 역할도 한다. (인자가 있으면 ssh가 prompt를 물어보는 것)
@@ -84,6 +98,7 @@ function wrap({ prelude = [], lines, cleanupPaths, env = {} }) {
     // 창이나 탭을 닫으면(HUP), 끝내라는 요청(TERM)이면 남은 명령을 실행하지 않고 끝낸다. (파일은 EXIT trap이 지운다)
     "trap 'exit 129' HUP",
     "trap 'exit 143' TERM",
+    ...inAppOptions,
     ...lines,
     'rc=$?',
     // ssh 자체의 오류(255)는 창이 바로 닫히면 확인할 수 없으므로 잠시 멈춘다.

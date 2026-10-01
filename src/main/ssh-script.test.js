@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { launch } from './launcher.js'
+import { CONNECTED_OSC } from '../shared/terminal-marker.js'
 import { buildConnect, buildForward, buildProxyJump, sq, toUnixPath } from './ssh.js'
 
 // 생성된 스크립트를 실제 bash에서 실행해 본다. ssh는 받은 인자를 기록하고, SSH_ASKPASS를 진짜 ssh처럼 직접 실행하는 가짜로 바꾼다.
@@ -231,6 +232,23 @@ describe.skipIf(!canRun)('generated scripts run under bash', () => {
 
       expect(failed.status).toBe(255)
       expect(failed.stdout).not.toContain('Press Enter')
+    })
+
+    it('in the app terminal only, lets ssh print an invisible marker once it is logged in', () => {
+      const r = newRun()
+      const inApp = run(buildConnect(node, r.paths), r, { env: { JUMPSPACE_IN_APP: '1' } })
+      const i = inApp.args.indexOf('PermitLocalCommand=yes')
+      expect(inApp.args.slice(i - 1, i + 3)).toEqual(['-o', 'PermitLocalCommand=yes', '-o', `LocalCommand=printf '\\033]${CONNECTED_OSC};connected\\007'`])
+      // 나머지 인자는 그대로
+      expect(inApp.args.filter((x, j) => j < i - 1 || j > i + 2)).toEqual(['-o', 'StrictHostKeyChecking=accept-new', '-i', '/keys/a', '-o', 'IdentitiesOnly=yes', '-p', '22', '--', 'deploy@example.com'])
+
+      // LocalCommand를 ssh처럼 셸로 실행하면 보이지 않는 OSC 표시가 나온다
+      const local = inApp.args[i + 2].slice('LocalCommand='.length)
+      const out = spawnBash(['-c', local], { base: join(root, 'osc'), cwd: root, timeout: 10000 })
+      expect(out.stdout).toBe(`\x1b]${CONNECTED_OSC};connected\x07`)
+
+      const outside = newRun()
+      expect(run(buildConnect(node, outside.paths), outside).args.join(' ')).not.toContain('LocalCommand')
     })
 
     it('hands the password to ssh through SSH_ASKPASS, which the script itself answers', () => {
