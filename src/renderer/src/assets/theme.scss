@@ -70,6 +70,9 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-sky-2: #4a1552;
   --js-city: #10032a;
   --js-grid: #ff8a3d;
+  // 주색(분홍)은 터미널의 빨강과, 보조색(주황)은 노랑과 겹쳐서 터미널에는 따로 정한다.
+  --js-ansi-magenta: #d86bff;
+  --js-ansi-cyan: #4ff0ff;
 }
 
 :root[data-theme='vapor-blue'] {
@@ -99,6 +102,9 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   // 연결 중(로그인 전)의 노랑. --js-live처럼 모든 색 묶음에서 같아서, 노랑=연결 중 / 초록=연결됨 / 빨강=실패가 어디서나 같다.
   // (--js-sun은 색 묶음마다 해의 색이라 Vapor Blue에서는 보라였다)
   --js-connecting: #ffd319;
+  // 터미널의 ANSI magenta / cyan. 보통은 주색과 보조색이고, 다른 ANSI 색과 겹치는 색 묶음만 따로 정한다.
+  --js-ansi-magenta: var(--js-primary);
+  --js-ansi-cyan: var(--js-secondary);
   --js-hover: rgba(255, 255, 255, 0.08);
   --js-primary-soft: color-mix(in srgb, var(--js-primary) 22%, transparent);
   --js-secondary-soft: color-mix(in srgb, var(--js-secondary) 16%, transparent);

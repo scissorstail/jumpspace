@@ -28,6 +28,7 @@ export function errorLine(error) {
 
 // 터미널 색: 지금 고른 테마의 CSS 변수에서 읽는다. color(name)은 그 변수의 값을 돌려준다.
 // 초록과 노랑은 모든 색 묶음에서 같은 --js-live / --js-connecting이다. (--js-sun은 Vapor Blue에서 보라라서 magenta와 구별되지 않았다)
+// magenta와 cyan은 --js-ansi-*: 보통 주색과 보조색이고, Sunset Drive에서는 빨강·노랑과 겹치지 않게 따로 정한다.
 export function terminalTheme(color) {
   return {
     background: color('--js-bg'),
@@ -39,8 +40,8 @@ export function terminalTheme(color) {
     green: color('--js-live'),
     yellow: color('--js-connecting'),
     blue: '#5aa9ff',
-    magenta: color('--js-primary'),
-    cyan: color('--js-secondary'),
+    magenta: color('--js-ansi-magenta'),
+    cyan: color('--js-ansi-cyan'),
     white: color('--js-text'),
     brightBlack: color('--js-text-muted')
   }
