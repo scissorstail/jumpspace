@@ -29,5 +29,5 @@ pnpm-debug.log*
 *.ctl
 *.jmp
 
-!/data
-data*
+# Older versions kept their data in ./data while developing. Only that folder, not every file named data*.
+/data
