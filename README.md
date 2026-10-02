@@ -20,6 +20,22 @@ note: This currently only works on Windows
 1. [Git for Windows](https://gitforwindows.org/) (To install Git Bash)
 2. OpenSSH >= 7.6 (Installed together with Git Bash). Password sign-in needs OpenSSH >= 8.4 (`SSH_ASKPASS_REQUIRE`), which current Git for Windows ships.
 
+## trying it on Windows
+
+There is no published installer yet. Build it from this branch:
+
+1. Install [Git for Windows](https://gitforwindows.org/) and [Node.js](https://nodejs.org/) 22 (LTS).
+2. In Git Bash or PowerShell:
+   ```sh
+   git clone -b claude/cool-bardeen-9x9ymz https://github.com/scissorstail/jumpspace.git
+   cd jumpspace
+   npm ci
+   npm run dev      # starts the app directly, or:
+   npm run dist     # builds the installer into dist_electron\
+   ```
+   `node-pty` (the in-app terminal) ships prebuilt for Windows, so no Visual Studio is needed.
+3. Open *Settings* (gear in the header) and check *Git Bash path*; the default is `%ProgramFiles%\Git\git-bash.exe`.
+
 ## usage
 
 ### nodes and paths

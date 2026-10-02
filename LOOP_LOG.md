@@ -91,6 +91,15 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 ### Questions for the owner
 - (none yet)
 
+### Windows check by the owner (pending, 2026-10-02)
+Never run on a real Windows machine so far (CI covers the unit tests, the generated scripts under Git Bash, ConPTY and the `git-bash.exe` launcher). Worth checking on the first real run:
+1. `npm ci` and `npm run dev` start the app; `npm run dist` builds the installer and the installed app starts with a working in-app terminal (node-pty inside the package; Feature queue item 4 would cover this in CI).
+2. Connect in the app terminal against a real server: the path goes yellow, then green once logged in (the `LocalCommand` marker through Git for Windows' ssh).
+3. Password sign-in (askpass, needs OpenSSH 8.4+), a ProxyJump chain with different authentication per hop, and port forwarding.
+4. *Open SSH in: Git Bash window*.
+5. Korean text in the terminal, copy/paste, close to tray.
+Anything that fails goes to the Backlog as a real bug (first in any phase).
+
 ## Log
 
 ### #0 2026-09-30 · setup
@@ -507,7 +516,12 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: lint exit 0, tests 298 passed, build exit 0, commit 3359159. In the app: t9, t13, t14, t65, t70, t73, t94 (app:// page 200, protocol checks, settings), t99b, t103 (legacy migration), t104 (empty-diagram hint) pass; no page errors.
 - Phase: polish continues; the next run is ux or style.
 
+### #82 2026-10-02 16:1x UTC · wrap-up (by hand, at the owner's request)
+- Did: the owner wants to wrap up and try the app on Windows. README has a new section "trying it on Windows" (Git for Windows, Node 22, clone this branch, `npm ci`, `npm run dev` or `npm run dist` into `dist_electron\`, check the Git Bash path); checked that node-pty ships prebuilt binaries for win32-x64 and win32-arm64, so no Visual Studio is needed. Added "Windows check by the owner" above with what was never verified on a real Windows machine. The hourly routine is disabled (see Routine below).
+- State: CI run 98 green on the last commit; 298 tests; Feature queue unchanged (top: terminal font size). Since the last feature (#61) the polish runs #62-#81 each found and fixed something.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
 - Stopped on 2026-09-30 10:18 UTC at the owner's request, **started again on 2026-09-30 11:40 UTC** at the owner's request ("small steady improvements"), with the new `style` activity. To stop it: `update_trigger` with `enabled: false`; to remove it: `delete_trigger`.
+- **Stopped (disabled, not deleted) on 2026-10-02 16:1x UTC at the owner's request** ("wrap it up, I will try it on Windows soon"). Last scheduled run: #81. To start it again: `update_trigger` with `enabled: true`.
