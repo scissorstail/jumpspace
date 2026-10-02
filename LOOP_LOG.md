@@ -492,6 +492,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: CSS only. Ink now 4.1 / 4.1 in the tags and 11.1 / 11.1 in the menu items in all three palettes; tag, card and item sizes and positions unchanged (22.7px tag, 73.9px card, 33.2px items, 219.9px menu). lint exit 0, tests 290 passed, build exit 0, commit 1a92380. t13, t65, t84 pass.
 - Phase: polish continues.
 
+### #79 2026-10-02 13:2x UTC · tests (scheduled run, polish phase)
+- Did: looked for untested logic left in components. `Layout.vue` loaded the projects, moved older versions' data out of `localStorage` once when there is no `projects.json`, and blocked saving after a failed load (so a failed read cannot overwrite the file with an empty list); none of it was tested. Reading it showed a gap: `JSON.parse` ran after the `try`, so unparsable content threw past the guard and the next save would have written `[]` over the file (in practice main returns normalized JSON, so this needs a bug elsewhere to happen; the guard should still hold). New `loadProjectData({ load, save, legacy })` in `utils/project.js` returns `{ items, failed, error }` with the parse inside the guard; `loadProject` only reports and stores.
+- Result: tests 294 passed (+4; mutation checked: the old parse-after-try structure fails the parse case, legacy data overriding an existing file and a migration without saving each fail), lint exit 0, build exit 0, commit 37354ac. In the app: with `projects.json` removed and data in `localStorage`, the item appears and is written to `projects.json` (scratch t103); t9, t13, t98 pass.
+- Phase: polish continues; the next run is ux or style.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
