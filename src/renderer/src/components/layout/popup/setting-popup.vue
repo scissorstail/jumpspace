@@ -10,6 +10,10 @@
     <template #overlay>
       <b-card
         v-if="show"
+        ref="dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Settings"
         header="Settings"
         style="width: 90vw; max-width: 600px"
       >
@@ -19,10 +23,12 @@
               <b-form-group
                 class="mb-0"
                 label="Git Bash path"
+                label-for="setting-git-bash"
                 label-align="left"
                 label-cols-sm="4"
               >
                 <b-form-input
+                  id="setting-git-bash"
                   v-model="gitBashPath"
                   size="sm"
                 />
@@ -114,10 +120,12 @@
                 label-align="left"
                 class="text-left"
                 label="Close to tray"
+                label-for="setting-close-to-tray"
                 label-cols-sm="4"
                 description="Closing the window keeps jumpspace running in the system tray."
               >
                 <b-form-checkbox
+                  id="setting-close-to-tray"
                   v-model="isHideToTrayOnClose"
                   switch
                 />

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { closePopoverOnEscape, dismissOnEscape, focusWhenShown, isKeyboardClick, onEscape } from './dismiss'
+import { closePopoverOnEscape, dismissOnEscape, focusWhenShown, isKeyboardClick, onEscape, returnFocusTarget, trapTab } from './dismiss'
 
 // 테스트는 DOM 없이 돌기 때문에 document 대신 리스너 목록만 흉내 낸다.
 let listeners
@@ -43,7 +43,7 @@ describe('onEscape', () => {
 describe('dismissOnEscape', () => {
   // Vue 없이 mixin의 watcher와 훅을 직접 호출한다.
   const create = () => {
-    const vm = { $emit: vi.fn() }
+    const vm = { $emit: vi.fn(), $nextTick: callback => callback() }
     return { vm, show: shown => dismissOnEscape.watch.show.call(vm, shown), destroy: () => dismissOnEscape.beforeDestroy.call(vm) }
   }
 
@@ -208,5 +208,107 @@ describe('focusWhenShown', () => {
     const getElement = vi.fn(() => null)
     focusWhenShown(getElement, { schedule })
     expect(getElement).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('trapTab', () => {
+  const [a, b, c] = ['a', 'b', 'c']
+
+  it('wraps Tab from the last control to the first and Shift+Tab from the first to the last', () => {
+    expect(trapTab([a, b, c], c, false)).toBe(a)
+    expect(trapTab([a, b, c], a, true)).toBe(c)
+  })
+
+  it('leaves Tab inside the dialog to the browser', () => {
+    expect(trapTab([a, b, c], a, false)).toBeNull()
+    expect(trapTab([a, b, c], b, true)).toBeNull()
+  })
+
+  it('pulls a focus that is outside back in, and does nothing without controls', () => {
+    expect(trapTab([a, b, c], 'outside', false)).toBe(a)
+    expect(trapTab([a, b, c], 'outside', true)).toBe(c)
+    expect(trapTab([], a, false)).toBeNull()
+  })
+})
+
+// 화면에 보이는지(offsetParent)와 문서에 붙어 있는지(isConnected)만 흉내 낸 요소
+const element = ({ visible = true, connected = true, dropdown = null, name = '' } = {}) => ({
+  name,
+  isConnected: connected,
+  offsetParent: visible ? {} : null,
+  disabled: false,
+  focus: vi.fn(),
+  closest: selector => (selector === '.dropdown' ? dropdown : null)
+})
+
+describe('returnFocusTarget', () => {
+  it('returns the element that had the focus while it is still shown', () => {
+    const button = element()
+    expect(returnFocusTarget(button)).toBe(button)
+  })
+
+  it('falls back to the toggle of the closed menu the element was in', () => {
+    const toggle = element()
+    const item = element({ visible: false, dropdown: { querySelector: () => toggle } })
+    expect(returnFocusTarget(item)).toBe(toggle)
+  })
+
+  it('gives nothing for an element that is gone or hidden without a menu', () => {
+    expect(returnFocusTarget(element({ connected: false }))).toBeNull()
+    expect(returnFocusTarget(element({ visible: false }))).toBeNull()
+    expect(returnFocusTarget(null)).toBeNull()
+  })
+})
+
+describe('dismissOnEscape: focus like a dialog', () => {
+  let focused
+  const opener = element({ name: 'opener' })
+  const controls = [element({ name: 'first' }), element({ name: 'middle' }), element({ name: 'last' })]
+
+  beforeEach(() => {
+    focused = opener
+    for (const x of [opener, ...controls]) x.focus.mockImplementation(function () { focused = this })
+    vi.stubGlobal('document', {
+      get activeElement() { return focused },
+      addEventListener: (type, listener) => type === 'keydown' && listeners.add(listener),
+      removeEventListener: (type, listener) => type === 'keydown' && listeners.delete(listener)
+    })
+    vi.stubGlobal('requestAnimationFrame', callback => callback())
+  })
+
+  const create = () => {
+    // 대화상자는 다음 렌더($nextTick)에서야 생긴다.
+    const vm = { $emit: vi.fn(), $refs: {}, $nextTick: callback => { vm.$refs.dialog = { $el: { querySelectorAll: () => controls } }; callback() } }
+    return { vm, show: shown => dismissOnEscape.watch.show.call(vm, shown) }
+  }
+  const tab = (shiftKey = false) => {
+    const event = { key: 'Tab', shiftKey, preventDefault: vi.fn() }
+    ;[...listeners].forEach(listener => listener(event))
+    return event
+  }
+
+  it('moves the focus to the first control when it opens', () => {
+    create().show(true)
+    expect(focused.name).toBe('first')
+  })
+
+  it('keeps Tab and Shift+Tab inside the dialog', () => {
+    create().show(true)
+
+    expect(tab(true).preventDefault).toHaveBeenCalled()
+    expect(focused.name).toBe('last')
+    expect(tab().preventDefault).toHaveBeenCalled()
+    expect(focused.name).toBe('first')
+
+    expect(tab().preventDefault).not.toHaveBeenCalled() // first -> middle는 브라우저가 한다
+  })
+
+  it('gives the focus back when it closes, and stops trapping', () => {
+    const { show } = create()
+    show(true)
+    show(false)
+
+    expect(focused.name).toBe('opener')
+    expect(listeners.size).toBe(0)
   })
 })

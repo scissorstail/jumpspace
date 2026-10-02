@@ -10,6 +10,10 @@
     <template #overlay>
       <b-card
         v-if="show"
+        ref="dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Info"
         header="Info"
         class="text-center"
       >

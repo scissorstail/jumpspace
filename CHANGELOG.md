@@ -37,6 +37,7 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- The Settings and Info dialogs now act like dialogs for the keyboard: the focus moves into them when they open, Tab stays inside instead of wandering through the buttons hidden behind them, and closing returns the focus to the menu button. The Git Bash path field and the Close to tray switch are named by their labels for screen readers.
 - A validation message in the node settings pushed every field below it down while typing, and the field showed Bootstrap's round warning icon and red glow. The field now only gets the theme's red border; the message floats just under it in a flat box while the field has the focus or the pointer, so nothing else moves.
 - With many terminal tabs the active tab and the "Hide terminals" button were scrolled out of sight, so none of the visible tabs looked selected. Tabs now shrink first, the active tab is always scrolled into view, the hide button stays put, the mouse wheel scrolls the tabs, and a tab's tooltip names it. Space selects a tab, and closing a tab with the keyboard no longer selects it first and leaves the focus in the remaining terminal.
 - In Vapor Blue, yellow text in the terminal was purple (the palette's sun color) and hard to tell from its magenta. Yellow and green in the terminal are now the same fixed yellow and green as the connection states, in every palette. In Sunset Drive the terminal's red and magenta (both pink) and yellow and cyan (both orange) looked alike; it now has its own violet magenta and cyan.
