@@ -37,6 +37,7 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- Error dialogs and error notices lost the line breaks of their message ("…git-bash.exe Check \"Git Bash path\" in Settings." ran together), and the "Failed to start SSH" / "Failed to copy" dialogs did not close with Enter because the focus was not on OK. Line breaks are kept and OK has the focus.
 - The Settings and Info dialogs now act like dialogs for the keyboard: the focus moves into them when they open, Tab stays inside instead of wandering through the buttons hidden behind them, and closing returns the focus to the menu button. The Git Bash path field and the Close to tray switch are named by their labels for screen readers.
 - A validation message in the node settings pushed every field below it down while typing, and the field showed Bootstrap's round warning icon and red glow. The field now only gets the theme's red border; the message floats just under it in a flat box while the field has the focus or the pointer, so nothing else moves.
 - With many terminal tabs the active tab and the "Hide terminals" button were scrolled out of sight, so none of the visible tabs looked selected. Tabs now shrink first, the active tab is always scrolled into view, the hide button stays put, the mouse wheel scrolls the tabs, and a tab's tooltip names it. Space selects a tab, and closing a tab with the keyboard no longer selects it first and leaves the focus in the remaining terminal.

@@ -341,6 +341,11 @@ body {
   }
 }
 
+// 오류 창과 오류 토스트의 문구: 줄바꿈은 지키고 나머지 공백은 보통처럼 모은다. (utils/notify.js)
+.msg-pre-line {
+  white-space: pre-line;
+}
+
 // 칸 아래의 오류 문구는 아래 줄을 밀어내지 않게 칸 바로 밑에 겹쳐 띄운다. 그 칸에 포커스가 있거나
 // 마우스를 올렸을 때만 보이고, 그 밖에는 빨강 테두리만 남는다. (문구는 aria-describedby로 칸에 계속 이어져 있다)
 .form-group .invalid-feedback {

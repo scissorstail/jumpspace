@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { errorMessage, toastError } from './notify'
+import { errorBox, errorMessage, toastError } from './notify'
 
 describe('errorMessage', () => {
   it('drops the prefix Electron adds to errors thrown by invoke()', () => {
@@ -26,6 +26,26 @@ describe('toastError', () => {
 
     toastError(vm, 'Failed to import', new Error("Error invoking remote method 'projects:import': Error: The file is not valid JSON."))
 
-    expect(vm.$bvToast.toast).toHaveBeenCalledWith('The file is not valid JSON.', { title: 'Failed to import', variant: 'danger', solid: true })
+    expect(vm.$bvToast.toast).toHaveBeenCalledWith('The file is not valid JSON.', { title: 'Failed to import', variant: 'danger', solid: true, bodyClass: 'msg-pre-line' })
+  })
+})
+
+describe('errorBox', () => {
+  it('shows the readable message with its line breaks kept and the focus on OK', () => {
+    const vm = { $bvModal: { msgBoxOk: vi.fn(() => Promise.resolve(true)) } }
+
+    errorBox(vm, 'Failed to start SSH', 'Git Bash was not found: C:\\nope\\git-bash.exe\nCheck "Git Bash path" in Settings.')
+
+    expect(vm.$bvModal.msgBoxOk).toHaveBeenCalledWith('Git Bash was not found: C:\\nope\\git-bash.exe\nCheck "Git Bash path" in Settings.', {
+      title: 'Failed to start SSH', bodyClass: 'msg-pre-line', autoFocusButton: 'ok'
+    })
+  })
+
+  it('takes errors thrown by invoke() as well', () => {
+    const vm = { $bvModal: { msgBoxOk: vi.fn() } }
+
+    errorBox(vm, 'Failed to copy', new Error("Error invoking remote method 'ssh:copyConfig': Error: Invalid host"))
+
+    expect(vm.$bvModal.msgBoxOk.mock.calls[0][0]).toBe('Invalid host')
   })
 })

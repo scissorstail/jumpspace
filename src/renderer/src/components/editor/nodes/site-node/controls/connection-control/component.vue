@@ -113,7 +113,7 @@
 <script>
 import pick from 'lodash/pick'
 import store from '@/store'
-import { errorMessage } from '@/utils/notify'
+import { errorBox } from '@/utils/notify'
 import { terminalTitle } from '@/utils/terminal-sessions'
 import {
   configRequest,
@@ -231,11 +231,11 @@ export default {
       try {
         const result = await request()
         if (!result.ok) {
-          this.$bvModal.msgBoxOk(result.error, { title: 'Failed to start SSH' })
+          errorBox(this, 'Failed to start SSH', result.error)
         }
       } catch (e) {
         console.error(e)
-        this.$bvModal.msgBoxOk(errorMessage(e), { title: 'Failed to start SSH' })
+        errorBox(this, 'Failed to start SSH', e)
       }
     },
     // 설정에 따라 앱 안의 터미널 또는 Git Bash 창에서 연다.
@@ -282,7 +282,7 @@ export default {
       })
 
       if (!result.ok) {
-        this.$bvModal.msgBoxOk(result.error, { title: 'Failed to copy' })
+        errorBox(this, 'Failed to copy', result.error)
         return
       }
 
