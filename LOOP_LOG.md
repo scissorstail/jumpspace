@@ -462,6 +462,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: tests 288 passed (+9; mutation checked seven ways: no pull-in from outside, no Shift+Tab wrap, no focus return, no first focus, no menu fallback, Tab ignored, focusing before the card is rendered: each fails a test), lint exit 0, build exit 0, commit 067ddd9. In the app: Settings opens with the focus in Git Bash path, Tab cycles inside, Shift+Tab from the first field goes to Save, Escape / Save / Cancel (also by mouse) return the focus to Menu; Info the same; the two controls are named "Git Bash path" and "Close to tray"; no page errors.
 - Phase: polish continues.
 
+### #73 2026-10-02 07:2x UTC · cleanup (scheduled run, polish phase)
+- Did: looked for leftovers outside `src`: no TODO/FIXME or stray `console.log`; every file in `src/renderer/public` is referenced; depcheck's "unused" `@fontsource/vt323` and `sass` are used (the font by path in `theme.scss`, sass by Vite). `.prettierrc` stays although Prettier is not a dependency: it keeps an editor's Prettier extension (the workspace file picks it) in line with neostandard. The one real leftover: `.gitignore` from 2020 ended with `!/data` and `data*`. `data*` matches any path segment starting with "data" anywhere, so a new `src/main/database.js` or `utils/data-format.js` would never have been committed, silently (checked with `git check-ignore`); the negation before it had no effect. Now only `/data` (the old local data folder) is ignored, with a comment.
+- Result: config only. `git check-ignore` before/after: the three example paths were ignored and no longer are, `data/projects.json` still is; nothing tracked or untracked changed state. lint exit 0, tests 288 passed, build exit 0, commit fd15b8f.
+- Phase: polish continues; the next run is ux or style.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
