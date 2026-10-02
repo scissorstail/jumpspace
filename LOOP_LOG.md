@@ -425,6 +425,12 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Noticed, not changed: in Sunset Drive the terminal's cyan is the palette's orange secondary (#ffb845), fairly close to the new yellow; a candidate for a later style run.
 - Phase: polish continues; the next run is ux or style.
 
+### #66 2026-10-02 00:2x UTC · style (scheduled run, polish phase)
+- Did: followed up the note from #65. Measured the hue distance of the terminal's six ANSI colors in each palette: Sunset Drive had red/magenta 3 degrees apart (both pink, magenta was the primary) and yellow/cyan 12 degrees (cyan was the orange secondary), so `ls` and prompt colors looked alike. New `--js-ansi-magenta` / `--js-ansi-cyan` (default `var(--js-primary)` / `var(--js-secondary)` in the shared `:root` block; Sunset Drive sets `#d86bff` / `#4ff0ff`), read by `terminalTheme`. Neon Night and Vapor Blue look exactly as before.
+- Result: tests 262 passed (+3: a test reads the real palettes from `theme.scss`, resolves `var()` and requires the six ANSI hues to be at least 15 degrees apart in every palette; mutation checked: without the Sunset Drive values and with the old primary/secondary mapping it fails), lint exit 0, build exit 0, commit 62d6724. In the app against the local sshd (scratch t93, `printf` with ANSI 31-36): the computed colors match in all three palettes and the six words are clearly different in Sunset Drive.
+- Noticed: Neon Night's red and magenta are 17 degrees apart, but they differ enough in lightness and are the palette's own colors; left as is.
+- Phase: polish continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
