@@ -56,7 +56,7 @@ Ordered roughly by value. Move an item to the log when it is done.
 ### Code hot spots
 - `src/renderer/src/components/layout/main-navigator.vue` (about 650 lines, the item menu moved out in #46): list, drag, select, rename, import/export. Most of the rest is its scoped CSS; the next seam would be the header toolbar (new, more actions).
 - `src/renderer/src/views/Layout.vue` (about 430 lines after the scene moved out)
-- `src/renderer/src/components/terminal/terminal-panel.vue` (about 440 lines; its texts and colors moved to `utils/terminal-view.js` in #57): session start, reconnect, clipboard and resize still live in one component.: item state, project load/save, view saving are mixed.
+- `src/renderer/src/components/terminal/terminal-panel.vue` (about 300 lines; texts and colors moved to `utils/terminal-view.js` in #57, the tab row to `terminal-tabs.vue` in #75): session start, reconnect, clipboard and resize.
 - `src/main/index.js` (about 310 lines): mostly window, tray and IPC wiring now; the app:// path check, the `{ ok, error }` wrapper and the setting store moved out in #67.
 
 ### Missing or thin tests
@@ -471,6 +471,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: reran the overlap and clipping audit of #45/#60 (scratch t60) after the changes since then (terminal tab list, error callouts, dialog focus), in all three palettes and at 800x600: only the intended overlaps listed in #45 (tunnel badge on its button corner, popovers over the header, a hover menu over a node placed right above). Then measured the dialogs (scratch t100): Settings had 20px between its title bar and the first row but 52px under the last description, because the last form group kept Bootstrap's 1rem margin and the card text added `mb-3`; Info was 20/24. Both margins removed in `setting-popup.vue`: 20/20 in every palette, the card is 32px shorter, the rows above did not move.
 - Result: template classes only. lint exit 0, tests 288 passed, build exit 0, commit 7acd956. t99b (dialog keyboard and focus) passes.
 - Phase: polish continues.
+
+### #75 2026-10-02 09:2x UTC · refactor (scheduled run, polish phase)
+- Did: split `terminal-panel.vue` (497 lines) along its clearest seam: the tab row from #68 (template, `scrollTabs`, the active-tab reveal, about 120 lines of CSS) is now `components/terminal/terminal-tabs.vue` (250 lines). It takes `sessions` and `activeKey` and emits `activate`, `reconnect`, `close` and `hide`; it reveals the active tab when the key changes and through its own ResizeObserver (window resize, panel shown again), so the panel's `fitActive` no longer reaches into it. The panel is 296 lines. README layout, CLAUDE.md gotcha and the Backlog hot spot updated.
+- Result: tests 288 passed (untouched; the row's logic was already pure in `utils/terminal-view.js`), lint exit 0, build exit 0, commit c2ad622. In the app against the local sshd: t95 with 8 and 12 tabs (active tab and hide button visible, Space, closing by keyboard, focus), t96 in two palettes (tab height 31.2px and text position the same as in #68 from 1 to 12 tabs, wheel back to the start), t13, t48, t70, t73, t89, t90 pass.
+- Phase: polish continues; the next run is ux or style.
 
 ## Routine
 
