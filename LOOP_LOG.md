@@ -467,6 +467,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: config only. `git check-ignore` before/after: the three example paths were ignored and no longer are, `data/projects.json` still is; nothing tracked or untracked changed state. lint exit 0, tests 288 passed, build exit 0, commit fd15b8f.
 - Phase: polish continues; the next run is ux or style.
 
+### #74 2026-10-02 08:2x UTC · style (scheduled run, polish phase)
+- Did: reran the overlap and clipping audit of #45/#60 (scratch t60) after the changes since then (terminal tab list, error callouts, dialog focus), in all three palettes and at 800x600: only the intended overlaps listed in #45 (tunnel badge on its button corner, popovers over the header, a hover menu over a node placed right above). Then measured the dialogs (scratch t100): Settings had 20px between its title bar and the first row but 52px under the last description, because the last form group kept Bootstrap's 1rem margin and the card text added `mb-3`; Info was 20/24. Both margins removed in `setting-popup.vue`: 20/20 in every palette, the card is 32px shorter, the rows above did not move.
+- Result: template classes only. lint exit 0, tests 288 passed, build exit 0, commit 7acd956. t99b (dialog keyboard and focus) passes.
+- Phase: polish continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
