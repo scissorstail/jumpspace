@@ -61,7 +61,7 @@ Ordered roughly by value. Move an item to the log when it is done.
 
 ### Missing or thin tests
 - No component tests (Vue) at all; logic lives in `utils/` on purpose. Consider `@vue/test-utils` only if it stays cheap.
-- `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts.
+- `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts; copying and removing items are unit tested since #71.
 - A Playwright + Electron smoke test in the repo was considered and turned down by the owner (decision 6).
 
 ### Dependencies (checked 2026-10-02 03:2x UTC)
@@ -451,6 +451,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: looked at the live validation of the node settings (#41) as a state change (scratch t97, t97c). Typing an invalid user pushed every row below it down by 46px (a two-line message) and the popover grew; the field also showed Bootstrap's round "!" icon and a red glow, because Bootstrap's `.form-control.is-invalid:focus` is more specific than the theme's rule. In `theme.scss` the invalid field (also with focus) now only gets the `--js-danger` border (no background icon, no shadow, normal padding), and `.form-group .invalid-feedback` floats right under the field as a flat box (danger border, raised background, hard 2px shadow), as wide as the field (`width: auto` overrides Bootstrap's 100%), visible only while the field has the focus or the pointer; otherwise only the red border stays (the message stays linked through `aria-describedby`). The port fields of the forward popover get the same flat red border.
 - Result: CSS only. lint exit 0, tests 273 passed, build exit 0, commit b0ce50b. In the app, all three palettes: popover size 376x480.4 before and after, no other control moves; with the focus on another field the message is hidden and the red border stays; the bottom field's (Exec) message is not clipped. t13, t70 pass.
 - Phase: polish continues.
+
+### #71 2026-10-02 05:2x UTC · tests (scheduled run, polish phase)
+- Did: every exported function is named in some test (only constants are not), so looked at logic still inside components. `main-navigator.vue` built item copies itself (the diagram and view must be deep copies, or editing the copy changes the original) and decided twice, in `removeItem` and `removeSelectedItems`, whether the open item was removed and the editor must close; neither had a test. They are now `copyNavigatorItem(item, index)` and `removeNavigatorItems(items, removed, opened)` in `utils/navigator-items.js`; the component calls them (one `removeItems` method for both removals; it no longer imports `cloneDeep`).
+- Result: tests 279 passed (+6; mutation checked six ways: shallow data copy, shared view, a made-up empty view, "open item removed" when anything is removed, the name box not opened, removal by name instead of identity: each fails a test), lint exit 0, build exit 0, commit 98cd5ff. In the app (scratch t98): removing the open item closes the editor, removing selected others keeps it open, removing the selected open item closes it, no page errors; t6, t9, t14, t65 pass.
+- Phase: polish continues; the next run is ux or style.
 
 ## Routine
 
