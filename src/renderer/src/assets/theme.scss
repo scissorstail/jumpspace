@@ -330,9 +330,40 @@ body {
     color: var(--js-text-muted);
   }
 
-  &.is-invalid {
+  // 잘못된 값: 테마의 빨강 테두리만. Bootstrap의 둥근 경고 아이콘(배경 그림)과 붉은 빛번짐은 지운다.
+  // (Bootstrap의 .is-invalid:focus가 더 구체적이라 같은 선택자로 덮는다)
+  &.is-invalid,
+  &.is-invalid:focus {
+    padding-right: 0.5rem;
     border-color: var(--js-danger);
+    background-image: none;
+    box-shadow: none;
   }
+}
+
+// 칸 아래의 오류 문구는 아래 줄을 밀어내지 않게 칸 바로 밑에 겹쳐 띄운다. 그 칸에 포커스가 있거나
+// 마우스를 올렸을 때만 보이고, 그 밖에는 빨강 테두리만 남는다. (문구는 aria-describedby로 칸에 계속 이어져 있다)
+.form-group .invalid-feedback {
+  position: absolute;
+  top: 100%;
+  right: 5px;
+  left: 5px;
+  z-index: 5;
+  width: auto; // Bootstrap의 width: 100%가 right를 무시하게 한다
+  margin-top: 2px;
+  padding: 4px 8px;
+  border: 2px solid var(--js-danger);
+  background: var(--js-bg-raised);
+  color: var(--js-text);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  box-shadow: 2px 2px 0 #000;
+  visibility: hidden;
+}
+
+.form-group:focus-within .invalid-feedback,
+.form-group:hover .invalid-feedback {
+  visibility: visible;
 }
 
 .input-group-append .btn,
