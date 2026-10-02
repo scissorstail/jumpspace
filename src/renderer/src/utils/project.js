@@ -22,3 +22,19 @@ export function listEmptyText(items, keyword) {
 }
 
 export const EXPORT_PASSWORD_WARNING = 'Some nodes have a saved password. The exported file will contain it as plain text. Continue?'
+
+// 저장된 항목 목록을 읽는다. load()는 저장 파일의 JSON 문자열(없으면 null), save(json)는 저장이다.
+// 이전 버전은 localStorage(legacy)에 저장했다. 저장 파일이 아직 없으면 최초 1회 옮겨온다.
+// 읽기나 해석에 실패하면 failed가 true다. 그 상태에서 저장하면 기존 데이터를 빈 목록으로 덮어쓰므로 저장을 막아야 한다.
+export async function loadProjectData({ load, save, legacy }) {
+  try {
+    let json = await load()
+    if (json === null && legacy) {
+      await save(legacy)
+      json = legacy
+    }
+    return { items: JSON.parse(json || '[]'), failed: false }
+  } catch (error) {
+    return { items: [], failed: true, error }
+  }
+}

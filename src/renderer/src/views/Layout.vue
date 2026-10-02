@@ -133,7 +133,7 @@ import InfoPopup from '../components/layout/popup/info-popup'
 import SettingPopup from '../components/layout/popup/setting-popup'
 import TerminalPanel from '../components/terminal/terminal-panel'
 import SceneBackdrop from '../components/layout/scene-backdrop'
-import { hasSavedPassword, EXPORT_PASSWORD_WARNING } from '../utils/project'
+import { hasSavedPassword, loadProjectData, EXPORT_PASSWORD_WARNING } from '../utils/project'
 import { toastError } from '../utils/notify'
 import { DEFAULT_VIEW, sanitizeView } from '../utils/view'
 
@@ -277,25 +277,20 @@ export default {
       this.saveProject()
     },
     async loadProject() {
-      let json = null
+      const { items, failed, error } = await loadProjectData({
+        load: () => window.preload.loadProjects(),
+        save: json => window.preload.saveProjects(json),
+        legacy: window.localStorage.projectSaveData
+      })
 
-      try {
-        json = await window.preload.loadProjects()
-
-        // 이전 버전은 localStorage에 저장했다. 저장 파일이 아직 없으면 최초 1회 옮겨온다. (localStorage는 지우지 않는다)
-        const legacy = window.localStorage.projectSaveData
-        if (json === null && legacy) {
-          await window.preload.saveProjects(legacy)
-          json = legacy
-        }
-      } catch (e) {
-        console.error(e)
+      if (failed) {
+        console.error(error)
         // 읽기에 실패한 상태에서 저장하면 기존 데이터를 빈 목록으로 덮어쓰게 되므로 저장을 막는다.
         this.isProjectLoadFailed = true
-        this.notifyError('Failed to load projects. Changes will not be saved.', e)
+        this.notifyError('Failed to load projects. Changes will not be saved.', error)
       }
 
-      this.projectData = JSON.parse(json || '[]')
+      this.projectData = items
     },
     async saveProject() {
       if (this.isProjectLoadFailed) {

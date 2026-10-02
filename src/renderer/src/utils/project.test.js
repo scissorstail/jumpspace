@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { hasSavedPassword, listEmptyText, matchesKeyword } from './project'
+import { describe, expect, it, vi } from 'vitest'
+import { hasSavedPassword, listEmptyText, loadProjectData, matchesKeyword } from './project'
 
 const item = connection => ({ name: 'a', data: { nodes: { 1: { data: { connection } } } } })
 
@@ -61,5 +61,37 @@ describe('listEmptyText', () => {
 
   it('counts an item being renamed as visible', () => {
     expect(listEmptyText([{ name: '', isEditing: true }], 'zzz')).toBe(null)
+  })
+})
+
+describe('loadProjectData', () => {
+  const items = [{ name: 'a', data: { nodes: {} } }]
+  const json = JSON.stringify(items)
+
+  it('reads the saved items', async () => {
+    const save = vi.fn()
+    expect(await loadProjectData({ load: async () => json, save, legacy: '[{"name":"old"}]' })).toEqual({ items, failed: false })
+    expect(save).not.toHaveBeenCalled()
+  })
+
+  it('moves the items of an older version from localStorage once, when there is no file yet', async () => {
+    const save = vi.fn(async () => {})
+    expect(await loadProjectData({ load: async () => null, save, legacy: json })).toEqual({ items, failed: false })
+    expect(save).toHaveBeenCalledWith(json)
+  })
+
+  it('starts with an empty list when there is nothing at all', async () => {
+    expect(await loadProjectData({ load: async () => null, save: vi.fn(), legacy: undefined })).toEqual({ items: [], failed: false })
+  })
+
+  it('reports a failure, so that saving is blocked, when reading, migrating or parsing fails', async () => {
+    const readError = new Error('EACCES')
+    expect(await loadProjectData({ load: async () => { throw readError }, save: vi.fn() })).toEqual({ items: [], failed: true, error: readError })
+
+    const saveError = new Error('disk full')
+    expect(await loadProjectData({ load: async () => null, save: async () => { throw saveError }, legacy: json })).toMatchObject({ failed: true, error: saveError })
+
+    // 해석할 수 없는 내용도 실패다. (예전에는 이 오류가 저장 막기를 건너뛰어 다음 저장이 파일을 빈 목록으로 덮어쓸 수 있었다)
+    expect(await loadProjectData({ load: async () => '{broken', save: vi.fn() })).toMatchObject({ items: [], failed: true })
   })
 })
