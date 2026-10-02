@@ -17,7 +17,7 @@
         header="Settings"
         style="width: 90vw; max-width: 600px"
       >
-        <b-card-text class="mb-3">
+        <b-card-text>
           <b-row class="mb-3">
             <b-col>
               <b-form-group
@@ -118,7 +118,7 @@
             <b-col>
               <b-form-group
                 label-align="left"
-                class="text-left"
+                class="mb-0 text-left"
                 label="Close to tray"
                 label-for="setting-close-to-tray"
                 label-cols-sm="4"
