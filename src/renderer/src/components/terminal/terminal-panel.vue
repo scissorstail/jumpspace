@@ -12,74 +12,14 @@
       @mousedown.prevent="startResize"
     />
 
-    <div class="terminal-tabs">
-      <!-- 탭이 많으면 이 목록만 옆으로 넘긴다. 숨기기 단추는 늘 보인다. -->
-      <div
-        ref="tabList"
-        class="terminal-tab-list"
-        role="tablist"
-        @wheel="scrollTabs"
-      >
-        <div
-          v-for="session in sessions"
-          :key="session.key"
-          :ref="`tab-${session.key}`"
-          class="terminal-tab"
-          :class="{ active: session.key === activeKey, [`is-${session.status}`]: true, 'is-connecting': session.status === 'running' && !session.connected, 'has-error': session.status === 'exited' && !!session.exitCode }"
-          role="tab"
-          :aria-selected="session.key === activeKey ? 'true' : 'false'"
-          tabindex="0"
-          :title="`${session.title}: ${statusText(session)}`"
-          @click="activate(session.key)"
-          @keydown.enter.self="activate(session.key)"
-          @keydown.space.self.prevent="activate(session.key)"
-        >
-          <span
-            class="terminal-status"
-            aria-hidden="true"
-          />
-          <span class="terminal-tab-title">{{ session.title }}</span>
-          <button
-            v-if="canReconnect(session)"
-            type="button"
-            class="terminal-tab-button"
-            :aria-label="`Reconnect ${session.title}`"
-            title="Reconnect (or press Enter in the terminal)"
-            @click.stop="reconnect(session)"
-          >
-            <b-icon
-              icon="arrow-clockwise"
-              aria-hidden="true"
-            />
-          </button>
-          <button
-            type="button"
-            class="terminal-tab-button"
-            :aria-label="`Close ${session.title}`"
-            title="Close"
-            @click.stop="closeSession(session)"
-          >
-            <b-icon
-              icon="x"
-              aria-hidden="true"
-            />
-          </button>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        class="terminal-hide"
-        aria-label="Hide terminals"
-        title="Hide terminals (they keep running)"
-        @click="$store.commit('terminalPanel', false)"
-      >
-        <b-icon
-          icon="chevron-down"
-          aria-hidden="true"
-        />
-      </button>
-    </div>
+    <terminal-tabs
+      :sessions="sessions"
+      :active-key="activeKey"
+      @activate="activate"
+      @reconnect="reconnect"
+      @close="closeSession"
+      @hide="$store.commit('terminalPanel', false)"
+    />
 
     <div class="terminal-body">
       <div
@@ -99,8 +39,9 @@ import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
 import { canReconnect, createOutputRouter, terminalShortcut } from '@/utils/terminal-sessions'
-import { endedLine, errorLine, RECONNECTING_LINE, revealScrollLeft, sessionStatusText, terminalTheme } from '@/utils/terminal-view'
+import { endedLine, errorLine, RECONNECTING_LINE, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
+import TerminalTabs from './terminal-tabs'
 
 const MIN_HEIGHT = 140
 
@@ -113,6 +54,7 @@ function currentTerminalTheme() {
 // 하단의 터미널 패널. 탭마다 xterm.js 화면을 하나씩 두고, main의 pty와 키 입력/출력을 주고받는다.
 export default {
   name: 'TerminalPanel',
+  components: { TerminalTabs },
   data() {
     return {
       height: 280
@@ -244,7 +186,6 @@ export default {
       this.router.unregister(id)
       this.$store.commit('terminalUpdate', { key: session.key, status: 'exited', exitCode })
     },
-    canReconnect,
     // 끝난 세션을 같은 탭에서 같은 요청으로 다시 연다. 요청은 main이 갖고 있다. (store에는 비밀번호를 두지 않는다)
     async reconnect(session) {
       const entry = session && this.terms.get(session.key)
@@ -304,29 +245,7 @@ export default {
       const entry = this.terms.get(this.activeKey)
       this.fit(entry)
       if (focus) entry?.term.focus()
-      this.revealActiveTab()
     },
-    // 넘치는 탭 목록은 세로 휠로도 옆으로 넘긴다.
-    scrollTabs(event) {
-      const list = this.$refs.tabList
-      if (!list || event.deltaX || !event.deltaY || list.scrollWidth <= list.clientWidth) return
-      list.scrollLeft += event.deltaY
-      event.preventDefault()
-    },
-    // 탭이 많아 목록이 넘칠 때 활성 탭이 보이게 넘긴다.
-    revealActiveTab() {
-      const list = this.$refs.tabList
-      const tab = this.$refs[`tab-${this.activeKey}`]?.[0]
-      if (!list || !tab) return
-
-      const listRect = list.getBoundingClientRect()
-      const tabRect = tab.getBoundingClientRect()
-      list.scrollLeft = revealScrollLeft(
-        { scrollLeft: list.scrollLeft, width: list.clientWidth },
-        { left: tabRect.left - listRect.left + list.scrollLeft, width: tabRect.width }
-      )
-    },
-    statusText: sessionStatusText,
     startResize(event) {
       const startY = event.clientY
       const startHeight = this.height
@@ -362,126 +281,6 @@ export default {
   height: 8px;
   cursor: ns-resize;
   z-index: 1;
-}
-
-.terminal-tabs {
-  display: flex;
-  align-items: stretch;
-  gap: 4px;
-  min-height: 34px;
-  padding: 3px 8px 0 14px;
-  background: var(--js-bg-raised);
-  border-bottom: 2px solid var(--js-primary);
-}
-
-// 탭이 많으면 먼저 좁아지고(min-width까지), 그래도 넘치면 이 목록만 옆으로 넘긴다.
-.terminal-tab-list {
-  display: flex;
-  flex: 1;
-  align-items: stretch;
-  gap: 4px;
-  min-width: 0;
-  overflow-x: auto;
-  // 스크롤바가 생기면 탭 높이가 줄어 글자가 움직이므로 숨긴다. 휠로 넘기고, 활성 탭과 포커스한 탭은 저절로 보인다.
-  scrollbar-width: none;
-}
-
-.terminal-tab {
-  display: flex;
-  flex: 0 1 auto;
-  align-items: center;
-  gap: 8px;
-  min-width: 150px;
-  max-width: 220px;
-  padding: 0 8px 0 14px;
-  background: var(--js-surface);
-  color: var(--js-text-muted);
-  font-family: var(--js-font-display);
-  font-size: 1.3rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  cursor: pointer;
-  user-select: none;
-
-  &:hover {
-    color: var(--js-text);
-  }
-
-  &.active {
-    background: var(--js-primary);
-    color: var(--js-on-primary);
-  }
-
-  // 끝난 탭에는 다시 연결 단추가 하나 더 붙는다. 그만큼 넓혀서 제목이 더 짧게 잘리지 않게 한다.
-  &.is-exited {
-    min-width: 191px; // 150px + 단추와 간격
-    max-width: 261px; // 220px + 단추와 간격
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--js-secondary);
-    outline-offset: -2px;
-  }
-}
-
-.terminal-tab-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.terminal-status {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  background: var(--js-line);
-
-  .is-running & {
-    background: var(--js-live);
-  }
-
-  // 시작 중이거나, 실행 중이지만 아직 로그인하지 않았다 (캔버스의 연결 중과 같은 노랑)
-  .is-starting &,
-  .is-running.is-connecting & {
-    background: var(--js-connecting);
-  }
-
-  .is-failed &,
-  .has-error & {
-    background: var(--js-danger);
-  }
-
-  // 활성 탭의 분홍 바탕은 오류 빨강과 거의 같은 색이라, 점에 어두운 테두리를 둘러 구분한다.
-  .active & {
-    box-shadow: 0 0 0 2px var(--js-on-primary);
-  }
-}
-
-.terminal-tab-button,
-.terminal-hide {
-  flex: none;
-  padding: 2px 6px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: inherit;
-  line-height: 1;
-
-  &:hover {
-    background: var(--js-hover);
-    color: var(--js-text);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--js-sun);
-    outline-offset: -2px;
-  }
-}
-
-// 분홍 바탕의 활성 탭 위에서는 어둡게 눌러 보인다.
-.terminal-tab.active .terminal-tab-button:hover {
-  background: rgba(0, 0, 0, 0.25);
-  color: var(--js-on-primary);
 }
 
 .terminal-body {
