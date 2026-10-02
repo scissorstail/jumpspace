@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { THEMES } from '../../../shared/setting.js'
-import { endedLine, errorLine, RECONNECTING_LINE, sessionStatusText, terminalTheme } from './terminal-view'
+import { endedLine, errorLine, RECONNECTING_LINE, revealScrollLeft, sessionStatusText, terminalTheme } from './terminal-view'
 
 describe('sessionStatusText', () => {
   it('names every state and gives the exit status of a failed end', () => {
@@ -71,5 +71,25 @@ describe('terminal colors of every palette', () => {
         expect(Math.min(d, 360 - d), `${theme}: ${a} ${t[a]} vs ${b} ${t[b]}`).toBeGreaterThanOrEqual(15)
       }
     }
+  })
+})
+
+describe('revealScrollLeft', () => {
+  const view = { scrollLeft: 100, width: 300 } // 100..400이 보인다
+
+  it('leaves the list alone when the tab is already visible', () => {
+    expect(revealScrollLeft(view, { left: 100, width: 150 })).toBe(100)
+    expect(revealScrollLeft(view, { left: 250, width: 150 })).toBe(100)
+  })
+
+  it('scrolls just far enough to show a tab on the right or the left', () => {
+    expect(revealScrollLeft(view, { left: 380, width: 150 })).toBe(230)
+    expect(revealScrollLeft(view, { left: 1000, width: 150 })).toBe(850)
+    expect(revealScrollLeft(view, { left: 40, width: 150 })).toBe(40)
+    expect(revealScrollLeft({ scrollLeft: 0, width: 300 }, { left: 0, width: 150 })).toBe(0)
+  })
+
+  it('shows the start of a tab wider than the list', () => {
+    expect(revealScrollLeft(view, { left: 500, width: 400 })).toBe(500)
   })
 })

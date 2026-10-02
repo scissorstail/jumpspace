@@ -12,57 +12,64 @@
       @mousedown.prevent="startResize"
     />
 
-    <div
-      class="terminal-tabs"
-      role="tablist"
-    >
+    <div class="terminal-tabs">
+      <!-- 탭이 많으면 이 목록만 옆으로 넘긴다. 숨기기 단추는 늘 보인다. -->
       <div
-        v-for="session in sessions"
-        :key="session.key"
-        class="terminal-tab"
-        :class="{ active: session.key === activeKey, [`is-${session.status}`]: true, 'is-connecting': session.status === 'running' && !session.connected, 'has-error': session.status === 'exited' && !!session.exitCode }"
-        role="tab"
-        :aria-selected="session.key === activeKey ? 'true' : 'false'"
-        tabindex="0"
-        :title="statusText(session)"
-        @click="activate(session.key)"
-        @keydown.enter="activate(session.key)"
+        ref="tabList"
+        class="terminal-tab-list"
+        role="tablist"
+        @wheel="scrollTabs"
       >
-        <span
-          class="terminal-status"
-          aria-hidden="true"
-        />
-        <span class="terminal-tab-title">{{ session.title }}</span>
-        <button
-          v-if="canReconnect(session)"
-          type="button"
-          class="terminal-tab-button"
-          :aria-label="`Reconnect ${session.title}`"
-          title="Reconnect (or press Enter in the terminal)"
-          @click.stop="reconnect(session)"
+        <div
+          v-for="session in sessions"
+          :key="session.key"
+          :ref="`tab-${session.key}`"
+          class="terminal-tab"
+          :class="{ active: session.key === activeKey, [`is-${session.status}`]: true, 'is-connecting': session.status === 'running' && !session.connected, 'has-error': session.status === 'exited' && !!session.exitCode }"
+          role="tab"
+          :aria-selected="session.key === activeKey ? 'true' : 'false'"
+          tabindex="0"
+          :title="`${session.title}: ${statusText(session)}`"
+          @click="activate(session.key)"
+          @keydown.enter.self="activate(session.key)"
+          @keydown.space.self.prevent="activate(session.key)"
         >
-          <b-icon
-            icon="arrow-clockwise"
+          <span
+            class="terminal-status"
             aria-hidden="true"
           />
-        </button>
-        <button
-          type="button"
-          class="terminal-tab-button"
-          :aria-label="`Close ${session.title}`"
-          title="Close"
-          @click.stop="closeSession(session)"
-        >
-          <b-icon
-            icon="x"
-            aria-hidden="true"
-          />
-        </button>
+          <span class="terminal-tab-title">{{ session.title }}</span>
+          <button
+            v-if="canReconnect(session)"
+            type="button"
+            class="terminal-tab-button"
+            :aria-label="`Reconnect ${session.title}`"
+            title="Reconnect (or press Enter in the terminal)"
+            @click.stop="reconnect(session)"
+          >
+            <b-icon
+              icon="arrow-clockwise"
+              aria-hidden="true"
+            />
+          </button>
+          <button
+            type="button"
+            class="terminal-tab-button"
+            :aria-label="`Close ${session.title}`"
+            title="Close"
+            @click.stop="closeSession(session)"
+          >
+            <b-icon
+              icon="x"
+              aria-hidden="true"
+            />
+          </button>
+        </div>
       </div>
 
       <button
         type="button"
-        class="terminal-hide ml-auto"
+        class="terminal-hide"
         aria-label="Hide terminals"
         title="Hide terminals (they keep running)"
         @click="$store.commit('terminalPanel', false)"
@@ -92,7 +99,7 @@ import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
 import { canReconnect, createOutputRouter, terminalShortcut } from '@/utils/terminal-sessions'
-import { endedLine, errorLine, RECONNECTING_LINE, sessionStatusText, terminalTheme } from '@/utils/terminal-view'
+import { endedLine, errorLine, RECONNECTING_LINE, revealScrollLeft, sessionStatusText, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 
 const MIN_HEIGHT = 140
@@ -278,6 +285,8 @@ export default {
         this.terms.delete(session.key)
       }
       this.$store.commit('terminalRemove', session.key)
+      // 닫기 단추가 사라져도 키보드 포커스가 갈 곳이 있게, 남은 활성 터미널로 옮긴다.
+      this.$nextTick(() => this.fitActive(true))
     },
     activate(key) {
       this.$store.commit('terminalActivate', key)
@@ -295,6 +304,27 @@ export default {
       const entry = this.terms.get(this.activeKey)
       this.fit(entry)
       if (focus) entry?.term.focus()
+      this.revealActiveTab()
+    },
+    // 넘치는 탭 목록은 세로 휠로도 옆으로 넘긴다.
+    scrollTabs(event) {
+      const list = this.$refs.tabList
+      if (!list || event.deltaX || !event.deltaY || list.scrollWidth <= list.clientWidth) return
+      list.scrollLeft += event.deltaY
+      event.preventDefault()
+    },
+    // 탭이 많아 목록이 넘칠 때 활성 탭이 보이게 넘긴다.
+    revealActiveTab() {
+      const list = this.$refs.tabList
+      const tab = this.$refs[`tab-${this.activeKey}`]?.[0]
+      if (!list || !tab) return
+
+      const listRect = list.getBoundingClientRect()
+      const tabRect = tab.getBoundingClientRect()
+      list.scrollLeft = revealScrollLeft(
+        { scrollLeft: list.scrollLeft, width: list.clientWidth },
+        { left: tabRect.left - listRect.left + list.scrollLeft, width: tabRect.width }
+      )
     },
     statusText: sessionStatusText,
     startResize(event) {
@@ -340,15 +370,28 @@ export default {
   gap: 4px;
   min-height: 34px;
   padding: 3px 8px 0 14px;
-  overflow-x: auto;
   background: var(--js-bg-raised);
   border-bottom: 2px solid var(--js-primary);
 }
 
+// 탭이 많으면 먼저 좁아지고(min-width까지), 그래도 넘치면 이 목록만 옆으로 넘긴다.
+.terminal-tab-list {
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  // 스크롤바가 생기면 탭 높이가 줄어 글자가 움직이므로 숨긴다. 휠로 넘기고, 활성 탭과 포커스한 탭은 저절로 보인다.
+  scrollbar-width: none;
+}
+
 .terminal-tab {
   display: flex;
+  flex: 0 1 auto;
   align-items: center;
   gap: 8px;
+  min-width: 150px;
   max-width: 220px;
   padding: 0 8px 0 14px;
   background: var(--js-surface);
@@ -371,6 +414,7 @@ export default {
 
   // 끝난 탭에는 다시 연결 단추가 하나 더 붙는다. 그만큼 넓혀서 제목이 더 짧게 잘리지 않게 한다.
   &.is-exited {
+    min-width: 191px; // 150px + 단추와 간격
     max-width: 261px; // 220px + 단추와 간격
   }
 
@@ -415,6 +459,7 @@ export default {
 
 .terminal-tab-button,
 .terminal-hide {
+  flex: none;
   padding: 2px 6px;
   border: 0;
   border-radius: 0;

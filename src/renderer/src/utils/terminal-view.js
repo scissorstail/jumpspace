@@ -46,3 +46,11 @@ export function terminalTheme(color) {
     brightBlack: color('--js-text-muted')
   }
 }
+
+// 옆으로 넘기는 탭 목록에서 탭 하나가 다 보이게 하는 scrollLeft. 이미 보이면 그대로 둔다.
+// view: { scrollLeft, width } (목록), item: { left, width } (목록 내용 안에서의 탭 위치)
+export function revealScrollLeft(view, item) {
+  if (item.left < view.scrollLeft || item.width >= view.width) return item.left
+  if (item.left + item.width > view.scrollLeft + view.width) return item.left + item.width - view.width
+  return view.scrollLeft
+}

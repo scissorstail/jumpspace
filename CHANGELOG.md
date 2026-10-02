@@ -37,6 +37,7 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- With many terminal tabs the active tab and the "Hide terminals" button were scrolled out of sight, so none of the visible tabs looked selected. Tabs now shrink first, the active tab is always scrolled into view, the hide button stays put, the mouse wheel scrolls the tabs, and a tab's tooltip names it. Space selects a tab, and closing a tab with the keyboard no longer selects it first and leaves the focus in the remaining terminal.
 - In Vapor Blue, yellow text in the terminal was purple (the palette's sun color) and hard to tell from its magenta. Yellow and green in the terminal are now the same fixed yellow and green as the connection states, in every palette. In Sunset Drive the terminal's red and magenta (both pink) and yellow and cyan (both orange) looked alike; it now has its own violet magenta and cyan.
 - With a long target host, the forward line under a node was cut before its count, so "(+5)" for the other forwards disappeared. The count now always shows; only the first forward is shortened.
 - Pointing at a sidebar item made it 2px taller (its `...` button was taller than the name), so every item below jumped. The button now fits the row.
