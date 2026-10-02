@@ -57,7 +57,7 @@ Ordered roughly by value. Move an item to the log when it is done.
 - `src/renderer/src/components/layout/main-navigator.vue` (about 650 lines, the item menu moved out in #46): list, drag, select, rename, import/export. Most of the rest is its scoped CSS; the next seam would be the header toolbar (new, more actions).
 - `src/renderer/src/views/Layout.vue` (about 430 lines after the scene moved out)
 - `src/renderer/src/components/terminal/terminal-panel.vue` (about 440 lines; its texts and colors moved to `utils/terminal-view.js` in #57): session start, reconnect, clipboard and resize still live in one component.: item state, project load/save, view saving are mixed.
-- `src/main/index.js`: IPC handlers could move into small modules like `launcher.js` (the trust check moved to `trust.js`).
+- `src/main/index.js` (about 310 lines): mostly window, tray and IPC wiring now; the app:// path check, the `{ ok, error }` wrapper and the setting store moved out in #67.
 
 ### Missing or thin tests
 - No component tests (Vue) at all; logic lives in `utils/` on purpose. Consider `@vue/test-utils` only if it stays cheap.
@@ -430,6 +430,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: tests 262 passed (+3: a test reads the real palettes from `theme.scss`, resolves `var()` and requires the six ANSI hues to be at least 15 degrees apart in every palette; mutation checked: without the Sunset Drive values and with the old primary/secondary mapping it fails), lint exit 0, build exit 0, commit 62d6724. In the app against the local sshd (scratch t93, `printf` with ANSI 31-36): the computed colors match in all three palettes and the six words are clearly different in Sunset Drive.
 - Noticed: Neon Night's red and magenta are 17 degrees apart, but they differ enough in lightness and are the palette's own colors; left as is.
 - Phase: polish continues.
+
+### #67 2026-10-02 01:2x UTC · refactor (scheduled run, polish phase)
+- Did: took three untested pieces of logic out of `src/main/index.js` (351 -> 311 lines): `appFilePath(rendererDir, url)` in `trust.js` (which page file an `app://` request may read; the security check of the protocol handler), `toResult(label, fn)` in new `ipc-result.js` (the try/catch that answers `{ ok: false, error }`, written four times before) and `createSettingStore(store)` in new `setting-store.js` (settings with defaults for broken JSON). README layout updated. Two deliberate small differences: a failed Copy SSH config is now logged like the others, and an address with a broken `%`-escape gets 403 instead of an exception inside the protocol handler.
+- Result: tests 270 passed (+8, existing tests untouched; mutation checked six ways: no folder check, a prefix check without the separator (a sibling `renderer-evil` folder), no decoding, no log, dropped values, no JSON fallback: each fails a test), lint exit 0, build exit 0, commit 46f7d13. In the app (scratch t94): `app://./index.html` 200, `..%2f` and a broken escape 403, a launch with a missing Git Bash answers `ok: false` with the message, settings round-trip; t13, t48, t93 pass.
+- Phase: polish continues; the next run is ux or style.
 
 ## Routine
 
