@@ -447,6 +447,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: docs only. lint exit 0, tests 273 passed, build exit 0, commit 20e768b.
 - Phase: polish continues; the next run is ux or style.
 
+### #70 2026-10-02 04:2x UTC · style (scheduled run, polish phase, layout shifts)
+- Did: looked at the live validation of the node settings (#41) as a state change (scratch t97, t97c). Typing an invalid user pushed every row below it down by 46px (a two-line message) and the popover grew; the field also showed Bootstrap's round "!" icon and a red glow, because Bootstrap's `.form-control.is-invalid:focus` is more specific than the theme's rule. In `theme.scss` the invalid field (also with focus) now only gets the `--js-danger` border (no background icon, no shadow, normal padding), and `.form-group .invalid-feedback` floats right under the field as a flat box (danger border, raised background, hard 2px shadow), as wide as the field (`width: auto` overrides Bootstrap's 100%), visible only while the field has the focus or the pointer; otherwise only the red border stays (the message stays linked through `aria-describedby`). The port fields of the forward popover get the same flat red border.
+- Result: CSS only. lint exit 0, tests 273 passed, build exit 0, commit b0ce50b. In the app, all three palettes: popover size 376x480.4 before and after, no other control moves; with the focus on another field the message is hidden and the red border stays; the bottom field's (Exec) message is not clipped. t13, t70 pass.
+- Phase: polish continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
