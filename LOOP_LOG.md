@@ -487,6 +487,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: docs only. lint exit 0, tests 290 passed, build exit 0, commit 2e676be.
 - Phase: polish continues; the next run is ux or style.
 
+### #78 2026-10-02 12:2x UTC · style (scheduled run, polish phase)
+- Did: measured where the pixel text really sits inside its controls (new scratch helper `ink.cjs`: takes a screenshot of the element and finds the rows of text-colored pixels, so the result is the visible ink, not the line box; t102). Buttons, the header title, dialog labels and footers were centered (0 to 0.5px). Two were not, because uppercase VT323 has no descenders and sits low: the node name tags (5.2px above the ink, 3.1px below) and every dropdown item (12.1 / 10.1; gear menu, sidebar `...` menus). The tag's inner span moves up 1px (`position: relative; top: -1px`, the tag keeps its size) and `.dropdown-item` trades 1px of top padding for bottom padding.
+- Result: CSS only. Ink now 4.1 / 4.1 in the tags and 11.1 / 11.1 in the menu items in all three palettes; tag, card and item sizes and positions unchanged (22.7px tag, 73.9px card, 33.2px items, 219.9px menu). lint exit 0, tests 290 passed, build exit 0, commit 1a92380. t13, t65, t84 pass.
+- Phase: polish continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
