@@ -6,6 +6,7 @@ Everything since 0.2.2-beta.
 
 ### Added
 
+- **A hint on an empty diagram.** A new or emptied item showed only the scenery, and nothing said that servers are added with a right-click. It now says so in the middle of the canvas (or to unlock the editor first while it is locked); the hint goes away with the first node and lets right-clicks through.
 - **Connection state on the canvas.** A path opened in the app terminal is yellow while connecting, turns into the flowing pink line with a green dot once ssh has logged in, and becomes a red dashed line with a red dot when the connection failed (until its tab is closed or reconnected). ssh reports the login itself through an invisible marker (`LocalCommand`), so a session waiting for a password stays "connecting". The terminal tab's dot and tooltip follow the same states.
 - **Reconnect an ended terminal tab.** A tab whose session ended shows a reconnect button, and Enter in its terminal does the same: the same connection starts again in the same tab (the path lights up again). The request with its password stays in the main process until the tab is closed; the window never keeps it.
 - **Terminals inside the app.** Connect, ProxyJump and forwards open in a panel at the bottom of the window (xterm.js + node-pty), one tab per session, instead of a separate Git Bash window. Key passphrases and other prompts are typed into the tab; closing a tab ends the session. *Settings > Open SSH in* brings back the Git Bash window.

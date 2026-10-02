@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { hasSavedPassword, listEmptyText, loadProjectData, matchesKeyword } from './project'
+import { canvasHint, hasSavedPassword, listEmptyText, loadProjectData, matchesKeyword } from './project'
 
 const item = connection => ({ name: 'a', data: { nodes: { 1: { data: { connection } } } } })
 
@@ -93,5 +93,24 @@ describe('loadProjectData', () => {
 
     // 해석할 수 없는 내용도 실패다. (예전에는 이 오류가 저장 막기를 건너뛰어 다음 저장이 파일을 빈 목록으로 덮어쓸 수 있었다)
     expect(await loadProjectData({ load: async () => '{broken', save: vi.fn() })).toMatchObject({ items: [], failed: true })
+  })
+})
+
+describe('canvasHint', () => {
+  it('asks to pick an item while none is open', () => {
+    expect(canvasHint({ isOpen: false, nodeCount: 0, isLocked: true })).toEqual({ title: 'No diagram open', text: 'Select an item in the sidebar, or add a new one.' })
+  })
+
+  it('says how to add the first server to an empty diagram', () => {
+    expect(canvasHint({ isOpen: true, nodeCount: 0, isLocked: false })).toEqual({ title: 'Empty diagram', text: 'Right-click the canvas to add a server.' })
+  })
+
+  it('asks to unlock first, because the right-click menu does not open while locked', () => {
+    expect(canvasHint({ isOpen: true, nodeCount: 0, isLocked: true }).text).toBe('Unlock the editor (lock icon), then right-click the canvas to add a server.')
+  })
+
+  it('shows nothing once there is a node', () => {
+    expect(canvasHint({ isOpen: true, nodeCount: 1, isLocked: false })).toBeNull()
+    expect(canvasHint({ isOpen: true, nodeCount: 3, isLocked: true })).toBeNull()
   })
 })

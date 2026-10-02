@@ -175,6 +175,9 @@ export default {
       }
     )
 
+    // 노드 수를 알린다. (빈 캔버스의 안내는 Layout이 보여준다)
+    this.editor.on(['nodecreated', 'noderemoved'], () => this.emitNodeCount())
+
     // 캔버스를 옮기거나 확대/축소할 때마다 알린다. (저장은 Layout이 한다)
     this.editor.on(['translated', 'zoomed'], () => {
       this.$emit('view-change', viewOf(this.editor.view.area.transform))
@@ -250,9 +253,13 @@ export default {
     },
     async load(editorSaveData) {
       await this.editor.fromJSON(JSON.parse(editorSaveData))
+      this.emitNodeCount()
       await this.compile()
 
       this.editor.view.resize()
+    },
+    emitNodeCount() {
+      this.$emit('node-count', this.editor.nodes.length)
     },
     async compile() {
       await this.engine.abort()

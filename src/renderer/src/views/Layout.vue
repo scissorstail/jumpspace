@@ -97,19 +97,20 @@
             :is-locked="isEditorLocked"
             :class="[!editorData && 'layout-inactive']"
             @view-change="updateView"
+            @node-count="nodeCount = $event"
           />
 
-          <!-- 열려 있는 item이 없을 때 -->
+          <!-- 열려 있는 item이 없거나, 열린 item에 노드가 없을 때의 안내 (우클릭은 그대로 캔버스로 간다) -->
           <div
-            v-if="!editorData"
+            v-if="emptyHint"
             class="layout-empty"
             :class="{ 'layout-empty-beside': isSidebarOpen }"
           >
             <div class="layout-empty-title">
-              No diagram open
+              {{ emptyHint.title }}
             </div>
             <div class="layout-empty-text">
-              Select an item in the sidebar, or add a new one.
+              {{ emptyHint.text }}
             </div>
           </div>
         </div>
@@ -133,7 +134,7 @@ import InfoPopup from '../components/layout/popup/info-popup'
 import SettingPopup from '../components/layout/popup/setting-popup'
 import TerminalPanel from '../components/terminal/terminal-panel'
 import SceneBackdrop from '../components/layout/scene-backdrop'
-import { hasSavedPassword, loadProjectData, EXPORT_PASSWORD_WARNING } from '../utils/project'
+import { canvasHint, hasSavedPassword, loadProjectData, EXPORT_PASSWORD_WARNING } from '../utils/project'
 import { toastError } from '../utils/notify'
 import { DEFAULT_VIEW, sanitizeView } from '../utils/view'
 
@@ -168,6 +169,8 @@ export default {
       projectData: null,
       editorData: null,
       openedItemIndex: null,
+      // 열린 다이어그램의 노드 수 (Editor가 알린다). 0이면 노드를 더하는 방법을 안내한다.
+      nodeCount: 0,
       isProjectLoadFailed: false,
       // 사이드바는 화면 위에 덮인다. 열려 있으면 빈 화면 안내를 그 옆으로 비켜 둔다.
       isSidebarOpen: false
@@ -187,6 +190,9 @@ export default {
     },
     isTerminalPanelOpen() {
       return this.$store.getters.isTerminalPanelOpen
+    },
+    emptyHint() {
+      return canvasHint({ isOpen: !!this.editorData, nodeCount: this.nodeCount, isLocked: this.isEditorLocked })
     },
     // 열려 있는 item의 이름. 창 제목에 쓴다.
     openedItemName() {
