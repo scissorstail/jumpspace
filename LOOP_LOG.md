@@ -477,6 +477,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: tests 288 passed (untouched; the row's logic was already pure in `utils/terminal-view.js`), lint exit 0, build exit 0, commit c2ad622. In the app against the local sshd: t95 with 8 and 12 tabs (active tab and hide button visible, Space, closing by keyboard, focus), t96 in two palettes (tab height 31.2px and text position the same as in #68 from 1 to 12 tabs, wheel back to the start), t13, t48, t70, t73, t89, t90 pass.
 - Phase: polish continues; the next run is ux or style.
 
+### #76 2026-10-02 10:2x UTC · ux (scheduled run, polish phase)
+- Did: walked the error paths of Connect (scratch t101). In "Git Bash window" mode with a missing Git Bash the dialog showed main's two-line message as one run-on line ("...git-bash.exe Check "Git Bash path" in Settings."), and the focus stayed on the dialog, so Enter did not close it. New `errorBox(vm, title, error)` in `utils/notify.js` (readable message, `bodyClass: 'msg-pre-line'`, `autoFocusButton: 'ok'`) replaces the three `msgBoxOk` calls of the node (Failed to start SSH twice, Failed to copy); `toastError` keeps line breaks too; `.msg-pre-line` in `theme.scss`. Confirmations (delete, remove, export) are left alone on purpose: no default focus on a destructive OK. Also checked: Connect on a node with an invalid user opens a tab with the red "Invalid user" line from main, which is clear enough; left as is.
+- Result: tests 290 passed (+2, toast test updated; mutation checked three ways: plain box, raw error text, toast without pre-line), lint exit 0, build exit 0, commit af33fa6. In the app: two lines, focus on OK, Enter closes; t46, t72 pass.
+- Phase: polish continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
