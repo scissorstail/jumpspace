@@ -193,10 +193,9 @@
 
 <script>
 import draggable from 'vuedraggable'
-import cloneDeep from 'lodash/cloneDeep'
 import isEmpty from 'lodash/isEmpty'
 import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNING } from '@/utils/project'
-import { createNavigatorItem, emptyItemData, toProjectItems } from '@/utils/navigator-items'
+import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems } from '@/utils/navigator-items'
 import { toastError } from '@/utils/notify'
 import NavigatorItemMenu from './navigator-item-menu'
 
@@ -333,11 +332,7 @@ export default {
       // 검색어에 맞지 않으면 새 항목이 목록에서 사라지므로 검색을 푼다.
       this.keyword = ''
 
-      const newItem = createNavigatorItem(
-        { name: item.name, data: cloneDeep(item.data), view: item.view ? { ...item.view } : undefined },
-        this.itemIndex++,
-        { isEditing: true }
-      )
+      const newItem = copyNavigatorItem(item, this.itemIndex++)
 
       const foundIndex = this.items.findIndex(x => x === item)
       if (foundIndex !== -1) {
@@ -351,27 +346,23 @@ export default {
         return
       }
 
-      if (this.openedItem === item) {
-        this.openedItem = null
-        this.$emit('deselected')
-      }
-
-      const foundIndex = this.items.findIndex((x) => x === item)
-      if (foundIndex >= 0) {
-        this.items.splice(foundIndex, 1)
-      }
+      this.removeItems([item])
     },
     async removeSelectedItems() {
       if (!(await this.confirmRemove(`Remove ${this.selectedItems.length} selected item(s)?`))) {
         return
       }
 
-      if (this.selectedItems.includes(this.openedItem)) {
+      this.removeItems(this.selectedItems)
+    },
+    // 항목을 목록에서 빼고, 열려 있던 항목이 빠지면 에디터를 닫는다.
+    removeItems(removed) {
+      const { items, openedRemoved } = removeNavigatorItems(this.items, removed, this.openedItem)
+      if (openedRemoved) {
         this.openedItem = null
         this.$emit('deselected')
       }
-
-      this.items = this.items.filter(x => !x.isSelected)
+      this.items = items
     },
     async exportItems(items) {
       if (hasSavedPassword(items) && !(await this.$bvModal.msgBoxConfirm(EXPORT_PASSWORD_WARNING, { title: 'Export', okTitle: 'Export' }))) {
