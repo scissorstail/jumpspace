@@ -437,6 +437,9 @@ $control-sm-height: 29px;
 }
 
 .dropdown-item {
+  // 대문자 픽셀 글자는 아래 꼬리가 없어서 줄의 가운데보다 2px 아래에 앉는다. 높이는 그대로 두고 1px 올린다.
+  padding-top: calc(0.25rem - 1px);
+  padding-bottom: calc(0.25rem + 1px);
   color: var(--js-text);
   font-family: var(--js-font-display);
   font-size: 1.05rem;
