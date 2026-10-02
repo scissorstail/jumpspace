@@ -104,7 +104,10 @@ src/main/       Electron main process
   ssh-config.js   "Copy SSH config"
   launcher.js     writes the temp files and starts Git Bash (window)
   terminal.js     terminal sessions inside the app (node-pty), used by the terminal panel
-  trust.js        is a URL the app's own page? (IPC sender check, navigation guard)
+  trust.js        is a URL the app's own page? (IPC sender check, navigation guard),
+                  and which page file an app:// request may read
+  ipc-result.js   answers { ok, error } to the page instead of throwing
+  setting-store.js  reads and saves the settings (defaults for broken values)
   storage.js      projects.json (atomic write, .bak), import parsing
   legacy-forwards.js  moves forwards saved by older versions to their current place
 src/shared/     pure modules used by both main and renderer

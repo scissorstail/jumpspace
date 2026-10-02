@@ -4,6 +4,8 @@
 //   앱: app://./… (기존 버전과 같은 origin을 유지한다)
 //   개발: electron-vite dev server (ELECTRON_RENDERER_URL)의 origin
 
+import { join, normalize, sep } from 'node:path'
+
 export const APP_URL = 'app://./index.html'
 
 function parse(url) {
@@ -21,4 +23,20 @@ export function isAppUrl(url, devUrl = '') {
 
   const dev = devUrl ? parse(devUrl) : null
   return Boolean(dev) && dev.origin !== 'null' && u.origin === dev.origin
+}
+
+// app:// 요청이 가리키는 화면 파일. 화면 폴더(rendererDir) 밖을 가리키거나 주소를 해석할 수 없으면 null이다.
+// ('%2e%2e%2f'처럼 인코딩한 '../'도 디코딩한 뒤 경로를 정리해서 검사한다)
+export function appFilePath(rendererDir, requestUrl) {
+  const root = normalize(rendererDir)
+  let pathname
+  try {
+    pathname = decodeURIComponent(new URL(requestUrl).pathname)
+  } catch {
+    return null
+  }
+  if (pathname === '/') pathname = '/index.html'
+
+  const file = normalize(join(root, pathname))
+  return file.startsWith(root + sep) ? file : null
 }

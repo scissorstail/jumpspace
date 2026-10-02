@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises'
-import { join, normalize, sep } from 'node:path'
+import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import {
   app,
@@ -20,8 +20,9 @@ import icon from '../../resources/icon.png?asset'
 import { spawn as spawnPty } from 'node-pty'
 import { launch, sweepTempDir } from './launcher.js'
 import { createTerminalManager, terminalBash } from './terminal.js'
-import { APP_URL, isAppUrl } from './trust.js'
-import { normalizeSetting } from '../shared/setting.js'
+import { APP_URL, appFilePath, isAppUrl } from './trust.js'
+import { toResult } from './ipc-result.js'
+import { createSettingStore } from './setting-store.js'
 import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
 
@@ -49,24 +50,10 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 function main() {
-  // 세팅 값 저장 (기존 버전과 같은 형식: key 'setting'에 JSON 문자열)
-  const store = new Store()
+  const settings = createSettingStore(new Store())
+  const getSetting = settings.get
   const projects = createProjectStorage(app.getPath('userData'))
   const tempDir = join(app.getPath('temp'), 'jumpspace')
-
-  function getSetting() {
-    try {
-      return normalizeSetting(JSON.parse(store.get('setting') || '{}'))
-    } catch {
-      return normalizeSetting()
-    }
-  }
-
-  function setSetting(data) {
-    const setting = normalizeSetting(data)
-    store.set('setting', JSON.stringify(setting))
-    return setting
-  }
 
   // 앱 화면(app:// 또는 dev server)에서 온 요청만 처리한다.
   function isTrusted(event) {
@@ -103,7 +90,7 @@ function main() {
 
   handle('setting:get', () => getSetting())
 
-  handle('setting:set', (event, data) => setSetting(data))
+  handle('setting:set', (event, data) => settings.set(data))
 
   handle('projects:load', () => projects.load())
 
@@ -142,15 +129,9 @@ function main() {
 
   // SSH 실행. 실패해도 예외 대신 { ok: false, error }를 돌려줘서 화면에서 안내할 수 있게 한다.
   for (const kind of ['connect', 'forward', 'proxyJump']) {
-    handle(`ssh:${kind}`, async (event, payload) => {
-      try {
-        await launch(kind, payload, { tempDir, gitBashPath: getSetting().gitBashPath })
-        return { ok: true }
-      } catch (e) {
-        console.error(`ssh:${kind} failed:`, e)
-        return { ok: false, error: e.message }
-      }
-    })
+    handle(`ssh:${kind}`, (event, payload) => toResult(`ssh:${kind}`, async () => {
+      await launch(kind, payload, { tempDir, gitBashPath: getSetting().gitBashPath })
+    }))
   }
 
   // 앱 안의 터미널. 스크립트는 위와 같이 만들고, Git Bash 창 대신 pty에서 실행해 화면(xterm.js)과 주고받는다.
@@ -164,24 +145,13 @@ function main() {
     }
   })
 
-  handle('terminal:open', async (event, kind, payload, size) => {
-    try {
-      const id = await terminals.open(kind, payload, { owner: event.sender.id, cols: size?.cols, rows: size?.rows })
-      return { ok: true, id }
-    } catch (e) {
-      console.error(`terminal:${kind} failed:`, e)
-      return { ok: false, error: e.message }
-    }
-  })
+  handle('terminal:open', (event, kind, payload, size) => toResult(`terminal:${kind}`, async () => ({
+    id: await terminals.open(kind, payload, { owner: event.sender.id, cols: size?.cols, rows: size?.rows })
+  })))
   // 끝난 탭을 같은 요청으로 다시 연다. 요청(비밀번호 포함)은 main만 갖고 있다.
-  handle('terminal:reopen', async (event, id, size) => {
-    try {
-      return { ok: true, id: await terminals.reopen(id, event.sender.id, { cols: size?.cols, rows: size?.rows }) }
-    } catch (e) {
-      console.error('terminal:reopen failed:', e)
-      return { ok: false, error: e.message }
-    }
-  })
+  handle('terminal:reopen', (event, id, size) => toResult('terminal:reopen', async () => ({
+    id: await terminals.reopen(id, event.sender.id, { cols: size?.cols, rows: size?.rows })
+  })))
   on('terminal:write', (event, id, data) => terminals.write(id, event.sender.id, data))
   on('terminal:resize', (event, id, cols, rows) => terminals.resize(id, event.sender.id, cols, rows))
   on('terminal:close', (event, id) => terminals.close(id, event.sender.id))
@@ -204,14 +174,9 @@ function main() {
   handle('clipboard:readText', async () => String((await clipboard.readText()) ?? '').slice(0, MAX_CLIPBOARD))
 
   // 접속 정보를 ~/.ssh/config 형식으로 클립보드에 복사한다.
-  handle('ssh:copyConfig', async (event, request) => {
-    try {
-      await clipboard.writeText(buildSshConfig(request?.nodes, { forwards: request?.forwards }))
-      return { ok: true }
-    } catch (e) {
-      return { ok: false, error: e.message }
-    }
-  })
+  handle('ssh:copyConfig', (event, request) => toResult('ssh:copyConfig', async () => {
+    await clipboard.writeText(buildSshConfig(request?.nodes, { forwards: request?.forwards }))
+  }))
 
   // Singleton instance
   app.on('second-instance', () => showWindow())
@@ -279,16 +244,11 @@ function showWindow() {
 
 // 기존 버전과 같은 origin(app://.)을 유지해야 이전에 localStorage에 저장한 데이터를 이어서 읽을 수 있다.
 function registerAppProtocol() {
-  const rendererDir = normalize(join(__dirname, '../renderer'))
+  const rendererDir = join(__dirname, '../renderer')
 
   protocol.handle('app', request => {
-    let pathname = decodeURIComponent(new URL(request.url).pathname)
-    if (pathname === '/') pathname = '/index.html'
-
-    const file = normalize(join(rendererDir, pathname))
-    if (!file.startsWith(rendererDir + sep)) {
-      return new Response('Forbidden', { status: 403 })
-    }
+    const file = appFilePath(rendererDir, request.url)
+    if (!file) return new Response('Forbidden', { status: 403 })
 
     return net.fetch(pathToFileURL(file).toString())
   })
