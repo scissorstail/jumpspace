@@ -64,7 +64,7 @@ Ordered roughly by value. Move an item to the log when it is done.
 - `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts; copying and removing items are unit tested since #71.
 - A Playwright + Electron smoke test in the repo was considered and turned down by the owner (decision 6).
 
-### Dependencies (checked 2026-10-02 03:2x UTC)
+### Dependencies (checked 2026-10-02 11:2x UTC)
 - `npm audit --omit=dev`: 0 vulnerabilities. `npm audit` (dev tooling included) reports 4 (2 low, 2 high), all through `vue` 2 and `rete-vue-render-plugin`; the only fix is Vue 3 (`--force`), so they stay (decision 5).
 - Held back on purpose (major versions): Vue 2.7, Rete v1 plugins, Bootstrap 4, vue-router 3, vuex 3. Not checked or updated by the routine: eslint 10, vite 8, vitest 5 and `@eslint/js` 10 are newer majors; look at them only if something needs them, with tests and a build first.
 - Up to date inside their ranges (2026-10-02): everything; electron 44.5.1, node-pty 1.1.0, @xterm/xterm 6.0.0 are the latest releases.
@@ -481,6 +481,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: walked the error paths of Connect (scratch t101). In "Git Bash window" mode with a missing Git Bash the dialog showed main's two-line message as one run-on line ("...git-bash.exe Check "Git Bash path" in Settings."), and the focus stayed on the dialog, so Enter did not close it. New `errorBox(vm, title, error)` in `utils/notify.js` (readable message, `bodyClass: 'msg-pre-line'`, `autoFocusButton: 'ok'`) replaces the three `msgBoxOk` calls of the node (Failed to start SSH twice, Failed to copy); `toastError` keeps line breaks too; `.msg-pre-line` in `theme.scss`. Confirmations (delete, remove, export) are left alone on purpose: no default focus on a destructive OK. Also checked: Connect on a node with an invalid user opens a tab with the red "Invalid user" line from main, which is clear enough; left as is.
 - Result: tests 290 passed (+2, toast test updated; mutation checked three ways: plain box, raw error text, toast without pre-line), lint exit 0, build exit 0, commit af33fa6. In the app: two lines, focus on OK, Enter closes; t46, t72 pass.
 - Phase: polish continues.
+
+### #77 2026-10-02 11:2x UTC · health (scheduled run, polish phase)
+- Did: CI runs 91-93 green. `npm outdated`: only the held-back majors (Vue 2 family, Rete v1, Bootstrap 4, eslint 10, vite 8, vitest 5); electron 44.5.1, node-pty 1.1.0, @xterm/xterm 6.0.0 current. `npm audit --omit=dev` 0, with dev tooling the known 4 through Vue 2. Docs against #70-#76: CHANGELOG has every user-visible change; the README still said an invalid value is "marked while you type, with a note" (since #70 the note shows only with focus or pointer) and said nothing about the dialogs' keyboard behavior from #72; both fixed.
+- Result: docs only. lint exit 0, tests 290 passed, build exit 0, commit 2e676be.
+- Phase: polish continues; the next run is ux or style.
 
 ## Routine
 
