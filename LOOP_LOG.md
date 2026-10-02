@@ -64,10 +64,10 @@ Ordered roughly by value. Move an item to the log when it is done.
 - `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts.
 - A Playwright + Electron smoke test in the repo was considered and turned down by the owner (decision 6).
 
-### Dependencies (checked 2026-10-01 17:2x UTC)
+### Dependencies (checked 2026-10-02 03:2x UTC)
 - `npm audit --omit=dev`: 0 vulnerabilities. `npm audit` (dev tooling included) reports 4 (2 low, 2 high), all through `vue` 2 and `rete-vue-render-plugin`; the only fix is Vue 3 (`--force`), so they stay (decision 5).
 - Held back on purpose (major versions): Vue 2.7, Rete v1 plugins, Bootstrap 4, vue-router 3, vuex 3. Not checked or updated by the routine: eslint 10, vite 8, vitest 5 and `@eslint/js` 10 are newer majors; look at them only if something needs them, with tests and a build first.
-- Up to date inside their ranges (2026-10-01): everything; electron 44.5.1, node-pty 1.1.0, @xterm/xterm 6.0.0 are the latest releases.
+- Up to date inside their ranges (2026-10-02): everything; electron 44.5.1, node-pty 1.1.0, @xterm/xterm 6.0.0 are the latest releases.
 
 ### Decisions by the owner (2026-09-30)
 1. **Passwords:** keep plain text for now. Storing them with Electron `safeStorage` (Windows DPAPI) stays an optional idea: it ties the passwords to this PC and user, so exported files could not carry them. Do not implement unless the owner asks.
@@ -441,6 +441,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: tests 273 passed (+3; mutation checked three ways: aligning left instead of "just enough", no case for a tab wider than the list, always scrolling: each fails a test), lint exit 0, build exit 0, commit 77a274c. In the app against the local sshd: 8 tabs fit, 12 scroll with the active tab and hide button visible, wheel back to the start works; tab height 31.2px and text position identical from 1 to 12 tabs in all three palettes; t13, t48, t70, t73, t89, t90 pass.
 - Noticed, not changed: arrow keys do not move between tabs (the WAI tablist pattern); Tab already reaches each tab, so it stays as is.
 - Phase: polish continues.
+
+### #69 2026-10-02 03:2x UTC · health (scheduled run, polish phase)
+- Did: CI run 84 green (Ubuntu and Windows, including the `appFilePath` tests of #67 on Windows paths). `npm outdated`: only the held-back majors; electron 44.5.1, node-pty 1.1.0, @xterm/xterm 6.0.0 are current. `npm audit --omit=dev` 0, with dev tooling the known 4 through Vue 2. Docs against runs #65-#68: README now says how many terminal tabs behave (narrower first, then the row scrolls, also with the wheel, keeping the active tab in view) and that the tooltip names the session; CLAUDE.md now says where the terminal colors come from (`--js-connecting` / `--js-live`, `--js-ansi-magenta` / `--js-ansi-cyan`, the hue test that a new palette has to pass) and why the tab list hides its scrollbar. CHANGELOG already had all four.
+- Result: docs only. lint exit 0, tests 273 passed, build exit 0, commit 20e768b.
+- Phase: polish continues; the next run is ux or style.
 
 ## Routine
 
