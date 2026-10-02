@@ -497,6 +497,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Result: tests 294 passed (+4; mutation checked: the old parse-after-try structure fails the parse case, legacy data overriding an existing file and a migration without saving each fail), lint exit 0, build exit 0, commit 37354ac. In the app: with `projects.json` removed and data in `localStorage`, the item appears and is written to `projects.json` (scratch t103); t9, t13, t98 pass.
 - Phase: polish continues; the next run is ux or style.
 
+### #80 2026-10-02 14:2x UTC · ux (scheduled run, polish phase)
+- Did: walked the canvas from a new item (scratch t104). A new item opens unlocked on a canvas showing only the scenery; servers are added only with a right-click, and nothing said so (the right-click menu is the only way, and it does not open while locked). New `canvasHint({ isOpen, nodeCount, isLocked })` in `utils/project.js` gives the centered hint for both cases: no item open (the old "No diagram open" text, moved here) and an open item without nodes ("Empty diagram": right-click the canvas, or unlock first while locked). The editor emits `node-count` after `fromJSON` and on `nodecreated` / `noderemoved` (the project data only changes on lock, so it cannot be used); `Layout.vue` shows the hint in the existing `.layout-empty` box, which has `pointer-events: none`.
+- Result: tests 298 passed (+4; mutation checked: the hint shown over nodes and the locked/unlocked texts swapped each fail), lint exit 0, build exit 0, commit f05a772. In the app: nothing open -> the old text; item with a node -> no hint; new item -> "Right-click the canvas..."; a right-click through the hint opens "Add node", the hint disappears with the node and returns after deleting it; locked empty item -> "Unlock the editor ... then right-click"; no page errors. t6, t9, t13, t14 pass.
+- Phase: polish continues.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
