@@ -66,7 +66,7 @@ Ordered roughly by value. Move an item to the log when it is done.
 
 ### Dependencies (checked 2026-10-02 11:2x UTC)
 - `npm audit --omit=dev`: 0 vulnerabilities. `npm audit` (dev tooling included) reports 4 (2 low, 2 high), all through `vue` 2 and `rete-vue-render-plugin`; the only fix is Vue 3 (`--force`), so they stay (decision 5).
-- Held back on purpose (major versions): Vue 2.7, Rete v1 plugins, Bootstrap 4, vue-router 3, vuex 3. Not checked or updated by the routine: eslint 10, vite 8, vitest 5 and `@eslint/js` 10 are newer majors; look at them only if something needs them, with tests and a build first.
+- Held back on purpose (major versions): Vue 2.7, Rete v1 plugins, Bootstrap 4, vuex 3 (vue-router was removed in #81). Not checked or updated by the routine: eslint 10, vite 8, vitest 5 and `@eslint/js` 10 are newer majors; look at them only if something needs them, with tests and a build first.
 - Up to date inside their ranges (2026-10-02): everything; electron 44.5.1, node-pty 1.1.0, @xterm/xterm 6.0.0 are the latest releases.
 
 ### Decisions by the owner (2026-09-30)
@@ -501,6 +501,11 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 - Did: walked the canvas from a new item (scratch t104). A new item opens unlocked on a canvas showing only the scenery; servers are added only with a right-click, and nothing said so (the right-click menu is the only way, and it does not open while locked). New `canvasHint({ isOpen, nodeCount, isLocked })` in `utils/project.js` gives the centered hint for both cases: no item open (the old "No diagram open" text, moved here) and an open item without nodes ("Empty diagram": right-click the canvas, or unlock first while locked). The editor emits `node-count` after `fromJSON` and on `nodecreated` / `noderemoved` (the project data only changes on lock, so it cannot be used); `Layout.vue` shows the hint in the existing `.layout-empty` box, which has `pointer-events: none`.
 - Result: tests 298 passed (+4; mutation checked: the hint shown over nodes and the locked/unlocked texts swapped each fail), lint exit 0, build exit 0, commit f05a772. In the app: nothing open -> the old text; item with a node -> no hint; new item -> "Right-click the canvas..."; a right-click through the hint opens "Add node", the hint disappears with the node and returns after deleting it; locked empty item -> "Unlock the editor ... then right-click"; no page errors. t6, t9, t13, t14 pass.
 - Phase: polish continues.
+
+### #81 2026-10-02 15:2x UTC · cleanup (scheduled run, polish phase)
+- Did: looked for dead code in the components (a scan of every `methods`, `computed` and `data` name against its file and all other sources: nothing unused) and for dependencies kept for nothing. `vue-router` drove one route (`/` -> Layout, lazy), `main.js` replaced the route right after start, and nothing read `$route`, used `router-link` or looked at the URL hash (`isAppUrl` ignores it). `App.vue` now renders `Layout` directly; `src/renderer/src/router/` and the dependency are gone (lockfile: only its 8 lines). CHANGELOG (Removed) and the held-back list in the Backlog updated.
+- Result: lint exit 0, tests 298 passed, build exit 0, commit 3359159. In the app: t9, t13, t14, t65, t70, t73, t94 (app:// page 200, protocol checks, settings), t99b, t103 (legacy migration), t104 (empty-diagram hint) pass; no page errors.
+- Phase: polish continues; the next run is ux or style.
 
 ## Routine
 
