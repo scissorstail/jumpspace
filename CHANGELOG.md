@@ -79,6 +79,7 @@ Everything since 0.2.2-beta.
 ### Removed
 
 - The unused `upath`, PWA, comment/minimap plugin and `core-js` dependencies, the global Vue mixin and the unused footer placeholder.
+- `vue-router`: the app has a single screen, which is now rendered directly.
 
 ### Notes for upgrading
 

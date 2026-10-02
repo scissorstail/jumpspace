@@ -1,11 +1,15 @@
 <template>
   <div id="app">
-    <router-view />
+    <Layout />
   </div>
 </template>
 
 <script>
+import Layout from './views/Layout.vue'
+
+// 화면은 Layout 하나뿐이라 라우터 없이 바로 그린다.
 export default {
+  components: { Layout },
   computed: {
     theme() {
       return this.$store.getters.setting.theme
