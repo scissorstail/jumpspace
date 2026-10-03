@@ -522,7 +522,7 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 
 ### #83 2026-10-03 04:xx UTC · feature (by hand, at the owner's request: "build it into an installer")
 - Did: cross-building the NSIS installer on Linux stops at the step that needs `wine` (the unpacked Windows app builds fine), so the Windows CI job now builds it: `electron-builder --win nsis --x64 --publish never` after the tests, then `.github/scripts/packaged-pty.cjs` runs under the packaged exe with `ELECTRON_RUN_AS_NODE=1` and starts `cmd.exe` through the packaged node-pty (ConPTY), then the `.exe` is uploaded as artifact `jumpspace-windows-installer` (30 days). The Windows package no longer carries node-pty's Linux `build/Release/pty.node` and the macOS prebuilds (`win.files` in `electron-builder.config.js`); the Linux package keeps its `pty.node`. README says where to download the installer. This is Feature queue item 4.
-- Checked: the script against the Linux package (ok), and fails when node-pty's binary is removed and when the output does not match (two mutations).
+- Checked: the script against the Linux package (ok), and fails when node-pty's binary is removed and when the output does not match (two mutations). CI run 100 (0ac5882) green on both jobs: installer built, packaged node-pty ran `cmd.exe` through ConPTY, artifact uploaded (about 117 MB zip).
 
 ## Routine
 
