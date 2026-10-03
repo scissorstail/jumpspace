@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it, vi } from 'vitest'
-import { createTerminalManager, killPty, MAX_SESSIONS, terminalBash } from './terminal.js'
+import { createTerminalManager, exitStatus, killPty, MAX_SESSIONS, terminalBash } from './terminal.js'
 import { sq, toUnixPath } from './ssh.js'
 
 const root = mkdtempSync(join(tmpdir(), 'jumpspace-terminal-'))
@@ -56,6 +56,16 @@ describe('terminalBash', () => {
   it('takes a bash.exe given directly, and explains a missing one', () => {
     expect(terminalBash('D:\\Git\\bin\\bash.exe', { platform: 'win32', exists: () => true })).toBe('D:\\Git\\bin\\bash.exe')
     expect(() => terminalBash('D:\\nope\\git-bash.exe', { platform: 'win32', exists: () => false })).toThrow(/bash\.exe of Git for Windows was not found/)
+  })
+})
+
+describe('exitStatus', () => {
+  it('reports the exit code, or 128 + signal for a session killed by a signal', () => {
+    expect(exitStatus({ exitCode: 0 })).toBe(0)
+    expect(exitStatus({ exitCode: 255, signal: 0 })).toBe(255)
+    expect(exitStatus({ exitCode: 0, signal: 2 })).toBe(130)
+    expect(exitStatus({ exitCode: 0, signal: 1 })).toBe(129)
+    expect(exitStatus({ exitCode: 3, signal: 2 })).toBe(3)
   })
 })
 

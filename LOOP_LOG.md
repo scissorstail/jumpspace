@@ -546,6 +546,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: nothing worthwhile found, no code change. Lesson for scripts: switch palettes through the Settings dialog, not `data-theme`, when a terminal is open.
 - Found / next: next polish runs: tests or cleanup, then ux.
 
+### #89 2026-10-03 13:xx UTC · ux (by hand, the owner's request from using it on Windows)
+- Asked: the reconnect button sat oddly far from the close button and was too large (like Claude Code's web tabs instead), and a session the user ended on purpose (`exit`, Ctrl+C) should close its tab at once; reconnect only for errors and failed connections. Dragging tabs to reorder would be nice but not now (not queued; the owner said it is not the time).
+- Did: measured ssh's exit statuses against the local sshd: `exit` 0 (or the shell's code), refused / auth failed / dropped 255, Ctrl+C while connecting 130 (the pty reports it as signal 2, which main dropped: new `exitStatus` returns 128 + signal), Ctrl+C on `ssh -N` 255. New pure `endedByUser` (`utils/terminal-sessions.js`): close when logged in and the status is not 255, on 130, or on 255 within 3 s of a Ctrl+C typed in that tab; otherwise keep the tab with the ended line and the reconnect arrow. Tab buttons are grouped at the right end of the tab with no gap, 22x22 each; both icons draw about 10x10 px (the x at 22px, the arrow at 11px, since the x glyph has more empty margin) and sit on the tab's center line within 1px; the extra width of an ended tab follows the smaller button (172/242px).
+- Checked: unit tests for both rules (four mutations fail a test). Real app against the local sshd (scratch t111, t112): `exit` after login closes the tab; Ctrl+C on a forwarding tab and while connecting close it; a refused connection stays with the arrow and reconnecting still works; no ssh left running after the script; icon ink measured. Tests 317 passed, lint ok, build ok.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

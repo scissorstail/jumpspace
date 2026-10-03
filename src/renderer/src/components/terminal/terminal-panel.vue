@@ -38,7 +38,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
-import { canReconnect, createOutputRouter, terminalShortcut } from '@/utils/terminal-sessions'
+import { canReconnect, createOutputRouter, endedByUser, terminalShortcut } from '@/utils/terminal-sessions'
 import { endedLine, errorLine, RECONNECTING_LINE, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import TerminalTabs from './terminal-tabs'
@@ -115,7 +115,7 @@ export default {
       })
       const fit = new FitAddon()
       term.loadAddon(fit)
-      const entry = { term, fit, id: null, ended: false, reconnecting: false }
+      const entry = { term, fit, id: null, ended: false, reconnecting: false, interruptedAt: null }
       this.terms.set(session.key, entry)
 
       const el = this.$refs[`term-${session.key}`]?.[0]
@@ -129,6 +129,8 @@ export default {
           if (data === '\r') this.reconnect(this.sessions.find(x => x.key === session.key))
           return
         }
+        // Ctrl+C를 누른 때를 기억한다: 포워딩(ssh -N)은 Ctrl+C로 끝내도 오류(255)로 끝난다.
+        if (data.includes('\x03')) entry.interruptedAt = Date.now()
         if (entry.id !== null) window.preload.terminal.write(entry.id, data)
       })
       this.enableClipboard(term, el)
@@ -181,9 +183,14 @@ export default {
       if (!session) return
 
       const entry = this.terms.get(session.key)
+      this.router.unregister(id)
+      // exit나 Ctrl+C로 직접 끝냈으면 탭을 바로 닫는다. 오류나 접속 실패로 끝났을 때만 남겨서 다시 접속할 수 있게 한다.
+      if (endedByUser({ exitCode, connected: session.connected, interruptedAt: entry?.interruptedAt ?? null })) {
+        this.closeSession(session)
+        return
+      }
       entry?.term.write(endedLine(exitCode))
       if (entry) entry.ended = true
-      this.router.unregister(id)
       this.$store.commit('terminalUpdate', { key: session.key, status: 'exited', exitCode })
     },
     // 끝난 세션을 같은 탭에서 같은 요청으로 다시 연다. 요청은 main이 갖고 있다. (store에는 비밀번호를 두지 않는다)
@@ -211,6 +218,7 @@ export default {
 
       entry.id = result.id
       entry.ended = false
+      entry.interruptedAt = null
       this.router.register(result.id, data => entry.term.write(data))
       this.$store.commit('terminalUpdate', { key: session.key, id: result.id, status: 'running' })
       this.fit(entry, true)

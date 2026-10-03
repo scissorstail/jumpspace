@@ -24,6 +24,12 @@ export function terminalBash(gitBashPath, { platform = process.platform, exists 
 
 // 세션을 끝낸다. pty.kill()은 bash에만 신호를 보내서 그 아래의 ssh가 남는다. (bash는 실행 중인 명령이 끝나야 trap을 실행한다)
 // node-pty는 세션마다 새 프로세스 그룹을 만들므로 Unix에서는 그룹 전체에 SIGHUP을 보낸다. Windows는 ConPTY를 닫으면 함께 끝난다.
+// pty가 끝난 상태. 신호로 끝났으면(예: 접속 중 Ctrl+C로 bash까지 SIGINT) 쉘처럼 128 + 신호 번호로 알린다. (Windows는 신호가 없다)
+export function exitStatus({ exitCode, signal }) {
+  if (exitCode) return exitCode
+  return signal ? 128 + signal : 0
+}
+
 export function killPty(pty, { platform = process.platform, kill = process.kill.bind(process) } = {}) {
   if (platform !== 'win32' && Number.isInteger(pty.pid) && pty.pid > 0) {
     try {
@@ -92,7 +98,8 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
     const id = nextId++
     sessions.set(id, { owner, pty })
     pty.onData(data => send(owner, 'terminal:data', id, data))
-    pty.onExit(({ exitCode }) => {
+    pty.onExit(event => {
+      const exitCode = exitStatus(event)
       // 사용자가 닫은 세션(close/closeAll이 이미 지웠다)은 다시 열 일이 없다.
       if (sessions.delete(id)) remember(id, { owner, kind, payload })
       send(owner, 'terminal:exit', id, exitCode)

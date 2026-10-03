@@ -26,31 +26,35 @@
           aria-hidden="true"
         />
         <span class="terminal-tab-title">{{ session.title }}</span>
-        <button
-          v-if="canReconnect(session)"
-          type="button"
-          class="terminal-tab-button"
-          :aria-label="`Reconnect ${session.title}`"
-          title="Reconnect (or press Enter in the terminal)"
-          @click.stop="$emit('reconnect', session)"
-        >
-          <b-icon
-            icon="arrow-clockwise"
-            aria-hidden="true"
-          />
-        </button>
-        <button
-          type="button"
-          class="terminal-tab-button"
-          :aria-label="`Close ${session.title}`"
-          title="Close"
-          @click.stop="$emit('close', session)"
-        >
-          <b-icon
-            icon="x"
-            aria-hidden="true"
-          />
-        </button>
+        <!-- 다시 연결과 닫기는 붙여서 탭 오른쪽 끝에 둔다 -->
+        <span class="terminal-tab-actions">
+          <button
+            v-if="canReconnect(session)"
+            type="button"
+            class="terminal-tab-button"
+            :aria-label="`Reconnect ${session.title}`"
+            title="Reconnect (or press Enter in the terminal)"
+            @click.stop="$emit('reconnect', session)"
+          >
+            <b-icon
+              icon="arrow-clockwise"
+              class="terminal-reconnect-icon"
+              aria-hidden="true"
+            />
+          </button>
+          <button
+            type="button"
+            class="terminal-tab-button"
+            :aria-label="`Close ${session.title}`"
+            title="Close"
+            @click.stop="$emit('close', session)"
+          >
+            <b-icon
+              icon="x"
+              aria-hidden="true"
+            />
+          </button>
+        </span>
       </div>
     </div>
 
@@ -178,8 +182,8 @@ export default {
 
   // 끝난 탭에는 다시 연결 단추가 하나 더 붙는다. 그만큼 넓혀서 제목이 더 짧게 잘리지 않게 한다.
   &.is-exited {
-    min-width: 191px; // 150px + 단추와 간격
-    max-width: 261px; // 220px + 단추와 간격
+    min-width: 172px; // 150px + 다시 연결 단추(22px)
+    max-width: 242px; // 220px + 다시 연결 단추
   }
 
   &:focus-visible {
@@ -189,6 +193,7 @@ export default {
 }
 
 .terminal-tab-title {
+  flex: 0 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -219,6 +224,34 @@ export default {
   .active & {
     box-shadow: 0 0 0 2px var(--js-on-primary);
   }
+}
+
+.terminal-tab-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  margin-left: auto;
+}
+
+// 탭의 단추 아이콘은 글자보다 작게, 둘이 같은 크기로 보이게 한다.
+// (x는 그림 둘레에 여백이 많아서 같은 글꼴 크기면 다시 연결 화살표보다 작게 그려진다)
+.terminal-tab-actions .terminal-tab-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 22px;
+
+  // 글자 기준선 대신 단추 가운데에 놓는다
+  .b-icon {
+    display: block;
+  }
+}
+
+.terminal-reconnect-icon {
+  font-size: 11px;
 }
 
 .terminal-tab-button,

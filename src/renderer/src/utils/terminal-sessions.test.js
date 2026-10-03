@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { canReconnect, createOutputRouter, hopKey, routeStates, sessionPhase, terminalShortcut, terminalTitle } from './terminal-sessions'
+import { canReconnect, createOutputRouter, endedByUser, hopKey, INTERRUPT_WINDOW_MS, routeStates, sessionPhase, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -158,5 +158,34 @@ describe('canReconnect', () => {
     expect(canReconnect({ status: 'failed', id: null })).toBe(false)
     expect(canReconnect({ status: 'exited', id: null })).toBe(false)
     expect(canReconnect(null)).toBe(false)
+  })
+})
+
+describe('endedByUser', () => {
+  const now = 100000
+
+  it('closes a session the user logged out of, whatever the shell returned', () => {
+    expect(endedByUser({ exitCode: 0, connected: true, now })).toBe(true)
+    expect(endedByUser({ exitCode: 3, connected: true, now })).toBe(true)
+  })
+
+  it('keeps a session that ssh ended by itself (refused, auth failed, connection lost)', () => {
+    expect(endedByUser({ exitCode: 255, connected: false, now })).toBe(false)
+    expect(endedByUser({ exitCode: 255, connected: true, now })).toBe(false)
+  })
+
+  it('closes a forward stopped with Ctrl+C (ssh -N also returns 255), but only right after it', () => {
+    expect(endedByUser({ exitCode: 255, connected: true, interruptedAt: now - 500, now })).toBe(true)
+    expect(endedByUser({ exitCode: 255, connected: true, interruptedAt: now - INTERRUPT_WINDOW_MS, now })).toBe(true)
+    expect(endedByUser({ exitCode: 255, connected: true, interruptedAt: now - INTERRUPT_WINDOW_MS - 1, now })).toBe(false)
+  })
+
+  it('closes a connection cancelled with Ctrl+C while connecting', () => {
+    expect(endedByUser({ exitCode: 130, connected: false, now })).toBe(true)
+  })
+
+  it('keeps a session that ended before logging in, so its error stays readable', () => {
+    expect(endedByUser({ exitCode: 127, connected: false, now })).toBe(false)
+    expect(endedByUser({ exitCode: 0, connected: false, now })).toBe(false)
   })
 })

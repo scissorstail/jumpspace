@@ -95,6 +95,19 @@ export function createOutputRouter({ maxPending = 256 * 1024 } = {}) {
 
 // 터미널에서 앱이 직접 처리하는 단축키. 붙여넣기(Ctrl+Shift+V, Shift+Insert)는 브라우저의 paste 이벤트로 이미 된다.
 //   'copy': Ctrl+Shift+C, Ctrl+Insert (Ctrl+C는 원격 프로그램에 보내는 인터럽트로 남긴다)
+// 사용자가 직접 끝낸 세션인지. 그렇다면 탭을 바로 닫고, 아니면(오류, 접속 실패) 다시 접속할 수 있게 남긴다.
+//   255: ssh 자체가 끝났다 (접속 거부, 인증 실패, 연결 끊김). 다만 포워딩(ssh -N)은 Ctrl+C로 끝내도 255라서,
+//        이 탭에서 방금(INTERRUPT_WINDOW_MS 안에) Ctrl+C를 눌렀다면 사용자가 끝낸 것으로 본다.
+//   130: 접속 중에 Ctrl+C로 그만두었다.
+//   그 밖: 로그인한 뒤 원격 쉘이 끝났다(exit, logout; 코드는 쉘의 것). 로그인하지 못하고 끝났으면 오류를 보이도록 남긴다.
+export const INTERRUPT_WINDOW_MS = 3000
+
+export function endedByUser({ exitCode, connected, interruptedAt = null, now = Date.now() }) {
+  if (exitCode === 255) return interruptedAt !== null && now - interruptedAt <= INTERRUPT_WINDOW_MS
+  if (exitCode === 130) return true
+  return !!connected
+}
+
 // 끝난 세션은 같은 탭에서 다시 접속할 수 있다. (열지도 못한 세션은 main에 요청이 없다)
 export function canReconnect(session) {
   return session?.status === 'exited' && session.id !== null && session.id !== undefined
