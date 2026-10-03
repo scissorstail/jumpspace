@@ -159,7 +159,8 @@ export default {
   flex: 0 1 auto;
   align-items: center;
   gap: 8px;
-  min-width: 150px;
+  // 폭은 제목 길이에 맞춘다. 탭이 많으면 min-width까지 줄어들고(제목은 말줄임), 그래도 넘치면 목록이 넘어간다.
+  min-width: 132px;
   max-width: 220px;
   padding: 0 8px 0 14px;
   background: var(--js-surface);
@@ -182,7 +183,7 @@ export default {
 
   // 끝난 탭에는 다시 연결 단추가 하나 더 붙는다. 그만큼 넓혀서 제목이 더 짧게 잘리지 않게 한다.
   &.is-exited {
-    min-width: 172px; // 150px + 다시 연결 단추(22px)
+    min-width: 154px; // 132px + 다시 연결 단추(22px)
     max-width: 242px; // 220px + 다시 연결 단추
   }
 
