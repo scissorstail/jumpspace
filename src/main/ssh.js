@@ -93,7 +93,9 @@ function wrap({ prelude = [], lines, cleanupPaths, env = {} }) {
   const script = [
     '#!/bin/bash',
     ...prelude,
-    `cleanup() { rm -f -- ${cleanupPaths.map(sq).join(' ')}; }`,
+    // 지우는 동안 오는 신호는 무시한다: 탭을 닫으면 SIGHUP이 여러 번 와서, 정리 중에 trap(exit)이 끼어들거나 rm이 죽었다.
+    // 무시한 신호는 rm 같은 자식에도 그대로 이어진다.
+    `cleanup() { trap '' HUP INT TERM; rm -f -- ${cleanupPaths.map(sq).join(' ')}; }`,
     'trap cleanup EXIT',
     // 창이나 탭을 닫으면(HUP), 끝내라는 요청(TERM)이면 남은 명령을 실행하지 않고 끝낸다. (파일은 EXIT trap이 지운다)
     "trap 'exit 129' HUP",

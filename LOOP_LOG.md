@@ -560,6 +560,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: the built CSS is byte-identical before and after (`cmp` of `out/renderer/assets/index-*.css`, same hash name), so the look cannot have changed. Tests 317 passed, lint ok, build ok.
 - Found / next: next hot spot is `main-navigator.vue` (the header toolbar seam). Next polish run: ux or style.
 
+### #92 2026-10-03 14:2x UTC · fix (scheduled run: CI red first)
+- Did: CI run 112 (19b9f90, a CSS-only refactor) failed on Ubuntu in the real-pty test "closing a session also ends the program": the program was gone, but the script's temp file was left. Did not reproduce in 12 local runs, so read the mechanism: closing a tab sends SIGHUP to the group, then `pty.kill()` and the terminal hangup send more; one arriving while the EXIT trap cleans up runs the HUP trap (`exit 129`) in the middle of it or kills the `rm` child. The generated script's `cleanup()` now starts with `trap '' HUP INT TERM` (ignored signals also hold for the `rm` child). New deterministic test in `ssh-script.test.js`: a bash `rm` function that sends SIGHUP to the script right before removing; it left the script behind before the fix and removes it after. Also moved the `killPty` comment back above `killPty` (#89 had put `exitStatus` between them).
+- Result: tests 318 passed, lint ok, build ok; the real-pty tests passed 6 more times in a row. Exit statuses of the scripts unchanged (their tests pass).
+- Found / next: the ux run planned for this hour moves to the next run.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

@@ -203,6 +203,18 @@ describe.skipIf(!canRun)('generated scripts run under bash', () => {
       expect(result.stdout).toContain('Connect... deploy@example.com:22 (web)')
     })
 
+    // 탭을 닫으면 프로세스 그룹에 SIGHUP이 여러 번 온다 (그룹, pty.kill(), 터미널 끊김). 지우는 중에 또 오면
+    // HUP trap(exit 129)이 정리를 끊거나 rm 자식이 죽어서 임시 파일이 남았다 (CI run 112).
+    it('finishes removing the script even when hung up again while cleaning up', () => {
+      const hupEnv = join(root, 'bashenv-hup.sh')
+      // 정리하는 rm 직전에 스크립트 자신에게 SIGHUP을 보낸다.
+      writeFileSync(hupEnv, `${readFileSync(bashEnv, 'utf8')}rm() { kill -HUP $$; sleep 0.3; command rm "$@"; }\n`)
+      const r = newRun()
+      run(buildConnect(node, r.paths), r, { env: { BASH_ENV: toUnixPath(hupEnv) } })
+
+      expect(existsSync(r.paths.scriptPath)).toBe(false)
+    })
+
     it('keeps hostile values as data', () => {
       const name = "x'; touch PWNED; echo '"
       const exec = "echo 'a b'; touch PWNED2"
