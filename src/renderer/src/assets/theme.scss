@@ -122,6 +122,7 @@ body {
 }
 
 // 헤더와 사이드바의 밝은 버튼(variant light / white)을 어두운 배경에 맞춘다.
+// 강조는 마우스를 올렸을 때와 키보드 포커스에만: 클릭한 단추는 포커스가 남아서 :focus면 계속 켜져 있었다.
 #main-header,
 #main-sidebar {
   .btn-light,
@@ -133,8 +134,13 @@ body {
     color: var(--js-text);
     box-shadow: none;
 
+    &:focus {
+      background-color: transparent;
+      color: var(--js-text);
+    }
+
     &:hover,
-    &:focus,
+    &:focus-visible,
     &.active,
     &:not(:disabled):not(.disabled):active {
       background-color: var(--js-hover);

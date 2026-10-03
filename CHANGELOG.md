@@ -39,6 +39,7 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- A header or sidebar button clicked with the mouse stayed highlighted until something else was clicked (for example the lock or *Arrange nodes*), so it looked pressed. The highlight now shows on hover and on keyboard focus only.
 - Pressing the mouse on a node's image and dragging dragged a ghost of the image instead of the node. The image now lets the mouse through, so the node moves.
 - Error dialogs and error notices lost the line breaks of their message ("…git-bash.exe Check "Git Bash path" in Settings." ran together), and the "Failed to start SSH" / "Failed to copy" dialogs did not close with Enter because the focus was not on OK. Line breaks are kept and OK has the focus.
 - The Settings and Info dialogs now act like dialogs for the keyboard: the focus moves into them when they open, Tab stays inside instead of wandering through the buttons hidden behind them, and closing returns the focus to the menu button. The Git Bash path field and the Close to tray switch are named by their labels for screen readers.
