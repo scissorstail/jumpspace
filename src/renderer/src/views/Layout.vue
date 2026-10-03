@@ -55,6 +55,28 @@
             :icon="isEditorLocked? 'lock' : 'unlock'"
           />
         </b-button>
+        <!-- 잠금을 풀었을 때만: 보기 초기화, 노드 정렬 -->
+        <template v-if="editorData && !isEditorLocked">
+          <b-button
+            size="sm"
+            title="Reset view"
+            aria-label="Reset view"
+            variant="light"
+            @click="resetView"
+          >
+            <b-icon icon="arrow-counterclockwise" />
+          </b-button>
+          <b-button
+            size="sm"
+            title="Arrange nodes"
+            aria-label="Arrange nodes"
+            variant="light"
+            :disabled="nodeCount === 0"
+            @click="arrangeNodes"
+          >
+            <b-icon icon="diagram-3" />
+          </b-button>
+        </template>
       </template>
     </MainHeader>
 
@@ -233,11 +255,18 @@ export default {
 
       // 마지막으로 보던 위치와 확대 상태로 열고, 기록이 없으면 기본값을 쓴다.
       const view = sanitizeView(item.view) || DEFAULT_VIEW
-      const area = this.$refs.editorRef.editor.view.area
       this.isRestoringView = true // 복원하면서 생기는 변경은 다시 저장하지 않는다
-      area.zoom(view.k, 0, 0)
-      area.translate(view.x, view.y)
+      this.$refs.editorRef.setView(view)
       this.isRestoringView = false
+    },
+    // 처음 보기(기본 확대, 원점)로 돌린다. 바뀐 보기는 저장된다.
+    resetView() {
+      this.$refs.editorRef.setView(DEFAULT_VIEW)
+    },
+    arrangeNodes() {
+      // 사이드바가 열려 있으면 가려지지 않는 쪽의 가운데에 모은다.
+      const sidebar = document.getElementById('main-sidebar')
+      this.$refs.editorRef.arrangeNodes({ insetLeft: this.isSidebarOpen ? sidebar?.offsetWidth || 0 : 0 })
     },
     // 캔버스를 옮기거나 확대/축소했을 때. 열려 있는 item에 기억해 두고, 잠시 뒤에 저장한다.
     updateView(view) {

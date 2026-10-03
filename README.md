@@ -47,6 +47,7 @@ There is no release yet, but every push to this branch builds a Windows installe
    - link: **Port forwarding**, see below. The button with a counter next to it starts the enabled forwards.
    - gear: **Setting** (icon picked from a grid, name, user, host, port, key, password, exec) and *Copy SSH config*. A value that ssh would not accept gets a red border while you type; the note on what is allowed shows under the field while it has the focus or the pointer.
 4. The canvas position and zoom of each item are remembered and restored when you open it again. Lock the editor to save changes to the diagram. You can start connections while it is locked.
+5. While the editor is unlocked, two buttons sit next to the lock: **Reset view** (counterclockwise arrow) brings back the starting zoom and position, and **Arrange nodes** (tree icon) lines all nodes up in the middle of the visible canvas, each path left to right on its own row, and zooms out if they do not fit. Lock the editor to keep the new positions.
 
 The node menu also shows when one of its buttons has keyboard focus. Enter opens a popover and moves the focus into it; Escape closes it and returns the focus to its button. Right-click a node for **Duplicate** or **Delete** (a node with content asks first). *Settings* and *Show Info* (gear menu in the header) open with the focus inside; Tab stays in them and Escape closes them.
 
@@ -135,7 +136,7 @@ src/shared/     pure modules used by both main and renderer
                   before running; the node settings show the same rules while typing)
 src/preload/    the small API exposed to the renderer (window.preload)
 src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
-  src/utils/      pure logic with unit tests (forwarding rules, canvas view, ...)
+  src/utils/      pure logic with unit tests (forwarding rules, canvas view, node arrangement, ...)
   src/components/editor/nodes/site-node/controls/connection-control/
                   the node: component.vue coordinates, forward-menu.vue and
                   connection-settings.vue are its two popovers (the latter uses

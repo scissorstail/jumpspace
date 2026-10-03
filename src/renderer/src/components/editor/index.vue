@@ -17,7 +17,8 @@ import AreaPlugin from 'rete-area-plugin'
 import ReadonlyPlugin from 'rete-readonly-plugin'
 
 import SiteNode from './nodes/site-node'
-import { MAX_ZOOM, MIN_ZOOM, viewOf } from '@/utils/view'
+import { MAX_ZOOM, MIN_ZOOM, fitView, viewOf } from '@/utils/view'
+import { arrangeLayout, boxOf } from '@/utils/arrange'
 import { hopKey, routeStates } from '@/utils/terminal-sessions'
 
 export default {
@@ -257,6 +258,57 @@ export default {
       await this.compile()
 
       this.editor.view.resize()
+    },
+    // 보기(확대와 위치)를 바꾼다. 바뀐 값은 translated/zoomed로 Layout에 알려진다.
+    setView({ k, x, y }) {
+      const { area } = this.editor.view
+      area.zoom(k, 0, 0)
+      area.translate(x, y)
+    },
+    // 노드 상자에 그 밖으로 나온 부분(아래의 이름과 주소, 양옆 소켓)을 더한 영역. 캔버스 좌표로,
+    // dx, dy는 노드 위치(상자의 왼쪽 위)에서 영역의 왼쪽 위까지. 마우스를 올리면 위에 뜨는 메뉴는 줄 간격 안에 들어간다.
+    extentOf(node) {
+      const el = this.editor.view.nodes.get(node).el
+      const { k } = this.editor.view.area.transform
+      const base = el.getBoundingClientRect()
+      const rects = [base, ...[...el.querySelectorAll('.info-field, .socket')].map(part => part.getBoundingClientRect()).filter(r => r.width && r.height)]
+      const left = Math.min(...rects.map(r => r.left))
+      const top = Math.min(...rects.map(r => r.top))
+
+      return {
+        dx: (left - base.left) / k,
+        dy: (top - base.top) / k,
+        width: (Math.max(...rects.map(r => r.right)) - left) / k,
+        height: (Math.max(...rects.map(r => r.bottom)) - top) / k
+      }
+    },
+    // 모든 노드를 연결 순서대로 정렬해서 보이는 캔버스의 가운데에 모은다. 다 보이지 않으면 그만큼 축소한다.
+    // insetLeft: 왼쪽에서 가려진 너비(열린 사이드바). 노드 위치는 끌어서 옮긴 것과 같아서 잠글 때 저장된다.
+    arrangeNodes({ insetLeft = 0 } = {}) {
+      const { area, container, nodes: views, connections } = this.editor.view
+      if (!this.editor.nodes.length) return
+
+      const extents = new Map(this.editor.nodes.map(node => [node, this.extentOf(node)]))
+      const items = this.editor.nodes.map(node => ({ id: node.id, x: node.position[0], y: node.position[1], ...extents.get(node) }))
+      const links = [...connections.keys()].map(c => [c.output.node.id, c.input.node.id])
+      const positions = arrangeLayout(items, links)
+
+      const viewport = { left: insetLeft, top: 0, width: Math.max(1, container.clientWidth - insetLeft), height: container.clientHeight }
+      const { k, x, y } = area.transform
+      const cx = (viewport.left + viewport.width / 2 - x) / k
+      const cy = (viewport.top + viewport.height / 2 - y) / k
+      for (const node of this.editor.nodes) {
+        const [px, py] = positions.get(node.id)
+        const { dx, dy } = extents.get(node)
+        views.get(node).translate(cx + px - dx, cy + py - dy)
+      }
+
+      // 격자 맞춤(snap)으로 조금 움직였을 수 있으니 실제 위치로 맞춘다.
+      const box = boxOf(this.editor.nodes.map(node => {
+        const { dx, dy, width, height } = extents.get(node)
+        return { x: node.position[0] + dx, y: node.position[1] + dy, width, height }
+      }))
+      this.setView(fitView(viewport, box, k))
     },
     emitNodeCount() {
       this.$emit('node-count', this.editor.nodes.length)
