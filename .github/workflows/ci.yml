@@ -25,7 +25,7 @@ jobs:
   # 환경변수 전달, 경로 인용, SSH_ASKPASS 동작을 확인한다.
   windows:
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       JUMPSPACE_TEST_BASH: C:\Program Files\Git\bin\bash.exe
@@ -50,3 +50,20 @@ jobs:
           JUMPSPACE_TEST_VERBOSE: '1'
         run: npx vitest run src/main/ssh-script.test.js -t "git-bash.exe" --reporter=verbose
       - run: npm run build
+      # 설치 파일은 Windows에서 만든다(리눅스에서는 NSIS 단계에 wine이 필요하다). 실행 결과의 Artifacts에서 받을 수 있다.
+      - name: Installer
+        run: npx electron-builder --config electron-builder.config.js --win nsis --x64 --publish never
+      # 패키지 안의 node-pty(Windows용 prebuild)가 로드되고 ConPTY로 프로세스를 띄우는지 확인한다.
+      - name: node-pty in the package
+        shell: bash
+        env:
+          ELECTRON_RUN_AS_NODE: '1'
+        run: |
+          exe=$(ls dist_electron/win-unpacked/*.exe)
+          "$exe" .github/scripts/packaged-pty.cjs dist_electron/win-unpacked
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jumpspace-windows-installer
+          path: dist_electron/*.exe
+          if-no-files-found: error
+          retention-days: 30

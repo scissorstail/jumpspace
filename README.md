@@ -22,7 +22,7 @@ note: This currently only works on Windows
 
 ## trying it on Windows
 
-There is no published installer yet. Build it from this branch:
+There is no release yet, but every push to this branch builds a Windows installer: open the latest run of the *CI* workflow under *Actions* (GitHub sign-in needed), download the artifact `jumpspace-windows-installer` and run the `.exe` inside the zip. It is unsigned, so SmartScreen asks first (*More info* > *Run anyway*). It installs for the current user without asking where. Or build it yourself:
 
 1. Install [Git for Windows](https://gitforwindows.org/) and [Node.js](https://nodejs.org/) 22 (LTS).
 2. In Git Bash or PowerShell:
@@ -161,7 +161,7 @@ src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
 - `npm test` covers validation, script and config building, the askpass routing (it runs the generated script), the launcher (with a fake `spawn`), storage (including the migration of old forwards and the canvas view), the settings, the terminal session manager (with a fake pty) and the pure UI logic.
 - `src/main/terminal.test.js` also starts real sessions with `node-pty`: a generated script with a fake `ssh` runs in a real pty, key strokes reach the program, closing a tab ends it (checked outside Windows), and Korean text passes through unchanged in both directions. On Windows this runs through ConPTY and Git's `bash.exe` (`JUMPSPACE_TEST_BASH`).
 - `src/main/ssh-script.test.js` runs the generated scripts for real under bash with a fake `ssh`, and lets the real `ssh-add` run a script file as `SSH_ASKPASS`. It needs bash: `/bin/bash` on Linux and macOS, on Windows set `JUMPSPACE_TEST_BASH` to Git Bash (`C:\Program Files\Git\bin\bash.exe`), otherwise it is skipped.
-- CI runs lint, tests and the build on Ubuntu. On Windows it runs the tests and the build too, with the bash based tests under the Git Bash of the runner, plus one that starts a generated script through the real `git-bash.exe` (`JUMPSPACE_TEST_GIT_BASH_EXE`), the launcher the app uses.
+- CI runs lint, tests and the build on Ubuntu. On Windows it runs the tests and the build too, with the bash based tests under the Git Bash of the runner, plus one that starts a generated script through the real `git-bash.exe` (`JUMPSPACE_TEST_GIT_BASH_EXE`), the launcher the app uses. Then it packages the installer, checks with `.github/scripts/packaged-pty.cjs` that the `node-pty` inside the package starts a process through ConPTY, and uploads the installer as an artifact.
 
 To try a path against real servers without owning any, start one `sshd` per authentication style on `127.0.0.1` with different ports and chain nodes for them. Every hop is reached through the previous one, so a single machine is enough:
 

@@ -13,6 +13,8 @@ module.exports = {
   npmRebuild: false,
   asarUnpack: ['node_modules/node-pty/**'],
   win: {
-    icon: 'build/icons/icon.ico'
+    icon: 'build/icons/icon.ico',
+    // Linux에서 컴파일된 build/Release/pty.node와 macOS용 빌드는 Windows 설치 파일에 넣지 않는다.
+    files: ['!node_modules/node-pty/build/**', '!node_modules/node-pty/prebuilds/darwin-*/**']
   }
 }

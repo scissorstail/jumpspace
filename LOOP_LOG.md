@@ -83,7 +83,7 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 1. **Terminal font size** with Ctrl +/- / Ctrl 0 on the terminal, remembered in the settings.
 2. **Search in the terminal scrollback** (Ctrl+Shift+F, `@xterm/addon-search`).
 3. **Find a node** by name, user or host on the canvas and center it.
-4. **Windows installer build in CI** (electron-builder `--win --dir`) and a start check of the packaged app, so the native `node-pty` in the package is covered.
+4. ~~**Windows installer build in CI**~~ done in #83 (installer artifact + packaged node-pty check).
 
 ### Proposals for the owner (need a decision)
 - (none open)
@@ -93,7 +93,7 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 
 ### Windows check by the owner (pending, 2026-10-02)
 Never run on a real Windows machine so far (CI covers the unit tests, the generated scripts under Git Bash, ConPTY and the `git-bash.exe` launcher). Worth checking on the first real run:
-1. `npm ci` and `npm run dev` start the app; `npm run dist` builds the installer and the installed app starts with a working in-app terminal (node-pty inside the package; Feature queue item 4 would cover this in CI).
+1. `npm ci` and `npm run dev` start the app; `npm run dist` builds the installer and the installed app starts with a working in-app terminal (CI now builds the installer and checks the packaged node-pty, #83; installing and opening a terminal in the installed app is still the owner's).
 2. Connect in the app terminal against a real server: the path goes yellow, then green once logged in (the `LocalCommand` marker through Git for Windows' ssh).
 3. Password sign-in (askpass, needs OpenSSH 8.4+), a ProxyJump chain with different authentication per hop, and port forwarding.
 4. *Open SSH in: Git Bash window*.
@@ -519,6 +519,10 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 ### #82 2026-10-02 16:1x UTC · wrap-up (by hand, at the owner's request)
 - Did: the owner wants to wrap up and try the app on Windows. README has a new section "trying it on Windows" (Git for Windows, Node 22, clone this branch, `npm ci`, `npm run dev` or `npm run dist` into `dist_electron\`, check the Git Bash path); checked that node-pty ships prebuilt binaries for win32-x64 and win32-arm64, so no Visual Studio is needed. Added "Windows check by the owner" above with what was never verified on a real Windows machine. The hourly routine is disabled (see Routine below).
 - State: CI run 98 green on the last commit; 298 tests; Feature queue unchanged (top: terminal font size). Since the last feature (#61) the polish runs #62-#81 each found and fixed something.
+
+### #83 2026-10-03 04:xx UTC · feature (by hand, at the owner's request: "build it into an installer")
+- Did: cross-building the NSIS installer on Linux stops at the step that needs `wine` (the unpacked Windows app builds fine), so the Windows CI job now builds it: `electron-builder --win nsis --x64 --publish never` after the tests, then `.github/scripts/packaged-pty.cjs` runs under the packaged exe with `ELECTRON_RUN_AS_NODE=1` and starts `cmd.exe` through the packaged node-pty (ConPTY), then the `.exe` is uploaded as artifact `jumpspace-windows-installer` (30 days). The Windows package no longer carries node-pty's Linux `build/Release/pty.node` and the macOS prebuilds (`win.files` in `electron-builder.config.js`); the Linux package keeps its `pty.node`. README says where to download the installer. This is Feature queue item 4.
+- Checked: the script against the Linux package (ok), and fails when node-pty's binary is removed and when the output does not match (two mutations).
 
 ## Routine
 
