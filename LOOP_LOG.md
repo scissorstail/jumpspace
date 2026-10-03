@@ -541,6 +541,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Did: CI run 106 (7e3ff34) failed on Windows only: the new `assets/theme.test.js` from #86 searched `theme.scss` for `'\n'` line ends, and the Windows runner checks files out with CRLF, so the header rule was not found. The test now normalizes CRLF first. Reproduced locally by converting `theme.scss` to CRLF (fails before, passes after; LF passes too). The other tests that read source files (`icons`, `image-drag`, `terminal-view`) do not depend on line ends and passed on Windows.
 - Result: tests 311 passed, lint ok, build ok. Lesson: a test that reads a source file must not depend on `\n` (now in CLAUDE.md). CI run 107 (3304a1a) green on both jobs.
 
+### #88 2026-10-03 12:2x UTC · style (scheduled run, polish phase)
+- Did: looked for a visual rough edge in the parts added or touched today, in all three palettes. Header (scratch t109): the icons of the toggle, lock, *Reset view*, *Arrange nodes* and gear are centered in their 43x35 buttons within 1px (icon ink measured); the disabled *Arrange nodes* on an empty item is clearly dimmer (opacity 0.65). Terminal panel with two failed sessions (t110): status square, title and buttons of each tab share one center line (462.6px +- 0.05); the failed nodes show the red mark. A navy frame around the terminal in Vapor Blue turned out to come from my script switching `data-theme` directly; switched through *Settings* (as the app does), the terminal colors follow the palette and match the panel in all three.
+- Result: nothing worthwhile found, no code change. Lesson for scripts: switch palettes through the Settings dialog, not `data-theme`, when a terminal is open.
+- Found / next: next polish runs: tests or cleanup, then ux.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
