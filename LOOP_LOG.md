@@ -539,7 +539,7 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 
 ### #87 2026-10-03 11:2x UTC · fix (scheduled run: CI red first)
 - Did: CI run 106 (7e3ff34) failed on Windows only: the new `assets/theme.test.js` from #86 searched `theme.scss` for `'\n'` line ends, and the Windows runner checks files out with CRLF, so the header rule was not found. The test now normalizes CRLF first. Reproduced locally by converting `theme.scss` to CRLF (fails before, passes after; LF passes too). The other tests that read source files (`icons`, `image-drag`, `terminal-view`) do not depend on line ends and passed on Windows.
-- Result: tests 311 passed, lint ok, build ok. Lesson: a test that reads a source file must not depend on `\n`.
+- Result: tests 311 passed, lint ok, build ok. Lesson: a test that reads a source file must not depend on `\n` (now in CLAUDE.md). CI run 107 (3304a1a) green on both jobs.
 
 ## Routine
 
