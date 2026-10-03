@@ -555,6 +555,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Did: tabs had a fixed floor of 150px, so a short name (ORA) left empty space before the close button. Tabs now take the width of their name (min 132px, 154px with the reconnect arrow; max 220/242px with an ellipsis); the buttons stay at the right end. 132px keeps about four letters readable when many tabs squeeze (96px left only one letter: "P..." in the 12-tab check).
 - Checked (scratch t113): 3 tabs: the gap from the title to the buttons is 8px and the close button 8px from the tab's right edge in every tab, the long name is cut at 242px; 12 tabs: each shows 4 to 5 letters, the row scrolls and keeps the active tab in view. CSS only; lint, tests 317, build ok.
 
+### #91 2026-10-03 13:2x UTC · refactor (scheduled run, polish phase)
+- Did: `components/editor/index.vue` was 586 lines, 258 of them the canvas styles (node box, sockets, connection states, locked look). They moved unchanged into `components/editor/canvas.scss`, imported next to `context-menu.scss`; the component is now 331 lines of template and logic. CLAUDE.md points to the new file for the node frame.
+- Result: the built CSS is byte-identical before and after (`cmp` of `out/renderer/assets/index-*.css`, same hash name), so the look cannot have changed. Tests 317 passed, lint ok, build ok.
+- Found / next: next hot spot is `main-navigator.vue` (the header toolbar seam). Next polish run: ux or style.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
