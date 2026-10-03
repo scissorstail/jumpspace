@@ -24,6 +24,7 @@
         v-if="icon"
         :src="base + icon"
         alt=""
+        draggable="false"
         width="28"
         height="28"
         loading="lazy"

@@ -46,6 +46,7 @@
         v-if="diagram"
         :src="`${diagramBase}${diagram}`"
         alt=""
+        draggable="false"
         class="info-diagram mb-1"
         height="40%"
         width="40%"
@@ -436,7 +437,11 @@ export default {
   }
 
   // 아이콘 파일은 검은 선 그림이라 어두운 카드 위에서는 밝게 뒤집는다.
+  // 마우스는 그대로 노드로 보낸다: 이미지를 따로 끌지 않고 노드를 끈다.
   &-diagram {
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
     filter: invert(1) brightness(0.92);
     min-width: 68px;
     min-height: 68px;
