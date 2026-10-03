@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const theme = readFileSync(join(__dirname, 'theme.scss'), 'utf8')
+// Windows의 checkout은 줄 끝이 CRLF일 수 있다.
+const theme = readFileSync(join(__dirname, 'theme.scss'), 'utf8').replace(/\r\n/g, '\n')
 
 describe('header and sidebar buttons', () => {
   // 클릭한 단추에는 포커스가 남는다. :focus로 강조하면 마우스로 누른 단추가 계속 켜져 있다.

@@ -537,6 +537,10 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 311 passed, lint ok, build ok. Real app (scratch t108) in all three palettes: after a click the button is transparent (was `rgba(255,255,255,.08)` before the fix), hover and keyboard focus (with the sun outline) still light it, the header buttons keep their positions to 0.1 px.
 - Found / next: after closing the sidebar with its X the toggle gets the focus back from b-sidebar and shows as keyboard focus; that is b-sidebar's focus return and helps keyboard users, so it stays. Next polish run: style or another ux pass over the arrange result in a narrow window.
 
+### #87 2026-10-03 11:2x UTC · fix (scheduled run: CI red first)
+- Did: CI run 106 (7e3ff34) failed on Windows only: the new `assets/theme.test.js` from #86 searched `theme.scss` for `'\n'` line ends, and the Windows runner checks files out with CRLF, so the header rule was not found. The test now normalizes CRLF first. Reproduced locally by converting `theme.scss` to CRLF (fails before, passes after; LF passes too). The other tests that read source files (`icons`, `image-drag`, `terminal-view`) do not depend on line ends and passed on Windows.
+- Result: tests 311 passed, lint ok, build ok. Lesson: a test that reads a source file must not depend on `\n`.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
