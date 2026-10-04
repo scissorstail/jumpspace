@@ -521,8 +521,11 @@ export default {
             background-color: transparent;
             color: var(--js-on-primary);
 
+            // 열려 있는 항목은 분홍 띠로 이미 구분되므로 메뉴 테두리를 두지 않는다. (띠의 그림자에 걸려 어중간하게 보였다)
+            // 테두리 두께는 그대로 두어 글자가 움직이지 않는다.
             &.dropdown-shown {
               z-index: 5;
+              border-color: transparent;
             }
 
             &::before {

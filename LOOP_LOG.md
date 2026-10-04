@@ -587,6 +587,10 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Did: the editor vetoes Rete's `zoom` with source `dblclick` and handles `dblclick` on the canvas itself: it goes back to the zoom the item was opened with (`openView` remembers `view.k`; Layout's `loadEditor` uses it), around the clicked point (new pure `zoomAround` in `utils/view.js`, clamped to the zoom limits). Double-clicks on a node, a line or the context menu leave the view alone. The restored view is saved like any zoom.
 - Checked: 3 unit tests (one mutation fails a test). Real app (scratch t118): an item opened at 0.6, zoomed to 0.878 and panned, double-click returns to 0.6 with the clicked point fixed (<1px); a second double-click does not zoom in; double-click on a node keeps the view; the restored view is saved; another item returns to its own 0.85. Without the listener three checks fail. Tests 322 passed, lint ok, build ok.
 
+### #98 2026-10-04 · style (by hand, the owner: the menu border on the selected sidebar row looks half hidden)
+- Did: `.list-item.active.dropdown-shown` gets `border-color: transparent` in `main-navigator.vue` (the width stays 1px, so the text does not move). Other rows with an open menu keep the border.
+- Checked (scratch t119) in all three palettes: the active row's border is transparent while its menu is open, its name stays at the same position (0px), an inactive row with an open menu still has the border. CSS only; lint ok, build ok.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
