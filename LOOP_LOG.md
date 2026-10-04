@@ -573,6 +573,12 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 ### #94 2026-10-04 · ci (by hand, the owner: no installer on every push, they will get it later)
 - Did: the Windows job builds the installer, runs the packaged node-pty check and uploads the artifact only when the workflow is started by hand (`workflow_dispatch`, new trigger); pushes and pull requests run lint, tests, the Git Bash script tests and the builds as before. README (how to get the installer, the CI section), CLAUDE.md (CI) and the end procedure above say so.
 
+### #95 2026-10-04 · ux (by hand, the owner: connect by click-click; drag-and-release is buggy on Windows)
+- Reported: connecting by click on the start socket and click on the target works; pressing on the start socket, dragging and releasing on the target leaves the line hanging without an arrow (screenshot from Windows). The owner said to fix the drag or, if that is hard, keep only click-click.
+- Looked: `rete-connection-plugin` picks on pointerdown and again on pointerup (`elementFromPoint` under the pointer). On Linux the drag connected at every tried release point (socket center and edge; off the socket it cancels cleanly), and our code has no handlers on those events, so the Windows failure could not be reproduced here. Chose click-click only, as the owner allowed.
+- Did: the editor vetoes `connectionpick` during a pointerup (window capture listener, flag cleared on the next task). After a drag the line keeps following the mouse; a click on the target connects, a click on empty canvas cancels. README usage, CHANGELOG (Changed), CLAUDE.md.
+- Checked (scratch t116): click-click connects; drag-release does not connect and the line follows; then a click connects; empty click cancels; node dragging unchanged; no console errors. Without the veto (mutation) three checks fail. Tests 318 passed, lint ok, build ok.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

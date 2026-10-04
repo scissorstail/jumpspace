@@ -199,12 +199,24 @@ export default {
       }
     )
 
+    // 연결은 클릭 두 번으로만 잇는다: 시작 소켓을 클릭하면 선이 마우스를 따라오고, 도착 소켓을 클릭하면 이어진다.
+    // 끌어서 놓는 방식(소켓에서 누르고 다른 소켓에서 놓기)은 Windows에서 선이 이어지지 않고 남는 일이 있어서 쓰지 않는다.
+    // 연결 플러그인은 놓는 순간(pointerup)에도 소켓을 고르므로, 그때 고르는 것만 막는다. 놓은 뒤에도 선은 따라오고, 클릭하면 이어진다.
+    this.isReleasing = false
+    this.onPointerRelease = () => {
+      this.isReleasing = true
+      setTimeout(() => { this.isReleasing = false })
+    }
+    window.addEventListener('pointerup', this.onPointerRelease, true)
+    this.editor.on('connectionpick', () => !this.isReleasing)
+
     // Rete는 캔버스 크기를 불러올 때와 창 크기가 바뀔 때만 픽셀로 고정한다. 터미널 패널을 열고 닫거나 높이를 바꾸면
     // 캔버스 영역이 달라지므로 그때도 맞춘다. (패널이 열린 채 다른 item을 열고 패널을 닫으면 캔버스가 잘린 채 남았다)
     this.areaObserver = new ResizeObserver(() => this.editor.view.resize())
     this.areaObserver.observe(this.$el.parentElement)
   },
   beforeDestroy() {
+    window.removeEventListener('pointerup', this.onPointerRelease, true)
     this.areaObserver?.disconnect()
   },
   methods: {
