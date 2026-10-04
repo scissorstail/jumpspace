@@ -38,7 +38,7 @@ Passwords stay plain text. The Vue 3 / Rete 2 migration is on hold. No Playwrigh
 
 - Work on `claude/cool-bardeen-9x9ymz`, push there, no pull request unless asked, no force push, no history rewriting.
 - Small commits whose message says why. End each commit with the trailer lines the session asks for (`Co-Authored-By: ...` with the model the session names, and the `Claude-Session:` line). Do not copy the model name from older commits.
-- CI (`.github/workflows/ci.yml`): Ubuntu runs lint, tests and build; Windows runs the tests, the bash based script tests under Git Bash and the real `git-bash.exe` launcher test. Check the result of the last run with the GitHub MCP tools (`gh` is not available).
+- CI (`.github/workflows/ci.yml`): Ubuntu runs lint, tests and build; Windows runs the tests, the bash based script tests under Git Bash and the real `git-bash.exe` launcher test; only a run started by hand (`workflow_dispatch`, GitHub MCP `actions_run_trigger` with the branch as ref) also builds the installer, checks the packaged node-pty and uploads the artifact `jumpspace-windows-installer`. Check the result of the last run with the GitHub MCP tools (`gh` is not available).
 
 ## Checking the UI
 
