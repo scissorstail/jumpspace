@@ -26,3 +26,15 @@ export function fitView(viewport, box, k) {
     y: viewport.top + viewport.height / 2 - ((box.top + box.bottom) / 2) * zoom
   }
 }
+
+// 확대를 k로 바꾸되, 화면의 한 점(point: 캔버스 영역 기준 px)은 제자리에 둔 보기. (더블클릭한 곳을 기준으로 줌을 되돌릴 때)
+export function zoomAround(view, k, point) {
+  const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, k))
+  const scale = zoom / view.k
+
+  return {
+    k: zoom,
+    x: point.x - (point.x - view.x) * scale,
+    y: point.y - (point.y - view.y) * scale
+  }
+}

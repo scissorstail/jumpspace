@@ -271,7 +271,7 @@ export default {
       // 마지막으로 보던 위치와 확대 상태로 열고, 기록이 없으면 기본값을 쓴다.
       const view = sanitizeView(item.view) || DEFAULT_VIEW
       this.isRestoringView = true // 복원하면서 생기는 변경은 다시 저장하지 않는다
-      this.$refs.editorRef.setView(view)
+      this.$refs.editorRef.openView(view)
       this.isRestoringView = false
     },
     toggleNodeInfo() {

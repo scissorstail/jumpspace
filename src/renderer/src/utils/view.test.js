@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_VIEW, MIN_ZOOM, fitView, sanitizeView, viewOf } from './view'
+import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, sanitizeView, viewOf, zoomAround } from './view'
 
 describe('sanitizeView', () => {
   it('keeps a valid view and drops extra keys', () => {
@@ -49,5 +49,30 @@ describe('fitView', () => {
   it('centers in the part of the window that is not covered (sidebar)', () => {
     const view = fitView({ left: 320, top: 0, width: 680, height: 600 }, { left: -10, top: -10, right: 10, bottom: 10 }, 1)
     expect(view).toEqual({ k: 1, x: 660, y: 300 })
+  })
+})
+
+describe('zoomAround', () => {
+  // 화면의 점 p가 가리키는 캔버스 좌표
+  const canvasAt = (view, p) => ({ x: (p.x - view.x) / view.k, y: (p.y - view.y) / view.k })
+
+  it('changes the zoom and keeps the point under the pointer in place', () => {
+    const view = { k: 1.6, x: -300, y: -120 }
+    const point = { x: 420, y: 260 }
+    const next = zoomAround(view, 0.85, point)
+    expect(next.k).toBe(0.85)
+    const before = canvasAt(view, point)
+    const after = canvasAt(next, point)
+    expect(after.x).toBeCloseTo(before.x)
+    expect(after.y).toBeCloseTo(before.y)
+  })
+
+  it('leaves the view alone when the zoom is already there', () => {
+    expect(zoomAround({ k: 0.85, x: 10, y: 20 }, 0.85, { x: 300, y: 300 })).toEqual({ k: 0.85, x: 10, y: 20 })
+  })
+
+  it('stays inside the zoom limits', () => {
+    expect(zoomAround({ k: 1, x: 0, y: 0 }, 50, { x: 0, y: 0 }).k).toBe(MAX_ZOOM)
+    expect(zoomAround({ k: 1, x: 0, y: 0 }, 0, { x: 0, y: 0 }).k).toBe(MIN_ZOOM)
   })
 })

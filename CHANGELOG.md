@@ -26,6 +26,7 @@ Everything since 0.2.2-beta.
 
 ### Changed
 
+- **Double-click restores the zoom.** A double-click on empty canvas no longer zooms in; it goes back to the zoom the diagram had when it was opened, keeping the point under the pointer in place. (*Reset view* still goes to the starting zoom and position.) Double-clicks on nodes and lines leave the view alone.
 - **Nodes are connected with two clicks.** Click the start socket, then the target socket. Dragging from a socket and releasing on another one left the line hanging without connecting on Windows; a release now keeps the line following the mouse until you click the target (or empty canvas to cancel).
 - **Build and dependencies.** Vue CLI 4 / webpack 4 is replaced by electron-vite / Vite 7 (the old toolchain no longer installed with a current npm). Electron 16 -> 44, electron-builder 26, electron-store 11, ESLint 9. Vue stays on 2.7 and Rete on v1. Sources moved to `src/main`, `src/preload` and `src/renderer`.
 - **ssh is no longer started from a shell string.** Values are validated in the main process, written into a temporary script and passed to Git Bash. The renderer is sandboxed and only gets a small IPC API.

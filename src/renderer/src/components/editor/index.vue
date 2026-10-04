@@ -17,7 +17,7 @@ import AreaPlugin from 'rete-area-plugin'
 import ReadonlyPlugin from 'rete-readonly-plugin'
 
 import SiteNode from './nodes/site-node'
-import { MAX_ZOOM, MIN_ZOOM, fitView, viewOf } from '@/utils/view'
+import { MAX_ZOOM, MIN_ZOOM, fitView, viewOf, zoomAround } from '@/utils/view'
 import { arrangeLayout, boxOf } from '@/utils/arrange'
 import { hopKey, routeStates } from '@/utils/terminal-sessions'
 
@@ -199,6 +199,12 @@ export default {
       }
     )
 
+    // 빈 캔버스를 더블클릭하면 Rete는 확대한다. 대신 이 item을 열었을 때의 확대로 돌아간다 (더블클릭한 곳 기준).
+    this.entryZoom = null
+    this.editor.on('zoom', ({ source }) => source !== 'dblclick')
+    this.onDoubleClick = e => this.restoreEntryZoom(e)
+    this.$el.addEventListener('dblclick', this.onDoubleClick)
+
     // 연결은 클릭 두 번으로만 잇는다: 시작 소켓을 클릭하면 선이 마우스를 따라오고, 도착 소켓을 클릭하면 이어진다.
     // 끌어서 놓는 방식(소켓에서 누르고 다른 소켓에서 놓기)은 Windows에서 선이 이어지지 않고 남는 일이 있어서 쓰지 않는다.
     // 연결 플러그인은 놓는 순간(pointerup)에도 소켓을 고르므로, 그때 고르는 것만 막는다. 놓은 뒤에도 선은 따라오고, 클릭하면 이어진다.
@@ -216,6 +222,7 @@ export default {
     this.areaObserver.observe(this.$el.parentElement)
   },
   beforeDestroy() {
+    this.$el.removeEventListener('dblclick', this.onDoubleClick)
     window.removeEventListener('pointerup', this.onPointerRelease, true)
     this.areaObserver?.disconnect()
   },
@@ -284,6 +291,18 @@ export default {
       const { area } = this.editor.view
       area.zoom(k, 0, 0)
       area.translate(x, y)
+    },
+    // item을 열 때의 보기. 그때의 확대를 기억해 두었다가 더블클릭으로 되돌린다.
+    openView(view) {
+      this.entryZoom = view.k
+      this.setView(view)
+    },
+    restoreEntryZoom(e) {
+      // 노드나 연결선, 메뉴 위의 더블클릭(글자 고르기 등)은 그대로 둔다.
+      if (this.entryZoom === null || e.target.closest('.node, .connection, .context-menu')) return
+
+      const rect = this.$el.getBoundingClientRect()
+      this.setView(zoomAround(this.editor.view.area.transform, this.entryZoom, { x: e.clientX - rect.left, y: e.clientY - rect.top }))
     },
     // 노드 상자에 그 밖으로 나온 부분(아래의 이름과 주소, 양옆 소켓)을 더한 영역. 캔버스 좌표로,
     // dx, dy는 노드 위치(상자의 왼쪽 위)에서 영역의 왼쪽 위까지. 마우스를 올리면 위에 뜨는 메뉴는 줄 간격 안에 들어간다.
