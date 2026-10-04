@@ -198,6 +198,14 @@ export default {
         })
       }
     )
+
+    // Rete는 캔버스 크기를 불러올 때와 창 크기가 바뀔 때만 픽셀로 고정한다. 터미널 패널을 열고 닫거나 높이를 바꾸면
+    // 캔버스 영역이 달라지므로 그때도 맞춘다. (패널이 열린 채 다른 item을 열고 패널을 닫으면 캔버스가 잘린 채 남았다)
+    this.areaObserver = new ResizeObserver(() => this.editor.view.resize())
+    this.areaObserver.observe(this.$el.parentElement)
+  },
+  beforeDestroy() {
+    this.areaObserver?.disconnect()
   },
   methods: {
     // 연달아 누르면 한 번만 알린다.

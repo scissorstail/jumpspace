@@ -565,6 +565,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 318 passed, lint ok, build ok; the real-pty tests passed 6 more times in a row. Exit statuses of the scripts unchanged (their tests pass). CI run 113 (5e68177) green on both jobs, including the new test under Git Bash on Windows.
 - Found / next: the ux run planned for this hour moves to the next run.
 
+### #93 2026-10-04 · fix (by hand, the owner found it on Windows)
+- Reported: with a terminal opened on one diagram, closing it while another diagram is shown left the canvas cut off (only the scenery below it). The owner also suggested that clicking a terminal tab could switch to the diagram it was opened from; asked back instead of doing it (it changes behavior, and switching with an unlocked editor asks about unsaved changes).
+- Cause: Rete v1 sets the canvas container to fixed pixel sizes only on load and on window resize. Opening a diagram while the panel was open fixed the canvas to the shorter height; closing the panel later grew the area but not the canvas. Resizing the panel by dragging and opening it left it stale too, and *Arrange nodes* centered on the stale height (off by 36px, partly behind the panel).
+- Did: the editor component calls `editor.view.resize()` from a `ResizeObserver` on `#editor-area` (disconnected on destroy). Component glue without a unit test (no DOM tests by design); checked in the real app instead (scratch t114) before and after: before, 4 checks failed (canvas 436px in a 716px area after closing the tab on another diagram, 436 in 282 after a drag, arrange below the visible part); after, all pass with no console errors. Tests 318 passed, lint ok, build ok.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

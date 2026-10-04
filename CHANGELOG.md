@@ -39,6 +39,7 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- After opening another diagram while the terminal panel was open, closing the last terminal left the canvas cut off at the height it had with the panel, with only the scenery below. The canvas now follows its area whenever the panel opens, closes or is resized (*Arrange nodes* also centers in the visible part while the panel is open).
 - A header or sidebar button clicked with the mouse stayed highlighted until something else was clicked (for example the lock or *Arrange nodes*), so it looked pressed. The highlight now shows on hover and on keyboard focus only.
 - Pressing the mouse on a node's image and dragging dragged a ghost of the image instead of the node. The image now lets the mouse through, so the node moves.
 - Error dialogs and error notices lost the line breaks of their message ("…git-bash.exe Check "Git Bash path" in Settings." ran together), and the "Failed to start SSH" / "Failed to copy" dialogs did not close with Enter because the focus was not on OK. Line breaks are kept and OK has the focus.
