@@ -18,7 +18,9 @@ export const DEFAULT_SETTING = {
   openIn: 'app',
   theme: 'neon-night',
   backdrop: 'depth',
-  nodeBlur: 0
+  nodeBlur: 0,
+  // 캔버스에서 노드의 접속 정보(user, host, port, 포워딩)를 숨기고 이름만 보인다 (머리글의 눈 단추)
+  hideNodeInfo: false
 }
 
 // 0..NODE_BLUR_MAX의 정수. 숫자가 아니면 기본값
@@ -39,6 +41,7 @@ export function normalizeSetting(data) {
     openIn: OPEN_IN.includes(data?.openIn) ? data.openIn : DEFAULT_SETTING.openIn,
     theme: THEMES.includes(data?.theme) ? data.theme : DEFAULT_SETTING.theme,
     backdrop: BACKDROPS.includes(data?.backdrop) ? data.backdrop : DEFAULT_SETTING.backdrop,
-    nodeBlur: normalizeNodeBlur(data?.nodeBlur)
+    nodeBlur: normalizeNodeBlur(data?.nodeBlur),
+    hideNodeInfo: data?.hideNodeInfo === true
   }
 }

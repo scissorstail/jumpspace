@@ -579,6 +579,10 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Did: the editor vetoes `connectionpick` during a pointerup (window capture listener, flag cleared on the next task). After a drag the line keeps following the mouse; a click on the target connects, a click on empty canvas cancels. README usage, CHANGELOG (Changed), CLAUDE.md.
 - Checked (scratch t116): click-click connects; drag-release does not connect and the line follows; then a click connects; empty click cancels; node dragging unchanged; no console errors. Without the veto (mutation) three checks fail. Tests 318 passed, lint ok, build ok.
 
+### #96 2026-10-04 · feature (by hand, the owner: a hide mode left of the lock)
+- Did: new setting `hideNodeInfo` (shared/setting.js, default false, only `true` turns it on; older settings load with it off) and an eye button left of the lock (`b-button :pressed`, lit while hiding). `#editor-area.hide-node-info` hides `.info-text` (user, host, port, forward line) in `editor/canvas.scss`; names stay. The connect button's tooltip leaves out the host of an unnamed node while hiding. The Settings dialog now saves over the current setting (`...this.setting`), otherwise saving it would have reset fields it does not show, like this one. The renderer store test's "complete stored setting" fixture gained the new field.
+- Checked: unit tests (normalize, one mutation fails a test). Real app (scratch t117): button order toggle, eye, lock; details hidden and shown again; names and node boxes do not move (0px); no address in the tooltip; saving Settings keeps it; still hidden after restarting the app. Tests 319 passed, lint ok, build ok.
+
 ## Routine
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.

@@ -198,7 +198,8 @@ export default {
     },
     // 접속 버튼의 이름. 아이콘만 있는 버튼이라 스크린 리더와 툴팁에 쓴다.
     connectLabel() {
-      const target = this.name || this.host || 'this node'
+      // 노드 정보를 숨긴 동안에는 단추의 설명에도 주소를 넣지 않는다.
+      const target = this.name || (store.getters.setting.hideNodeInfo ? '' : this.host) || 'this node'
 
       return this.isProxyJumpReady ? `Connect to ${target} through the previous nodes (ProxyJump)` : `Connect to ${target}`
     },

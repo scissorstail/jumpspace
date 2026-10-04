@@ -255,3 +255,8 @@
     transform: none;
   }
 }
+
+// 노드 정보 숨기기(머리글의 눈 단추): 이름만 남기고 user, host, port, 포워딩 줄을 감춘다.
+.hide-node-info #rete .info-text {
+  display: none;
+}

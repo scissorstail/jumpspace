@@ -219,7 +219,9 @@ export default {
       this.nodeBlur = this.setting.nodeBlur
     },
     async saveSetting() {
+      // 이 창에 없는 설정(노드 정보 숨기기 등)은 지금 값을 그대로 둔다.
       await this.settingSave({
+        ...this.setting,
         gitBashPath: this.gitBashPath,
         isHideToTrayOnClose: this.isHideToTrayOnClose,
         openIn: this.openIn,

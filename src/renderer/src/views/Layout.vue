@@ -42,6 +42,18 @@
             {{ terminalCount }}
           </b-badge>
         </b-button>
+        <!-- 노드의 접속 정보 숨기기/보이기 (이름은 남는다). 화면을 보여줄 때 쓴다. -->
+        <b-button
+          v-if="editorData"
+          size="sm"
+          variant="light"
+          :title="hideNodeInfo ? 'Show node details' : 'Hide node details (names stay)'"
+          :aria-label="hideNodeInfo ? 'Show node details' : 'Hide node details'"
+          :pressed="hideNodeInfo"
+          @click="toggleNodeInfo"
+        >
+          <b-icon :icon="hideNodeInfo ? 'eye-slash' : 'eye'" />
+        </b-button>
         <!-- Editor Lock/Unlock button (다른 머리글 단추처럼 기본 title을 쓴다. b-tooltip은 누른 뒤에도 남아 있었다) -->
         <b-button
           v-if="editorData"
@@ -106,7 +118,7 @@
       <div id="workspace">
         <div
           id="editor-area"
-          :class="[`backdrop-${backdrop}`, nodeBlur > 0 && 'node-glass']"
+          :class="[`backdrop-${backdrop}`, nodeBlur > 0 && 'node-glass', hideNodeInfo && 'hide-node-info']"
           :style="{ '--node-blur': `${nodeBlur}px` }"
         >
           <!-- 배경 풍경: 밤하늘, 별, 줄무늬 해, 도시, 네온 격자 바닥 (장식) -->
@@ -204,6 +216,9 @@ export default {
       return this.$store.getters.setting.backdrop
     },
     // 노드 뒤 유리판의 흐림(px), 0이면 없음 (설정 > Node glass)
+    hideNodeInfo() {
+      return this.$store.getters.setting.hideNodeInfo
+    },
     nodeBlur() {
       return this.$store.getters.setting.nodeBlur
     },
@@ -258,6 +273,9 @@ export default {
       this.isRestoringView = true // 복원하면서 생기는 변경은 다시 저장하지 않는다
       this.$refs.editorRef.setView(view)
       this.isRestoringView = false
+    },
+    toggleNodeInfo() {
+      this.$store.dispatch('settingSave', { ...this.$store.getters.setting, hideNodeInfo: !this.hideNodeInfo })
     },
     // 처음 보기(기본 확대, 원점)로 돌린다. 바뀐 보기는 저장된다.
     resetView() {

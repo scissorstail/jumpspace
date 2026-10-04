@@ -3,8 +3,8 @@ import { BACKDROPS, DEFAULT_SETTING, NODE_BLUR_MAX, normalizeSetting, THEMES } f
 
 describe('normalizeSetting', () => {
   it('keeps valid values', () => {
-    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', nodeBlur: 12 }))
-      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', nodeBlur: 12 })
+    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', nodeBlur: 12, hideNodeInfo: true }))
+      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', nodeBlur: 12, hideNodeInfo: true })
   })
 
   it('uses the default path when it is empty, blank or not a string', () => {
@@ -80,6 +80,17 @@ describe('normalizeSetting: nodeBlur', () => {
     expect(normalizeSetting({ nodeBlur: 999 }).nodeBlur).toBe(NODE_BLUR_MAX)
     for (const nodeBlur of [null, undefined, '', 'blur(9px)', NaN, Infinity, {}, true]) {
       expect(normalizeSetting({ nodeBlur }).nodeBlur).toBe(0)
+    }
+  })
+})
+
+describe('normalizeSetting: hideNodeInfo', () => {
+  it('is off unless it is exactly true (older settings have no such key)', () => {
+    expect(DEFAULT_SETTING.hideNodeInfo).toBe(false)
+    expect(normalizeSetting({}).hideNodeInfo).toBe(false)
+    expect(normalizeSetting({ hideNodeInfo: true }).hideNodeInfo).toBe(true)
+    for (const value of ['true', 1, 'yes', null, {}]) {
+      expect(normalizeSetting({ hideNodeInfo: value }).hideNodeInfo).toBe(false)
     }
   })
 })

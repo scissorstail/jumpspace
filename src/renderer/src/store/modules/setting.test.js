@@ -17,7 +17,7 @@ describe('setting store', () => {
   })
 
   it('loads the stored setting', async () => {
-    const stored = { gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', nodeBlur: 0 }
+    const stored = { gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', nodeBlur: 0, hideNodeInfo: true }
     expect(await run('settingLoad', { getSetting: async () => stored })).toEqual(stored)
   })
 

@@ -47,7 +47,8 @@ There is no release yet, but the CI can build a Windows installer on request: un
    - link: **Port forwarding**, see below. The button with a counter next to it starts the enabled forwards.
    - gear: **Setting** (icon picked from a grid, name, user, host, port, key, password, exec) and *Copy SSH config*. A value that ssh would not accept gets a red border while you type; the note on what is allowed shows under the field while it has the focus or the pointer.
 4. The canvas position and zoom of each item are remembered and restored when you open it again. Lock the editor to save changes to the diagram. You can start connections while it is locked.
-5. While the editor is unlocked, two buttons sit next to the lock: **Reset view** (counterclockwise arrow) brings back the starting zoom and position, and **Arrange nodes** (tree icon) lines all nodes up in the middle of the visible canvas, each path left to right on its own row, and zooms out if they do not fit. Lock the editor to keep the new positions.
+5. The eye button left of the lock hides the details under every node (user, host, port, forwards) and keeps only the names, for example while sharing the screen; click it again to show them. The choice is remembered.
+6. While the editor is unlocked, two buttons sit next to the lock: **Reset view** (counterclockwise arrow) brings back the starting zoom and position, and **Arrange nodes** (tree icon) lines all nodes up in the middle of the visible canvas, each path left to right on its own row, and zooms out if they do not fit. Lock the editor to keep the new positions.
 
 The node menu also shows when one of its buttons has keyboard focus. Enter opens a popover and moves the focus into it; Escape closes it and returns the focus to its button. Right-click a node for **Duplicate** or **Delete** (a node with content asks first). *Settings* and *Show Info* (gear menu in the header) open with the focus inside; Tab stays in them and Escape closes them.
 
