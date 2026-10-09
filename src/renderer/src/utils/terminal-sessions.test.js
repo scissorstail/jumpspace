@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { canReconnect, countByOwner, createOutputRouter, endedByUser, hopKey, INTERRUPT_WINDOW_MS, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
+import { canReconnect, countByOwner, createOutputRouter, endedByUser, hopKey, INTERRUPT_WINDOW_MS, reorderSessions, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -92,6 +92,29 @@ describe('sessions of a diagram', () => {
     expect(counts.get(3)).toBe(1)
     expect(counts.get(7)).toBeUndefined()
     expect(countByOwner(undefined).size).toBe(0)
+  })
+})
+
+describe('reorderSessions', () => {
+  const sessions = [{ key: 1, owner: 0 }, { key: 2, owner: 3 }, { key: 3, owner: 0 }, { key: 4, owner: 0 }]
+  const keys = list => list.map(x => x.key)
+
+  it('puts the dragged tabs in their new order', () => {
+    expect(keys(reorderSessions(sessions, [4, 1, 3]))).toEqual([4, 2, 1, 3])
+  })
+
+  // 다른 item의 세션(2)은 보이지 않는 채로 제자리에 남는다.
+  it('leaves the sessions of other diagrams where they are', () => {
+    const result = reorderSessions(sessions, [3, 4, 1])
+
+    expect(keys(result)).toEqual([3, 2, 4, 1])
+    expect(result[1]).toBe(sessions[1])
+  })
+
+  it('ignores keys that are unknown or repeated, and does not change the input', () => {
+    expect(keys(reorderSessions(sessions, [3, 99, 3, 1]))).toEqual([3, 2, 1, 4])
+    expect(keys(reorderSessions(sessions, []))).toEqual([1, 2, 3, 4])
+    expect(keys(sessions)).toEqual([1, 2, 3, 4])
   })
 })
 

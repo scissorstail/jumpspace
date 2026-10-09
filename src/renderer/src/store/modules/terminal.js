@@ -6,7 +6,7 @@
 // 터미널은 그것을 연 다이어그램(item)의 것이다. owner는 지금 열려 있는 item의 번호(목록 항목의 index)이고,
 // 세션은 만들어질 때의 owner를 갖는다. 패널과 캔버스는 지금 owner의 세션만 보여주고, 다른 item의 세션은
 // 뒤에서 계속 돈다. 활성 탭과 패널을 숨겼는지는 item마다 기억해 두었다가 돌아오면 되살린다.
-import { hopKey, sessionsOf } from '../../utils/terminal-sessions'
+import { hopKey, reorderSessions, sessionsOf } from '../../utils/terminal-sessions'
 
 let nextKey = 1
 
@@ -61,6 +61,10 @@ export default {
     terminalActivate(state, key) {
       state.activeKey = key
       state.isPanelOpen = true
+    },
+    // 탭을 끌어서 옮겼다: keys는 보이는 탭들의 새 순서
+    terminalReorder(state, keys) {
+      state.sessions = reorderSessions(state.sessions, keys)
     },
     terminalPanel(state, isOpen) {
       state.isPanelOpen = isOpen

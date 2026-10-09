@@ -6,6 +6,7 @@ Everything since 0.2.2-beta.
 
 ### Added
 
+- **Reorder terminal tabs.** Drag a tab by its name to move it; the other tabs make room while you drag. The close and reconnect buttons still only close and reconnect.
 - **Hide node details.** The eye button left of the lock hides user, host, port and forwards under every node and keeps only the names (the address also leaves the connect button's tooltip); a second click shows them again. It is remembered like the other settings.
 - **Reset view and arrange nodes.** While the editor is unlocked, two buttons next to the lock bring the canvas back to its starting zoom and position, and line all nodes up in the middle of the visible canvas: each path runs left to right on its own row in link order, nodes behind the same jump host stack in the next column, and the view zooms out when the group does not fit. The text under a node is part of the space it takes. Like dragging, the new positions are saved when you lock the editor.
 - **A hint on an empty diagram.** A new or emptied item showed only the scenery, and nothing said that servers are added with a right-click. It now says so in the middle of the canvas (or to unlock the editor first while it is locked); the hint goes away with the first node and lets right-clicks through.

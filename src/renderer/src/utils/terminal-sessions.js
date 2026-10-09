@@ -28,6 +28,17 @@ export function countByOwner(sessions) {
   return counts
 }
 
+// 탭을 끌어서 순서를 바꿨다. keys는 한 item의 탭들을 새 순서로 적은 것이다.
+// 그 탭들이 차지하던 자리만 새 순서로 채우고, 다른 item의 세션은 제자리에 둔다. (목록에 없는 key는 무시한다)
+export function reorderSessions(sessions, keys) {
+  const byKey = new Map(sessions.map(x => [x.key, x]))
+  const moved = keys.filter((key, i) => byKey.has(key) && keys.indexOf(key) === i).map(key => byKey.get(key))
+  const slots = new Set(moved)
+  let next = 0
+
+  return sessions.map(x => slots.has(x) ? moved[next++] : x)
+}
+
 // 세션 하나가 캔버스에 보이는 상태
 //   connecting: 시작했지만 아직 로그인 표시(ssh의 LocalCommand, shared/terminal-marker.js)가 오지 않았다
 //   connected : 로그인했고 세션이 열려 있다

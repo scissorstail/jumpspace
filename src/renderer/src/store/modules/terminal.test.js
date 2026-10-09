@@ -92,6 +92,24 @@ describe('terminal store', () => {
       expect(getters.allTerminalSessions(state).map(x => x.title)).toEqual(['b1'])
     })
 
+    it('reorders the tabs of the open diagram and keeps the active tab', () => {
+      const state = freshState()
+      mutations.terminalOwner(state, 0)
+      open(state, 'a1')
+      mutations.terminalOwner(state, 1)
+      open(state, 'b1')
+      mutations.terminalOwner(state, 0)
+      open(state, 'a2')
+      const [a1, , a2] = state.sessions
+
+      mutations.terminalReorder(state, [a2.key, a1.key])
+
+      expect(titles(state)).toEqual(['a2', 'a1'])
+      expect(state.activeKey).toBe(a2.key)
+      mutations.terminalOwner(state, 1)
+      expect(titles(state)).toEqual(['b1'])
+    })
+
     it('leaves the visible panel alone when a tab of another diagram ends', () => {
       const state = freshState()
       mutations.terminalOwner(state, 0)

@@ -1,11 +1,20 @@
 <template>
   <div class="terminal-tabs">
-    <!-- 탭이 많으면 이 목록만 옆으로 넘긴다. 숨기기 단추는 늘 보인다. -->
-    <div
+    <!-- 탭이 많으면 이 목록만 옆으로 넘긴다. 숨기기 단추는 늘 보인다.
+         탭을 끌면 순서가 바뀐다 (닫기/다시 연결 단추에서는 끌리지 않는다). -->
+    <draggable
       ref="tabList"
+      :value="sessions"
+      tag="div"
       class="terminal-tab-list"
       role="tablist"
-      @wheel="scrollTabs"
+      direction="horizontal"
+      :animation="120"
+      filter=".terminal-tab-button"
+      :prevent-on-filter="false"
+      ghost-class="terminal-tab-ghost"
+      @input="$emit('reorder', $event.map(x => x.key))"
+      @wheel.native="scrollTabs"
     >
       <div
         v-for="session in sessions"
@@ -56,7 +65,7 @@
           </button>
         </span>
       </div>
-    </div>
+    </draggable>
 
     <button
       type="button"
@@ -74,13 +83,15 @@
 </template>
 
 <script>
+import draggable from 'vuedraggable'
 import { canReconnect } from '@/utils/terminal-sessions'
 import { revealScrollLeft, sessionStatusText } from '@/utils/terminal-view'
 
 // 터미널 패널 위쪽의 탭 줄. 탭이 많으면 좁아졌다가 목록만 옆으로 넘어가고, 활성 탭은 늘 보이게 한다.
-// 탭을 고르기, 다시 연결, 닫기, 패널 숨기기는 이벤트(activate, reconnect, close, hide)로 패널에 알린다.
+// 탭을 고르기, 다시 연결, 닫기, 끌어서 바꾼 순서, 패널 숨기기는 이벤트(activate, reconnect, close, reorder, hide)로 패널에 알린다.
 export default {
   name: 'TerminalTabs',
+  components: { draggable },
   props: {
     sessions: {
       type: Array,
@@ -109,14 +120,14 @@ export default {
     statusText: sessionStatusText,
     // 넘치는 탭 목록은 세로 휠로도 옆으로 넘긴다.
     scrollTabs(event) {
-      const list = this.$refs.tabList
+      const list = this.$refs.tabList?.$el
       if (!list || event.deltaX || !event.deltaY || list.scrollWidth <= list.clientWidth) return
       list.scrollLeft += event.deltaY
       event.preventDefault()
     },
     // 탭이 많아 목록이 넘칠 때 활성 탭이 보이게 넘긴다.
     reveal() {
-      const list = this.$refs.tabList
+      const list = this.$refs.tabList?.$el
       const tab = this.$refs[`tab-${this.activeKey}`]?.[0]
       if (!list || !tab) return
 
@@ -191,6 +202,13 @@ export default {
     outline: 2px solid var(--js-secondary);
     outline-offset: -2px;
   }
+}
+
+// 끄는 동안 탭이 놓일 자리: 윤곽만 남긴다.
+.terminal-tab-ghost {
+  outline: 2px dashed var(--js-secondary);
+  outline-offset: -2px;
+  opacity: 0.45;
 }
 
 .terminal-tab-title {
