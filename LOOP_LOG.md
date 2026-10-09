@@ -1,9 +1,17 @@
 # LOOP_LOG
 
-A scheduled routine works on this project once an hour: cleanup, refactoring, tests, health checks and small UI/UX improvements, and, whenever that polish is good enough, one feature from the Feature queue before polishing again. (Research on similar programs was removed from the routine at the owner's request.)
+A scheduled routine works on this project (every 40 minutes on the owner's Windows PC since 2026-10-10, see **Routine** at the end; once an hour in the cloud before): cleanup, refactoring, tests, health checks and small UI/UX improvements, and, whenever that polish is good enough, one feature from the Feature queue before polishing again. (Research on similar programs was removed from the routine at the owner's request.)
 This file is its memory. **Read the whole file before doing anything, and append an entry when you are done.**
 
 ## Protocol (every run)
+
+**On the owner's PC (since 2026-10-10) these points replace what the steps below say:**
+- The repository is `C:Usersscissepositoryjumpspace`. Node is not on `PATH`: put `C:Userssciss	ools
+ode-v22.23.3-win-x64` in front of it (Git Bash: `export PATH="/c/Users/sciss/tools/node-v22.23.3-win-x64:$PATH"`).
+- **Do not push.** The owner has not allowed pushing from this PC yet: commit locally only, and do not open pull requests. Without a push there is no new CI run, so lint, tests and build on this PC are the check. (When the owner allows pushing, replace this point.)
+- The owner works in the same folder and may have the app open (`npm run dev`). If `git status` shows changes you did not make, leave them alone: do not commit, stash, reset or overwrite them; log that the run was skipped and stop. Never close an Electron window you did not start; start your own with a temporary `--user-data-dir`.
+- UI checks: there is no `xvfb-run` on Windows. Install `playwright-core` in a temporary folder outside the repository and launch `node_modules/electron/dist/electron.exe` with the repository as the app (build first), a temporary `--user-data-dir` and a seeded `projects.json`.
+- One activity per run, finished well inside 40 minutes. If it does not fit, do a smaller one.
 
 1. **Orient.** `git fetch origin claude/cool-bardeen-9x9ymz`, check `git status -sb`, read this file (Backlog and the last few log entries). If CI is reachable (GitHub MCP `actions_list`), look at the last run of the branch; a red run is the first thing to fix.
 2. **Pick one activity** from the rotation below. Prefer the one that was not done for the longest time (see the log). Do exactly one, small and finished, in about an hour at most.
@@ -591,7 +599,18 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Did: `.list-item.active.dropdown-shown` gets `border-color: transparent` in `main-navigator.vue` (the width stays 1px, so the text does not move). Other rows with an open menu keep the border.
 - Checked (scratch t119) in all three palettes: the active row's border is transparent while its menu is open, its name stays at the same position (0px), an inactive row with an open menu still has the border. CSS only; lint ok, build ok.
 
+### #99 2026-10-10 · ux + feature (by hand, the owner: the side menu covers the screen wherever it sits; terminals must belong to their item)
+- Did: the sidebar and its hamburger button are gone. The header title is the button for the diagram list (`#diagram-switcher` in `views/Layout.vue`, the same `main-navigator.vue` with search, `+` and `...` in one row); it closes on a pick, Escape or a click outside and is open at start. Terminals have an `owner` (the navigator item's `index`): the store's `terminalSessions` is the open diagram's sessions, `allTerminalSessions` everything; active tab and hidden panel are remembered per owner; the list shows a terminal mark with the number of tabs; removing an item closes its terminals; canvas paths follow only the open diagram's sessions.
+- Checked: unit tests for the store and the helpers (one mutation fails two tests). Real app on Windows (scratch): switching, counts, Escape, outside click, coming back to the same tabs, removing an item. Terminals only against a refused local port, not a real server. Tests 307 passed, lint ok, build ok, commit 3be3416 (not pushed).
+
+### #100 2026-10-10 · feature (by hand, the owner: reorder terminal tabs by dragging the name)
+- Did: the tab row is a `vuedraggable`; `reorderSessions` moves only the open diagram's sessions inside the store's list. Close and reconnect buttons do not start a drag.
+- Checked: 4 unit tests. Real app (scratch): drag to the front and to the end, sessions of the other diagram keep their place, close and click still work. Tests 311 passed, lint ok, build ok, commit 489f98d (not pushed).
+- Next: polish phase; the first polish runs look at #99 and #100.
+
 ## Routine
+
+- **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. To stop: disable both tasks in the app (Scheduled) or ask Claude. The cloud trigger below is the old one and stays disabled.
 
 - Trigger `trig_01FsD2f6cNMsreY77TQhttgX` ("jumpspace hourly maintenance loop"), cron `17 * * * *` (UTC), created 2026-09-30 04:17 UTC. It fires into the session that created it (`session_01Ai8BiWV94LK7YNcKWYdRa3`), so the conversation context is kept, and this file is the memory that survives a lost container. Everything is pushed to `claude/cool-bardeen-9x9ymz` on every run.
 - Stopped on 2026-09-30 10:18 UTC at the owner's request, **started again on 2026-09-30 11:40 UTC** at the owner's request ("small steady improvements"), with the new `style` activity. To stop it: `update_trigger` with `enabled: false`; to remove it: `delete_trigger`.
