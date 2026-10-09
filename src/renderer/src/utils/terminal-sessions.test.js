@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { canReconnect, createOutputRouter, endedByUser, hopKey, INTERRUPT_WINDOW_MS, routeStates, sessionPhase, terminalShortcut, terminalTitle } from './terminal-sessions'
+import { canReconnect, countByOwner, createOutputRouter, endedByUser, hopKey, INTERRUPT_WINDOW_MS, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -67,6 +67,31 @@ describe('hopKey', () => {
     expect(hopKey({ user: ' deploy ', host: 'web', port: 22 })).toBe('deploy@web:22')
     expect(hopKey({ host: 'db.internal' })).toBe('@db.internal:')
     expect(hopKey(null)).toBe('@:')
+  })
+})
+
+describe('sessions of a diagram', () => {
+  const sessions = [{ key: 1, owner: 0 }, { key: 2, owner: 3 }, { key: 3, owner: 0 }, { key: 4, owner: null }]
+
+  it('keeps only the sessions the item opened, in order', () => {
+    expect(sessionsOf(sessions, 0).map(x => x.key)).toEqual([1, 3])
+    expect(sessionsOf(sessions, 3).map(x => x.key)).toEqual([2])
+    expect(sessionsOf(sessions, 7)).toEqual([])
+    expect(sessionsOf(undefined, 0)).toEqual([])
+  })
+
+  // item 번호 0과 "열린 item 없음"(null)은 다르다.
+  it('does not mix up item 0 with no item', () => {
+    expect(sessionsOf(sessions, null).map(x => x.key)).toEqual([4])
+  })
+
+  it('counts the open tabs of every item', () => {
+    const counts = countByOwner(sessions)
+
+    expect(counts.get(0)).toBe(2)
+    expect(counts.get(3)).toBe(1)
+    expect(counts.get(7)).toBeUndefined()
+    expect(countByOwner(undefined).size).toBe(0)
   })
 })
 

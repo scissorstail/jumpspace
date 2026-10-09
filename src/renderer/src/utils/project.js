@@ -42,7 +42,7 @@ export async function loadProjectData({ load, save, legacy }) {
 // 캔버스 가운데의 안내. 열린 항목이 없으면 고르라고, 열린 항목에 노드가 없으면 노드를 더하는 방법을 알려준다.
 // 잠겨 있으면 우클릭 메뉴가 열리지 않으므로 먼저 잠금을 풀라고 한다. 노드가 있으면 null.
 export function canvasHint({ isOpen, nodeCount, isLocked }) {
-  if (!isOpen) return { title: 'No diagram open', text: 'Select an item in the sidebar, or add a new one.' }
+  if (!isOpen) return { title: 'No diagram open', text: 'Click the title above to choose a diagram, or add a new one.' }
   if (nodeCount > 0) return null
   return {
     title: 'Empty diagram',

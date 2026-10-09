@@ -259,7 +259,7 @@ export default {
       }
     },
     // 앱 안의 터미널 세션이 지나가는 노드와 연결선에 상태를 붙인다: 연결 중(is-connecting), 연결됨(is-live), 실패(is-failed). 모양은 CSS.
-    // 노드와 세션은 user@host:port로 맞춰 본다. 그래서 다른 item의 같은 서버 경로도 함께 표시된다.
+    // 노드와 세션은 user@host:port로 맞춰 본다. 지금 열린 item이 연 세션만 본다 (store의 terminalSessions): 터미널은 그것을 연 item의 것이다.
     markLiveRoutes() {
       if (!this.editor) return
 

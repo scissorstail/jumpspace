@@ -14,6 +14,11 @@ export function sessionStatusText(session) {
   }[session?.status]
 }
 
+// 목록의 item 옆 숫자에 붙는 설명 (마우스를 올렸을 때, 화면 읽기)
+export function terminalCountText(count) {
+  return count === 1 ? '1 terminal open' : `${count} terminals open`
+}
+
 // 세션이 끝났을 때 터미널에 쓰는 줄. Enter로 다시 접속할 수 있다는 것도 알린다.
 export function endedLine(exitCode) {
   return `\r\n${GRAY}[session ended${exitCode ? `, exit status ${exitCode}` : ''}] Press Enter to reconnect.${RESET}\r\n`

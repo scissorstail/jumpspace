@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { THEMES } from '../../../shared/setting.js'
-import { endedLine, errorLine, RECONNECTING_LINE, revealScrollLeft, sessionStatusText, terminalTheme } from './terminal-view'
+import { endedLine, errorLine, RECONNECTING_LINE, revealScrollLeft, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
 
 describe('sessionStatusText', () => {
   it('names every state and gives the exit status of a failed end', () => {
@@ -12,6 +12,13 @@ describe('sessionStatusText', () => {
     expect(sessionStatusText({ status: 'exited', exitCode: 255 })).toBe('Ended (exit status 255)')
     expect(sessionStatusText({ status: 'failed' })).toBe('Could not start')
     expect(sessionStatusText(null)).toBeUndefined()
+  })
+})
+
+describe('terminalCountText', () => {
+  it('names the number next to a diagram in the list', () => {
+    expect(terminalCountText(1)).toBe('1 terminal open')
+    expect(terminalCountText(3)).toBe('3 terminals open')
   })
 })
 

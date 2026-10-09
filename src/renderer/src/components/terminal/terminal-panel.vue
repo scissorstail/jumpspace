@@ -21,9 +21,10 @@
       @hide="$store.commit('terminalPanel', false)"
     />
 
+    <!-- 화면은 모든 item의 세션 것을 둔다: 다른 item으로 갔다 와도 내용이 남는다. 탭 줄은 지금 item의 것만 보여준다. -->
     <div class="terminal-body">
       <div
-        v-for="session in sessions"
+        v-for="session in allSessions"
         v-show="session.key === activeKey"
         :key="session.key"
         :ref="`term-${session.key}`"
@@ -52,6 +53,8 @@ function currentTerminalTheme() {
 }
 
 // 하단의 터미널 패널. 탭마다 xterm.js 화면을 하나씩 두고, main의 pty와 키 입력/출력을 주고받는다.
+// 터미널은 그것을 연 다이어그램(item)의 것이다. sessions는 지금 열린 item의 세션(탭 줄), allSessions는 전부이다.
+// 다른 item의 세션은 보이지 않을 뿐 계속 돌고, 그 item을 다시 열면 나타난다.
 export default {
   name: 'TerminalPanel',
   components: { TerminalTabs },
@@ -61,7 +64,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters({ sessions: 'terminalSessions', activeKey: 'activeTerminalKey', isOpen: 'isTerminalPanelOpen' })
+    ...mapGetters({ sessions: 'terminalSessions', allSessions: 'allTerminalSessions', activeKey: 'activeTerminalKey', isOpen: 'isTerminalPanelOpen' })
   },
   watch: {
     // 테마를 바꾸면 열린 터미널의 색도 바꾼다.
@@ -71,7 +74,7 @@ export default {
       })
     },
     // 새 탭: 화면을 만들고 main에 세션을 연다.
-    sessions(list) {
+    allSessions(list) {
       this.$nextTick(() => list.filter(x => x.request && !this.terms.has(x.key)).forEach(x => this.start(x)))
     },
     activeKey() {
@@ -126,7 +129,7 @@ export default {
       term.onData(data => {
         // 끝난 세션에서는 Enter가 다시 접속이다.
         if (entry.ended) {
-          if (data === '\r') this.reconnect(this.sessions.find(x => x.key === session.key))
+          if (data === '\r') this.reconnect(this.allSessions.find(x => x.key === session.key))
           return
         }
         // Ctrl+C를 누른 때를 기억한다: 포워딩(ssh -N)은 Ctrl+C로 끝내도 오류(255)로 끝난다.
@@ -179,7 +182,7 @@ export default {
       })
     },
     onExit(id, exitCode) {
-      const session = this.sessions.find(x => x.id === id)
+      const session = this.allSessions.find(x => x.id === id)
       if (!session) return
 
       const entry = this.terms.get(session.key)
@@ -236,6 +239,10 @@ export default {
       this.$store.commit('terminalRemove', session.key)
       // 닫기 단추가 사라져도 키보드 포커스가 갈 곳이 있게, 남은 활성 터미널로 옮긴다.
       this.$nextTick(() => this.fitActive(true))
+    },
+    // 지워진 item들의 터미널을 모두 닫는다. (item이 없으면 다시 볼 길이 없다)
+    closeOwners(owners) {
+      this.allSessions.filter(x => owners.includes(x.owner)).forEach(x => this.closeSession(x))
     },
     activate(key) {
       this.$store.commit('terminalActivate', key)

@@ -2,27 +2,14 @@
   <div id="layout">
     <MainHeader
       :title="openedItemName"
-      :class="{ 'beside-sidebar': isSidebarOpen }"
+      :is-switcher-open="isSwitcherOpen"
+      @switcher="toggleSwitcher"
       @export="exportProject"
       @info="isShowInfoPopup = true"
       @setting="isShowSettingPopup = true"
       @lock="isEditorLocked = true"
       @unlock="isEditorLocked = false"
     >
-      <!-- sidebar toggle -->
-      <template #main-navigator-toggle>
-        <b-button
-          v-b-toggle.main-sidebar
-          size="sm"
-          aria-label="Toggle sidebar"
-          class=""
-          variant="light"
-        >
-          <b-icon
-            icon="list"
-          />
-        </b-button>
-      </template>
       <template #main-navigator-toolbar>
         <!-- 숨긴 터미널 패널 다시 열기 -->
         <b-button
@@ -93,27 +80,32 @@
     </MainHeader>
 
     <div id="main-content">
-      <!-- sidebar -->
-      <b-sidebar
-        id="main-sidebar"
-        body-class="main-sidebar-list"
-        no-header
-        shadow
-        @change="isSidebarOpen = $event"
+      <!-- 다이어그램 목록: 헤더의 제목을 누르면 그 아래에 잠깐 열리고, 고르면 닫힌다. 캔버스와 터미널의 자리는 줄지 않는다.
+           닫혀 있어도 목록(MainNavigator)은 그대로 있다: item의 상태를 갖고 있기 때문이다. -->
+      <div
+        v-show="isSwitcherOpen"
+        class="diagram-switcher-backdrop"
+        @mousedown="closeSwitcher()"
+      />
+      <div
+        v-show="isSwitcherOpen"
+        id="diagram-switcher"
+        role="dialog"
+        aria-label="Diagrams"
+        @keydown.esc="closeSwitcher({ returnFocus: true })"
       >
-        <template #default="{ hide }">
-          <MainNavigator
-            v-if="projectData"
-            ref="mainNavigator"
-            :project-data="projectData"
-            :is-locked="isEditorLocked"
-            @hide="hide"
-            @selected="loadEditor"
-            @deselected="clearEditor"
-            @updated="updateProject"
-          />
-        </template>
-      </b-sidebar>
+        <MainNavigator
+          v-if="projectData"
+          ref="mainNavigator"
+          :project-data="projectData"
+          :is-locked="isEditorLocked"
+          @hide="closeSwitcher()"
+          @selected="loadEditor"
+          @deselected="clearEditor"
+          @removed="$refs.terminalPanel.closeOwners($event)"
+          @updated="updateProject"
+        />
+      </div>
 
       <div id="workspace">
         <div
@@ -138,7 +130,6 @@
           <div
             v-if="emptyHint"
             class="layout-empty"
-            :class="{ 'layout-empty-beside': isSidebarOpen }"
           >
             <div class="layout-empty-title">
               {{ emptyHint.title }}
@@ -150,7 +141,7 @@
         </div>
 
         <!-- 앱 안의 터미널 -->
-        <TerminalPanel />
+        <TerminalPanel ref="terminalPanel" />
       </div>
     </div>
 
@@ -206,8 +197,8 @@ export default {
       // 열린 다이어그램의 노드 수 (Editor가 알린다). 0이면 노드를 더하는 방법을 안내한다.
       nodeCount: 0,
       isProjectLoadFailed: false,
-      // 사이드바는 화면 위에 덮인다. 열려 있으면 빈 화면 안내를 그 옆으로 비켜 둔다.
-      isSidebarOpen: false
+      // 제목 아래의 다이어그램 목록이 열려 있는지
+      isSwitcherOpen: false
     }
   },
   computed: {
@@ -267,6 +258,10 @@ export default {
       this.editorData = JSON.stringify({ ...item.data, timestamp: Date.now() })
       this.openedItemIndex = index
       this.isEditorLocked = isLocked // Call after update 'openedItemIndex'
+      // 터미널은 item의 것이다: 이 item이 연 탭만 보이게 한다. (item.index는 목록 항목의 번호)
+      this.$store.commit('terminalOwner', item.index)
+      // 고르면 목록을 닫는다. 새 항목은 이름을 쓰는 중이므로(isLocked가 false) 열어 둔다.
+      if (isLocked) this.closeSwitcher()
 
       // 마지막으로 보던 위치와 확대 상태로 열고, 기록이 없으면 기본값을 쓴다.
       const view = sanitizeView(item.view) || DEFAULT_VIEW
@@ -282,9 +277,23 @@ export default {
       this.$refs.editorRef.setView(DEFAULT_VIEW)
     },
     arrangeNodes() {
-      // 사이드바가 열려 있으면 가려지지 않는 쪽의 가운데에 모은다.
-      const sidebar = document.getElementById('main-sidebar')
-      this.$refs.editorRef.arrangeNodes({ insetLeft: this.isSidebarOpen ? sidebar?.offsetWidth || 0 : 0 })
+      this.$refs.editorRef.arrangeNodes()
+    },
+    toggleSwitcher() {
+      if (this.isSwitcherOpen) {
+        this.closeSwitcher()
+      } else {
+        this.openSwitcher()
+      }
+    },
+    openSwitcher() {
+      this.isSwitcherOpen = true
+      this.$nextTick(() => this.$refs.mainNavigator?.focusSearch())
+    },
+    // Escape로 닫았을 때는 포커스를 제목 단추로 돌려준다.
+    closeSwitcher({ returnFocus = false } = {}) {
+      this.isSwitcherOpen = false
+      if (returnFocus) document.getElementById('diagram-switcher-toggle')?.focus()
     },
     // 캔버스를 옮기거나 확대/축소했을 때. 열려 있는 item에 기억해 두고, 잠시 뒤에 저장한다.
     updateView(view) {
@@ -303,6 +312,7 @@ export default {
       this.editorData = null
       this.openedItemIndex = null
       this.isEditorLocked = true // Call after update 'openedItemIndex'
+      this.$store.commit('terminalOwner', null)
     },
     async compileEditor() {
       // 현재 editor에 열려있는 item이 있으면
@@ -344,6 +354,8 @@ export default {
       }
 
       this.projectData = items
+      // 처음에는 열린 다이어그램이 없다. 고를 수 있게 목록부터 보여준다.
+      this.openSwitcher()
     },
     async saveProject() {
       if (this.isProjectLoadFailed) {
@@ -442,10 +454,6 @@ export default {
   text-align: center;
   pointer-events: none;
 
-  // 사이드바(bootstrap-vue 기본 너비 320px)가 열려 있으면 가려지지 않는 쪽의 가운데에 둔다.
-  &.layout-empty-beside {
-    left: 320px;
-  }
 }
 
 .layout-empty-title {
@@ -471,10 +479,29 @@ export default {
   text-transform: uppercase;
 }
 
-#main-sidebar {
-  .main-sidebar-list {
-    display: flex;
-    flex-direction: column;
-  }
+// 목록 밖을 누르면 닫는다. 보이지 않는 막이 창 전체를 덮는다 (제목 단추도 덮으므로 제목을 다시 눌러도 닫힌다).
+.diagram-switcher-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1020;
+}
+
+// 제목 아래에 매달린 판. 목록이 길면 판 안에서 넘긴다.
+#diagram-switcher {
+  position: absolute;
+  top: 10px;
+  right: 0;
+  left: 0;
+  z-index: 1021;
+  display: flex;
+  flex-direction: column;
+  width: 380px;
+  max-width: calc(100% - 20px);
+  max-height: calc(100% - 26px);
+  margin: 0 auto;
+  border: 3px solid var(--js-primary);
+  background-color: var(--js-bg-raised);
+  box-shadow: 6px 6px 0 #000;
+  color: var(--js-text);
 }
 </style>

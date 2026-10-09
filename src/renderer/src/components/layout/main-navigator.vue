@@ -2,26 +2,25 @@
   <div
     id="main-navigator"
     v-click-outside="vcoConfig"
-    class="shadow"
   >
-    <!-- navigator-header -->
-    <div class="main-navigator-header p-1 px-2 layout-divider ">
-      <b-button
+    <!-- navigator-header: 검색, 새 항목, 그 밖의 동작을 한 줄에 둔다 -->
+    <div class="main-navigator-header p-1 px-2 layout-divider">
+      <b-input-group
         size="sm"
-        variant="light"
-        aria-label="Close sidebar"
-        @click="$emit('hide')"
+        class="list-search py-1 mr-1"
       >
-        <b-icon
-          icon="x"
+        <b-input-group-prepend is-text>
+          <b-icon
+            icon="search"
+          />
+        </b-input-group-prepend>
+        <b-form-input
+          v-model="keyword"
+          aria-label="Search items"
+          :debounce="150"
+          type="search"
         />
-      </b-button>
-
-      <hr
-        class="btn-divider my-0 mx-1 p-0"
-      >
-
-      <div class="ml-auto mr-auto" />
+      </b-input-group>
 
       <b-button
         size="sm"
@@ -81,29 +80,9 @@
       </b-dropdown>
     </div>
 
-    <!-- navigator-tool -->
-    <div class="main-navigator-header p-1 px-2 layout-divider">
-      <b-input-group
-        size="sm"
-        class="list-search py-1"
-      >
-        <b-input-group-prepend is-text>
-          <b-icon
-            icon="search"
-          />
-        </b-input-group-prepend>
-        <b-form-input
-          v-model="keyword"
-          aria-label="Search items"
-          :debounce="150"
-          type="search"
-        />
-      </b-input-group>
-    </div>
-
     <!-- navigator-content -->
     <div
-      class="main-navigator-content layout-divider"
+      class="main-navigator-content"
       :class="{dragging: isDrag}"
     >
       <b-button-toolbar
@@ -142,6 +121,19 @@
                 class="list-item-name"
                 :title="item.name || null"
               >{{ item.name || '(untitled)' }}</span>
+              <!-- 이 item에 떠 있는 터미널 탭 수 (다른 item을 열어도 계속 돈다) -->
+              <span
+                v-if="terminalCounts.get(item.index)"
+                class="list-item-terminals"
+                :title="terminalCountText(terminalCounts.get(item.index))"
+              >
+                <b-icon
+                  icon="terminal"
+                  aria-hidden="true"
+                />
+                <span aria-hidden="true">{{ terminalCounts.get(item.index) }}</span>
+                <span class="sr-only">{{ terminalCountText(terminalCounts.get(item.index)) }}</span>
+              </span>
               <div @click.stop>
                 <NavigatorItemMenu
                   v-if="!isSelecting"
@@ -183,11 +175,6 @@
         </p>
       </b-button-toolbar>
     </div>
-
-    <!-- navigator-footer -->
-    <div
-      class="main-navigator-footer p-1"
-    />
   </div>
 </template>
 
@@ -195,10 +182,14 @@
 import draggable from 'vuedraggable'
 import isEmpty from 'lodash/isEmpty'
 import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNING } from '@/utils/project'
+import { countByOwner } from '@/utils/terminal-sessions'
+import { terminalCountText } from '@/utils/terminal-view'
 import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems } from '@/utils/navigator-items'
 import { toastError } from '@/utils/notify'
 import NavigatorItemMenu from './navigator-item-menu'
 
+// 다이어그램(item) 목록: 고르기, 검색, 새로 만들기, 이름 바꾸기, 순서 바꾸기, 가져오기/내보내기.
+// 헤더의 제목을 누르면 그 아래에 열리는 판(views/Layout.vue의 #diagram-switcher) 안에 있고, 닫혀 있어도 목록 상태는 여기에 남는다.
 export default {
   name: 'MainNavigator',
   components: {
@@ -237,6 +228,10 @@ export default {
     selectedItems() {
       return this.items.filter(x => x.isSelected)
     },
+    // item 번호(index) -> 떠 있는 터미널 탭 수
+    terminalCounts() {
+      return countByOwner(this.$store.getters.allTerminalSessions)
+    },
     isSelecting() {
       return this.selectedItems.length > 0
     },
@@ -257,6 +252,11 @@ export default {
     this.items = this.toNavigatorItems(this.projectData)
   },
   methods: {
+    terminalCountText,
+    // 판이 열리면 바로 찾을 수 있게 검색칸에 포커스를 준다.
+    focusSearch() {
+      this.$el.querySelector('.list-search input')?.focus()
+    },
     unchoose(event) {
       setTimeout(() => {
         const { pageX, pageY } = event.originalEvent
@@ -283,6 +283,9 @@ export default {
 
         this.openedItem = item
         this.$emit('selected', { item, index: this.openedItemIndex, isLocked: !item.isEditing })
+      } else if (!isEmpty(event)) {
+        // 이미 열려 있는 항목을 눌렀다: 그대로 두고 목록만 닫는다.
+        this.$emit('hide')
       }
     },
     async addNewItem() {
@@ -362,6 +365,8 @@ export default {
         this.openedItem = null
         this.$emit('deselected')
       }
+      // 지워진 item의 터미널은 닫는다.
+      this.$emit('removed', removed.map(x => x.index))
       this.items = items
     },
     async exportItems(items) {
@@ -446,6 +451,7 @@ export default {
 <style lang="scss" scoped>
 #main-navigator {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow-y: hidden;
@@ -576,11 +582,28 @@ export default {
           }
 
           &-name {
+            flex: 1;
+            min-width: 0;
             overflow: hidden;
             white-space: nowrap;
             text-align: left;
-            width: 90%;
             text-overflow: ellipsis;
+          }
+
+          // 떠 있는 터미널 수: 작은 터미널 그림과 숫자. 색은 줄의 글자색을 따른다 (열린 항목의 분홍 띠 위에서도 읽힌다).
+          &-terminals {
+            display: flex;
+            flex: none;
+            align-items: center;
+            gap: 4px;
+            margin-left: 8px;
+            font-family: var(--js-font-mono);
+            font-size: 0.8rem;
+            letter-spacing: 0;
+
+            svg {
+              font-size: 0.95rem;
+            }
           }
 
           &-dropdown {
@@ -611,6 +634,9 @@ export default {
 
 /* 검색 칸 */
 .list-search {
+  flex: 1;
+  width: auto;
+
   ::v-deep .input-group-text {
     padding-right: 4px;
     border-color: var(--js-border);

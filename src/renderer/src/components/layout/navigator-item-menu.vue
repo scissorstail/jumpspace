@@ -32,7 +32,7 @@
 </template>
 
 <script>
-// 사이드바 항목 하나의 ... 메뉴 (Edit, Copy, Remove, Export). 동작은 부모(main-navigator)가 한다.
+// 다이어그램 목록의 항목 하나의 ... 메뉴 (Edit, Copy, Remove, Export). 동작은 부모(main-navigator)가 한다.
 // 모양은 부모의 .list-item-dropdown 규칙이 정한다. (Vue 2에서 자식의 루트 요소는 부모의 scoped 속성도 받는다)
 export default {
   name: 'NavigatorItemMenu',

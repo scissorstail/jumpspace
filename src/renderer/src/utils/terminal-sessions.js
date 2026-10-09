@@ -16,6 +16,18 @@ export function hopKey(connection) {
   return `${text(connection?.user)}@${text(connection?.host)}:${text(connection?.port)}`
 }
 
+// 한 다이어그램(item)이 연 세션들. owner는 세션을 열 때 열려 있던 item의 번호이다.
+export function sessionsOf(sessions, owner) {
+  return (sessions || []).filter(x => x.owner === owner)
+}
+
+// item마다 떠 있는 터미널 탭 수: Map(owner -> 개수). 목록의 이름 옆에 보여준다.
+export function countByOwner(sessions) {
+  const counts = new Map()
+  for (const { owner } of sessions || []) counts.set(owner, (counts.get(owner) || 0) + 1)
+  return counts
+}
+
 // 세션 하나가 캔버스에 보이는 상태
 //   connecting: 시작했지만 아직 로그인 표시(ssh의 LocalCommand, shared/terminal-marker.js)가 오지 않았다
 //   connected : 로그인했고 세션이 열려 있다

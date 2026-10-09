@@ -121,10 +121,10 @@ body {
   color: var(--js-text);
 }
 
-// 헤더와 사이드바의 밝은 버튼(variant light / white)을 어두운 배경에 맞춘다.
+// 헤더와 다이어그램 목록의 밝은 버튼(variant light / white)을 어두운 배경에 맞춘다.
 // 강조는 마우스를 올렸을 때와 키보드 포커스에만: 클릭한 단추는 포커스가 남아서 :focus면 계속 켜져 있었다.
 #main-header,
-#main-sidebar {
+#diagram-switcher {
   .btn-light,
   .btn-white,
   .btn-outline-white {
@@ -147,13 +147,6 @@ body {
       color: var(--js-secondary);
     }
   }
-}
-
-#main-sidebar.b-sidebar {
-  border-right: 3px solid var(--js-primary);
-  background-color: var(--js-bg-raised) !important;
-  color: var(--js-text);
-  box-shadow: 6px 0 0 #000 !important;
 }
 
 // ---- Bootstrap 부품을 평평한 네온 테마에 맞춘다 ----

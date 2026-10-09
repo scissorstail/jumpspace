@@ -1,4 +1,4 @@
-// 사이드바 목록의 항목. 저장하는 값({ name, data, view? })에 화면 상태를 덧붙인 것이다.
+// 다이어그램 목록(제목 아래에 열리는 판)의 항목. 저장하는 값({ name, data, view? })에 화면 상태를 덧붙인 것이다.
 import cloneDeep from 'lodash/cloneDeep'
 
 // 목록의 한 줄을 만든다. index는 목록 안에서 겹치지 않는 번호이고(DOM id에 쓴다), isEditing이면 이름 입력창이 열린 상태이다.

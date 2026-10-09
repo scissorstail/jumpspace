@@ -98,7 +98,7 @@ describe('loadProjectData', () => {
 
 describe('canvasHint', () => {
   it('asks to pick an item while none is open', () => {
-    expect(canvasHint({ isOpen: false, nodeCount: 0, isLocked: true })).toEqual({ title: 'No diagram open', text: 'Select an item in the sidebar, or add a new one.' })
+    expect(canvasHint({ isOpen: false, nodeCount: 0, isLocked: true })).toEqual({ title: 'No diagram open', text: 'Click the title above to choose a diagram, or add a new one.' })
   })
 
   it('says how to add the first server to an empty diagram', () => {
