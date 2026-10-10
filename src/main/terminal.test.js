@@ -1,8 +1,8 @@
 import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterAll, describe, expect, it, vi } from 'vitest'
-import { createTerminalManager, exitStatus, killPty, MAX_SESSIONS, REFLOW_BUILD, terminalBash, windowsPtyInfo } from './terminal.js'
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
+import { createTerminalManager, exitStatus, killPty, MAX_PENDING_OUTPUT, MAX_SESSIONS, OUTPUT_DELAY_MS, REFLOW_BUILD, terminalBash, windowsPtyInfo } from './terminal.js'
 import { sq, toUnixPath } from './ssh.js'
 
 const root = mkdtempSync(join(tmpdir(), 'jumpspace-terminal-'))
@@ -66,6 +66,23 @@ describe('exitStatus', () => {
     expect(exitStatus({ exitCode: 0, signal: 2 })).toBe(130)
     expect(exitStatus({ exitCode: 0, signal: 1 })).toBe(129)
     expect(exitStatus({ exitCode: 3, signal: 2 })).toBe(3)
+  })
+
+  it("reads the signal out of the exit code of Git's bash on Windows (Ctrl+C while connecting ends with 512)", () => {
+    const windows = { platform: 'win32' }
+
+    expect(exitStatus({ exitCode: 512 }, windows)).toBe(130)
+    expect(exitStatus({ exitCode: 256 }, windows)).toBe(129)
+    // 코어를 남겼다는 표시(0x80)는 신호 번호가 아니다.
+    expect(exitStatus({ exitCode: (0x80 | 3) << 8 }, windows)).toBe(131)
+    // 보통의 종료 코드와 Windows의 큰 상태 값(예: 0xC000013A)은 그대로 둔다.
+    expect(exitStatus({ exitCode: 255 }, windows)).toBe(255)
+    expect(exitStatus({ exitCode: 0 }, windows)).toBe(0)
+    expect(exitStatus({ exitCode: 513 }, windows)).toBe(513)
+    expect(exitStatus({ exitCode: 0xC000013A }, windows)).toBe(0xC000013A)
+    expect(exitStatus({ exitCode: 0x10000 }, windows)).toBe(0x10000)
+    // 다른 곳에서는 종료 코드를 그대로 믿는다.
+    expect(exitStatus({ exitCode: 512 }, { platform: 'linux' })).toBe(512)
   })
 })
 
@@ -184,10 +201,8 @@ describe('createTerminalManager', () => {
     expect(args.join(' ')).not.toContain('pw')
 
     ptys[0].emitData('hello')
-    expect(send).toHaveBeenCalledWith(7, 'terminal:data', id, 'hello')
-
     ptys[0].emitExit(0)
-    expect(send).toHaveBeenCalledWith(7, 'terminal:exit', id, 0)
+    expect(send.mock.calls).toEqual([[7, 'terminal:data', id, 'hello'], [7, 'terminal:exit', id, 0]])
     expect(manager.size).toBe(0)
   })
 
@@ -254,6 +269,116 @@ describe('createTerminalManager', () => {
   })
 })
 
+describe('createTerminalManager: output goes to the screen in batches', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('collects the pieces of one redraw into one message', async () => {
+    const { manager, ptys, send } = setup()
+    const id = await manager.open('connect', node, { owner: 7 })
+    vi.useFakeTimers()
+
+    ptys[0].emitData('\x1b[5;1H')
+    ptys[0].emitData('spin 1')
+    vi.advanceTimersByTime(OUTPUT_DELAY_MS - 1)
+    ptys[0].emitData('\x1b[29;13H')
+    expect(send).not.toHaveBeenCalled()
+
+    // 첫 조각에서 OUTPUT_DELAY_MS 뒤에 보낸다. 조각이 이어져도 더 미루지 않는다.
+    vi.advanceTimersByTime(1)
+    expect(send.mock.calls).toEqual([[7, 'terminal:data', id, '\x1b[5;1Hspin 1\x1b[29;13H']])
+
+    ptys[0].emitData('next')
+    vi.advanceTimersByTime(OUTPUT_DELAY_MS)
+    expect(send).toHaveBeenLastCalledWith(7, 'terminal:data', id, 'next')
+    expect(send).toHaveBeenCalledTimes(2)
+
+    // 보낼 것이 없으면 아무것도 보내지 않는다.
+    vi.advanceTimersByTime(OUTPUT_DELAY_MS * 10)
+    expect(send).toHaveBeenCalledTimes(2)
+  })
+
+  it('sends what is left before it reports the end', async () => {
+    const { manager, ptys, send } = setup()
+    const id = await manager.open('connect', node, { owner: 7 })
+    vi.useFakeTimers()
+
+    ptys[0].emitData('Connection closed.')
+    ptys[0].emitExit(255)
+    expect(send.mock.calls).toEqual([[7, 'terminal:data', id, 'Connection closed.'], [7, 'terminal:exit', id, 255]])
+
+    vi.advanceTimersByTime(OUTPUT_DELAY_MS * 10)
+    expect(send).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not wait when a lot has piled up', async () => {
+    const { manager, ptys, send } = setup()
+    const id = await manager.open('connect', node, { owner: 7 })
+    vi.useFakeTimers()
+
+    const chunk = 'x'.repeat(MAX_PENDING_OUTPUT / 4)
+    for (let i = 0; i < 3; i++) ptys[0].emitData(chunk)
+    expect(send).not.toHaveBeenCalled()
+    ptys[0].emitData(chunk)
+    expect(send.mock.calls).toEqual([[7, 'terminal:data', id, chunk.repeat(4)]])
+
+    // 그 뒤의 출력은 다시 모은다.
+    ptys[0].emitData('tail')
+    expect(send).toHaveBeenCalledTimes(1)
+    vi.advanceTimersByTime(OUTPUT_DELAY_MS)
+    expect(send).toHaveBeenLastCalledWith(7, 'terminal:data', id, 'tail')
+  })
+
+  it('keeps the output of sessions apart, and drops that of a closed one', async () => {
+    const { manager, ptys, send } = setup()
+    const a = await manager.open('connect', node, { owner: 1 })
+    const b = await manager.open('connect', node, { owner: 1 })
+    vi.useFakeTimers()
+
+    ptys[0].emitData('from a')
+    ptys[1].emitData('from b')
+    manager.close(a, 1)
+    ptys[0].emitData('after the tab was closed')
+    vi.advanceTimersByTime(OUTPUT_DELAY_MS)
+    expect(send.mock.calls).toEqual([[1, 'terminal:data', b, 'from b']])
+
+    ptys[1].emitData('more')
+    manager.closeAll(1)
+    vi.advanceTimersByTime(OUTPUT_DELAY_MS)
+    expect(send).toHaveBeenCalledTimes(1)
+
+    // 닫은 세션이 끝났다는 알림은 그대로 간다 (남은 출력 없이).
+    ptys[0].emitExit(129)
+    expect(send).toHaveBeenLastCalledWith(1, 'terminal:exit', a, 129)
+    expect(send).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('createTerminalManager: a session that is ending', () => {
+  it('ignores a resize and key strokes the pty no longer takes', async () => {
+    const { manager, ptys, send } = setup()
+    const id = await manager.open('connect', node, { owner: 1 })
+    // node-pty: 프로그램이 끝난 뒤, 끝났다는 알림이 오기 전
+    ptys[0].resize.mockImplementation(() => { throw new Error('Cannot resize a pty that has already exited') })
+    ptys[0].write.mockImplementation(() => { throw new Error('This socket has been ended by the other party') })
+
+    expect(() => manager.resize(id, 1, 100, 40)).not.toThrow()
+    expect(() => manager.write(id, 1, 'x')).not.toThrow()
+    expect(ptys[0].resize).toHaveBeenCalledWith(100, 40)
+    expect(ptys[0].write).toHaveBeenCalledWith('x')
+
+    ptys[0].emitExit(255)
+    expect(send).toHaveBeenCalledWith(1, 'terminal:exit', id, 255)
+  })
+
+  it("reports Ctrl+C while connecting as 130 on Windows, where Git's bash ends with 512", async () => {
+    const { manager, ptys, send } = setup({ platform: 'win32', release: '10.0.19045' })
+    const id = await manager.open('connect', node, { owner: 1 })
+
+    ptys[0].emitExit(512)
+    expect(send).toHaveBeenCalledWith(1, 'terminal:exit', id, 130)
+  })
+})
+
 describe('createTerminalManager: reconnect', () => {
   it('reopens an ended session with the same request and gives it a new id', async () => {
     const { manager, spawnPty, ptys, send } = setup()
@@ -268,7 +393,7 @@ describe('createTerminalManager: reconnect', () => {
     expect(Object.values(options.env)).toContain('pw')
 
     ptys[1].emitData('back')
-    expect(send).toHaveBeenCalledWith(3, 'terminal:data', again, 'back')
+    await vi.waitFor(() => expect(send).toHaveBeenCalledWith(3, 'terminal:data', again, 'back'))
     // 한 번 다시 열면 옛 id로는 다시 열 수 없다.
     await expect(manager.reopen(id, 3)).rejects.toThrow(/can no longer be reconnected/)
   })

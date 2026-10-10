@@ -43,7 +43,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
-import { canReconnect, createOutputRouter, endedByUser, terminalShortcut } from '@/utils/terminal-sessions'
+import { canReconnect, createOutputRouter, endedByUser, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
 import { endedLine, errorLine, panelDrag, panelHeight, RECONNECTING_LINE, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import TerminalTabs from './terminal-tabs'
@@ -182,6 +182,7 @@ export default {
     },
     // Windows 터미널처럼. 복사: 선택하고 Ctrl+C (또는 Ctrl+Shift+C, Ctrl+Insert). 고른 글자가 없는 Ctrl+C는 그대로 중단이다.
     // 붙여넣기: Ctrl+V (또는 Ctrl+Shift+V; Shift+Insert는 브라우저가 처리). 오른쪽 클릭: 선택한 글자가 있으면 복사, 없으면 붙여넣기.
+    // 프로그램이 마우스를 받는 동안의 오른쪽 클릭은 프로그램의 것이다 (rightClickAction).
     enableClipboard(term, el) {
       const copySelection = () => {
         if (!term.hasSelection()) return false
@@ -208,12 +209,14 @@ export default {
       })
       el.addEventListener('contextmenu', async event => {
         event.preventDefault()
-        if (copySelection()) {
+        const action = rightClickAction({ mouseTracking: term.modes.mouseTrackingMode, shiftKey: event.shiftKey, hasSelection: term.hasSelection() })
+        if (action === 'copy') {
+          copySelection()
           term.clearSelection()
-          return
+        } else if (action === 'paste') {
+          await paste()
+          term.focus()
         }
-        await paste()
-        term.focus()
       })
     },
     onExit(id, exitCode) {

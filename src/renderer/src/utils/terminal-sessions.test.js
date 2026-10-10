@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { canReconnect, countByOwner, createOutputRouter, endedByUser, hopKey, INTERRUPT_WINDOW_MS, reorderSessions, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
+import { canReconnect, countByOwner, createOutputRouter, endedByUser, hopKey, INTERRUPT_WINDOW_MS, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -176,6 +176,24 @@ describe('routeStates', () => {
 
     expect(links.has(`${a}>${b}`)).toBe(true)
     expect(links.has(`${b}>${a}`)).toBe(false)
+  })
+})
+
+describe('rightClickAction', () => {
+  it('copies the selected text, or pastes when nothing is selected', () => {
+    expect(rightClickAction({ hasSelection: true })).toBe('copy')
+    expect(rightClickAction({ hasSelection: false })).toBe('paste')
+    expect(rightClickAction()).toBe('paste')
+    expect(rightClickAction({ mouseTracking: 'none', shiftKey: true, hasSelection: true })).toBe('copy')
+  })
+
+  it('leaves the click to a program that asked for the mouse, unless Shift is held', () => {
+    for (const mouseTracking of ['x10', 'vt200', 'drag', 'any']) {
+      expect(rightClickAction({ mouseTracking })).toBe('program')
+      expect(rightClickAction({ mouseTracking, hasSelection: true })).toBe('program')
+      expect(rightClickAction({ mouseTracking, shiftKey: true })).toBe('paste')
+      expect(rightClickAction({ mouseTracking, shiftKey: true, hasSelection: true })).toBe('copy')
+    }
   })
 })
 

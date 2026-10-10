@@ -23,8 +23,13 @@ export function terminalBash(gitBashPath, { platform = process.platform, exists 
   return bash
 }
 
-// pty가 끝난 상태. 신호로 끝났으면(예: 접속 중 Ctrl+C로 bash까지 SIGINT) 쉘처럼 128 + 신호 번호로 알린다. (Windows는 신호가 없다)
-export function exitStatus({ exitCode, signal }) {
+// pty가 끝난 상태. 신호로 끝났으면(예: 접속 중 Ctrl+C로 bash까지 SIGINT) 쉘처럼 128 + 신호 번호로 알린다.
+// Windows에는 신호가 없지만 Git의 bash(MSYS)는 신호로 끝난 것을 종료 코드의 윗바이트(신호 << 8)로 남긴다:
+// 접속 중 Ctrl+C는 512로 끝났다. 아랫바이트가 0이고 한 바이트를 넘는 값만 그렇게 읽는다 (보통의 종료 코드는 255까지).
+export function exitStatus({ exitCode, signal }, { platform = process.platform } = {}) {
+  if (platform === 'win32' && exitCode > 0xff && exitCode <= 0xffff && (exitCode & 0xff) === 0) {
+    return 128 + ((exitCode >> 8) & 0x7f)
+  }
   if (exitCode) return exitCode
   return signal ? 128 + signal : 0
 }
@@ -58,6 +63,13 @@ export function windowsPtyInfo({ platform = process.platform, release = osReleas
 }
 
 const isSize = value => Number.isInteger(value) && value >= 2 && value <= 1000
+
+// pty의 출력을 화면으로 보내기 전에 모으는 시간. 화면을 다시 그리는 프로그램(Claude Code, tmux)의 한 장면은 pty에서
+// 수십 조각으로 나뉘어 온다 (함께 온 ConPTY에서 한 장면에 25조각쯤). 조각마다 보내면 화면이 그 사이에 그려져서 반쯤
+// 그린 장면과 그 자리의 커서가 보였다. 8ms면 그런 장면이 거의 없었고(4ms로는 남았다), 키 입력의 메아리에는 느껴지지 않는다.
+export const OUTPUT_DELAY_MS = 8
+// 이만큼 쌓이면 기다리지 않고 보낸다 (출력이 쏟아질 때 한 번에 보내는 양의 한도).
+export const MAX_PENDING_OUTPUT = 256 * 1024
 
 // 터미널 세션(pty)을 관리한다. 세션은 연 화면(owner, webContents id)만 쓰고 닫을 수 있다.
 // 실행하는 것은 ssh.js가 만든 스크립트뿐이고, 화면에서는 키 입력만 보낸다.
@@ -132,15 +144,45 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
 
     const { pty, bundled } = spawned
     const id = nextId++
-    sessions.set(id, { owner, pty, windowsPty: windowsPtyInfo({ platform, release, bundled }) })
-    pty.onData(data => send(owner, 'terminal:data', id, data))
+    const session = { owner, pty, windowsPty: windowsPtyInfo({ platform, release, bundled }), pending: '', timer: null }
+    sessions.set(id, session)
+
+    // 모아 둔 출력을 화면으로 보낸다. (OUTPUT_DELAY_MS)
+    const flush = () => {
+      clearTimeout(session.timer)
+      session.timer = null
+      if (session.pending) {
+        const data = session.pending
+        session.pending = ''
+        send(owner, 'terminal:data', id, data)
+      }
+    }
+
+    pty.onData(data => {
+      // 사용자가 닫은 세션의 남은 출력은 받을 화면이 없다.
+      if (sessions.get(id) !== session) return
+      session.pending += data
+      if (session.pending.length >= MAX_PENDING_OUTPUT) flush()
+      else if (session.timer === null) session.timer = setTimeout(flush, OUTPUT_DELAY_MS)
+    })
     pty.onExit(event => {
-      const exitCode = exitStatus(event)
+      const exitCode = exitStatus(event, { platform })
+      // 끝났다는 알림보다 마지막 출력이 먼저 가야 한다.
+      flush()
       // 사용자가 닫은 세션(close/closeAll이 이미 지웠다)은 다시 열 일이 없다.
       if (sessions.delete(id)) remember(id, { owner, kind, payload })
       send(owner, 'terminal:exit', id, exitCode)
     })
     return id
+  }
+
+  // 세션을 끝낸다. 모아 둔 출력은 버린다.
+  function end(id, session) {
+    sessions.delete(id)
+    clearTimeout(session.timer)
+    session.timer = null
+    session.pending = ''
+    killPty(session.pty)
   }
 
   return {
@@ -170,17 +212,24 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
       }
     },
 
+    // 프로그램이 막 끝난 pty는 크기 변경에 예외를 던진다 (node-pty: "Cannot resize a pty that has already exited").
+    // 끝났다는 알림(onExit)은 남은 출력을 다 읽은 뒤에야 오므로 그 사이의 요청은 버린다: 여기서 던지면 메인 프로세스의
+    // 잡히지 않은 오류가 된다. 쓰기도 같은 이유로 감싼다.
     write(id, owner, data) {
       const session = owned(id, owner)
       if (session && typeof data === 'string' && data.length <= MAX_WRITE) {
-        session.pty.write(data)
+        try {
+          session.pty.write(data)
+        } catch {}
       }
     },
 
     resize(id, owner, cols, rows) {
       const session = owned(id, owner)
       if (session && isSize(cols) && isSize(rows)) {
-        session.pty.resize(cols, rows)
+        try {
+          session.pty.resize(cols, rows)
+        } catch {}
       }
     },
 
@@ -188,10 +237,7 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
     close(id, owner) {
       forget(id, owner)
       const session = owned(id, owner)
-      if (session) {
-        sessions.delete(id)
-        killPty(session.pty)
-      }
+      if (session) end(id, session)
     },
 
     // 창이 닫히거나 새로고침될 때 그 화면의 세션을 모두 끝낸다.
@@ -200,10 +246,7 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
         if (owner === undefined || entry.owner === owner) ended.delete(id)
       }
       for (const [id, session] of sessions) {
-        if (owner === undefined || session.owner === owner) {
-          sessions.delete(id)
-          killPty(session.pty)
-        }
+        if (owner === undefined || session.owner === owner) end(id, session)
       }
     }
   }

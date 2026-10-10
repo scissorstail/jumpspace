@@ -139,6 +139,16 @@ export function canReconnect(session) {
 // 터미널에서 가로채는 단축키: 'copy', 'paste', 아니면 null(터미널이 그대로 처리).
 // Windows 터미널처럼 Ctrl+C는 고른 글자가 있을 때만 복사이고(없으면 실행 중인 프로그램을 중단시킨다), Ctrl+V는 붙여넣기다.
 // Shift+Insert 붙여넣기는 브라우저가 처리하므로 여기서 다루지 않는다.
+// 터미널에서 오른쪽 클릭이 하는 일: 'copy'(고른 글자가 있다), 'paste', 아니면 'program'.
+// 프로그램이 마우스를 받겠다고 한 동안(tmux의 mouse on, vim, Claude Code)에는 클릭이 프로그램의 것이다: 화면이 그 클릭을
+// 프로그램에 보내므로, 여기서 붙여넣기까지 하면 클립보드의 글이 프로그램에 함께 들어간다. Shift를 누르면 터미널의 것이다
+// (그 동안 글자를 고를 때도 Shift를 누른다).
+//   mouseTracking: xterm.js의 term.modes.mouseTrackingMode ('none'이면 프로그램이 마우스를 받지 않는다)
+export function rightClickAction({ mouseTracking = 'none', shiftKey = false, hasSelection = false } = {}) {
+  if (mouseTracking !== 'none' && !shiftKey) return 'program'
+  return hasSelection ? 'copy' : 'paste'
+}
+
 export function terminalShortcut(event, { hasSelection = false } = {}) {
   if (event?.type !== 'keydown' || !event.ctrlKey || event.altKey || event.metaKey) return null
   if (event.code === 'KeyC') return event.shiftKey || hasSelection ? 'copy' : null

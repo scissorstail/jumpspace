@@ -39,7 +39,8 @@ describe('terminalTheme', () => {
   it('maps the theme variables to xterm colors', () => {
     const vars = { '--js-bg': '#000', '--js-text': '#fff', '--js-primary': '#f0f', '--js-line': '#333', '--js-danger': '#f00', '--js-live': '#0f0', '--js-connecting': '#ff0', '--js-sun': '#a0f', '--js-secondary': '#0ff', '--js-ansi-magenta': '#f0e', '--js-ansi-cyan': '#0fe', '--js-text-muted': '#999' }
     const theme = terminalTheme(name => vars[name])
-    expect(theme).toMatchObject({ background: '#000', foreground: '#fff', cursor: '#f0f', cursorAccent: '#000', red: '#f00', green: '#0f0', yellow: '#ff0', magenta: '#f0e', cyan: '#0fe', brightBlack: '#999' })
+    // 커서는 글자색, 그 아래 글자는 바탕색 (터미널의 기본). 색 묶음의 주색(#f0f)을 쓰지 않는다.
+    expect(theme).toMatchObject({ background: '#000', foreground: '#fff', cursor: '#fff', cursorAccent: '#000', red: '#f00', green: '#0f0', yellow: '#ff0', magenta: '#f0e', cyan: '#0fe', brightBlack: '#999' })
     expect(Object.values(theme).every(Boolean)).toBe(true)
   })
 })

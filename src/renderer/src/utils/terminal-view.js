@@ -34,11 +34,13 @@ export function errorLine(error) {
 // 터미널 색: 지금 고른 테마의 CSS 변수에서 읽는다. color(name)은 그 변수의 값을 돌려준다.
 // 초록과 노랑은 모든 색 묶음에서 같은 --js-live / --js-connecting이다. (--js-sun은 Vapor Blue에서 보라라서 magenta와 구별되지 않았다)
 // magenta와 cyan은 --js-ansi-*: 보통 주색과 보조색이고, Sunset Drive에서는 빨강·노랑과 겹치지 않게 따로 정한다.
+// 커서는 터미널이 보통 그러듯 글자색이고, 그 아래의 글자는 바탕색이다 (owner, 2026-10-11: 색 묶음의 주색으로 칠한
+// 커서는 화면을 다시 그리는 프로그램에서 번쩍이는 색 덩어리로 보였다).
 export function terminalTheme(color) {
   return {
     background: color('--js-bg'),
     foreground: color('--js-text'),
-    cursor: color('--js-primary'),
+    cursor: color('--js-text'),
     cursorAccent: color('--js-bg'),
     selectionBackground: color('--js-line'),
     red: color('--js-danger'),
