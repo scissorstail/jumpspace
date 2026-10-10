@@ -136,9 +136,13 @@ export function canReconnect(session) {
   return session?.status === 'exited' && session.id !== null && session.id !== undefined
 }
 
-export function terminalShortcut(event) {
+// 터미널에서 가로채는 단축키: 'copy', 'paste', 아니면 null(터미널이 그대로 처리).
+// Windows 터미널처럼 Ctrl+C는 고른 글자가 있을 때만 복사이고(없으면 실행 중인 프로그램을 중단시킨다), Ctrl+V는 붙여넣기다.
+// Shift+Insert 붙여넣기는 브라우저가 처리하므로 여기서 다루지 않는다.
+export function terminalShortcut(event, { hasSelection = false } = {}) {
   if (event?.type !== 'keydown' || !event.ctrlKey || event.altKey || event.metaKey) return null
-  if (event.shiftKey && event.code === 'KeyC') return 'copy'
+  if (event.code === 'KeyC') return event.shiftKey || hasSelection ? 'copy' : null
+  if (event.code === 'KeyV') return 'paste'
   if (!event.shiftKey && event.key === 'Insert') return 'copy'
   return null
 }

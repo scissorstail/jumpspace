@@ -118,7 +118,8 @@ export default {
       this.$store.commit('terminalUpdate', { key: session.key, request: null })
 
       const term = new Terminal({
-        cursorBlink: true,
+        // 깜빡이지 않는다: 로딩 표시처럼 화면을 빠르게 다시 그리는 프로그램에서 커서가 번쩍거렸다.
+        cursorBlink: false,
         fontFamily: '"JetBrains Mono", Consolas, "Cascadia Mono", "DejaVu Sans Mono", monospace',
         fontSize: 13,
         scrollback: 5000,
@@ -164,18 +165,30 @@ export default {
       // 여는 동안 패널 크기가 바뀌었을 수 있다.
       this.fit(entry, true)
     },
-    // 복사: 선택하고 Ctrl+Shift+C (또는 Ctrl+Insert). 붙여넣기: Ctrl+Shift+V, Shift+Insert (브라우저가 처리).
-    // 오른쪽 클릭: 선택한 글자가 있으면 복사, 없으면 붙여넣기 (Windows 터미널처럼)
+    // Windows 터미널처럼. 복사: 선택하고 Ctrl+C (또는 Ctrl+Shift+C, Ctrl+Insert). 고른 글자가 없는 Ctrl+C는 그대로 중단이다.
+    // 붙여넣기: Ctrl+V (또는 Ctrl+Shift+V; Shift+Insert는 브라우저가 처리). 오른쪽 클릭: 선택한 글자가 있으면 복사, 없으면 붙여넣기.
     enableClipboard(term, el) {
       const copySelection = () => {
         if (!term.hasSelection()) return false
         window.preload.clipboard.writeText(term.getSelection())
         return true
       }
+      const paste = async () => {
+        const text = await window.preload.clipboard.readText()
+        if (text) term.paste(text)
+      }
       term.attachCustomKeyEventHandler(event => {
-        if (terminalShortcut(event) !== 'copy') return true
+        const shortcut = terminalShortcut(event, { hasSelection: term.hasSelection() })
+        if (!shortcut) return true
+
+        // 브라우저도 붙여넣지 않게 막는다 (두 번 들어간다).
         event.preventDefault()
-        copySelection()
+        if (shortcut === 'paste') {
+          paste()
+        } else if (copySelection() && !event.shiftKey && event.code === 'KeyC') {
+          // Ctrl+C로 복사했으면 선택을 푼다: 다음 Ctrl+C는 중단이다.
+          term.clearSelection()
+        }
         return false
       })
       el.addEventListener('contextmenu', async event => {
@@ -184,8 +197,7 @@ export default {
           term.clearSelection()
           return
         }
-        const text = await window.preload.clipboard.readText()
-        if (text) term.paste(text)
+        await paste()
         term.focus()
       })
     },

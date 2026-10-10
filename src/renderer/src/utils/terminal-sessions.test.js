@@ -187,6 +187,20 @@ describe('terminalShortcut', () => {
     expect(terminalShortcut(key('Insert', { ctrlKey: true }, 'Insert'))).toBe('copy')
   })
 
+  it('copies with Ctrl+C only while text is selected, so it still interrupts otherwise', () => {
+    expect(terminalShortcut(key('KeyC', { ctrlKey: true }, 'c'), { hasSelection: true })).toBe('copy')
+    expect(terminalShortcut(key('KeyC', { ctrlKey: true }, 'c'), { hasSelection: false })).toBe(null)
+    expect(terminalShortcut(key('KeyC', { ctrlKey: true }, 'c'))).toBe(null)
+  })
+
+  it('pastes with Ctrl+V and Ctrl+Shift+V, selected text or not', () => {
+    expect(terminalShortcut(key('KeyV', { ctrlKey: true }, 'v'))).toBe('paste')
+    expect(terminalShortcut(key('KeyV', { ctrlKey: true, shiftKey: true }, 'V'))).toBe('paste')
+    expect(terminalShortcut(key('KeyV', { ctrlKey: true }, 'v'), { hasSelection: true })).toBe('paste')
+    expect(terminalShortcut(key('KeyV', {}, 'v'))).toBe(null)
+    expect(terminalShortcut(key('KeyV', { ctrlKey: true, altKey: true }, 'v'))).toBe(null)
+  })
+
   it('leaves Ctrl+C (interrupt), plain keys, other modifiers and key-up alone', () => {
     expect(terminalShortcut(key('KeyC', { ctrlKey: true }, 'c'))).toBe(null)
     expect(terminalShortcut(key('KeyC', { shiftKey: true }, 'C'))).toBe(null)
