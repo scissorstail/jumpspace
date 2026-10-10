@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { maskText } from './mask'
 import {
   activeForwards,
   configRequest,
@@ -146,6 +147,14 @@ describe('forwardSummary', () => {
     expect(summary.first).toBe(':15432 → db.internal:5432')
     expect(summary.more).toBe('+1')
     expect(summary.title).toBe(':15432 → db.internal:5432\n:8080 → localhost:80')
+  })
+
+  it('shows ports and hosts through the given function (masked while node details are hidden)', () => {
+    const summary = forwardSummary(forwards, forwardPlan(server, []), maskText)
+    expect(summary.first).toBe(':*** → ***.***:***')
+    expect(summary.text).toBe(':*** → ***.***:*** (+1)')
+    expect(summary.title).toBe(':*** → ***.***:***\n:*** → ***:***')
+    expect(JSON.stringify(summary)).not.toMatch(/15432|5432|8080|internal|localhost/)
   })
 
   it('marks missing ports and uses the default host of the mode', () => {

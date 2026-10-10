@@ -16,7 +16,6 @@
       :sessions="sessions"
       :active-key="activeKey"
       @activate="activate"
-      @reconnect="reconnect"
       @close="closeSession"
       @reorder="$store.commit('terminalReorder', $event)"
       @hide="$store.commit('terminalPanel', false)"

@@ -1,7 +1,7 @@
 <template>
   <div class="terminal-tabs">
     <!-- 탭이 많으면 이 목록만 옆으로 넘긴다. 숨기기 단추는 늘 보인다.
-         탭을 끌면 순서가 바뀐다 (닫기/다시 연결 단추에서는 끌리지 않는다). -->
+         탭을 끌면 순서가 바뀐다 (닫기 단추에서는 끌리지 않는다). -->
     <draggable
       ref="tabList"
       :value="sessions"
@@ -35,22 +35,8 @@
           aria-hidden="true"
         />
         <span class="terminal-tab-title">{{ session.title }}</span>
-        <!-- 다시 연결과 닫기는 붙여서 탭 오른쪽 끝에 둔다 -->
+        <!-- 닫기는 탭 오른쪽 끝에 둔다. 끝난 세션은 터미널에서 Enter로 다시 연결한다 (단추는 두지 않는다). -->
         <span class="terminal-tab-actions">
-          <button
-            v-if="canReconnect(session)"
-            type="button"
-            class="terminal-tab-button"
-            :aria-label="`Reconnect ${session.title}`"
-            title="Reconnect (or press Enter in the terminal)"
-            @click.stop="$emit('reconnect', session)"
-          >
-            <b-icon
-              icon="arrow-clockwise"
-              class="terminal-reconnect-icon"
-              aria-hidden="true"
-            />
-          </button>
           <button
             type="button"
             class="terminal-tab-button"
@@ -84,11 +70,10 @@
 
 <script>
 import draggable from 'vuedraggable'
-import { canReconnect } from '@/utils/terminal-sessions'
 import { revealScrollLeft, sessionStatusText } from '@/utils/terminal-view'
 
 // 터미널 패널 위쪽의 탭 줄. 탭이 많으면 좁아졌다가 목록만 옆으로 넘어가고, 활성 탭은 늘 보이게 한다.
-// 탭을 고르기, 다시 연결, 닫기, 끌어서 바꾼 순서, 패널 숨기기는 이벤트(activate, reconnect, close, reorder, hide)로 패널에 알린다.
+// 탭을 고르기, 닫기, 끌어서 바꾼 순서, 패널 숨기기는 이벤트(activate, close, reorder, hide)로 패널에 알린다.
 export default {
   name: 'TerminalTabs',
   components: { draggable },
@@ -116,7 +101,6 @@ export default {
     this.observer?.disconnect()
   },
   methods: {
-    canReconnect,
     statusText: sessionStatusText,
     // 넘치는 탭 목록은 세로 휠로도 옆으로 넘긴다.
     scrollTabs(event) {
@@ -192,12 +176,6 @@ export default {
     color: var(--js-on-primary);
   }
 
-  // 끝난 탭에는 다시 연결 단추가 하나 더 붙는다. 그만큼 넓혀서 제목이 더 짧게 잘리지 않게 한다.
-  &.is-exited {
-    min-width: 154px; // 132px + 다시 연결 단추(22px)
-    max-width: 242px; // 220px + 다시 연결 단추
-  }
-
   &:focus-visible {
     outline: 2px solid var(--js-secondary);
     outline-offset: -2px;
@@ -252,8 +230,7 @@ export default {
   margin-left: auto;
 }
 
-// 탭의 단추 아이콘은 글자보다 작게, 둘이 같은 크기로 보이게 한다.
-// (x는 그림 둘레에 여백이 많아서 같은 글꼴 크기면 다시 연결 화살표보다 작게 그려진다)
+// 탭의 단추 아이콘은 글자보다 작게 한다. (x는 그림 둘레에 여백이 많아서 글꼴 크기보다 작게 그려진다)
 .terminal-tab-actions .terminal-tab-button {
   display: flex;
   align-items: center;
@@ -267,10 +244,6 @@ export default {
   .b-icon {
     display: block;
   }
-}
-
-.terminal-reconnect-icon {
-  font-size: 11px;
 }
 
 .terminal-tab-button,

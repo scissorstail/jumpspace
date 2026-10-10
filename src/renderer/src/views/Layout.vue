@@ -34,7 +34,7 @@
           v-if="editorData"
           size="sm"
           variant="light"
-          :title="hideNodeInfo ? 'Show node details' : 'Hide node details (names stay)'"
+          :title="hideNodeInfo ? 'Show node details' : 'Mask node details with *** (names stay)'"
           :aria-label="hideNodeInfo ? 'Show node details' : 'Hide node details'"
           :pressed="hideNodeInfo"
           @click="toggleNodeInfo"
@@ -110,7 +110,7 @@
       <div id="workspace">
         <div
           id="editor-area"
-          :class="[`backdrop-${backdrop}`, nodeBlur > 0 && 'node-glass', hideNodeInfo && 'hide-node-info']"
+          :class="[`backdrop-${backdrop}`, nodeBlur > 0 && 'node-glass']"
           :style="{ '--node-blur': `${nodeBlur}px` }"
         >
           <!-- 배경 풍경: 밤하늘, 별, 줄무늬 해, 도시, 네온 격자 바닥 (장식) -->

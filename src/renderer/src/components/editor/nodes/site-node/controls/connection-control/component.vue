@@ -72,21 +72,21 @@
           </div>
           <div
             class="info-text"
-            :title="user || ''"
+            :title="infoText.user"
           >
-            {{ user || '' }}
+            {{ infoText.user }}
           </div>
           <div
             class="info-text"
-            :title="host || ''"
+            :title="infoText.host"
           >
-            {{ host || '' }}
+            {{ infoText.host }}
           </div>
           <div
             class="info-text"
-            :title="port || ''"
+            :title="infoText.port"
           >
-            {{ port || '' }}
+            {{ infoText.port }}
           </div>
           <div
             v-if="forwardSummaryText"
@@ -116,6 +116,7 @@ import pick from 'lodash/pick'
 import store from '@/store'
 import { errorBox } from '@/utils/notify'
 import { terminalTitle } from '@/utils/terminal-sessions'
+import { maskText } from '@/utils/mask'
 import {
   configRequest,
   forwardEntries,
@@ -196,10 +197,20 @@ export default {
     diagramBase() {
       return `${this.baseUrl}img/diagram/servers/`
     },
+    // 노드 정보 숨기기(머리글의 눈 단추). 켜면 이름만 그대로 두고 user, host, port, 포워딩은 가린 글자로 보여준다.
+    isInfoHidden() {
+      return store.getters.setting.hideNodeInfo
+    },
+    // 노드 아래에 보여줄 user, host, port (툴팁에도 같은 글자를 쓴다)
+    infoText() {
+      const show = this.isInfoHidden ? maskText : x => x || ''
+
+      return { user: show(this.user), host: show(this.host), port: show(this.port) }
+    },
     // 접속 버튼의 이름. 아이콘만 있는 버튼이라 스크린 리더와 툴팁에 쓴다.
     connectLabel() {
       // 노드 정보를 숨긴 동안에는 단추의 설명에도 주소를 넣지 않는다.
-      const target = this.name || (store.getters.setting.hideNodeInfo ? '' : this.host) || 'this node'
+      const target = this.name || (this.isInfoHidden ? '' : this.host) || 'this node'
 
       return this.isProxyJumpReady ? `Connect to ${target} through the previous nodes (ProxyJump)` : `Connect to ${target}`
     },
@@ -211,7 +222,7 @@ export default {
       return forwardHint(this.forwardPlan, this.connectionOf(this.$data))
     },
     forwardSummaryText() {
-      return forwardSummary(this.forwards, this.forwardPlan)
+      return forwardSummary(this.forwards, this.forwardPlan, this.isInfoHidden ? maskText : undefined)
     },
     // 설정 팝오버에서 편집하는 값
     connectionFields() {
