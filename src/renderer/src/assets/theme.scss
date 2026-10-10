@@ -108,6 +108,7 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-hover: rgba(255, 255, 255, 0.08);
   --js-primary-soft: color-mix(in srgb, var(--js-primary) 22%, transparent);
   --js-secondary-soft: color-mix(in srgb, var(--js-secondary) 16%, transparent);
+  --js-font-base: 'Pretendard Variable', 'Spoqa Han Sans Neo', sans-serif;
   --js-font-display: 'JS Pixel', 'Spoqa Han Sans Neo', monospace;
   --js-font-mono: 'JetBrains Mono', Consolas, 'DejaVu Sans Mono', monospace;
   // 세 가지 색 띠 (평평한 신스웨이브 줄)
@@ -119,6 +120,15 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
 body {
   background: var(--js-bg);
   color: var(--js-text);
+}
+
+// 기본 글꼴은 body에 두고 상속시킨다. (모든 요소에 직접 주면 제목용 글꼴을 지정한 단추 안의 글자까지 덮어쓴다)
+// Bootstrap도 body, .tooltip, .popover에 글꼴을 주므로, Bootstrap보다 뒤에 읽히는 이 파일에 둔다.
+// (App.vue에 있을 때는 Bootstrap에 덮여서 시스템 글꼴로 그려졌다) 터미널(xterm.js)은 자기 고정폭 글꼴을 직접 지정한다.
+body,
+.tooltip,
+.popover {
+  font-family: var(--js-font-base);
 }
 
 // 헤더와 다이어그램 목록의 밝은 버튼(variant light / white)을 어두운 배경에 맞춘다.

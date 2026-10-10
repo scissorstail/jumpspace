@@ -83,11 +83,13 @@ body {
       format('woff2');
 }
 
-// 기본 글꼴은 body에 두고 상속시킨다. (모든 요소에 직접 주면 제목용 글꼴을 지정한 단추 안의 글자까지 덮어쓴다)
-// 터미널(xterm.js)은 자기 고정폭 글꼴을 직접 지정한다. Bootstrap은 .tooltip, .popover에 글꼴을 따로 준다.
-body,
-.tooltip,
-.popover {
-  font-family: 'Spoqa Han Sans Neo', sans-serif;
+// 일반 글자(본문, 입력란, 메뉴, 설명)는 Pretendard로 쓴다. 굵기를 모두 담은 가변 글꼴 파일 하나다. (OFL, fonts/Pretendard/LICENSE.txt)
+// 제목용 픽셀 글꼴(--js-font-display)과 고정폭 글꼴(--js-font-mono)은 그대로다. 글꼴을 body에 거는 곳은 theme.scss다.
+@font-face {
+  font-family: 'Pretendard Variable';
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+  src: url('./assets/fonts/Pretendard/PretendardVariable.woff2') format('woff2-variations');
 }
 </style>
