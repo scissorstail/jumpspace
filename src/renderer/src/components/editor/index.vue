@@ -20,6 +20,7 @@ import SiteNode from './nodes/site-node'
 import { MAX_ZOOM, MIN_ZOOM, fitView, scaleView, settleSize, viewOf, zoomAround } from '@/utils/view'
 import { arrangeLayout, boxOf } from '@/utils/arrange'
 import { activeTerminalNode, hopKey, routeStates } from '@/utils/terminal-sessions'
+import { lockedPress } from '@/utils/locked-press'
 
 export default {
   name: 'EditorIndex',
@@ -238,6 +239,17 @@ export default {
     window.addEventListener('pointerup', this.onPointerRelease, true)
     this.editor.on('connectionpick', () => !this.isReleasing)
 
+    // 잠겨 있는 동안 노드의 그림, 이름, 접속 정보, 소켓은 배경처럼 군다: 그 위에서 끌면 캔버스가 움직인다 (utils/locked-press.js).
+    // Rete는 노드 위의 누름을 노드의 것으로 삼고 멈추므로, 노드에 닿기 전에(capture) 멈추고 같은 누름을 캔버스에 다시 보낸다.
+    // 다시 보낸 누름은 캔버스 자신이 target이라 여기서 또 걸리지 않고, Rete의 캔버스 끌기가 받는다.
+    this.onLockedPress = e => {
+      if (lockedPress(e, { isLocked: this.isLocked }) !== 'canvas') return
+
+      e.stopPropagation()
+      this.$el.dispatchEvent(new PointerEvent('pointerdown', e))
+    }
+    this.$el.addEventListener('pointerdown', this.onLockedPress, true)
+
     // Rete는 캔버스 크기를 불러올 때와 창 크기가 바뀔 때만 픽셀로 고정한다. 터미널 패널을 열고 닫거나 높이를 바꾸면
     // 캔버스 영역이 달라지므로 그때도 맞춘다. (패널이 열린 채 다른 item을 열고 패널을 닫으면 캔버스가 잘린 채 남았다)
     // 영역 크기가 바뀌면 다이어그램도 배경 풍경처럼 같은 비율로 커지고 줄어든다.
@@ -249,6 +261,7 @@ export default {
   },
   beforeDestroy() {
     this.$el.removeEventListener('dblclick', this.onDoubleClick)
+    this.$el.removeEventListener('pointerdown', this.onLockedPress, true)
     window.removeEventListener('pointerup', this.onPointerRelease, true)
     this.areaObserver?.disconnect()
   },
