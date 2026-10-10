@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it, vi } from 'vitest'
-import { createTerminalManager, exitStatus, killPty, MAX_SESSIONS, terminalBash } from './terminal.js'
+import { createTerminalManager, exitStatus, killPty, MAX_SESSIONS, REFLOW_BUILD, terminalBash, windowsPtyInfo } from './terminal.js'
 import { sq, toUnixPath } from './ssh.js'
 
 const root = mkdtempSync(join(tmpdir(), 'jumpspace-terminal-'))
@@ -37,7 +37,7 @@ function setup(extra = {}) {
   const { spawnPty, ptys } = fakePtyFactory()
   const send = vi.fn()
   const tempDir = mkdtempSync(join(root, 't-'))
-  const manager = createTerminalManager({ tempDir, getBash: () => '/bin/bash', spawnPty, send, ...extra })
+  const manager = createTerminalManager({ tempDir, getBash: () => '/bin/bash', spawnPty, send, platform: 'linux', ...extra })
   return { manager, spawnPty, ptys, send, tempDir }
 }
 
@@ -87,6 +87,82 @@ describe('killPty', () => {
     expect(() => killPty(pty, { platform: 'win32', kill })).not.toThrow()
     expect(kill).not.toHaveBeenCalled()
     expect(() => killPty(pty, { platform: 'linux', kill })).not.toThrow()
+  })
+})
+
+describe('windowsPtyInfo', () => {
+  it('is null outside Windows', () => {
+    expect(windowsPtyInfo({ platform: 'linux', release: '6.8.0' })).toBeNull()
+    expect(windowsPtyInfo({ platform: 'darwin', release: '24.0.0', bundled: true })).toBeNull()
+  })
+
+  it("gives the build of Windows for Windows' own ConPTY", () => {
+    expect(windowsPtyInfo({ platform: 'win32', release: '10.0.19045' })).toEqual({ backend: 'conpty', buildNumber: 19045 })
+    expect(windowsPtyInfo({ platform: 'win32', release: '10.0.26100' })).toEqual({ backend: 'conpty', buildNumber: 26100 })
+    // 번호를 모르면 주지 않는다 (xterm.js는 그때 새 ConPTY로 본다)
+    expect(windowsPtyInfo({ platform: 'win32', release: 'unknown' })).toEqual({ backend: 'conpty', buildNumber: undefined })
+  })
+
+  it('counts the bundled ConPTY as a new one on an old Windows, so the screen reflows long lines itself', () => {
+    expect(windowsPtyInfo({ platform: 'win32', release: '10.0.19045', bundled: true })).toEqual({ backend: 'conpty', buildNumber: REFLOW_BUILD })
+    expect(windowsPtyInfo({ platform: 'win32', release: '10.0.26100', bundled: true })).toEqual({ backend: 'conpty', buildNumber: 26100 })
+    expect(windowsPtyInfo({ platform: 'win32', release: '', bundled: true })).toEqual({ backend: 'conpty', buildNumber: REFLOW_BUILD })
+  })
+})
+
+describe('createTerminalManager: the pty on Windows', () => {
+  const windows = { platform: 'win32', release: '10.0.19045' }
+
+  it('starts the session in the ConPTY that comes with node-pty and tells the screen so', async () => {
+    const { manager, spawnPty } = setup(windows)
+    const id = await manager.open('connect', node, { owner: 7 })
+
+    expect(spawnPty).toHaveBeenCalledTimes(1)
+    expect(spawnPty.mock.calls[0][2].useConptyDll).toBe(true)
+    expect(manager.windowsPty(id, 7)).toEqual({ backend: 'conpty', buildNumber: REFLOW_BUILD })
+    // 다른 창에는 알려 주지 않는다.
+    expect(manager.windowsPty(id, 8)).toBeNull()
+    expect(manager.windowsPty(999, 7)).toBeNull()
+  })
+
+  it('leaves the pty alone outside Windows', async () => {
+    const { manager, spawnPty } = setup({ platform: 'linux', release: '6.8.0' })
+    const id = await manager.open('connect', node, { owner: 7 })
+
+    expect(spawnPty.mock.calls[0][2]).not.toHaveProperty('useConptyDll')
+    expect(manager.windowsPty(id, 7)).toBeNull()
+  })
+
+  it("falls back to Windows' own ConPTY when the bundled one cannot start, and does not try it again", async () => {
+    const { spawnPty: plain, ptys } = fakePtyFactory()
+    const spawnPty = vi.fn((file, args, options) => {
+      if (options.useConptyDll) throw new Error('Cannot find conpty.dll')
+      return plain(file, args, options)
+    })
+    const tempDir = mkdtempSync(join(root, 'fallback-'))
+    const manager = createTerminalManager({ tempDir, getBash: () => '/bin/bash', spawnPty, send: vi.fn(), ...windows })
+
+    const first = await manager.open('connect', node, { owner: 1 })
+    expect(spawnPty).toHaveBeenCalledTimes(2)
+    expect(ptys).toHaveLength(1)
+    expect(ptys[0].options).not.toHaveProperty('useConptyDll')
+    expect(manager.windowsPty(first, 1)).toEqual({ backend: 'conpty', buildNumber: 19045 })
+
+    const second = await manager.open('connect', node, { owner: 1 })
+    expect(spawnPty).toHaveBeenCalledTimes(3)
+    expect(manager.windowsPty(second, 1)).toEqual({ backend: 'conpty', buildNumber: 19045 })
+  })
+
+  it('reports the real error and removes the files when no pty can be started at all', async () => {
+    const tempDir = mkdtempSync(join(root, 'nopty-'))
+    const spawnPty = vi.fn((file, args, options) => { throw new Error(options.useConptyDll ? 'no bundled conpty' : 'no pty at all') })
+    const manager = createTerminalManager({ tempDir, getBash: () => '/bin/bash', spawnPty, send: vi.fn(), ...windows })
+
+    await expect(manager.open('connect', node, { owner: 1 })).rejects.toThrow('no pty at all')
+    expect(readdirSync(tempDir)).toEqual([])
+    // 함께 온 ConPTY 탓이 아닐 수 있으므로 다음에는 다시 그것부터 해 본다.
+    await expect(manager.open('connect', node, { owner: 1 })).rejects.toThrow('no pty at all')
+    expect(spawnPty.mock.calls.map(call => !!call[2].useConptyDll)).toEqual([true, false, true, false])
   })
 })
 
@@ -322,6 +398,47 @@ describe.skipIf(!BASH || !existsSync(BASH))('a real pty', () => {
     expect(text()).toContain('ed959ceab88020ec9e85eba0a5')
     expect(text()).toContain('GOT[한글 입력]')
     await waitFor(() => exit !== null)
+  }, 30000)
+
+  // 전체 화면 프로그램(tmux, vim, Claude Code)이 쓰는 요청이 화면까지 오는지. Windows 10에 들어 있는 ConPTY는
+  // 대체 화면과 마우스 요청을 넘기지 않아서, 앱은 node-pty에 함께 들어 있는 ConPTY를 쓴다 (CI의 Windows 잡에서 확인한다).
+  it('hands the alternate screen and the mouse request of a full-screen program on to the screen', async () => {
+    const { spawn } = await import('node-pty')
+    const bashEnv = join(root, 'bashenv-fullscreen.sh')
+    writeFileSync(bashEnv, 'ssh() { printf "READY\\n"; printf "\\033[?1049h\\033[?1000hFULL\\033[?1000l\\033[?1049l"; printf "END\\n"; }\n')
+
+    const output = []
+    let exit = null
+    const tempDir = mkdtempSync(join(root, 'fullscreen-'))
+    const manager = createTerminalManager({
+      tempDir,
+      getBash: () => BASH,
+      spawnPty: (file, args, options) => spawn(file, args, { ...options, env: { ...options.env, BASH_ENV: toUnixPath(bashEnv) } }),
+      send: (owner, channel, id, value) => {
+        if (channel === 'terminal:exit') exit = value
+        else output.push(value)
+        // 새 ConPTY는 시작할 때 터미널에게 묻고(DA1) 답을 3초까지 기다린다. 화면(xterm.js)이 하듯 답한다.
+        if (channel === 'terminal:data' && value.includes('\x1b[c')) manager.write(id, owner, '\x1b[?1;2c')
+      }
+    })
+    const text = () => output.join('')
+
+    const waitFor = async (check, ms = 15000) => {
+      const end = Date.now() + ms
+      while (!check()) {
+        if (Date.now() > end) throw new Error(`timed out; output so far: ${JSON.stringify(text())}`)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+    }
+
+    await manager.open('connect', node, { owner: 1 })
+    await waitFor(() => exit !== null)
+
+    expect(text()).toContain('\x1b[?1049h')
+    expect(text()).toContain('\x1b[?1000h')
+    expect(text().indexOf('\x1b[?1049h')).toBeLessThan(text().indexOf('FULL'))
+    expect(text().indexOf('FULL')).toBeLessThan(text().indexOf('\x1b[?1049l'))
+    expect(exit).toBe(0)
   }, 30000)
 
   it.skipIf(process.platform === 'win32')('closing a session also ends the program that runs in it', async () => {

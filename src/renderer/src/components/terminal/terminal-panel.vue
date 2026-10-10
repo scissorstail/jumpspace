@@ -168,10 +168,17 @@ export default {
       }
 
       entry.id = result.id
+      this.adaptToPty(term, result)
       this.router.register(result.id, data => term.write(data))
       this.$store.commit('terminalUpdate', { key: session.key, id: result.id, status: 'running' })
       // 여는 동안 패널 크기가 바뀌었을 수 있다.
       this.fit(entry, true)
+    },
+    // Windows의 pty(ConPTY)는 크기가 바뀔 때 화면을 스스로 맞춘다. xterm.js도 그에 맞춰야 한다 (main의 windowsPtyInfo):
+    // 모르면 패널이 높아질 때 지난 출력을 화면으로 끌어내리고, ConPTY가 그 줄들을 빈 줄로 덮어써서 사라진다.
+    // 출력을 받기 전에(router.register 앞에서) 정한다.
+    adaptToPty(term, { windowsPty }) {
+      if (windowsPty) term.options.windowsPty = windowsPty
     },
     // Windows 터미널처럼. 복사: 선택하고 Ctrl+C (또는 Ctrl+Shift+C, Ctrl+Insert). 고른 글자가 없는 Ctrl+C는 그대로 중단이다.
     // 붙여넣기: Ctrl+V (또는 Ctrl+Shift+V; Shift+Insert는 브라우저가 처리). 오른쪽 클릭: 선택한 글자가 있으면 복사, 없으면 붙여넣기.
@@ -250,6 +257,7 @@ export default {
       entry.id = result.id
       entry.ended = false
       entry.interruptedAt = null
+      this.adaptToPty(entry.term, result)
       this.router.register(result.id, data => entry.term.write(data))
       this.$store.commit('terminalUpdate', { key: session.key, id: result.id, status: 'running' })
       this.fit(entry, true)
