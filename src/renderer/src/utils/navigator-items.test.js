@@ -1,5 +1,26 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems } from './navigator-items'
+import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from './navigator-items'
+
+// 판(#diagram-switcher)과 목록은 넘치는 것을 자른다. 그 안의 메뉴가 판보다 길면(항목이 적을 때) 아래가 잘려 보이지 않았다.
+describe('menus in the diagram list', () => {
+  it('are placed with position: fixed', () => {
+    expect(SWITCHER_MENU_POPPER.positionFixed).toBe(true)
+  })
+
+  it.each(['main-navigator.vue', 'navigator-item-menu.vue'])('every dropdown in %s leaves the panel', (file) => {
+    const source = readFileSync(join(__dirname, '..', 'components', 'layout', file), 'utf8')
+    const dropdowns = source.match(/<b-dropdown\s[^>]*>/g) || []
+
+    expect(dropdowns.length).toBeGreaterThan(0)
+    for (const tag of dropdowns) {
+      expect(tag).toContain(':popper-opts="menuPopperOpts"')
+      expect(tag).toContain('boundary="window"')
+    }
+    expect(source).toContain('this.menuPopperOpts = SWITCHER_MENU_POPPER')
+  })
+})
 
 describe('createNavigatorItem', () => {
   it('adds the screen state and the index to an item', () => {

@@ -44,6 +44,8 @@
         variant="light"
         :toggle-attrs="{ 'aria-label': 'More actions' }"
         toggle-class="text-decoration-none"
+        boundary="window"
+        :popper-opts="menuPopperOpts"
         no-caret
         right
       >
@@ -184,7 +186,7 @@ import isEmpty from 'lodash/isEmpty'
 import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNING } from '@/utils/project'
 import { countByOwner } from '@/utils/terminal-sessions'
 import { terminalCountText } from '@/utils/terminal-view'
-import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems } from '@/utils/navigator-items'
+import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from '@/utils/navigator-items'
 import { toastError } from '@/utils/notify'
 import NavigatorItemMenu from './navigator-item-menu'
 
@@ -249,6 +251,7 @@ export default {
     }
   },
   created() {
+    this.menuPopperOpts = SWITCHER_MENU_POPPER
     this.items = this.toNavigatorItems(this.projectData)
   },
   methods: {
