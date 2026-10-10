@@ -58,6 +58,9 @@ ode-v22.23.3-win-x64` in front of it (Git Bash: `export PATH="/c/Users/sciss/too
 
 Ordered roughly by value. Move an item to the log when it is done.
 
+### Known bugs (first in any phase)
+- **The window freezes for seconds when a terminal is resized just as its session ends** (found 2026-10-10 on Windows, #101). Scratch check: open a terminal to a refused port, resize the window about 3 s later while the session is still `running` and about to exit: the main process did not answer for 0.6 s (width change) up to more than 7 s (height change, rows 13 -> 7); a resize 1 s after opening or after the session has `exited` answers in about 15 ms. `terminal.js` `resize` calls `session.pty.resize` synchronously (node-pty, ConPTY). Not understood yet: find out whether it is the exiting pty, and avoid blocking main (for example skip or defer the resize of a session that is ending). Needs a test with the fake pty and a check in the real app.
+
 ### UX candidates
 - (none open)
 
@@ -607,6 +610,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Did: the tab row is a `vuedraggable`; `reorderSessions` moves only the open diagram's sessions inside the store's list. Close and reconnect buttons do not start a drag.
 - Checked: 4 unit tests. Real app (scratch): drag to the front and to the end, sessions of the other diagram keep their place, close and click still work. Tests 311 passed, lint ok, build ok, commit 489f98d (not pushed).
 - Next: polish phase; the first polish runs look at #99 and #100.
+
+### #101 2026-10-10 · fix (by hand, the owner: fix one bug that is visible right away)
+- Did: in a low window the terminal panel kept its 280px and left the canvas a strip of about 90px. New pure `panelHeight(wanted, available)` in `utils/terminal-view.js` (canvas keeps `MIN_CANVAS_HEIGHT` 200, panel at least `MIN_PANEL_HEIGHT` 140); the panel watches the height of `#workspace` with a ResizeObserver and shows the limited height, the chosen height stays and comes back in a taller window. Dragging starts from the shown height.
+- Checked: 3 unit tests. Real app (scratch, window kept off screen because the owner uses the desktop): window 860 -> canvas 536 / panel 280; 420 -> 200 / 176; 300 -> 116 / 140; back to 860 -> 536 / 280; drag in the low window, then enlarge keeps the dragged height. Tests 314 passed, lint ok, build ok (not pushed).
+- Found / next: the freeze under **Known bugs** in the Backlog (a resize while a session is ending blocks the main process). It was there before this change, which only makes one more resize happen in a low window.
 
 ## Routine
 

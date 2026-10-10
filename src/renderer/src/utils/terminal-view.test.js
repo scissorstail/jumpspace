@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { THEMES } from '../../../shared/setting.js'
-import { endedLine, errorLine, RECONNECTING_LINE, revealScrollLeft, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
+import { endedLine, errorLine, MIN_CANVAS_HEIGHT, MIN_PANEL_HEIGHT, panelHeight, RECONNECTING_LINE, revealScrollLeft, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
 
 describe('sessionStatusText', () => {
   it('names every state and gives the exit status of a failed end', () => {
@@ -78,6 +78,24 @@ describe('terminal colors of every palette', () => {
         expect(Math.min(d, 360 - d), `${theme}: ${a} ${t[a]} vs ${b} ${t[b]}`).toBeGreaterThanOrEqual(15)
       }
     }
+  })
+})
+
+describe('panelHeight', () => {
+  it('keeps the height the user chose while there is room', () => {
+    expect(panelHeight(280, 800)).toBe(280)
+    expect(panelHeight(280, Infinity)).toBe(280)
+  })
+
+  // 창이 낮아지면 캔버스가 사라지지 않게 패널이 줄어든다.
+  it('shrinks in a low window so the canvas keeps its minimum', () => {
+    expect(panelHeight(280, 400)).toBe(400 - MIN_CANVAS_HEIGHT)
+    expect(panelHeight(600, 500)).toBe(500 - MIN_CANVAS_HEIGHT)
+  })
+
+  it('never gets lower than its own minimum', () => {
+    expect(panelHeight(280, 150)).toBe(MIN_PANEL_HEIGHT)
+    expect(panelHeight(20, 800)).toBe(MIN_PANEL_HEIGHT)
   })
 })
 

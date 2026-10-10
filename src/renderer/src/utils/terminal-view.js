@@ -52,6 +52,17 @@ export function terminalTheme(color) {
   }
 }
 
+// 터미널 패널의 높이. 캔버스에 MIN_CANVAS_HEIGHT는 남기고, 패널은 MIN_PANEL_HEIGHT보다 낮아지지 않는다.
+//   wanted: 사용자가 끌어서 정한 높이, available: 캔버스와 패널이 나눠 쓰는 높이 (#workspace)
+// 창이 낮아지면 보이는 높이만 줄고 wanted는 그대로라서, 창을 다시 키우면 원래 높이로 돌아온다.
+export const MIN_PANEL_HEIGHT = 140
+export const MIN_CANVAS_HEIGHT = 200 // 노드 하나와 그 아래 글이 대략 들어가는 높이
+
+export function panelHeight(wanted, available) {
+  const max = Math.max(MIN_PANEL_HEIGHT, available - MIN_CANVAS_HEIGHT)
+  return Math.min(max, Math.max(MIN_PANEL_HEIGHT, wanted))
+}
+
 // 옆으로 넘기는 탭 목록에서 탭 하나가 다 보이게 하는 scrollLeft. 이미 보이면 그대로 둔다.
 // view: { scrollLeft, width } (목록), item: { left, width } (목록 내용 안에서의 탭 위치)
 export function revealScrollLeft(view, item) {

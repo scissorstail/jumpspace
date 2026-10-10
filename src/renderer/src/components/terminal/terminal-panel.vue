@@ -2,7 +2,7 @@
   <section
     v-show="isOpen && sessions.length > 0"
     class="terminal-panel"
-    :style="{ height: `${height}px` }"
+    :style="{ height: `${shownHeight}px` }"
     aria-label="Terminals"
   >
     <!-- 위쪽 가장자리를 끌어서 높이를 바꾼다 -->
@@ -41,11 +41,9 @@ import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
 import { canReconnect, createOutputRouter, endedByUser, terminalShortcut } from '@/utils/terminal-sessions'
-import { endedLine, errorLine, RECONNECTING_LINE, terminalTheme } from '@/utils/terminal-view'
+import { endedLine, errorLine, panelHeight, RECONNECTING_LINE, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import TerminalTabs from './terminal-tabs'
-
-const MIN_HEIGHT = 140
 
 // 터미널 색은 지금 고른 테마(assets/theme.scss의 CSS 변수)에서 읽는다.
 function currentTerminalTheme() {
@@ -61,10 +59,17 @@ export default {
   components: { TerminalTabs },
   data() {
     return {
-      height: 280
+      // 사용자가 정한 높이. 창이 낮으면 보이는 높이(shownHeight)만 줄어든다.
+      height: 280,
+      // 캔버스와 패널이 나눠 쓰는 높이 (#workspace). 창 크기가 바뀌면 다시 잰다.
+      available: Infinity
     }
   },
   computed: {
+    // 창이 낮아도 캔버스가 남도록 줄인 높이
+    shownHeight() {
+      return panelHeight(this.height, this.available)
+    },
     ...mapGetters({ sessions: 'terminalSessions', allSessions: 'allTerminalSessions', activeKey: 'activeTerminalKey', isOpen: 'isTerminalPanelOpen' })
   },
   watch: {
@@ -94,11 +99,14 @@ export default {
     this.stopExit = window.preload.terminal.onExit((id, exitCode) => this.onExit(id, exitCode))
     this.observer = new ResizeObserver(() => this.fitActive())
     this.observer.observe(this.$el)
+    this.spaceObserver = new ResizeObserver(([entry]) => { this.available = entry.contentRect.height })
+    this.spaceObserver.observe(this.$el.parentElement)
   },
   beforeDestroy() {
     this.stopData?.()
     this.stopExit?.()
     this.observer?.disconnect()
+    this.spaceObserver?.disconnect()
     for (const [, entry] of this.terms) {
       if (entry.id !== null) window.preload.terminal.close(entry.id)
       entry.term.dispose()
@@ -264,9 +272,9 @@ export default {
     },
     startResize(event) {
       const startY = event.clientY
-      const startHeight = this.height
-      const max = () => Math.max(MIN_HEIGHT, (this.$el.parentElement?.clientHeight || 600) - 80)
-      const move = e => { this.height = Math.min(max(), Math.max(MIN_HEIGHT, startHeight + startY - e.clientY)) }
+      // 보이는 높이에서 시작한다: 창이 낮아 줄어든 패널을 끌어도 튀지 않는다.
+      const startHeight = this.shownHeight
+      const move = e => { this.height = panelHeight(startHeight + startY - e.clientY, this.available) }
       const up = () => {
         window.removeEventListener('mousemove', move)
         window.removeEventListener('mouseup', up)

@@ -45,6 +45,7 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- In a low window the terminal panel kept its height and squeezed the canvas down to a strip. The panel now gives way so the canvas keeps at least 200px (the panel itself never goes below 140px), and it returns to the height you chose when the window gets taller again.
 - Opening the `...` menu of the diagram that is open in the sidebar drew a thin border around its pink row that the row's shadow partly covered. The open row has no menu border now (it is already marked); other rows keep it.
 - After opening another diagram while the terminal panel was open, closing the last terminal left the canvas cut off at the height it had with the panel, with only the scenery below. The canvas now follows its area whenever the panel opens, closes or is resized (*Arrange nodes* also centers in the visible part while the panel is open).
 - A header or sidebar button clicked with the mouse stayed highlighted until something else was clicked (for example the lock or *Arrange nodes*), so it looked pressed. The highlight now shows on hover and on keyboard focus only.
