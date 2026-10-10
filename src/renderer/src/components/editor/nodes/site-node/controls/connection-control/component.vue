@@ -488,6 +488,8 @@ export default {
     color: var(--js-secondary);
     font-family: var(--js-font-mono);
     font-size: 0.74rem;
+    // JetBrains Mono는 ***, .*, -> 같은 묶음을 합자로 바꿔 그린다. 가린 글자(***.***)의 별이 줄마다 다른 높이로 그려지므로 끈다.
+    font-variant-ligatures: none;
     line-height: 1.5;
     text-overflow: ellipsis;
     white-space: nowrap;
