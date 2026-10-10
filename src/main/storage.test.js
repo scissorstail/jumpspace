@@ -113,6 +113,11 @@ describe('normalizeItems: canvas view', () => {
     }
   })
 
+  it('keeps the size of the canvas area that belongs to the view', () => {
+    expect(normalizeItems([item({ k: 0.5, x: -10, y: 20, w: 1010, h: 505 })])[0].view).toEqual({ k: 0.5, x: -10, y: 20, w: 1010, h: 505 })
+    expect(normalizeItems([item({ k: 0.5, x: -10, y: 20, w: 'x', h: 505 })])[0].view).toEqual({ k: 0.5, x: -10, y: 20 })
+  })
+
   it('does not keep extra keys of the view', () => {
     expect(normalizeItems([item({ k: 1, x: 0, y: 0, evil: 1 })])[0].view).toEqual({ k: 1, x: 0, y: 0 })
   })

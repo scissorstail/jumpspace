@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, sanitizeView, viewOf, zoomAround } from './view'
+import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, sanitizeView, scaleView, viewOf, zoomAround } from './view'
 
 describe('sanitizeView', () => {
   it('keeps a valid view and drops extra keys', () => {
@@ -18,6 +18,77 @@ describe('sanitizeView', () => {
     expect(sanitizeView({ k: 0.1, x: 0, y: 0 })).not.toBe(null)
     expect(sanitizeView({ k: 2, x: 0, y: 0 })).not.toBe(null)
     expect(sanitizeView(DEFAULT_VIEW)).toEqual(DEFAULT_VIEW)
+  })
+})
+
+describe('sanitizeView: the size of the canvas area the view was seen in', () => {
+  it('keeps w and h when both are usable', () => {
+    expect(sanitizeView({ k: 1, x: 5, y: 6, w: 1010, h: 505.5 })).toEqual({ k: 1, x: 5, y: 6, w: 1010, h: 505.5 })
+  })
+
+  it('drops both when one is missing or unusable, and keeps the view', () => {
+    for (const size of [{ w: 800 }, { h: 600 }, { w: 0, h: 600 }, { w: -1, h: 600 }, { w: '800', h: 600 }, { w: NaN, h: 600 }, { w: Infinity, h: 600 }, { w: 1e9, h: 600 }]) {
+      expect(sanitizeView({ k: 1, x: 0, y: 0, ...size })).toEqual({ k: 1, x: 0, y: 0 })
+    }
+  })
+})
+
+describe('scaleView', () => {
+  const view = { k: 1, x: 100, y: 50 }
+  const from = { width: 1000, height: 600 }
+  // 화면의 점(px)이 가리키는 캔버스 좌표
+  const canvasAt = (v, px, py) => [(px - v.x) / v.k, (py - v.y) / v.k]
+
+  it('does nothing when the size is the same', () => {
+    expect(scaleView(view, from, { ...from })).toEqual(view)
+  })
+
+  it('scales the diagram with the area and keeps its center in the center', () => {
+    const half = scaleView(view, from, { width: 500, height: 300 })
+    expect(half.k).toBe(0.5)
+    expect(canvasAt(half, 250, 150)).toEqual(canvasAt(view, 500, 300))
+    // 왼쪽 위 구석에 보이던 점도 구석에 남는다 (같은 비율로 줄었으므로)
+    expect(canvasAt(half, 0, 0)).toEqual(canvasAt(view, 0, 0))
+  })
+
+  it('follows the side that shrank more, so nothing that was visible leaves the area', () => {
+    const narrow = scaleView(view, from, { width: 500, height: 600 })
+    expect(narrow.k).toBe(0.5)
+    expect(canvasAt(narrow, 250, 300)).toEqual(canvasAt(view, 500, 300))
+
+    const low = scaleView(view, from, { width: 1000, height: 300 })
+    expect(low.k).toBe(0.5)
+    expect(canvasAt(low, 500, 150)).toEqual(canvasAt(view, 500, 300))
+  })
+
+  it('does not zoom in when only one side grows, and stays centered', () => {
+    const wide = scaleView(view, from, { width: 2000, height: 600 })
+    expect(wide.k).toBe(1)
+    expect(canvasAt(wide, 1000, 300)).toEqual(canvasAt(view, 500, 300))
+  })
+
+  it('grows when both sides grow', () => {
+    expect(scaleView(view, from, { width: 1500, height: 900 }).k).toBe(1.5)
+  })
+
+  it('comes back to the same view from the remembered one, whatever happened in between', () => {
+    const small = scaleView(view, from, { width: 300, height: 200 })
+    expect(small.k).toBeLessThan(view.k)
+    expect(scaleView(view, from, from)).toEqual(view)
+  })
+
+  it('stays inside the zoom limits and keeps the center', () => {
+    const tiny = scaleView({ k: 0.2, x: 0, y: 0 }, from, { width: 100, height: 60 })
+    expect(tiny.k).toBe(MIN_ZOOM)
+    expect(canvasAt(tiny, 50, 30)).toEqual(canvasAt({ k: 0.2, x: 0, y: 0 }, 500, 300))
+    expect(scaleView({ k: 1.5, x: 0, y: 0 }, from, { width: 4000, height: 2400 }).k).toBe(MAX_ZOOM)
+  })
+
+  it('returns the view unchanged when a size is unknown, without extra keys', () => {
+    for (const size of [null, undefined, {}, { width: 0, height: 600 }, { width: 1000, height: NaN }]) {
+      expect(scaleView({ ...view, w: 1, h: 2 }, size, from)).toEqual(view)
+      expect(scaleView(view, from, size)).toEqual(view)
+    }
   })
 })
 

@@ -17,7 +17,7 @@ import AreaPlugin from 'rete-area-plugin'
 import ReadonlyPlugin from 'rete-readonly-plugin'
 
 import SiteNode from './nodes/site-node'
-import { MAX_ZOOM, MIN_ZOOM, fitView, viewOf, zoomAround } from '@/utils/view'
+import { MAX_ZOOM, MIN_ZOOM, fitView, scaleView, viewOf, zoomAround } from '@/utils/view'
 import { arrangeLayout, boxOf } from '@/utils/arrange'
 import { hopKey, routeStates } from '@/utils/terminal-sessions'
 
@@ -180,8 +180,18 @@ export default {
     this.editor.on(['nodecreated', 'noderemoved'], () => this.emitNodeCount())
 
     // 캔버스를 옮기거나 확대/축소할 때마다 알린다. (저장은 Layout이 한다)
+    // 사용자가 정한 보기(base)는 그때의 영역 크기와 함께 기억한다. 영역 크기가 바뀌면 base에서 다시 계산하므로
+    // (rescaleView) 창을 줄였다 늘리거나 터미널 패널을 열었다 닫아도 처음 보기로 정확히 돌아온다.
+    // 크기에 맞추느라 생긴 변화(isRescaling)는 사용자의 보기가 아니므로 기억하지도 알리지도 않는다.
+    this.base = null
+    this.isRescaling = false
     this.editor.on(['translated', 'zoomed'], () => {
-      this.$emit('view-change', viewOf(this.editor.view.area.transform))
+      if (this.isRescaling) return
+
+      const { k, x, y } = this.editor.view.area.transform
+      const size = this.areaSize()
+      this.base = { view: { k, x, y }, size }
+      this.$emit('view-change', { ...viewOf({ k, x, y }), ...(size.width > 0 && size.height > 0 && { w: size.width, h: size.height }) })
     })
 
     this.editor.on(
@@ -200,7 +210,7 @@ export default {
     )
 
     // 빈 캔버스를 더블클릭하면 Rete는 확대한다. 대신 이 item을 열었을 때의 확대로 돌아간다 (더블클릭한 곳 기준).
-    this.entryZoom = null
+    this.entry = null // { k, size }: item을 열었을 때의 확대와 그때의 영역 크기
     this.editor.on('zoom', ({ source }) => source !== 'dblclick')
     this.onDoubleClick = e => this.restoreEntryZoom(e)
     this.$el.addEventListener('dblclick', this.onDoubleClick)
@@ -218,7 +228,11 @@ export default {
 
     // Rete는 캔버스 크기를 불러올 때와 창 크기가 바뀔 때만 픽셀로 고정한다. 터미널 패널을 열고 닫거나 높이를 바꾸면
     // 캔버스 영역이 달라지므로 그때도 맞춘다. (패널이 열린 채 다른 item을 열고 패널을 닫으면 캔버스가 잘린 채 남았다)
-    this.areaObserver = new ResizeObserver(() => this.editor.view.resize())
+    // 영역 크기가 바뀌면 다이어그램도 배경 풍경처럼 같은 비율로 커지고 줄어든다.
+    this.areaObserver = new ResizeObserver(() => {
+      this.editor.view.resize()
+      this.rescaleView()
+    })
     this.areaObserver.observe(this.$el.parentElement)
   },
   beforeDestroy() {
@@ -292,17 +306,38 @@ export default {
       area.zoom(k, 0, 0)
       area.translate(x, y)
     },
-    // item을 열 때의 보기. 그때의 확대를 기억해 두었다가 더블클릭으로 되돌린다.
-    openView(view) {
-      this.entryZoom = view.k
-      this.setView(view)
+    // 캔버스 영역(#editor-area)의 크기
+    areaSize() {
+      const area = this.$el.parentElement
+
+      return { width: area.clientWidth, height: area.clientHeight }
+    },
+    // 기억해 둔 보기(base)를 지금 영역 크기에 맞춰 보여준다. base는 그대로 둔다.
+    rescaleView() {
+      if (!this.base) return
+
+      this.isRescaling = true
+      try {
+        this.setView(scaleView(this.base.view, this.base.size, this.areaSize()))
+      } finally {
+        this.isRescaling = false
+      }
+    },
+    // item을 열 때의 보기. 저장할 때의 영역 크기(w, h)가 있으면 지금 크기에 맞춘다.
+    // 그때의 확대를 기억해 두었다가 더블클릭으로 되돌린다 (영역 크기가 바뀌면 그 확대도 같은 비율로 따라간다).
+    openView({ k, x, y, w, h }) {
+      const size = w > 0 && h > 0 ? { width: w, height: h } : this.areaSize()
+      this.base = { view: { k, x, y }, size }
+      this.entry = { k, size }
+      this.rescaleView()
     },
     restoreEntryZoom(e) {
       // 노드나 연결선, 메뉴 위의 더블클릭(글자 고르기 등)은 그대로 둔다.
-      if (this.entryZoom === null || e.target.closest('.node, .connection, .context-menu')) return
+      if (!this.entry || e.target.closest('.node, .connection, .context-menu')) return
 
       const rect = this.$el.getBoundingClientRect()
-      this.setView(zoomAround(this.editor.view.area.transform, this.entryZoom, { x: e.clientX - rect.left, y: e.clientY - rect.top }))
+      const entryZoom = scaleView({ k: this.entry.k, x: 0, y: 0 }, this.entry.size, this.areaSize()).k
+      this.setView(zoomAround(this.editor.view.area.transform, entryZoom, { x: e.clientX - rect.left, y: e.clientY - rect.top }))
     },
     // 노드 상자에 그 밖으로 나온 부분(아래의 이름과 주소, 양옆 소켓)을 더한 영역. 캔버스 좌표로,
     // dx, dy는 노드 위치(상자의 왼쪽 위)에서 영역의 왼쪽 위까지. 마우스를 올리면 위에 뜨는 메뉴는 줄 간격 안에 들어간다.

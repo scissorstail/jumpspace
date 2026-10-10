@@ -27,6 +27,24 @@ export function fitView(viewport, box, k) {
   }
 }
 
+// 캔버스 영역의 크기가 from에서 to로 바뀔 때({ width, height }) 다이어그램이 영역에서 같은 자리와 같은 비율을 차지하게 하는 보기.
+// 배경 풍경이 영역에 맞춰 커지고 줄어드는 것과 같이 움직인다: 영역의 가운데에 있던 점은 가운데에 남고,
+// 확대는 가로와 세로 중 더 많이 줄어든(덜 늘어난) 쪽의 비율을 따라서 보이던 것이 영역 밖으로 나가지 않는다.
+// 크기를 알 수 없으면(0, 숨겨진 영역) 그대로 돌려준다.
+export function scaleView(view, from, to) {
+  const { k, x, y } = view
+  if (![from?.width, from?.height, to?.width, to?.height].every(n => Number.isFinite(n) && n > 0)) return { k, x, y }
+
+  const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, k * Math.min(to.width / from.width, to.height / from.height)))
+  const scale = zoom / k
+
+  return {
+    k: zoom,
+    x: to.width / 2 - (from.width / 2 - x) * scale,
+    y: to.height / 2 - (from.height / 2 - y) * scale
+  }
+}
+
 // 확대를 k로 바꾸되, 화면의 한 점(point: 캔버스 영역 기준 px)은 제자리에 둔 보기. (더블클릭한 곳을 기준으로 줌을 되돌릴 때)
 export function zoomAround(view, k, point) {
   const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, k))
