@@ -188,7 +188,7 @@ export default {
     min-width: 0;
     padding: 0 12px 0 16px;
     background: var(--js-primary);
-    box-shadow: 3px 3px 0 #000;
+    box-shadow: 3px 3px 0 var(--js-shadow);
     color: var(--js-on-primary);
     font-size: 1.6rem;
     line-height: 1.2;

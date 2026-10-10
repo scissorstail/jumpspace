@@ -543,7 +543,7 @@ export default {
               inset: 1px 0;
               z-index: -1;
               background: var(--js-primary);
-              box-shadow: 3px 3px 0 #000;
+              box-shadow: 3px 3px 0 var(--js-shadow);
             }
           }
 

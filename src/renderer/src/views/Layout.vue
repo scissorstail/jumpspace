@@ -517,7 +517,7 @@ export default {
   margin: 0 auto;
   border: 3px solid var(--js-primary);
   background-color: var(--js-bg-raised);
-  box-shadow: 6px 6px 0 #000;
+  box-shadow: 6px 6px 0 var(--js-shadow);
   color: var(--js-text);
 }
 </style>

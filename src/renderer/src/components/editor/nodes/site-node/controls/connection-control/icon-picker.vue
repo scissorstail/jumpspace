@@ -155,7 +155,7 @@ export default {
   &.icon-picker-selected {
     border-color: var(--js-primary);
     background: var(--js-primary-soft);
-    box-shadow: 2px 2px 0 #000;
+    box-shadow: 2px 2px 0 var(--js-shadow);
   }
 }
 

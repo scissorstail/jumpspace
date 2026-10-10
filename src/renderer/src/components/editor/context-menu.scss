@@ -26,7 +26,7 @@ div.context-menu {
   padding: 4px;
   border: 2px solid var(--js-secondary);
   background: var(--js-surface);
-  box-shadow: 6px 6px 0 #000;
+  box-shadow: 6px 6px 0 var(--js-shadow);
   transform-origin: top left;
   animation: context-menu-in 0.12s ease-out;
 

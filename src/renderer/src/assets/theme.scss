@@ -46,6 +46,7 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-sun: #ffd319;
   --js-signal: #ffd319; // 열린 경로 위를 흐르는 신호
   --js-danger: #ff3864;
+  --js-shadow: #3a2575; // 흐리지 않은 단색 그림자 (아래 --js-drop)
   // 배경 풍경
   --js-sky-2: #2b1055;
   --js-city: #07011a;
@@ -67,6 +68,7 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-sun: #ff8a3d;
   --js-signal: #ffe45c; // 열린 경로 위를 흐르는 신호
   --js-danger: #ff4d6d;
+  --js-shadow: #532376;
   --js-sky-2: #4a1552;
   --js-city: #10032a;
   --js-grid: #ff8a3d;
@@ -90,6 +92,7 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-sun: #b47cff;
   --js-signal: #6ff7e8; // 열린 경로 위를 흐르는 신호
   --js-danger: #ff5c8a;
+  --js-shadow: #283583;
   --js-sky-2: #1a1f5e;
   --js-city: #03061f;
   --js-grid: #6ff7e8;
@@ -113,8 +116,9 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-font-mono: 'JetBrains Mono', Consolas, 'DejaVu Sans Mono', monospace;
   // 세 가지 색 띠 (평평한 신스웨이브 줄)
   --js-bands: linear-gradient(90deg, var(--js-primary) 0 33.4%, var(--js-sun) 33.4% 66.7%, var(--js-secondary) 66.7%);
-  // 흐리지 않은 단색 그림자
-  --js-drop: 4px 4px 0 #000;
+  // 흐리지 않은 단색 그림자. 색은 색 묶음의 --js-shadow: 검정은 어두운 바탕과 구별되지 않아서, 그림자가 어디까지인지
+  // (그리고 그 위의 것이 어디서 끝나는지) 보이지 않았다. 바탕과 패널보다 밝고 테두리(--js-line)보다 어두운 색이다.
+  --js-drop: 4px 4px 0 var(--js-shadow);
 }
 
 body {
@@ -282,14 +286,14 @@ body,
     border: 0;
     border-radius: 0;
     background: var(--js-primary);
-    box-shadow: 2px 2px 0 #000;
+    box-shadow: 2px 2px 0 var(--js-shadow);
   }
 
   &:focus {
     box-shadow: none;
 
     &::-webkit-slider-thumb {
-      box-shadow: 2px 2px 0 #000;
+      box-shadow: 2px 2px 0 var(--js-shadow);
     }
   }
 
@@ -371,7 +375,7 @@ body,
   color: var(--js-text);
   font-size: 0.75rem;
   line-height: 1.35;
-  box-shadow: 2px 2px 0 #000;
+  box-shadow: 2px 2px 0 var(--js-shadow);
   visibility: hidden;
 }
 
@@ -485,7 +489,7 @@ $control-sm-height: 29px;
   border-radius: 0;
   background: var(--js-surface);
   color: var(--js-text);
-  box-shadow: 8px 8px 0 #000;
+  box-shadow: 8px 8px 0 var(--js-shadow);
 }
 
 .modal-content::before,

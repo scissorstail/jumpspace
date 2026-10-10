@@ -368,7 +368,7 @@ export default {
   padding: 0;
   border: 2px solid var(--js-secondary);
   background: var(--js-bg);
-  box-shadow: 3px 3px 0 #000;
+  box-shadow: 3px 3px 0 var(--js-shadow);
   color: var(--js-secondary);
   line-height: 1;
   cursor: pointer;
@@ -429,7 +429,7 @@ export default {
     margin-bottom: 4px;
     padding: 0 10px;
     background: var(--js-primary);
-    box-shadow: 3px 3px 0 #000;
+    box-shadow: 3px 3px 0 var(--js-shadow);
     color: var(--js-on-primary);
     font-family: var(--js-font-display);
     font-size: 1.45rem;
@@ -563,7 +563,7 @@ export default {
     border-top: 0;
     background: var(--js-surface);
     color: var(--js-text);
-    box-shadow: 8px 8px 0 #000;
+    box-shadow: 8px 8px 0 var(--js-shadow);
 
     &::before {
       content: '';
