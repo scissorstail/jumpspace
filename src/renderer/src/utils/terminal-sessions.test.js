@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { canReconnect, countByOwner, createOutputRouter, endedByUser, hopKey, INTERRUPT_WINDOW_MS, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
+import { activeTerminalNode, canReconnect, countByOwner, createOutputRouter, endedByUser, hopKey, INTERRUPT_WINDOW_MS, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -176,6 +176,40 @@ describe('routeStates', () => {
 
     expect(links.has(`${a}>${b}`)).toBe(true)
     expect(links.has(`${b}>${a}`)).toBe(false)
+  })
+})
+
+describe('activeTerminalNode', () => {
+  const a = 'u@a:22'
+  const b = 'u@b:22'
+  const c = 'u@c:22'
+  const sessions = [
+    { key: 1, status: 'running', connected: true, hops: [a] },
+    { key: 2, status: 'running', connected: true, hops: [a, b, c] },
+    { key: 3, status: 'exited', exitCode: 255, hops: [a, b] }
+  ]
+
+  // Connect는 노드 하나, ProxyJump와 포워딩은 앞 노드들 다음에 그 노드가 온다.
+  it('is the last hop of the selected tab: the node it was opened from', () => {
+    expect(activeTerminalNode(sessions, 1)).toBe(a)
+    expect(activeTerminalNode(sessions, 2)).toBe(c)
+  })
+
+  it('follows the selected tab, also when its session has ended', () => {
+    expect(activeTerminalNode(sessions, 3)).toBe(b)
+  })
+
+  it('is nothing while the panel is hidden', () => {
+    expect(activeTerminalNode(sessions, 2, false)).toBe(null)
+    expect(activeTerminalNode(sessions, 2, true)).toBe(c)
+  })
+
+  it('is nothing without a selected tab or without a route', () => {
+    expect(activeTerminalNode(sessions, null)).toBe(null)
+    expect(activeTerminalNode(sessions, 9)).toBe(null)
+    expect(activeTerminalNode([{ key: 1, hops: [] }, { key: 2 }], 1)).toBe(null)
+    expect(activeTerminalNode([{ key: 1, hops: [] }, { key: 2 }], 2)).toBe(null)
+    expect(activeTerminalNode(undefined, 1)).toBe(null)
   })
 })
 

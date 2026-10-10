@@ -19,7 +19,7 @@ import ReadonlyPlugin from 'rete-readonly-plugin'
 import SiteNode from './nodes/site-node'
 import { MAX_ZOOM, MIN_ZOOM, fitView, scaleView, settleSize, viewOf, zoomAround } from '@/utils/view'
 import { arrangeLayout, boxOf } from '@/utils/arrange'
-import { hopKey, routeStates } from '@/utils/terminal-sessions'
+import { activeTerminalNode, hopKey, routeStates } from '@/utils/terminal-sessions'
 
 export default {
   name: 'EditorIndex',
@@ -36,6 +36,14 @@ export default {
   data() {
     return {}
   },
+  computed: {
+    // 고른 터미널 탭을 연 노드 (user@host:port, 없으면 null)
+    activeTerminalNode() {
+      const { terminalSessions, activeTerminalKey, isTerminalPanelOpen } = this.$store.getters
+
+      return activeTerminalNode(terminalSessions, activeTerminalKey, isTerminalPanelOpen)
+    }
+  },
   watch: {
     // 터미널 세션이 열리거나 끝나면 캔버스의 경로 표시를 바꾼다.
     '$store.getters.terminalSessions': {
@@ -43,6 +51,10 @@ export default {
       handler() {
         this.markLiveRoutes()
       }
+    },
+    // 다른 탭을 고르거나 패널을 숨기면 세션은 그대로여서 위의 watch가 돌지 않는다.
+    activeTerminalNode() {
+      this.markLiveRoutes()
     },
     async editorData() {
       if (this.editorData) {
@@ -274,6 +286,7 @@ export default {
     },
     // 앱 안의 터미널 세션이 지나가는 노드와 연결선에 상태를 붙인다: 연결 중(is-connecting), 연결됨(is-live), 실패(is-failed). 모양은 CSS.
     // 노드와 세션은 user@host:port로 맞춰 본다. 지금 열린 item이 연 세션만 본다 (store의 terminalSessions): 터미널은 그것을 연 item의 것이다.
+    // 고른 탭을 연 노드에는 is-active-terminal도 붙인다: 선택한 노드처럼 보이지만 Rete의 선택은 아니다 (Delete나 끌기의 대상이 바뀌면 안 된다).
     markLiveRoutes() {
       if (!this.editor) return
 
@@ -286,8 +299,12 @@ export default {
         el.classList.toggle('is-failed', phase === 'failed')
       }
 
+      const active = this.activeTerminalNode
+
       for (const [node, view] of this.editor.view.nodes) {
-        mark(view.el, nodes.get(keyOf(node)))
+        const key = keyOf(node)
+        mark(view.el, nodes.get(key))
+        view.el.classList.toggle('is-active-terminal', active !== null && key === active)
       }
       for (const [connection, view] of this.editor.view.connections) {
         mark(view.el, links.get(`${keyOf(connection.output.node)}>${keyOf(connection.input.node)}`))

@@ -40,3 +40,23 @@ describe('the signal on a path with a terminal session', () => {
     expect(block(states[state], '.flow-path')).not.toMatch(/animation: none/)
   })
 })
+
+// 고른 터미널 탭을 연 노드는 선택한 노드처럼 보인다. 모양을 두 군데에 적으면 어긋나므로 한 규칙을 함께 쓴다.
+describe('the node of the selected terminal tab', () => {
+  const plain = scss.replace(/^\s*\/\/.*$/gm, '')
+  const [, selectors = '', body = ''] = plain.match(/([^{}]*\.node\.site\.selected[^{}]*) \{([^{}]*)\}/) || []
+
+  it('looks like a selected node', () => {
+    expect(selectors.split(',').map(x => x.trim())).toEqual(['.node.site.selected', '.is-active-terminal .node.site'])
+    expect(body).toMatch(/outline-color: var\(--js-primary\);/)
+    expect(body).toMatch(/box-shadow: 6px 6px 0 var\(--js-sun\);/)
+  })
+
+  // 올렸을 때의 그림자(:hover)와 선택자의 무게가 같아서 뒤에 오는 쪽이 이긴다.
+  it('keeps its shadow while the mouse is over the node', () => {
+    const hover = scss.indexOf('&:hover {\n      box-shadow:')
+
+    expect(hover).toBeGreaterThan(-1)
+    expect(scss.indexOf('.is-active-terminal .node.site {')).toBeGreaterThan(hover)
+  })
+})
