@@ -139,6 +139,7 @@
   }
 
   // 연결 중: 노란 선 위로 신호가 천천히 흐른다. (로그인 표시가 오면 is-live로 바뀐다)
+  // 신호는 바탕색이다: 선과 같은 노랑이면 움직임이 보이지 않았다. 노란 선에 난 틈이 다음 노드 쪽으로 흘러간다.
   .is-connecting .connection {
     .main-path {
       stroke: var(--js-connecting);
@@ -147,7 +148,7 @@
 
     .flow-path {
       display: inline;
-      stroke: var(--js-connecting);
+      stroke: var(--js-bg);
       animation-duration: 1.4s;
     }
 
