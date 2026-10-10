@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, sanitizeView, scaleView, viewOf, zoomAround } from './view'
+import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, isRealSize, sanitizeView, scaleView, settleSize, viewOf, zoomAround } from './view'
 
 describe('sanitizeView', () => {
   it('keeps a valid view and drops extra keys', () => {
@@ -89,6 +89,46 @@ describe('scaleView', () => {
       expect(scaleView({ ...view, w: 1, h: 2 }, size, from)).toEqual(view)
       expect(scaleView(view, from, size)).toEqual(view)
     }
+  })
+})
+
+describe('isRealSize', () => {
+  it('needs a width and a height above zero', () => {
+    expect(isRealSize({ width: 1000, height: 600 })).toBe(true)
+    expect(isRealSize({ width: 0.5, height: 0.5 })).toBe(true)
+    for (const size of [null, undefined, {}, { width: 1000 }, { width: 1000, height: 0 }, { width: 0, height: 600 }, { width: -5, height: 600 }, { width: NaN, height: 600 }, { width: 1000, height: Infinity }, { width: '1000', height: 600 }]) {
+      expect(isRealSize(size)).toBe(false)
+    }
+  })
+})
+
+// 터미널 패널을 최대화한 동안 캔버스 영역은 높이가 0이다. 그때 연 다이어그램의 보기는 크기를 모른 채 기억된다.
+describe('settleSize', () => {
+  const collapsed = { width: 1000, height: 0 }
+  const now = { width: 1000, height: 476 }
+
+  it('takes the first known size for a view that was opened in a collapsed area', () => {
+    expect(settleSize(collapsed, now)).toEqual(now)
+    expect(settleSize(collapsed, now)).not.toBe(now)
+    expect(settleSize(undefined, now)).toEqual(now)
+  })
+
+  it('keeps a size that is already known', () => {
+    const seen = { width: 1000, height: 756 }
+    expect(settleSize(seen, now)).toBe(seen)
+  })
+
+  it('waits while the area is still collapsed', () => {
+    expect(settleSize(collapsed, { width: 1000, height: 0 })).toBe(collapsed)
+    expect(settleSize(collapsed, null)).toBe(collapsed)
+  })
+
+  // 크기를 알게 된 뒤에는 영역이 바뀔 때 보기가 따라간다 (모르는 채로는 scaleView가 그대로 돌려준다).
+  it('lets the view follow the area again', () => {
+    const view = { k: 1, x: 0, y: 0 }
+    const smaller = { width: 1000, height: 238 }
+    expect(scaleView(view, collapsed, smaller)).toEqual(view)
+    expect(scaleView(view, settleSize(collapsed, now), smaller).k).toBe(0.5)
   })
 })
 

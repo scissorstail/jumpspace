@@ -29,52 +29,53 @@
             {{ terminalCount }}
           </b-badge>
         </b-button>
-        <!-- 노드의 접속 정보 숨기기/보이기 (이름은 남는다). 화면을 보여줄 때 쓴다. -->
-        <b-button
-          v-if="editorData"
-          size="sm"
-          variant="light"
-          :title="hideNodeInfo ? 'Show node details' : 'Mask node details with *** (names stay)'"
-          :aria-label="hideNodeInfo ? 'Show node details' : 'Hide node details'"
-          :pressed="hideNodeInfo"
-          @click="toggleNodeInfo"
-        >
-          <b-icon :icon="hideNodeInfo ? 'eye-slash' : 'eye'" />
-        </b-button>
-        <!-- Editor Lock/Unlock button (다른 머리글 단추처럼 기본 title을 쓴다. b-tooltip은 누른 뒤에도 남아 있었다) -->
-        <b-button
-          v-if="editorData"
-          size="sm"
-          :title="isEditorLocked ? 'Unlock editor' : 'Lock editor'"
-          :aria-label="isEditorLocked ? 'Unlock editor' : 'Lock editor'"
-          variant="light"
-          @click="isEditorLocked = !isEditorLocked"
-        >
-          <b-icon
-            :icon="isEditorLocked? 'lock' : 'unlock'"
-          />
-        </b-button>
-        <!-- 잠금을 풀었을 때만: 보기 초기화, 노드 정렬 -->
-        <template v-if="editorData && !isEditorLocked">
+        <!-- 터미널을 최대화한 동안에는 캔버스가 보이지 않는다: 다이어그램 단추들을 두지 않는다. (내리기는 탭 줄의 단추) -->
+        <template v-if="editorData && !isTerminalMaximized">
+          <!-- 노드의 접속 정보 숨기기/보이기 (이름은 남는다). 화면을 보여줄 때 쓴다. -->
           <b-button
             size="sm"
-            title="Reset view"
-            aria-label="Reset view"
             variant="light"
-            @click="resetView"
+            :title="hideNodeInfo ? 'Show node details' : 'Mask node details with *** (names stay)'"
+            :aria-label="hideNodeInfo ? 'Show node details' : 'Hide node details'"
+            :pressed="hideNodeInfo"
+            @click="toggleNodeInfo"
           >
-            <b-icon icon="arrow-counterclockwise" />
+            <b-icon :icon="hideNodeInfo ? 'eye-slash' : 'eye'" />
           </b-button>
+          <!-- Editor Lock/Unlock button (다른 머리글 단추처럼 기본 title을 쓴다. b-tooltip은 누른 뒤에도 남아 있었다) -->
           <b-button
             size="sm"
-            title="Arrange nodes"
-            aria-label="Arrange nodes"
+            :title="isEditorLocked ? 'Unlock editor' : 'Lock editor'"
+            :aria-label="isEditorLocked ? 'Unlock editor' : 'Lock editor'"
             variant="light"
-            :disabled="nodeCount === 0"
-            @click="arrangeNodes"
+            @click="isEditorLocked = !isEditorLocked"
           >
-            <b-icon icon="diagram-3" />
+            <b-icon
+              :icon="isEditorLocked? 'lock' : 'unlock'"
+            />
           </b-button>
+          <!-- 잠금을 풀었을 때만: 보기 초기화, 노드 정렬 -->
+          <template v-if="!isEditorLocked">
+            <b-button
+              size="sm"
+              title="Reset view"
+              aria-label="Reset view"
+              variant="light"
+              @click="resetView"
+            >
+              <b-icon icon="arrow-counterclockwise" />
+            </b-button>
+            <b-button
+              size="sm"
+              title="Arrange nodes"
+              aria-label="Arrange nodes"
+              variant="light"
+              :disabled="nodeCount === 0"
+              @click="arrangeNodes"
+            >
+              <b-icon icon="diagram-3" />
+            </b-button>
+          </template>
         </template>
       </template>
     </MainHeader>
@@ -107,7 +108,10 @@
         />
       </div>
 
-      <div id="workspace">
+      <div
+        id="workspace"
+        :class="{ 'terminal-maximized': isTerminalMaximized }"
+      >
         <div
           id="editor-area"
           :class="[`backdrop-${backdrop}`, nodeBlur > 0 && 'node-glass']"
@@ -218,6 +222,10 @@ export default {
     },
     isTerminalPanelOpen() {
       return this.$store.getters.isTerminalPanelOpen
+    },
+    // 터미널 패널이 헤더 아래까지 올라가 캔버스 자리를 차지하고 있는지
+    isTerminalMaximized() {
+      return this.$store.getters.isTerminalPanelMaximized
     },
     emptyHint() {
       return canvasHint({ isOpen: !!this.editorData, nodeCount: this.nodeCount, isLocked: this.isEditorLocked })
@@ -428,6 +436,14 @@ export default {
   > .layout-empty {
     z-index: 1;
   }
+}
+
+// 터미널을 최대화한 동안 캔버스 영역은 높이 없이 접어 둔다. display: none은 쓰지 않는다: Rete가 소켓의 위치를
+// offset으로 재기 때문에, 그동안 다른 다이어그램을 열면 연결선이 틀어진 채로 남는다. 보이지 않는 노드의 단추로
+// 키보드 포커스가 가지 않게 visibility도 끈다. (높이가 0인 동안 편집기는 보기를 그대로 둔다: utils/view.js의 scaleView)
+#workspace.terminal-maximized > #editor-area {
+  flex: 0 0 0px;
+  visibility: hidden;
 }
 
 #main-content {

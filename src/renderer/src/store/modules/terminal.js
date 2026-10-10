@@ -5,7 +5,7 @@
 //
 // 터미널은 그것을 연 다이어그램(item)의 것이다. owner는 지금 열려 있는 item의 번호(목록 항목의 index)이고,
 // 세션은 만들어질 때의 owner를 갖는다. 패널과 캔버스는 지금 owner의 세션만 보여주고, 다른 item의 세션은
-// 뒤에서 계속 돈다. 활성 탭과 패널을 숨겼는지는 item마다 기억해 두었다가 돌아오면 되살린다.
+// 뒤에서 계속 돈다. 활성 탭과 패널을 숨겼는지, 최대화했는지는 item마다 기억해 두었다가 돌아오면 되살린다.
 import { hopKey, reorderSessions, sessionsOf } from '../../utils/terminal-sessions'
 
 let nextKey = 1
@@ -15,8 +15,10 @@ export default {
     sessions: [],
     activeKey: null,
     isPanelOpen: false,
+    // 패널을 헤더 바로 아래까지 올렸는지 (최대화). 패널을 숨겨도 남아서, 다시 보이면 최대화한 채로 돌아온다.
+    isPanelMaximized: false,
     owner: null,
-    // owner -> { activeKey, isPanelOpen }. mutation 안에서만 읽는다.
+    // owner -> { activeKey, isPanelOpen, isPanelMaximized }. mutation 안에서만 읽는다.
     remembered: {}
   },
   getters: {
@@ -25,7 +27,9 @@ export default {
     // 지금 열려 있는 item의 세션
     terminalSessions: state => sessionsOf(state.sessions, state.owner),
     activeTerminalKey: state => state.activeKey,
-    isTerminalPanelOpen: state => state.isPanelOpen
+    isTerminalPanelOpen: state => state.isPanelOpen,
+    // 패널이 캔버스 자리까지 차지하고 있는지: 최대화했고, 패널이 보이는 동안만이다 (숨긴 동안은 캔버스가 보인다).
+    isTerminalPanelMaximized: state => state.isPanelOpen && state.isPanelMaximized && sessionsOf(state.sessions, state.owner).length > 0
   },
   mutations: {
     terminalAdd(state, { title, kind, payload, route = [] }) {
@@ -56,7 +60,11 @@ export default {
         const next = siblings[Math.min(index, siblings.length - 1)]
         state.activeKey = next ? next.key : null
       }
-      if (siblings.length === 0) state.isPanelOpen = false
+      // 마지막 탭이 닫히면 최대화도 끝난다: 다음 터미널은 캔버스 아래에서 보통 높이로 열린다.
+      if (siblings.length === 0) {
+        state.isPanelOpen = false
+        state.isPanelMaximized = false
+      }
     },
     terminalActivate(state, key) {
       state.activeKey = key
@@ -69,17 +77,22 @@ export default {
     terminalPanel(state, isOpen) {
       state.isPanelOpen = isOpen
     },
+    // 패널을 헤더 아래까지 올리거나(true) 캔버스 아래의 원래 높이로 내린다(false).
+    terminalMaximize(state, isMaximized) {
+      state.isPanelMaximized = isMaximized
+    },
     // 다른 item을 열었다(없으면 null). 떠나는 item의 활성 탭과 패널 상태를 기억하고, 새 item의 것을 되살린다.
     terminalOwner(state, owner) {
       if (owner === state.owner) return
 
-      state.remembered[state.owner] = { activeKey: state.activeKey, isPanelOpen: state.isPanelOpen }
+      state.remembered[state.owner] = { activeKey: state.activeKey, isPanelOpen: state.isPanelOpen, isPanelMaximized: state.isPanelMaximized }
       state.owner = owner
 
       const mine = sessionsOf(state.sessions, owner)
       const last = state.remembered[owner]
       state.activeKey = mine.some(x => x.key === last?.activeKey) ? last.activeKey : mine[0]?.key ?? null
       state.isPanelOpen = mine.length > 0 && (last ? last.isPanelOpen : true)
+      state.isPanelMaximized = mine.length > 0 && !!last?.isPanelMaximized
     }
   },
   actions: {

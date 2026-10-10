@@ -24,6 +24,8 @@ import {
   BIconPlayFill,
   BIconHddNetwork,
   BIconChevronDown,
+  BIconChevronBarUp,
+  BIconChevronBarDown,
   BIconArrowCounterclockwise,
   BIconDiagram3
 } from 'bootstrap-vue'
@@ -52,6 +54,8 @@ Vue.component('BIconArrowRight', BIconArrowRight)
 Vue.component('BIconPlayFill', BIconPlayFill)
 Vue.component('BIconHddNetwork', BIconHddNetwork)
 Vue.component('BIconChevronDown', BIconChevronDown)
+Vue.component('BIconChevronBarUp', BIconChevronBarUp)
+Vue.component('BIconChevronBarDown', BIconChevronBarDown)
 Vue.component('BIconArrowCounterclockwise', BIconArrowCounterclockwise)
 Vue.component('BIconDiagram3', BIconDiagram3)
 

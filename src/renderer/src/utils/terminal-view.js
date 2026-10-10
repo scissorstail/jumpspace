@@ -63,6 +63,18 @@ export function panelHeight(wanted, available) {
   return Math.min(max, Math.max(MIN_PANEL_HEIGHT, wanted))
 }
 
+// 패널의 위쪽 가장자리를 끌 때의 모습. 패널은 캔버스를 남기는 높이(panelHeight의 최대)에서 멈추는데, 거기서
+// MAXIMIZE_SNAP보다 더 끌어 올리면 최대화한다 (캔버스 없이 헤더 아래까지). 마우스의 위치만 보므로, 놓기 전에
+// 다시 끌어 내리면 풀리고, 최대화한 패널을 끌어 내려도 같은 자리에서 풀린다.
+//   wanted: 마우스를 따라간 높이, available: 캔버스와 패널이 나눠 쓰는 높이
+//   돌려주는 값: { maximized, height } (height는 최대화하지 않았을 때의 높이)
+export const MAXIMIZE_SNAP = 80
+
+export function panelDrag(wanted, available) {
+  const height = panelHeight(wanted, available)
+  return { maximized: wanted > panelHeight(Infinity, available) + MAXIMIZE_SNAP, height }
+}
+
 // 옆으로 넘기는 탭 목록에서 탭 하나가 다 보이게 하는 scrollLeft. 이미 보이면 그대로 둔다.
 // view: { scrollLeft, width } (목록), item: { left, width } (목록 내용 안에서의 탭 위치)
 export function revealScrollLeft(view, item) {

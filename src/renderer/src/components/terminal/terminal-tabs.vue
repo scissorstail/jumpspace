@@ -1,6 +1,6 @@
 <template>
   <div class="terminal-tabs">
-    <!-- 탭이 많으면 이 목록만 옆으로 넘긴다. 숨기기 단추는 늘 보인다.
+    <!-- 탭이 많으면 이 목록만 옆으로 넘긴다. 오른쪽 끝의 패널 단추(최대화, 최소화)는 늘 보인다.
          탭을 끌면 순서가 바뀐다 (닫기 단추에서는 끌리지 않는다). -->
     <draggable
       ref="tabList"
@@ -53,15 +53,30 @@
       </div>
     </draggable>
 
+    <!-- 창의 단추처럼: 헤더 아래까지 올리기(최대화한 동안에는 내리기)와 최소화(패널을 숨긴다, 헤더의 터미널 단추로 다시 연다) -->
+    <button
+      type="button"
+      class="terminal-maximize"
+      :aria-label="isMaximized ? 'Lower terminals' : 'Maximize terminals'"
+      :title="isMaximized ? 'Lower terminals (show the diagram)' : 'Maximize terminals (up to the header)'"
+      @click="$emit('maximize', !isMaximized)"
+    >
+      <b-icon
+        :icon="isMaximized ? 'chevron-bar-down' : 'chevron-bar-up'"
+        aria-hidden="true"
+      />
+    </button>
     <button
       type="button"
       class="terminal-hide"
-      aria-label="Hide terminals"
-      title="Hide terminals (they keep running)"
+      aria-label="Minimize terminals"
+      title="Minimize terminals (they keep running)"
       @click="$emit('hide')"
     >
+      <!-- 줄의 길이를 옆 단추의 가로줄에 맞춘다 (dash는 그대로 두면 짧다) -->
       <b-icon
-        icon="chevron-down"
+        icon="dash"
+        scale="1.4"
         aria-hidden="true"
       />
     </button>
@@ -73,7 +88,7 @@ import draggable from 'vuedraggable'
 import { revealScrollLeft, sessionStatusText } from '@/utils/terminal-view'
 
 // 터미널 패널 위쪽의 탭 줄. 탭이 많으면 좁아졌다가 목록만 옆으로 넘어가고, 활성 탭은 늘 보이게 한다.
-// 탭을 고르기, 닫기, 끌어서 바꾼 순서, 패널 숨기기는 이벤트(activate, close, reorder, hide)로 패널에 알린다.
+// 탭을 고르기, 닫기, 끌어서 바꾼 순서, 패널 최대화/내리기, 패널 숨기기는 이벤트(activate, close, reorder, maximize, hide)로 패널에 알린다.
 export default {
   name: 'TerminalTabs',
   components: { draggable },
@@ -85,6 +100,11 @@ export default {
     activeKey: {
       type: Number,
       default: null
+    },
+    // 패널이 헤더 아래까지 올라가 있는지 (최대화 단추가 내리기 단추로 바뀐다)
+    isMaximized: {
+      type: Boolean,
+      default: false
     }
   },
   watch: {
@@ -247,6 +267,7 @@ export default {
 }
 
 .terminal-tab-button,
+.terminal-maximize,
 .terminal-hide {
   flex: none;
   padding: 2px 6px;

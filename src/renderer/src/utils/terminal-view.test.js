@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { THEMES } from '../../../shared/setting.js'
-import { endedLine, errorLine, MIN_CANVAS_HEIGHT, MIN_PANEL_HEIGHT, panelHeight, RECONNECTING_LINE, revealScrollLeft, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
+import { endedLine, errorLine, MAXIMIZE_SNAP, MIN_CANVAS_HEIGHT, MIN_PANEL_HEIGHT, panelDrag, panelHeight, RECONNECTING_LINE, revealScrollLeft, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
 
 describe('sessionStatusText', () => {
   it('names every state and gives the exit status of a failed end', () => {
@@ -96,6 +96,43 @@ describe('panelHeight', () => {
   it('never gets lower than its own minimum', () => {
     expect(panelHeight(280, 150)).toBe(MIN_PANEL_HEIGHT)
     expect(panelHeight(20, 800)).toBe(MIN_PANEL_HEIGHT)
+  })
+})
+
+// 위쪽 가장자리를 끌 때: 캔버스를 남기는 높이에서 멈추고, 거기서 더 끌어 올리면 최대화한다.
+describe('panelDrag', () => {
+  const available = 800
+  const tallest = available - MIN_CANVAS_HEIGHT
+
+  it('follows the mouse and stops where the canvas keeps its minimum', () => {
+    expect(panelDrag(300, available)).toEqual({ maximized: false, height: 300 })
+    expect(panelDrag(20, available)).toEqual({ maximized: false, height: MIN_PANEL_HEIGHT })
+    expect(panelDrag(tallest + 30, available)).toEqual({ maximized: false, height: tallest })
+    expect(panelDrag(tallest + MAXIMIZE_SNAP, available)).toEqual({ maximized: false, height: tallest })
+  })
+
+  it('maximizes when dragged further up than the snap distance', () => {
+    expect(panelDrag(tallest + MAXIMIZE_SNAP + 1, available).maximized).toBe(true)
+    expect(panelDrag(available + 50, available).maximized).toBe(true)
+  })
+
+  // 최대화한 패널(높이 = available)을 끌어 내릴 때도 같은 자리에서 풀린다.
+  it('lets go at the same place when a maximized panel is dragged down', () => {
+    expect(panelDrag(available - 10, available).maximized).toBe(true)
+    expect(panelDrag(tallest + MAXIMIZE_SNAP, available)).toEqual({ maximized: false, height: tallest })
+    expect(panelDrag(350, available)).toEqual({ maximized: false, height: 350 })
+  })
+
+  // 창이 낮아서 패널이 이미 최소 높이일 때: 건드리기만 해서는 최대화하지 않는다.
+  it('needs the same extra drag in a low window', () => {
+    expect(panelDrag(MIN_PANEL_HEIGHT, 300)).toEqual({ maximized: false, height: MIN_PANEL_HEIGHT })
+    expect(panelDrag(MIN_PANEL_HEIGHT - 60, 300).maximized).toBe(false)
+    expect(panelDrag(MIN_PANEL_HEIGHT + MAXIMIZE_SNAP, 300).maximized).toBe(false)
+    expect(panelDrag(MIN_PANEL_HEIGHT + MAXIMIZE_SNAP + 1, 300).maximized).toBe(true)
+  })
+
+  it('never maximizes before the available height is known', () => {
+    expect(panelDrag(5000, Infinity)).toEqual({ maximized: false, height: 5000 })
   })
 })
 

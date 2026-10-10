@@ -1,23 +1,27 @@
 <template>
+  <!-- 최대화하면 높이를 정하지 않는다: 캔버스 자리까지 #workspace를 다 차지한다 (.is-maximized) -->
   <section
     v-show="isOpen && sessions.length > 0"
     class="terminal-panel"
-    :style="{ height: `${shownHeight}px` }"
+    :class="{ 'is-maximized': isMaximized }"
+    :style="isMaximized ? null : { height: `${shownHeight}px` }"
     aria-label="Terminals"
   >
-    <!-- 위쪽 가장자리를 끌어서 높이를 바꾼다 -->
+    <!-- 위쪽 가장자리를 끌어서 높이를 바꾼다. 헤더 가까이 끌어 올리면 최대화하고, 최대화한 것을 끌어 내리면 풀린다. -->
     <div
       class="terminal-resize"
-      title="Drag to resize"
+      :title="isMaximized ? 'Drag down to lower' : 'Drag to resize, up to the header to maximize'"
       @mousedown.prevent="startResize"
     />
 
     <terminal-tabs
       :sessions="sessions"
       :active-key="activeKey"
+      :is-maximized="isMaximized"
       @activate="activate"
       @close="closeSession"
       @reorder="$store.commit('terminalReorder', $event)"
+      @maximize="$store.commit('terminalMaximize', $event)"
       @hide="$store.commit('terminalPanel', false)"
     />
 
@@ -40,7 +44,7 @@ import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
 import { canReconnect, createOutputRouter, endedByUser, terminalShortcut } from '@/utils/terminal-sessions'
-import { endedLine, errorLine, panelHeight, RECONNECTING_LINE, terminalTheme } from '@/utils/terminal-view'
+import { endedLine, errorLine, panelDrag, panelHeight, RECONNECTING_LINE, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import TerminalTabs from './terminal-tabs'
 
@@ -58,7 +62,7 @@ export default {
   components: { TerminalTabs },
   data() {
     return {
-      // 사용자가 정한 높이. 창이 낮으면 보이는 높이(shownHeight)만 줄어든다.
+      // 사용자가 정한 높이. 창이 낮으면 보이는 높이(shownHeight)만 줄어든다. 최대화한 동안에도 남아서, 내리면 이 높이로 돌아온다.
       height: 280,
       // 캔버스와 패널이 나눠 쓰는 높이 (#workspace). 창 크기가 바뀌면 다시 잰다.
       available: Infinity
@@ -69,7 +73,7 @@ export default {
     shownHeight() {
       return panelHeight(this.height, this.available)
     },
-    ...mapGetters({ sessions: 'terminalSessions', allSessions: 'allTerminalSessions', activeKey: 'activeTerminalKey', isOpen: 'isTerminalPanelOpen' })
+    ...mapGetters({ sessions: 'terminalSessions', allSessions: 'allTerminalSessions', activeKey: 'activeTerminalKey', isOpen: 'isTerminalPanelOpen', isMaximized: 'isTerminalPanelMaximized' })
   },
   watch: {
     // 테마를 바꾸면 열린 터미널의 색도 바꾼다.
@@ -87,6 +91,10 @@ export default {
     },
     isOpen(open) {
       if (open) this.$nextTick(() => this.fitActive(true))
+    },
+    // 올리거나 내린 뒤에는 바로 칠 수 있게 터미널로 포커스를 준다.
+    isMaximized() {
+      if (this.isOpen) this.$nextTick(() => this.fitActive(true))
     }
   },
   created() {
@@ -283,10 +291,17 @@ export default {
     },
     startResize(event) {
       const startY = event.clientY
-      // 보이는 높이에서 시작한다: 창이 낮아 줄어든 패널을 끌어도 튀지 않는다.
-      const startHeight = this.shownHeight
-      const move = e => { this.height = panelHeight(startHeight + startY - e.clientY, this.available) }
+      // 보이는 높이에서 시작한다: 창이 낮아 줄어든 패널이나 최대화한 패널을 끌어도 튀지 않는다.
+      const startHeight = this.$el.getBoundingClientRect().height
+      const chosen = this.height
+      const move = e => {
+        const { maximized, height } = panelDrag(startHeight + startY - e.clientY, this.available)
+        if (maximized !== this.isMaximized) this.$store.commit('terminalMaximize', maximized)
+        if (!maximized) this.height = height
+      }
       const up = () => {
+        // 끌어 올려서 최대화했으면 끌기 전의 높이를 남긴다: 내렸을 때 캔버스가 좁은 띠로 남지 않는다.
+        if (this.isMaximized) this.height = chosen
         window.removeEventListener('mousemove', move)
         window.removeEventListener('mouseup', up)
       }
@@ -306,6 +321,13 @@ export default {
   border-top: 4px solid transparent;
   border-image: var(--js-bands) 1;
   background: var(--js-bg);
+
+  // 최대화: 캔버스 영역은 높이 없이 접히고(views/Layout.vue) 패널이 #workspace를 다 차지한다.
+  // 위의 색 띠는 헤더의 띠와 같은 자리에 겹친다.
+  &.is-maximized {
+    flex: 1;
+    min-height: 0;
+  }
 }
 
 .terminal-resize {

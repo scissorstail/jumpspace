@@ -27,13 +27,25 @@ export function fitView(viewport, box, k) {
   }
 }
 
+// 영역의 크기({ width, height })를 아는지. 접히거나 숨겨진 영역은 너비나 높이가 0이라서 모르는 것으로 친다.
+export function isRealSize(size) {
+  return [size?.width, size?.height].every(n => Number.isFinite(n) && n > 0)
+}
+
+// 보기와 함께 기억하는 영역 크기. 보기를 정할 때 영역이 접혀 있어서(터미널 패널을 최대화한 동안) 크기를 몰랐으면,
+// 처음으로 알게 된 크기(now)를 그 보기의 크기로 삼는다. 이미 아는 크기는 바꾸지 않는다.
+// (모르는 채로 두면 scaleView가 언제나 그대로 돌려줘서, 그 다이어그램은 영역 크기가 바뀌어도 따라가지 않는다)
+export function settleSize(size, now) {
+  return !isRealSize(size) && isRealSize(now) ? { width: now.width, height: now.height } : size
+}
+
 // 캔버스 영역의 크기가 from에서 to로 바뀔 때({ width, height }) 다이어그램이 영역에서 같은 자리와 같은 비율을 차지하게 하는 보기.
 // 배경 풍경이 영역에 맞춰 커지고 줄어드는 것과 같이 움직인다: 영역의 가운데에 있던 점은 가운데에 남고,
 // 확대는 가로와 세로 중 더 많이 줄어든(덜 늘어난) 쪽의 비율을 따라서 보이던 것이 영역 밖으로 나가지 않는다.
 // 크기를 알 수 없으면(0, 숨겨진 영역) 그대로 돌려준다.
 export function scaleView(view, from, to) {
   const { k, x, y } = view
-  if (![from?.width, from?.height, to?.width, to?.height].every(n => Number.isFinite(n) && n > 0)) return { k, x, y }
+  if (!isRealSize(from) || !isRealSize(to)) return { k, x, y }
 
   const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, k * Math.min(to.width / from.width, to.height / from.height)))
   const scale = zoom / k

@@ -17,7 +17,7 @@ import AreaPlugin from 'rete-area-plugin'
 import ReadonlyPlugin from 'rete-readonly-plugin'
 
 import SiteNode from './nodes/site-node'
-import { MAX_ZOOM, MIN_ZOOM, fitView, scaleView, viewOf, zoomAround } from '@/utils/view'
+import { MAX_ZOOM, MIN_ZOOM, fitView, scaleView, settleSize, viewOf, zoomAround } from '@/utils/view'
 import { arrangeLayout, boxOf } from '@/utils/arrange'
 import { hopKey, routeStates } from '@/utils/terminal-sessions'
 
@@ -313,12 +313,18 @@ export default {
       return { width: area.clientWidth, height: area.clientHeight }
     },
     // 기억해 둔 보기(base)를 지금 영역 크기에 맞춰 보여준다. base는 그대로 둔다.
+    // 다만 영역이 접혀 있을 때(터미널 패널을 최대화한 동안) 연 보기는 크기를 모른 채 기억되므로,
+    // 영역이 처음 보일 때의 크기를 그 보기의 크기로 삼는다. (item을 열었을 때의 확대인 entry도 같다)
     rescaleView() {
       if (!this.base) return
 
+      const now = this.areaSize()
+      this.base.size = settleSize(this.base.size, now)
+      if (this.entry) this.entry.size = settleSize(this.entry.size, now)
+
       this.isRescaling = true
       try {
-        this.setView(scaleView(this.base.view, this.base.size, this.areaSize()))
+        this.setView(scaleView(this.base.view, this.base.size, now))
       } finally {
         this.isRescaling = false
       }
