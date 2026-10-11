@@ -91,10 +91,11 @@ Said while the animations were being turned off (#110): "write these down separa
 - `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts; copying and removing items are unit tested since #71.
 - A Playwright + Electron smoke test in the repo was considered and turned down by the owner (decision 6).
 
-### Dependencies (checked 2026-10-02 11:2x UTC)
-- `npm audit --omit=dev`: 0 vulnerabilities. `npm audit` (dev tooling included) reports 4 (2 low, 2 high), all through `vue` 2 and `rete-vue-render-plugin`; the only fix is Vue 3 (`--force`), so they stay (decision 5).
+### Dependencies (checked 2026-10-11, #125)
+- `npm audit --omit=dev`: 0 vulnerabilities. `npm audit` (dev tooling included) reports 11 (2 low, 7 moderate, 2 high), none with a fix inside the major versions: `vue` 2 and `rete-vue-render-plugin` (low; the fix is Vue 3, decision 5), `lodash-es` through `rete-context-menu-plugin` (high; the fix is Rete 2, decision 5), and `sprintf-js` through `roarr`, `global-agent` and `@electron/get` in `electron-builder` (moderate; the "fix" npm names is a step back to electron-builder 26.5.0). They stay.
+- `electron-builder` is 26.15.3 in the lockfile while 26.17.0 is inside its range: held back in #125, because the routine may not run it. Take it together with an installer build that is looked at.
 - Held back on purpose (major versions): Vue 2.7, Rete v1 plugins, Bootstrap 4, vuex 3 (vue-router was removed in #81). Not checked or updated by the routine: eslint 10, vite 8, vitest 5 and `@eslint/js` 10 are newer majors; look at them only if something needs them, with tests and a build first.
-- Up to date inside their ranges (2026-10-02): everything; electron 44.5.1, node-pty 1.1.0, @xterm/xterm 6.0.0 are the latest releases.
+- Up to date inside their ranges (2026-10-11): everything but `electron-builder` (above); electron 44.7.0 and vite 7.3.7 since #125, node-pty 1.1.0 and @xterm/xterm 6.0.0 as before. `neostandard` 0.14.0 is outside its range (`^0.13.0`) and was not looked at.
 
 ### Decisions by the owner (2026-09-30)
 1. **Passwords:** keep plain text for now. Storing them with Electron `safeStorage` (Windows DPAPI) stays an optional idea: it ties the passwords to this PC and user, so exported files could not carry them. Do not implement unless the owner asks.
@@ -828,6 +829,15 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Protocol: the points for the owner's PC now say to push after the work and to look at the CI run of the push (the owner's word of today, read as standing for the commits of the runs), not to build the installer, and to start no window at all (the paragraph that told how to launch a test Electron is gone). CLAUDE.md: the UI check on the owner's PC, `gh` for the CI result there, the routine is every 40 minutes.
 - Not known yet: whether a fresh run gets through without stopping at a permission prompt. The first run of each task will show it.
 - Pushed with this entry: #120 to #124.
+
+### #125 2026-10-11 13:0x UTC · health (scheduled run, the first of the routine of #124)
+- Picked: `health`, the activity not done for the longest time (#77; tests #79, cleanup #81, refactor #91, style and ux since). The last three CI runs were green, the folder was clean and level with origin.
+- Did (3139e25, lockfile only): electron 44.5.1 -> 44.7.0 and vite 7.3.6 -> 7.3.7, the two updates inside the ranges of `package.json`; http-cache-semantics 4.2.0 -> 4.3.0 and source-map-js 1.2.1 -> 1.2.2, the two audit findings with a fix that is no major version (both dev tooling). `npm audit` went from 13 to 11, `npm audit --omit=dev` is 0 as before. The Dependencies block of the Backlog is rewritten.
+- Not taken: `npm audit fix` also moved `electron-builder` and its parts from 26.15.3 to 26.17.0. Taken back: it is the tool of the installer build that comes next, and these runs may not run it. Left for the owner's build (see Dependencies).
+- Checked: lint exit 0, vitest exit 0 (594 passed, 26 skipped), build exit 0 with vite 7.3.7; the headless UI checks on that build: every run passed. `npx electron --version` prints v44.7.0 (it fetched the binary; no window).
+- Not checked: the app was never started under Electron 44.7.0. The unit tests run in Node, the UI checks in a headless Edge, and the CI of a push starts no Electron either. The first `npm run dev` of the owner, or the installer build, is the first real start; if it misbehaves, `git revert 3139e25` and `npm ci` bring 44.5.1 back.
+- Seen, not changed: `package.json` still names another owner in `author` and `repository.url` than the repository this branch is pushed to. The owner's to say.
+- Found / next: nothing else. The docs were not compared with the code in this run (#120 to #123 each updated theirs). Next by age: `tests` (#79), then `cleanup` (#81).
 
 ## Routine
 
