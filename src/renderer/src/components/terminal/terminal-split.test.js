@@ -214,3 +214,34 @@ describe('the split in the panel and the tab row', () => {
     expect(panel).toMatch(/:side-key="sideKey"/)
   })
 })
+
+describe('the tab of the other half', () => {
+  const { mutations, getters } = terminal
+  const open = (state, title) => {
+    mutations.terminalAdd(state, { title, kind: 'connect', payload: {} })
+    return state.activeKey
+  }
+
+  it('is the tab in sight that is not selected, and nobody while the panel is not split', () => {
+    const state = JSON.parse(JSON.stringify(terminal.state))
+    mutations.terminalOwner(state, 0)
+    expect(getters.terminalSideKey(state)).toBeNull()
+
+    const a = open(state, 'a')
+    const b = open(state, 'b')
+    expect(getters.terminalSideKey(state)).toBeNull()
+
+    mutations.terminalSplit(state, true)
+    expect(getters.terminalSideKey(state)).toBe(a)
+    mutations.terminalActivate(state, a)
+    expect(getters.terminalSideKey(state)).toBe(b)
+
+    mutations.terminalSplit(state, false)
+    expect(getters.terminalSideKey(state)).toBeNull()
+  })
+
+  it('is what the panel calls split', () => {
+    expect(panel).toMatch(/isSplit\(\) \{\n\s+return this\.sideKey !== null\n/)
+    expect(panel).toMatch(/sideKey: 'terminalSideKey'/)
+  })
+})

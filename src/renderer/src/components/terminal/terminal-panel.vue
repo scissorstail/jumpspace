@@ -104,18 +104,15 @@ export default {
 
       return `${theme} ${terminalColors}`
     },
-    // 좌우로 나눴는지, 다른 칸에 보이는 탭 (없으면 null)
+    // 좌우로 나눴는지 (다른 칸에 보이는 탭이 있다)
     isSplit() {
-      return this.panes.right !== null
-    },
-    sideKey() {
-      return this.isSplit ? (this.activeKey === this.panes.right ? this.panes.left : this.panes.right) : null
+      return this.sideKey !== null
     },
     // 보이는 화면과 고른 탭: 하나라도 바뀌면 크기를 다시 맞추고 포커스를 옮긴다.
     shownKeys() {
       return `${this.panes.left} ${this.panes.right} ${this.activeKey}`
     },
-    ...mapGetters({ sessions: 'terminalSessions', allSessions: 'allTerminalSessions', activeKey: 'activeTerminalKey', panes: 'terminalPanes', isOpen: 'isTerminalPanelOpen', isMaximized: 'isTerminalPanelMaximized' })
+    ...mapGetters({ sessions: 'terminalSessions', allSessions: 'allTerminalSessions', activeKey: 'activeTerminalKey', panes: 'terminalPanes', sideKey: 'terminalSideKey', isOpen: 'isTerminalPanelOpen', isMaximized: 'isTerminalPanelMaximized' })
   },
   watch: {
     // 색 묶음이나 색의 단계를 바꾸면 열린 터미널의 색도 바꾼다. (색 묶음의 CSS 변수는 다음 그리기에 바뀐다)

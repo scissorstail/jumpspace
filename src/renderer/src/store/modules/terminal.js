@@ -37,6 +37,8 @@ export default {
     activeTerminalKey: state => state.activeKey,
     // 두 칸에 보이는 탭: { left, right } (나누지 않았으면 right는 null)
     terminalPanes: state => shownPanes(state),
+    // 좌우로 나눈 동안 다른 칸(고른 탭이 없는 칸)에 보이는 탭. 나누지 않았으면 null.
+    terminalSideKey: state => (state.activeKey === null ? null : state.sideKey),
     isTerminalPanelOpen: state => state.isPanelOpen,
     // 패널이 캔버스 자리까지 차지하고 있는지: 최대화했고, 패널이 펼쳐져 있는 동안만이다 (최소화한 동안은 캔버스가 보인다).
     isTerminalPanelMaximized: state => state.isPanelOpen && state.isPanelMaximized && sessionsOf(state.sessions, state.owner).length > 0
