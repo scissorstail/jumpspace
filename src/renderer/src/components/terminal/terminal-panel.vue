@@ -41,6 +41,7 @@
 <script>
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
 import { canReconnect, createOutputRouter, endedByUser, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
@@ -140,6 +141,7 @@ export default {
 
       const el = this.$refs[`term-${session.key}`]?.[0]
       term.open(el)
+      this.drawWithWebgl(term)
       this.fit(entry)
       term.focus()
 
@@ -177,6 +179,18 @@ export default {
     // Windows의 pty(ConPTY)는 크기가 바뀔 때 화면을 스스로 맞춘다. xterm.js도 그에 맞춰야 한다 (main의 windowsPtyInfo):
     // 모르면 패널이 높아질 때 지난 출력을 화면으로 끌어내리고, ConPTY가 그 줄들을 빈 줄로 덮어써서 사라진다.
     // 출력을 받기 전에(router.register 앞에서) 정한다.
+    // 선과 블록 문자(─ │ █ 등)를 xterm.js가 칸에 꼭 맞게 직접 그리게 한다 (owner, 2026-10-11: Claude Code의 선 사이에
+    // 틈이 보였다). 기본 그리기(DOM)는 그 문자를 글꼴로 그려서, 화면 배율에 따라 줄과 줄, 칸과 칸 사이가 끊긴다.
+    // WebGL을 쓸 수 없거나 브라우저가 그 컨텍스트를 거두면(동시에 16개쯤까지) 기본 그리기로 돌아간다.
+    drawWithWebgl(term) {
+      try {
+        const webgl = new WebglAddon()
+        webgl.onContextLoss(() => webgl.dispose())
+        term.loadAddon(webgl)
+      } catch (e) {
+        console.warn('WebGL terminal renderer is not available', e)
+      }
+    },
     adaptToPty(term, { windowsPty }) {
       if (windowsPty) term.options.windowsPty = windowsPty
     },
