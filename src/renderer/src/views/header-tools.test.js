@@ -73,3 +73,17 @@ describe('the buttons at the right of the header', () => {
     expect(buttons[buttons.length - 2].label).toBe('Reset view')
   })
 })
+
+// 다이어그램이 열리지 않은 동안의 제목(앱 이름)이 이름표보다 높으면 머리글이 높아지고, 첫 다이어그램을 열 때
+// 머리글 아래의 모든 것이 그만큼 올라간다. 글자 크기 x 줄 높이로 견준다.
+describe('the title in the header', () => {
+  const box = name => {
+    const block = header.match(new RegExp(`\\n  \\.${name} \\{\\n([\\s\\S]*?)\\n  \\}`))?.[1] ?? ''
+    return Number(block.match(/\n {4}font-size: ([\d.]+)rem;/)?.[1]) * Number(block.match(/\n {4}line-height: ([\d.]+);/)?.[1])
+  }
+
+  it('is not higher as the name of the app than as the name tag of a diagram', () => {
+    expect(box('header-title-tag')).toBeCloseTo(1.92, 5)
+    expect(box('header-brand')).toBeLessThanOrEqual(box('header-title-tag'))
+  })
+})
