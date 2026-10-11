@@ -905,6 +905,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 645 passed (2 assertions added, 3 mutations fail them and `split-check`, 34 checks now), lint ok, build ok, headless UI checks passed, commit 43d048d. Not checked: the real window.
 - Found / next: nothing else. Next by age: `health`, then `tests` (`forward-menu.vue` has none of its own, #132).
 
+### #140 2026-10-12 · health (run in the owner's session)
+- Did: `npm outdated` has nothing inside the current major versions, Electron is at the newest 44.x (44.7.0), CI is green on the last three pushes. The file list of the README named two buttons of the tab row; it names the split button too now.
+- Result: tests 645 passed, lint ok, build ok (README only, no UI check needed), commit c4f9313. `npm audit` still 11 (2 low, 7 moderate, 2 high), all behind a major version (vue 2, rete 1).
+- Found / next: nothing new. Next by age: `tests` (`forward-menu.vue`), then `cleanup`.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
