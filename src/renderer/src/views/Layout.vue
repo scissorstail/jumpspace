@@ -11,6 +11,13 @@
       @unlock="isEditorLocked = false"
     >
       <template #main-navigator-toolbar>
+        <!-- 저장하는 동안의 표시 (owner, 2026-10-11). 자리는 늘 차지하고 글자만 보였다 숨는다: 단추들이 밀리지 않는다. 움직이지 않는다. -->
+        <span
+          class="save-state"
+          :class="{ 'is-saving': savingCount > 0 }"
+          role="status"
+          :aria-hidden="savingCount > 0 ? 'false' : 'true'"
+        >Saving</span>
         <!-- 숨긴 터미널 패널 다시 열기 -->
         <b-button
           v-if="terminalCount > 0 && !isTerminalPanelOpen"
@@ -213,6 +220,8 @@ export default {
       // 열린 다이어그램의 노드 수 (Editor가 알린다). 0이면 노드를 더하는 방법을 안내한다.
       nodeCount: 0,
       isProjectLoadFailed: false,
+      // 끝나지 않은 저장의 수. 0보다 크면 머리글에 Saving을 보여준다.
+      savingCount: 0,
       // 제목 아래의 다이어그램 목록이 열려 있는지
       isSwitcherOpen: false
     }
@@ -395,12 +404,15 @@ export default {
         return
       }
 
-      // project를 JSON 형식으로 변환하여 파일에 저장
+      // project를 JSON 형식으로 변환하여 파일에 저장. 끝날 때까지 머리글에 Saving을 보여준다 (겹친 저장은 모두 끝나야 사라진다).
+      this.savingCount += 1
       try {
         await window.preload.saveProjects(JSON.stringify(this.projectData))
       } catch (e) {
         console.error(e)
         this.notifyError('Failed to save projects', e)
+      } finally {
+        this.savingCount -= 1
       }
     },
     async exportProject() {
@@ -438,6 +450,22 @@ export default {
   .layout-inactive {
     opacity: 0;
     pointer-events: none;
+  }
+}
+
+// 머리글의 저장 표시: 저장하는 동안에만 보인다
+.save-state {
+  margin-right: 8px;
+  color: var(--js-sun);
+  font-family: var(--js-font-display);
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  visibility: hidden;
+
+  &.is-saving {
+    visibility: visible;
   }
 }
 

@@ -96,19 +96,32 @@ describe('the states of a path with a terminal session', () => {
 // 고른 터미널 탭을 연 노드는 선택한 노드처럼 보인다. 모양을 두 군데에 적으면 어긋나므로 한 규칙을 함께 쓴다.
 describe('the node of the selected terminal tab', () => {
   const plain = scss.replace(/^\s*\/\/.*$/gm, '')
-  const [, selectors = '', body = ''] = plain.match(/([^{}]*\.node\.site\.selected[^{}]*) \{([^{}]*)\}/) || []
+  const [, selectors = '', body = ''] = plain.match(/([^{}]*\.is-active-terminal \.node\.site[^{}]*) \{([^{}]*)\}/) || []
 
-  it('looks like a selected node', () => {
-    expect(selectors.split(',').map(x => x.trim())).toEqual(['.node.site.selected', '.is-active-terminal .node.site'])
+  it('has a pink frame and a sun shadow', () => {
+    expect(selectors.split(',').map(x => x.trim())).toEqual(['.is-active-terminal .node.site'])
     expect(body).toMatch(/outline-color: var\(--js-primary\);/)
     expect(body).toMatch(/box-shadow: 6px 6px 0 var\(--js-sun\);/)
   })
 
-  // 올렸을 때의 그림자(:hover)와 선택자의 무게가 같아서 뒤에 오는 쪽이 이긴다.
-  it('keeps its shadow while the mouse is over the node', () => {
-    const hover = scss.indexOf('&:hover {\n      box-shadow:')
+  // 편집 중에 누른 노드(Rete의 .selected)에는 모양이 없다 (owner, 2026-10-11): 선택해도 할 수 있는 일이 없다.
+  it('is the only marked node: a node that was clicked gets no look', () => {
+    expect(plain).not.toMatch(/\.selected/)
+  })
+
+  // 올렸을 때의 색(:hover)과 선택자의 무게가 같아서 뒤에 오는 쪽이 이긴다.
+  it('keeps its frame while the mouse is over the node', () => {
+    const hover = scss.indexOf('&:hover {\n      outline-color:')
 
     expect(hover).toBeGreaterThan(-1)
     expect(scss.indexOf('.is-active-terminal .node.site {')).toBeGreaterThan(hover)
+  })
+
+  // 노드에 올리면 색만 바뀐다 (owner, 2026-10-11): 움직이거나 그림자가 커지지 않는다.
+  it('changes only colors under the mouse and does not move', () => {
+    const hover = scss.match(/\.node\.site \{[\s\S]*?&:hover \{\n([\s\S]*?)\n {4}\}/)?.[1] ?? ''
+
+    expect(hover.split('\n').map(x => x.trim().split(':')[0])).toEqual(['outline-color', 'background'])
+    expect(scss).not.toContain('translate(')
   })
 })
