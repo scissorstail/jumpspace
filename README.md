@@ -159,7 +159,7 @@ src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
   src/components/terminal/terminal-panel.vue
                   the terminal panel (xterm.js), one tab per session; terminal-tabs.vue
                   is its tab row (scrolls when there are many tabs) with the panel's
-                  maximize and minimize buttons
+                  split, maximize and minimize buttons
 ```
 
 ### how ssh is started
