@@ -854,6 +854,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 604 passed (1 new, 2 mutations fail it), lint ok, build ok, headless UI checks passed with a new `header-check` (7 checks, three palettes; the 2 mutations fail it too), commit f17ba05. Not checked: the real window.
 - Found / next: a test in `src/main/terminal.test.js` failed once in this run: it looked for the password `pw` in the path of the generated script, and the random name of the temporary folder contained those letters. The password of the test is another one now (b97500f). Next by age: `ux`, then `health`.
 
+### #130 2026-10-11 15:3x UTC · ux (run in the owner's session)
+- Did: Enter in the *Git Bash path* field of Settings saves like the Save button; the Enter that ends the composition of a character (IME) does not.
+- Result: tests 605 passed (1 new, 2 mutations fail it), lint ok, build ok, headless UI checks passed (`colors-check` 29, 2 new; the 2 mutations fail them too), commit ad01dbd. Not checked: the real window, a real IME.
+- Found / next: nothing new. Next by age: `health`, then `tests`.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
