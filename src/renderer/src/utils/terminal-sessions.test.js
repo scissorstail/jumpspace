@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { activeTerminalNode, canReconnect, countByOwner, createOutputRouter, endedByUser, hopKey, INTERRUPT_WINDOW_MS, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
+import { activeTerminalNode, canReconnect, countByOwner, createOutputRouter, duplicateNumbers, endedByUser, hopKey, INTERRUPT_WINDOW_MS, numberedTitle, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -301,5 +301,41 @@ describe('endedByUser', () => {
   it('keeps a session that ended before logging in, so its error stays readable', () => {
     expect(endedByUser({ exitCode: 127, connected: false, now })).toBe(false)
     expect(endedByUser({ exitCode: 0, connected: false, now })).toBe(false)
+  })
+})
+
+describe('duplicateNumbers', () => {
+  const session = (key, title) => ({ key, title })
+  const numbers = list => [...duplicateNumbers(list)]
+
+  it('numbers the tabs that share a name, in the order they were opened', () => {
+    expect(numbers([session(1, 'web'), session(2, 'db'), session(3, 'web'), session(5, 'web')])).toEqual([[1, 1], [3, 2], [5, 3]])
+  })
+
+  it('gives a name that is there once no number', () => {
+    expect(numbers([session(1, 'web'), session(2, 'db')])).toEqual([])
+    expect(numbers([])).toEqual([])
+    expect(numbers(undefined)).toEqual([])
+  })
+
+  // 탭을 끌어서 옮겨도 번호는 그대로다
+  it('does not follow the order of the tabs', () => {
+    const moved = [session(3, 'web'), session(1, 'web')]
+
+    expect(duplicateNumbers(moved).get(1)).toBe(1)
+    expect(duplicateNumbers(moved).get(3)).toBe(2)
+    expect(moved.map(x => x.key)).toEqual([3, 1])
+  })
+
+  it('tells a forward and a jump of the same node apart by their own names', () => {
+    expect(numbers([session(1, 'web'), session(2, '⇄ web'), session(3, 'web (+1)')])).toEqual([])
+  })
+})
+
+describe('numberedTitle', () => {
+  it('puts the number after the name, and leaves a name without a number as it is', () => {
+    expect(numberedTitle('web', 2)).toBe('web (2)')
+    expect(numberedTitle('web (+1)', 1)).toBe('web (+1) (1)')
+    expect(numberedTitle('web', undefined)).toBe('web')
   })
 })

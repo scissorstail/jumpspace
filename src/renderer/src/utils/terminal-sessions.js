@@ -8,6 +8,26 @@ export function terminalTitle(kind, connection, hops = 0) {
   return name
 }
 
+// 이름이 같은 탭들을 구분하는 번호: Map(key -> 번호). 연 순서대로 1, 2, ... 이고, 끌어서 순서를 바꿔도 그대로다.
+// 이름이 하나뿐인 탭은 들어 있지 않다 (번호를 보이지 않는다). 하나만 남으면 그 탭의 번호도 사라진다.
+export function duplicateNumbers(sessions) {
+  const byTitle = new Map()
+  for (const session of [...(sessions || [])].sort((a, b) => a.key - b.key)) {
+    byTitle.set(session.title, [...(byTitle.get(session.title) || []), session.key])
+  }
+
+  const numbers = new Map()
+  for (const keys of byTitle.values()) {
+    if (keys.length > 1) keys.forEach((key, i) => numbers.set(key, i + 1))
+  }
+  return numbers
+}
+
+// 탭을 가리키는 이름 (툴팁, 닫기 단추): 번호가 있으면 뒤에 붙인다.
+export function numberedTitle(title, number) {
+  return number ? `${title} (${number})` : title
+}
+
 // 서버 하나(한 홉)를 가리키는 키. 캔버스의 노드와 열린 세션을 이 값으로 맞춰 본다.
 // (비밀번호나 키 경로는 넣지 않는다. 세션 목록에 남기 때문이다)
 export function hopKey(connection) {

@@ -24,7 +24,7 @@
         role="tab"
         :aria-selected="session.key === activeKey ? 'true' : 'false'"
         tabindex="0"
-        :title="`${session.title}: ${statusText(session)}`"
+        :title="`${label(session)}: ${statusText(session)}`"
         @click="$emit('activate', session.key)"
         @keydown.enter.self="$emit('activate', session.key)"
         @keydown.space.self.prevent="$emit('activate', session.key)"
@@ -34,12 +34,17 @@
           aria-hidden="true"
         />
         <span class="terminal-tab-title">{{ session.title }}</span>
+        <!-- 이름이 같은 탭의 번호. 이름이 잘려도(말줄임) 번호는 남는다. -->
+        <span
+          v-if="numbers.has(session.key)"
+          class="terminal-tab-number"
+        >({{ numbers.get(session.key) }})</span>
         <!-- 닫기는 탭 오른쪽 끝에 둔다. 끝난 세션은 터미널에서 Enter로 다시 연결한다 (단추는 두지 않는다). -->
         <span class="terminal-tab-actions">
           <button
             type="button"
             class="terminal-tab-button"
-            :aria-label="`Close ${session.title}`"
+            :aria-label="`Close ${label(session)}`"
             title="Close"
             @click.stop="$emit('close', session)"
           >
@@ -84,6 +89,7 @@
 
 <script>
 import draggable from 'vuedraggable'
+import { duplicateNumbers, numberedTitle } from '@/utils/terminal-sessions'
 import { revealScrollLeft, sessionStatusText } from '@/utils/terminal-view'
 
 // 터미널 패널 위쪽의 탭 줄. 탭이 많으면 좁아졌다가 목록만 옆으로 넘어가고, 활성 탭은 늘 보이게 한다.
@@ -106,6 +112,12 @@ export default {
       default: false
     }
   },
+  computed: {
+    // 이름이 같은 탭들의 번호 (key -> 번호)
+    numbers() {
+      return duplicateNumbers(this.sessions)
+    }
+  },
   watch: {
     activeKey() {
       this.$nextTick(() => this.reveal())
@@ -121,6 +133,9 @@ export default {
   },
   methods: {
     statusText: sessionStatusText,
+    label(session) {
+      return numberedTitle(session.title, this.numbers.get(session.key))
+    },
     // 넘치는 탭 목록은 세로 휠로도 옆으로 넘긴다.
     scrollTabs(event) {
       const list = this.$refs.tabList?.$el
@@ -213,6 +228,12 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+// 번호는 줄어들지 않는다: 탭이 좁아지면 이름만 잘린다. (이름과의 간격은 낱말 사이만큼)
+.terminal-tab-number {
+  flex: none;
+  margin-left: -2px;
 }
 
 .terminal-status {
