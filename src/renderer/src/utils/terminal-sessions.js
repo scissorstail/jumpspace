@@ -48,6 +48,15 @@ export function activatePane({ activeKey, sideKey, activeSide }, key) {
   return { activeKey: key, sideKey, activeSide }
 }
 
+// 탭을 닫았다. 보이는 두 탭 가운데 하나였으면 나누기가 끝나고 남은 탭이 패널을 다 쓴다.
+// 혼자 보이던 고른 탭이면 옆 탭(nextKey, 탭이 더 없으면 null)을 고르고, 보이지 않던 탭이면 그대로다.
+export function closePane({ activeKey, sideKey, activeSide }, key, nextKey = null) {
+  if (sideKey !== null && (key === sideKey || key === activeKey)) {
+    return { activeKey: key === activeKey ? sideKey : activeKey, sideKey: null, activeSide: 'left' }
+  }
+  return { activeKey: key === activeKey ? nextKey : activeKey, sideKey, activeSide }
+}
+
 // 나누기를 켤 때 오른쪽 칸에 놓을 탭: 고른 탭의 다음 탭, 없으면 앞의 탭. 탭이 하나뿐이면 null (나눌 수 없다).
 export function splitPartner(sessions, activeKey) {
   const keys = (sessions || []).map(x => x.key)

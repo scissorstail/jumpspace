@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import terminal from '../../store/modules/terminal'
-import { activatePane, shownPanes, splitPartner } from '../../utils/terminal-sessions'
+import { activatePane, closePane, shownPanes, splitPartner } from '../../utils/terminal-sessions'
 
 // 터미널 패널을 좌우로 나누기 (owner, 2026-10-12). 탭 줄은 하나이고, 두 칸에 탭이 하나씩 보인다.
 const here = dirname(fileURLToPath(import.meta.url))
@@ -42,6 +42,26 @@ describe('activatePane', () => {
 
   it('just selects the tab while the panel is not split', () => {
     expect(activatePane({ activeKey: 3, sideKey: null, activeSide: 'left' }, 7)).toEqual({ activeKey: 7, sideKey: null, activeSide: 'left' })
+  })
+})
+
+describe('closePane', () => {
+  const split = { activeKey: 3, sideKey: 5, activeSide: 'right' }
+  const alone = { activeKey: 3, sideKey: null, activeSide: 'left' }
+
+  it('ends the split when one of the two tabs in sight is closed, and keeps the other one', () => {
+    expect(closePane(split, 5, 7)).toEqual({ activeKey: 3, sideKey: null, activeSide: 'left' })
+    expect(closePane(split, 3, 7)).toEqual({ activeKey: 5, sideKey: null, activeSide: 'left' })
+  })
+
+  it('changes nothing when a tab that is not in sight is closed', () => {
+    expect(closePane(split, 9, 7)).toEqual(split)
+    expect(closePane(alone, 9, 7)).toEqual(alone)
+  })
+
+  it('selects the neighbor when the only tab in sight is closed, or nobody when it was the last', () => {
+    expect(closePane(alone, 3, 7)).toEqual({ activeKey: 7, sideKey: null, activeSide: 'left' })
+    expect(closePane(alone, 3)).toEqual({ activeKey: null, sideKey: null, activeSide: 'left' })
   })
 })
 

@@ -10,7 +10,7 @@
 // 패널은 좌우 두 칸으로 나눌 수 있다 (owner, 2026-10-12). 탭 줄은 하나이고, 두 칸에 탭이 하나씩 보인다:
 // activeKey(고른 탭, 키 입력을 받는다)와 sideKey(다른 칸의 탭). activeSide는 고른 탭이 있는 칸이다.
 // 보이는 탭 가운데 하나를 닫으면 나누기가 끝나고 남은 탭이 패널을 다 쓴다.
-import { activatePane, hopKey, reorderSessions, sessionsOf, shownPanes, splitPartner } from '../../utils/terminal-sessions'
+import { activatePane, closePane, hopKey, reorderSessions, sessionsOf, shownPanes, splitPartner } from '../../utils/terminal-sessions'
 
 let nextKey = 1
 
@@ -68,15 +68,8 @@ export default {
 
       // 다른 item의 세션이 뒤에서 끝났으면 보이는 패널은 그대로 둔다.
       if (session.owner !== state.owner) return
-      if (state.sideKey !== null && (key === state.sideKey || key === state.activeKey)) {
-        // 보이는 두 탭 가운데 하나를 닫았다: 나누기가 끝나고 남은 탭이 패널을 다 쓴다.
-        if (key === state.activeKey) state.activeKey = state.sideKey
-        state.sideKey = null
-        state.activeSide = 'left'
-      } else if (state.activeKey === key) {
-        const next = siblings[Math.min(index, siblings.length - 1)]
-        state.activeKey = next ? next.key : null
-      }
+      const next = siblings[Math.min(index, siblings.length - 1)]
+      Object.assign(state, closePane(state, key, next ? next.key : null))
       // 마지막 탭이 닫히면 최대화도 끝난다: 다음 터미널은 캔버스 아래에서 보통 높이로 열린다.
       if (siblings.length === 0) {
         state.isPanelOpen = false
