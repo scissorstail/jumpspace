@@ -42,18 +42,6 @@
           >
             <b-icon :icon="hideNodeInfo ? 'eye-slash' : 'eye'" />
           </b-button>
-          <!-- Editor Lock/Unlock button (다른 머리글 단추처럼 기본 title을 쓴다. b-tooltip은 누른 뒤에도 남아 있었다) -->
-          <b-button
-            size="sm"
-            :title="isEditorLocked ? 'Unlock editor' : 'Lock editor'"
-            :aria-label="isEditorLocked ? 'Unlock editor' : 'Lock editor'"
-            variant="light"
-            @click="isEditorLocked = !isEditorLocked"
-          >
-            <b-icon
-              :icon="isEditorLocked? 'lock' : 'unlock'"
-            />
-          </b-button>
           <!-- 잠금을 풀었을 때만: 보기 초기화, 노드 정렬 -->
           <template v-if="!isEditorLocked">
             <b-button
@@ -76,6 +64,20 @@
               <b-icon icon="diagram-3" />
             </b-button>
           </template>
+          <!-- Editor Lock/Unlock button (다른 머리글 단추처럼 기본 title을 쓴다. b-tooltip은 누른 뒤에도 남아 있었다)
+               편집 모드를 바꾸는 중요한 단추라서 늘 같은 자리, 설정(톱니) 단추의 바로 왼쪽에 둔다 (owner, 2026-10):
+               다른 단추는 이 단추의 왼쪽에 생기고 사라진다. 그래서 이 단추가 이 묶음의 마지막이어야 한다. -->
+          <b-button
+            size="sm"
+            :title="isEditorLocked ? 'Unlock editor' : 'Lock editor'"
+            :aria-label="isEditorLocked ? 'Unlock editor' : 'Lock editor'"
+            variant="light"
+            @click="isEditorLocked = !isEditorLocked"
+          >
+            <b-icon
+              :icon="isEditorLocked? 'lock' : 'unlock'"
+            />
+          </b-button>
         </template>
       </template>
     </MainHeader>
