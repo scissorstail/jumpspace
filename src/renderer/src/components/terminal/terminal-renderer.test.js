@@ -20,3 +20,24 @@ describe('the renderer of the app terminal', () => {
     expect(method).toMatch(/try \{[\s\S]*\} catch \(e\) \{/)
   })
 })
+
+// main이 연 세션을 탭의 화면에 잇는 일은 처음 열 때와 다시 접속할 때 같은 한 곳에서 한다.
+describe('attaching a session to its screen', () => {
+  const attach = panel.match(/\n {4}attach\(session, entry, \{ id, windowsPty \}\) \{\n([\s\S]*?)\n {4}\},/)?.[1] ?? ''
+
+  // 늦으면 패널이 높아질 때 지난 출력이 빈 줄로 덮인다 (ConPTY)
+  it('tells xterm about the Windows pty before any output is taken', () => {
+    const told = attach.indexOf('if (windowsPty) entry.term.options.windowsPty = windowsPty')
+    const taken = attach.indexOf('this.router.register(id, data => entry.term.write(data))')
+
+    expect(told).toBeGreaterThan(-1)
+    expect(taken).toBeGreaterThan(told)
+  })
+
+  it('is the one place that takes the output, for a new session and a reconnected one', () => {
+    expect(panel.match(/this\.router\.register\(/g)).toHaveLength(1)
+    expect(panel.match(/this\.attach\(session, entry, result\)/g)).toHaveLength(2)
+    expect(attach).toContain("this.$store.commit('terminalUpdate', { key: session.key, id, status: 'running' })")
+    expect(attach).toContain('this.fit(entry, true)')
+  })
+})
