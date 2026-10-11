@@ -756,6 +756,14 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Docs: README (usage step 2, a new section "from SSH config", project layout), CHANGELOG (Added), CLAUDE.md (a gotcha, the rule for popups).
 - Found / next: the right-click menu does not open with its corner at the pointer although a comment says so; see UX candidates.
 
+### #117 2026-10-11 · fix (by hand, the owner with a piece of a Claude Code screen: "when Claude Code is on, there seem to be gaps between the lines... it looks a bit odd")
+- Read as: the rulers and frames a program draws with box characters are broken up. Not asked back; the owner may have meant something else (the distance between text rows), see the question in the reply.
+- Found: on the headless screen at a display scale of 125 % the vertical lines of a frame broke between the rows and filled blocks showed seams between the cells; at 100 % they were whole. The terminal used the DOM renderer of xterm.js, which takes these characters from the font (JetBrains Mono).
+- Did: the terminal loads `@xterm/addon-webgl` 0.19 (new dev dependency, bundled into the renderer) after it is opened. That renderer draws box and block characters itself, as large as a cell. A lost WebGL context disposes the addon, which brings the DOM renderer back, and so does a machine without WebGL.
+- Checked: at real scales of 100, 125 and 150 % (`--force-device-scale-factor`) rulers, a rounded frame and two rows of blocks are whole, seen on screenshots; the canvases have the device size. 2 new tests that read the wiring, 2 mutations each fail one (514 passed). The older headless checks pass (53 and 57); three checks of the first failed until the script stopped counting `.xterm-rows` elements, which the WebGL renderer does not make. lint, vitest and build exit 0. Not checked: the real window, a real Claude Code session, a lost context in practice, a PC without a GPU.
+- Docs: CHANGELOG (Fixed), CLAUDE.md.
+- Found / next: with an emulated `deviceScaleFactor` the headless browser shows the WebGL canvas magnified; an artifact of the emulation, noted in CLAUDE.md.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
