@@ -53,7 +53,7 @@ export default {
         this.markLiveRoutes()
       }
     },
-    // 다른 탭을 고르거나 패널을 숨기면 세션은 그대로여서 위의 watch가 돌지 않는다.
+    // 다른 탭을 고르거나 패널을 최소화하면 세션은 그대로여서 위의 watch가 돌지 않는다.
     activeTerminalNode() {
       this.markLiveRoutes()
     },

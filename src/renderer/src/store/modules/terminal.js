@@ -5,7 +5,7 @@
 //
 // 터미널은 그것을 연 다이어그램(item)의 것이다. owner는 지금 열려 있는 item의 번호(목록 항목의 index)이고,
 // 세션은 만들어질 때의 owner를 갖는다. 패널과 캔버스는 지금 owner의 세션만 보여주고, 다른 item의 세션은
-// 뒤에서 계속 돈다. 활성 탭과 패널을 숨겼는지, 최대화했는지, 좌우로 나눴는지는 item마다 기억해 두었다가 돌아오면 되살린다.
+// 뒤에서 계속 돈다. 활성 탭과 패널을 최소화했는지, 최대화했는지, 좌우로 나눴는지는 item마다 기억해 두었다가 돌아오면 되살린다.
 //
 // 패널은 좌우 두 칸으로 나눌 수 있다 (owner, 2026-10-12). 탭 줄은 하나이고, 두 칸에 탭이 하나씩 보인다:
 // activeKey(고른 탭, 키 입력을 받는다)와 sideKey(다른 칸의 탭). activeSide는 고른 탭이 있는 칸이다.
@@ -18,8 +18,9 @@ export default {
   state: {
     sessions: [],
     activeKey: null,
+    // 패널이 펼쳐져 있는지. false이면 최소화한 것이다: 탭 줄만 창 아래쪽에 남는다 (세션이 없으면 패널 자체가 없다).
     isPanelOpen: false,
-    // 패널을 헤더 바로 아래까지 올렸는지 (최대화). 패널을 숨겨도 남아서, 다시 보이면 최대화한 채로 돌아온다.
+    // 패널을 헤더 바로 아래까지 올렸는지 (최대화). 패널을 최소화해도 남아서, 다시 펼치면 최대화한 채로 돌아온다.
     isPanelMaximized: false,
     // 좌우로 나눈 동안 다른 칸에 보이는 탭 (null이면 나누지 않았다)과, 고른 탭이 있는 칸
     sideKey: null,
@@ -37,7 +38,7 @@ export default {
     // 두 칸에 보이는 탭: { left, right } (나누지 않았으면 right는 null)
     terminalPanes: state => shownPanes(state),
     isTerminalPanelOpen: state => state.isPanelOpen,
-    // 패널이 캔버스 자리까지 차지하고 있는지: 최대화했고, 패널이 보이는 동안만이다 (숨긴 동안은 캔버스가 보인다).
+    // 패널이 캔버스 자리까지 차지하고 있는지: 최대화했고, 패널이 펼쳐져 있는 동안만이다 (최소화한 동안은 캔버스가 보인다).
     isTerminalPanelMaximized: state => state.isPanelOpen && state.isPanelMaximized && sessionsOf(state.sessions, state.owner).length > 0
   },
   mutations: {

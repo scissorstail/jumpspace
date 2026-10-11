@@ -136,7 +136,7 @@ export function routeStates(sessions) {
 
 // 고른 터미널 탭을 연 노드(hopKey). 세션이 지나가는 마지막 홉이 그 노드다: Connect는 노드 하나, ProxyJump와 포워딩은
 // 앞 노드들 다음에 그 노드가 온다. 캔버스가 그 노드를 선택한 것처럼 보여준다.
-// 패널을 숨긴 동안에는 고른 탭이 보이지 않으므로 가리키는 노드도 없다(null).
+// 패널을 최소화한 동안에는 고른 탭의 터미널이 보이지 않으므로 가리키는 노드도 없다(null).
 export function activeTerminalNode(sessions, activeKey, isPanelOpen = true) {
   if (!isPanelOpen) return null
 
