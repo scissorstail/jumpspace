@@ -869,6 +869,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 611 passed (6 new; 7 mutations fail them, and the 5 that can be reached in the UI fail the headless checks), lint ok, build ok, headless UI checks passed, commit abd03b5. No code changed. Not checked: the real window.
 - Found / next: nothing wrong in the picker. `forward-menu.vue` (374 lines) has no test of its own either. Next by age: `cleanup`, then `refactor`.
 
+### #133 2026-10-12 · ux (by hand, the owner: "when the names are the same, put a number at the right end, name ... (1), name ... (2)")
+- Did: terminal tabs of one diagram with the same name show a number after it, in the order they were opened. The number is its own part of the tab and stays whole when the name is cut off; the tooltip and the close button use it too.
+- Result: tests 619 passed (8 new, 6 mutations fail them), lint ok, build ok, headless UI checks passed (`check` 58, 5 new; the 5 mutations that show in the UI fail them), commit 16789d3. Not checked: the real window.
+- Found / next: the owner asked for two more things in the same message, done next one by one: the minimized panel stays at the bottom, and a left/right split of the terminals.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
