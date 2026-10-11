@@ -840,6 +840,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 601 passed (7 new, 10 mutations each fail one), lint ok, build ok, commit 2e3b8d0. No renderer change, so no UI check.
 - Found / next: nothing. Next by age: `cleanup`, then `refactor`.
 
+### #127 2026-10-11 · cleanup (by hand, the owner: "I changed my nickname, make it scissorstail, without the @")
+- Did: `author` and `repository.url` in `package.json` and the copyright line of `LICENSE` name the owner's present account (found in #125).
+- Result: tests 601 passed, lint ok, build ok, commit bb9033d.
+- Found / next: nothing.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
