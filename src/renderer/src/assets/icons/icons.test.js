@@ -41,4 +41,14 @@ describe('icons', () => {
     }
     expect(missing).toEqual([])
   })
+
+  // 쓰지 않는 아이콘은 등록하지 않는다: 하나씩 등록하는 까닭이 묶음에 쓰는 것만 넣으려는 것이다.
+  it('registers no icon that no component uses', () => {
+    const used = new Set(vueFiles(root).flatMap(file => usedIcons(readFileSync(file, 'utf8'))).map(componentName))
+    // BIcon은 <b-icon> 자신이다
+    const names = [...registered.matchAll(/Vue\.component\('(BIcon\w+)'/g)].map(match => match[1])
+
+    expect(names.length).toBeGreaterThan(20)
+    expect(names.filter(name => !used.has(name))).toEqual([])
+  })
 })

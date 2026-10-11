@@ -13,7 +13,6 @@ import {
   BIconX,
   BIconThreeDots,
   BIconThreeDotsVertical,
-  BIconList,
   BIconLock,
   BIconUnlock,
   BIconClipboard,
@@ -45,7 +44,6 @@ Vue.component('BIconKeyFill', BIconKeyFill)
 Vue.component('BIconX', BIconX)
 Vue.component('BIconThreeDots', BIconThreeDots)
 Vue.component('BIconThreeDotsVertical', BIconThreeDotsVertical)
-Vue.component('BIconList', BIconList)
 Vue.component('BIconLock', BIconLock)
 Vue.component('BIconUnlock', BIconUnlock)
 Vue.component('BIconClipboard', BIconClipboard)
