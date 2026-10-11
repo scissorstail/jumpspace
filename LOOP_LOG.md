@@ -910,6 +910,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 645 passed, lint ok, build ok (README only, no UI check needed), commit c4f9313. `npm audit` still 11 (2 low, 7 moderate, 2 high), all behind a major version (vue 2, rete 1).
 - Found / next: nothing new. Next by age: `tests` (`forward-menu.vue`), then `cleanup`.
 
+### #141 2026-10-12 · tests (run in the owner's session)
+- Did: the port forwarding menu (`forward-menu.vue`, 374 lines) had no test. New `forward-menu.test.js` runs the script of the component itself (its text with the imports handed in, since a `.vue` cannot be imported in these tests): the count, when Start can be pressed and what its tooltip says, change / add / remove giving back a new list, start closing its window; the wiring of the rows is read from the template.
+- Result: tests 656 passed (11 new, 14 mutations fail them), lint ok, build ok, commit c51a856. No code changed, so no UI check.
+- Found / next: nothing wrong in the menu. The same way of running a component's script would fit `connection-settings.vue` and `main-navigator.vue`. Next by age: `cleanup`, then `refactor`.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
