@@ -52,7 +52,13 @@ export function parseItems(text) {
   }
 }
 
-export function createProjectStorage(dir) {
+// Windows는 다른 곳에서 열어 둔 파일 위로는 rename하지 못한다 (EPERM, EBUSY, EACCES). 백신이나 색인 프로그램, 또는 그 파일을
+// 막 읽는 다른 코드가 잠깐 열어 둔 동안이 그렇다. 곧 풀리므로 조금씩 더 기다리며 다시 한다 (모두 합쳐 1.5초쯤).
+const RENAME_RETRY_MS = [20, 50, 100, 200, 400, 800]
+const BUSY = ['EPERM', 'EBUSY', 'EACCES']
+
+// renameFile, wait: 테스트가 실패하는 rename과 기다리지 않는 기다림을 끼워 넣는다
+export function createProjectStorage(dir, { renameFile = rename, wait = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
   const file = join(dir, 'projects.json')
   const backup = join(dir, 'projects.json.bak')
 
@@ -70,7 +76,15 @@ export function createProjectStorage(dir) {
     } catch (e) {
       if (e.code !== 'ENOENT') throw e
     }
-    await rename(tmp, file)
+
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await renameFile(tmp, file)
+      } catch (e) {
+        if (!BUSY.includes(e.code) || attempt >= RENAME_RETRY_MS.length) throw e
+        await wait(RENAME_RETRY_MS[attempt])
+      }
+    }
   }
 
   // 앞선 저장이 끝난 뒤에 다음 저장을 시작하게 하는 줄. 실패한 저장도 줄에서는 끝난 것으로 친다.

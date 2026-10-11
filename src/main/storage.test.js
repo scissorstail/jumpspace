@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -73,6 +73,63 @@ describe('storage', () => {
     await storage.save(JSON.stringify(items))
 
     expect(JSON.parse(await storage.load())).toEqual(items)
+  })
+
+  // Windows는 다른 곳에서 열어 둔 파일 위로 rename하지 못한다 (백신, 색인, 그 파일을 막 읽는 코드). 위의 테스트가 저장 직후에
+  // 파일을 읽는 동안 다음 저장의 rename이 EPERM으로 실패한 적이 있다. 곧 풀리므로 다시 한다.
+  describe('when the file is held open elsewhere for a moment', () => {
+    const busy = code => Object.assign(new Error(`${code}: operation not permitted, rename`), { code })
+    // times번 실패한 뒤에 진짜 rename을 한다
+    const flaky = (times, code = 'EPERM') => {
+      const calls = []
+      const waits = []
+      const renameFile = async (from, to) => {
+        calls.push(code)
+        if (calls.length <= times) throw busy(code)
+        return rename(from, to)
+      }
+
+      return { calls, waits, storage: createProjectStorage(dir, { renameFile, wait: async ms => { waits.push(ms) } }) }
+    }
+
+    it.each(['EPERM', 'EBUSY', 'EACCES'])('tries the rename again after %s and saves', async code => {
+      const { calls, waits, storage: held } = flaky(3, code)
+
+      await held.save(JSON.stringify(items))
+
+      expect(calls).toHaveLength(4)
+      expect(waits).toEqual([20, 50, 100])
+      expect(JSON.parse(await held.load())).toEqual(items)
+      expect(await readdir(dir)).toEqual(['projects.json'])
+    })
+
+    it('waits longer each time and gives up with the error after the last wait', async () => {
+      const { calls, waits, storage: held } = flaky(Infinity)
+
+      await expect(held.save(JSON.stringify(items))).rejects.toMatchObject({ code: 'EPERM' })
+
+      expect(waits).toEqual([20, 50, 100, 200, 400, 800])
+      expect(calls).toHaveLength(7)
+      expect([...waits].sort((a, b) => a - b)).toEqual(waits)
+    })
+
+    it('does not try again after another kind of error', async () => {
+      const { calls, waits, storage: held } = flaky(Infinity, 'ENOSPC')
+
+      await expect(held.save(JSON.stringify(items))).rejects.toMatchObject({ code: 'ENOSPC' })
+
+      expect(calls).toHaveLength(1)
+      expect(waits).toEqual([])
+    })
+
+    it('keeps the saves in their order while one of them waits', async () => {
+      const { storage: held } = flaky(2)
+
+      await Promise.all(['a', 'b', 'c'].map(name => held.save(JSON.stringify([{ name, data: { nodes: {} } }]))))
+
+      expect(JSON.parse(await held.load())[0].name).toBe('c')
+      expect(JSON.parse(await readFile(held.backup, 'utf-8')).items[0].name).toBe('b')
+    })
   })
 
   it('rejects invalid data in a row of saves without holding up the others', async () => {
