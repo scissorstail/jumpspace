@@ -78,3 +78,27 @@ describe('the color of the hard shadows', () => {
     expect(found).toEqual([])
   })
 })
+
+// 설정, 정보, From SSH config 창은 b-overlay 가운데의 카드다 (role="dialog", popup/config-popup.test.js가 본다).
+// 앱 창이 카드보다 낮으면 위아래가 잘리고 아무것도 스크롤되지 않아서 Save에 마우스로 닿을 수 없었다.
+describe('a dialog card in a low window', () => {
+  const start = theme.indexOf("\n.card[role='dialog'] {")
+  const block = start < 0 ? '' : theme.slice(start, theme.indexOf('\n}\n', start))
+
+  it('stays inside the window with a margin', () => {
+    const margin = theme.match(/\n\$dialog-margin: (\d+)px;/)?.[1]
+
+    expect(Number(margin)).toBeGreaterThanOrEqual(8)
+    expect(block).toMatch(/\n {2}max-height: calc\(100vh - #\{2 \* \$dialog-margin\}\);/)
+  })
+
+  // 제목과 단추 줄은 늘 보이고, 넘치는 본문만 스크롤한다
+  it('scrolls only its body', () => {
+    expect(block).toMatch(/\n {2}> \.card-body \{\n {4}overflow-y: auto;\n {2}\}/)
+    expect(block).not.toMatch(/\n {2}overflow/)
+  })
+
+  it('keeps the band on top at its height', () => {
+    expect(block).toMatch(/\n {2}&::before \{\n {4}flex: none;\n {2}\}/)
+  })
+})

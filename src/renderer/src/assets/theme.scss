@@ -522,6 +522,23 @@ $control-sm-height: 29px;
   background: transparent;
 }
 
+// 설정, 정보, From SSH config 창 (b-overlay 가운데의 카드). 앱 창이 카드보다 낮으면 카드의 위아래가 창 밖으로
+// 나가고 아무것도 스크롤되지 않아서, 아래의 단추 줄(Save)에 마우스로 닿을 수 없었다. 카드는 창 안에 머물고
+// 본문만 스크롤한다: 제목과 단추 줄은 늘 보인다. 위의 색 띠는 줄어들지 않는다.
+$dialog-margin: 16px;
+
+.card[role='dialog'] {
+  max-height: calc(100vh - #{2 * $dialog-margin});
+
+  &::before {
+    flex: none;
+  }
+
+  > .card-body {
+    overflow-y: auto;
+  }
+}
+
 .modal-backdrop {
   background: var(--js-bg);
 }
