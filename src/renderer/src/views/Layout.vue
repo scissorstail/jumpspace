@@ -11,13 +11,16 @@
       @unlock="isEditorLocked = false"
     >
       <template #main-navigator-toolbar>
-        <!-- 저장하는 동안의 표시 (owner, 2026-10-11). 자리는 늘 차지하고 글자만 보였다 숨는다: 단추들이 밀리지 않는다. 움직이지 않는다. -->
-        <span
-          class="save-state"
-          :class="{ 'is-saving': savingCount > 0 }"
-          role="status"
-          :aria-hidden="savingCount > 0 ? 'false' : 'true'"
-        >Saving</span>
+        <!-- 저장하는 동안의 표시 (owner, 2026-10-11): 흐리게 도는 고리. 글자 "Saving"은 저장할 때마다 번쩍여서 눈에 거슬렸다.
+             자리는 늘 차지하고(단추들이 밀리지 않는다) 고리는 저장하는 동안에만 있다: 저장하지 않을 때는 도는 것이 없다.
+             앱에서 저절로 움직이는 것은 이것 하나뿐이다 (motion.test.js). Bootstrap의 spinner가 스스로 돈다. -->
+        <span class="save-state">
+          <b-spinner
+            v-if="savingCount > 0"
+            small
+            label="Saving"
+          />
+        </span>
         <!-- 숨긴 터미널 패널 다시 열기. 안의 그림과 숫자를 가운데에 맞춰 놓는다(flex): 글자 줄에 놓으면 숫자 배지 때문에
              다른 단추보다 1px쯤 높아져서, 패널을 숨길 때마다 머리글이 높아지고 캔버스가 그만큼 줄었다. -->
         <b-button
@@ -222,7 +225,7 @@ export default {
       // 열린 다이어그램의 노드 수 (Editor가 알린다). 0이면 노드를 더하는 방법을 안내한다.
       nodeCount: 0,
       isProjectLoadFailed: false,
-      // 끝나지 않은 저장의 수. 0보다 크면 머리글에 Saving을 보여준다.
+      // 끝나지 않은 저장의 수. 0보다 크면 머리글에서 흐린 고리가 돈다.
       savingCount: 0,
       // 제목 아래의 다이어그램 목록이 열려 있는지
       isSwitcherOpen: false
@@ -406,7 +409,7 @@ export default {
         return
       }
 
-      // project를 JSON 형식으로 변환하여 파일에 저장. 끝날 때까지 머리글에 Saving을 보여준다 (겹친 저장은 모두 끝나야 사라진다).
+      // project를 JSON 형식으로 변환하여 파일에 저장. 끝날 때까지 머리글에서 고리가 돈다 (겹친 저장은 모두 끝나야 사라진다).
       this.savingCount += 1
       try {
         await window.preload.saveProjects(JSON.stringify(this.projectData))
@@ -455,20 +458,18 @@ export default {
   }
 }
 
-// 머리글의 저장 표시: 저장하는 동안에만 보인다
+// 머리글의 저장 표시: 저장하는 동안 도는 고리가 들어가는 자리. 고리가 없어도 같은 크기라서 단추들이 밀리지 않는다.
+// 눈에 잘 띄지 않게 흐리다 (owner, 2026-10-11): 글자색보다 옅은 색을 반쯤 비치게 한다.
 .save-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
   margin-right: 8px;
-  color: var(--js-sun);
-  font-family: var(--js-font-display);
-  font-size: 1.15rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  color: var(--js-text-muted);
+  opacity: 0.45;
   vertical-align: middle;
-  visibility: hidden;
-
-  &.is-saving {
-    visibility: visible;
-  }
 }
 
 #workspace {

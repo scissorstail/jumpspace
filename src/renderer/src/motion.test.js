@@ -7,6 +7,8 @@ import { describe, expect, it } from 'vitest'
 // 연결선 위의 신호, 깜박이는 점, 우클릭 메뉴가 커지며 나오는 것, CRT 배경의 내려가는 띠, 탭을 끌 때 비켜 주는 움직임,
 // 그리고 색이나 투명도가 서서히 바뀌는 transition. 다시 생기면 여기서 걸린다.
 // (Bootstrap이 가져온 것은 여기서 보지 않는다. 우리가 쓴 스타일과 화면 코드만 본다.)
+// 하나만 예외다 (owner, 같은 날: "잘 안보이는 흐린 회전 스피너"): 저장하는 동안 머리글에서 도는 고리.
+// Bootstrap의 spinner가 스스로 도는 것이라 아래의 검사에는 걸리지 않는다. 그래서 따로 센다: 다른 곳에 또 생기면 걸린다.
 const root = __dirname
 
 const sources = dir =>
@@ -53,6 +55,15 @@ describe('nothing in the app moves by itself', () => {
 
   it.each(motion)('no file has %s', (name, pattern) => {
     expect(found(pattern)).toEqual([])
+  })
+
+  // 도는 것은 저장 표시 하나다. Bootstrap의 spinner는 이름으로 찾는다 (태그, 가져온 컴포넌트, 그 클래스).
+  it('has one spinner, the saving mark in the header', () => {
+    const spinner = /<b-spinner\b|\bBSpinner\b|\bspinner-(?:border|grow)\b/
+
+    expect(found(spinner)).toEqual(['views/Layout.vue: <b-spinner'])
+    expect(spinner.test('<div class="spinner-border" />')).toBe(true)
+    expect(spinner.test('  components: { BSpinner },')).toBe(true)
   })
 
   // 끄는 것(transition: none)은 움직임이 아니다. 주석에 남은 이름도 세지 않는다.
