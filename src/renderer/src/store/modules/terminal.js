@@ -5,8 +5,12 @@
 //
 // 터미널은 그것을 연 다이어그램(item)의 것이다. owner는 지금 열려 있는 item의 번호(목록 항목의 index)이고,
 // 세션은 만들어질 때의 owner를 갖는다. 패널과 캔버스는 지금 owner의 세션만 보여주고, 다른 item의 세션은
-// 뒤에서 계속 돈다. 활성 탭과 패널을 숨겼는지, 최대화했는지는 item마다 기억해 두었다가 돌아오면 되살린다.
-import { hopKey, reorderSessions, sessionsOf } from '../../utils/terminal-sessions'
+// 뒤에서 계속 돈다. 활성 탭과 패널을 숨겼는지, 최대화했는지, 좌우로 나눴는지는 item마다 기억해 두었다가 돌아오면 되살린다.
+//
+// 패널은 좌우 두 칸으로 나눌 수 있다 (owner, 2026-10-12). 탭 줄은 하나이고, 두 칸에 탭이 하나씩 보인다:
+// activeKey(고른 탭, 키 입력을 받는다)와 sideKey(다른 칸의 탭). activeSide는 고른 탭이 있는 칸이다.
+// 보이는 탭 가운데 하나를 닫으면 나누기가 끝나고 남은 탭이 패널을 다 쓴다.
+import { activatePane, hopKey, reorderSessions, sessionsOf, shownPanes, splitPartner } from '../../utils/terminal-sessions'
 
 let nextKey = 1
 
@@ -17,8 +21,11 @@ export default {
     isPanelOpen: false,
     // 패널을 헤더 바로 아래까지 올렸는지 (최대화). 패널을 숨겨도 남아서, 다시 보이면 최대화한 채로 돌아온다.
     isPanelMaximized: false,
+    // 좌우로 나눈 동안 다른 칸에 보이는 탭 (null이면 나누지 않았다)과, 고른 탭이 있는 칸
+    sideKey: null,
+    activeSide: 'left',
     owner: null,
-    // owner -> { activeKey, isPanelOpen, isPanelMaximized }. mutation 안에서만 읽는다.
+    // owner -> { activeKey, isPanelOpen, isPanelMaximized, sideKey, activeSide }. mutation 안에서만 읽는다.
     remembered: {}
   },
   getters: {
@@ -27,6 +34,8 @@ export default {
     // 지금 열려 있는 item의 세션
     terminalSessions: state => sessionsOf(state.sessions, state.owner),
     activeTerminalKey: state => state.activeKey,
+    // 두 칸에 보이는 탭: { left, right } (나누지 않았으면 right는 null)
+    terminalPanes: state => shownPanes(state),
     isTerminalPanelOpen: state => state.isPanelOpen,
     // 패널이 캔버스 자리까지 차지하고 있는지: 최대화했고, 패널이 보이는 동안만이다 (숨긴 동안은 캔버스가 보인다).
     isTerminalPanelMaximized: state => state.isPanelOpen && state.isPanelMaximized && sessionsOf(state.sessions, state.owner).length > 0
@@ -56,7 +65,12 @@ export default {
 
       // 다른 item의 세션이 뒤에서 끝났으면 보이는 패널은 그대로 둔다.
       if (session.owner !== state.owner) return
-      if (state.activeKey === key) {
+      if (state.sideKey !== null && (key === state.sideKey || key === state.activeKey)) {
+        // 보이는 두 탭 가운데 하나를 닫았다: 나누기가 끝나고 남은 탭이 패널을 다 쓴다.
+        if (key === state.activeKey) state.activeKey = state.sideKey
+        state.sideKey = null
+        state.activeSide = 'left'
+      } else if (state.activeKey === key) {
         const next = siblings[Math.min(index, siblings.length - 1)]
         state.activeKey = next ? next.key : null
       }
@@ -67,7 +81,17 @@ export default {
       }
     },
     terminalActivate(state, key) {
-      state.activeKey = key
+      Object.assign(state, activatePane(state, key))
+      state.isPanelOpen = true
+    },
+    // 패널을 좌우로 나누거나(true: 고른 탭의 옆 탭이 오른쪽 칸에 온다) 다시 합친다(false: 고른 탭만 남는다).
+    // 탭이 하나뿐이면 나눌 수 없다.
+    terminalSplit(state, isSplit) {
+      const partner = isSplit ? splitPartner(sessionsOf(state.sessions, state.owner), state.activeKey) : null
+      if (isSplit && partner === null) return
+
+      state.sideKey = partner
+      state.activeSide = 'left'
       state.isPanelOpen = true
     },
     // 탭을 끌어서 옮겼다: keys는 보이는 탭들의 새 순서
@@ -85,7 +109,7 @@ export default {
     terminalOwner(state, owner) {
       if (owner === state.owner) return
 
-      state.remembered[state.owner] = { activeKey: state.activeKey, isPanelOpen: state.isPanelOpen, isPanelMaximized: state.isPanelMaximized }
+      state.remembered[state.owner] = { activeKey: state.activeKey, isPanelOpen: state.isPanelOpen, isPanelMaximized: state.isPanelMaximized, sideKey: state.sideKey, activeSide: state.activeSide }
       state.owner = owner
 
       const mine = sessionsOf(state.sessions, owner)
@@ -93,6 +117,10 @@ export default {
       state.activeKey = mine.some(x => x.key === last?.activeKey) ? last.activeKey : mine[0]?.key ?? null
       state.isPanelOpen = mine.length > 0 && (last ? last.isPanelOpen : true)
       state.isPanelMaximized = mine.length > 0 && !!last?.isPanelMaximized
+      // 나눈 것은 두 탭이 모두 남아 있을 때만 되살린다. (떠나 있는 동안 끝난 세션은 탭이 닫혔다)
+      const split = state.activeKey === last?.activeKey && last.sideKey !== state.activeKey && mine.some(x => x.key === last.sideKey)
+      state.sideKey = split ? last.sideKey : null
+      state.activeSide = split ? last.activeSide : 'left'
     }
   },
   actions: {

@@ -28,7 +28,8 @@ import {
   BIconChevronBarUp,
   BIconChevronBarDown,
   BIconArrowCounterclockwise,
-  BIconDiagram3
+  BIconDiagram3,
+  BIconLayoutSplit
 } from 'bootstrap-vue'
 // import { BootstrapVueIcons } from 'bootstrap-vue' // To use all icons
 
@@ -60,5 +61,6 @@ Vue.component('BIconChevronBarUp', BIconChevronBarUp)
 Vue.component('BIconChevronBarDown', BIconChevronBarDown)
 Vue.component('BIconArrowCounterclockwise', BIconArrowCounterclockwise)
 Vue.component('BIconDiagram3', BIconDiagram3)
+Vue.component('BIconLayoutSplit', BIconLayoutSplit)
 
 // Vue.use(BootstrapVueIcons) // To use all icons

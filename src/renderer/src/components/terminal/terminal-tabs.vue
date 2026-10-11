@@ -20,7 +20,7 @@
         :key="session.key"
         :ref="`tab-${session.key}`"
         class="terminal-tab"
-        :class="{ active: session.key === activeKey && !isMinimized, [`is-${session.status}`]: true, 'is-connecting': session.status === 'running' && !session.connected, 'has-error': session.status === 'exited' && !!session.exitCode }"
+        :class="{ active: session.key === activeKey && !isMinimized, 'is-side': session.key === sideKey && !isMinimized, [`is-${session.status}`]: true, 'is-connecting': session.status === 'running' && !session.connected, 'has-error': session.status === 'exited' && !!session.exitCode }"
         role="tab"
         :aria-selected="session.key === activeKey && !isMinimized ? 'true' : 'false'"
         tabindex="0"
@@ -57,6 +57,23 @@
       </div>
     </draggable>
 
+    <!-- 좌우로 나누기 (owner, 2026-10-12): 고른 탭 옆에 다른 탭 하나를 함께 보여준다. 탭이 둘은 있어야 한다.
+         최소화한 동안에는 나눌 화면이 없으므로 단추도 없다. -->
+    <button
+      v-if="!isMinimized"
+      type="button"
+      class="terminal-split"
+      :aria-label="isSplit ? 'Show one terminal' : 'Split terminals left and right'"
+      :title="isSplit ? 'Show one terminal' : 'Split: show two terminals side by side'"
+      :aria-pressed="isSplit ? 'true' : 'false'"
+      :disabled="!isSplit && sessions.length < 2"
+      @click="$emit('split', !isSplit)"
+    >
+      <b-icon
+        icon="layout-split"
+        aria-hidden="true"
+      />
+    </button>
     <!-- 창의 단추처럼: 헤더 아래까지 올리기(최대화한 동안에는 내리기)와 최소화(탭 줄만 아래쪽에 남는다).
          최소화한 동안에는 최소화 단추가 다시 보이기 단추다 (같은 자리: 두 번 누르면 원래대로다). 탭을 눌러도 다시 보인다. -->
     <button
@@ -94,7 +111,8 @@ import { duplicateNumbers, numberedTitle } from '@/utils/terminal-sessions'
 import { revealScrollLeft, sessionStatusText } from '@/utils/terminal-view'
 
 // 터미널 패널 위쪽의 탭 줄. 탭이 많으면 좁아졌다가 목록만 옆으로 넘어가고, 활성 탭은 늘 보이게 한다.
-// 탭을 고르기, 닫기, 끌어서 바꾼 순서, 패널 최대화/내리기, 패널 최소화/다시 보이기는 이벤트(activate, close, reorder, maximize, hide, show)로 패널에 알린다.
+// 탭을 고르기, 닫기, 끌어서 바꾼 순서, 좌우로 나누기/합치기, 패널 최대화/내리기, 패널 최소화/다시 보이기는
+// 이벤트(activate, close, reorder, split, maximize, hide, show)로 패널에 알린다.
 export default {
   name: 'TerminalTabs',
   components: { draggable },
@@ -104,6 +122,11 @@ export default {
       required: true
     },
     activeKey: {
+      type: Number,
+      default: null
+    },
+    // 좌우로 나눈 동안 다른 칸에 보이는 탭 (없으면 null: 나누지 않았다)
+    sideKey: {
       type: Number,
       default: null
     },
@@ -119,6 +142,9 @@ export default {
     }
   },
   computed: {
+    isSplit() {
+      return this.sideKey !== null
+    },
     // 이름이 같은 탭들의 번호 (key -> 번호)
     numbers() {
       return duplicateNumbers(this.sessions)
@@ -216,6 +242,12 @@ export default {
     color: var(--js-on-primary);
   }
 
+  // 좌우로 나눈 동안 다른 칸에 보이는 탭: 고른 탭(분홍 바탕)과 구분되게 아래에 줄만 긋는다.
+  &.is-side {
+    color: var(--js-text);
+    box-shadow: inset 0 -3px 0 var(--js-primary);
+  }
+
   &:focus-visible {
     outline: 2px solid var(--js-secondary);
     outline-offset: -2px;
@@ -293,6 +325,7 @@ export default {
 }
 
 .terminal-tab-button,
+.terminal-split,
 .terminal-maximize,
 .terminal-hide {
   flex: none;
@@ -311,6 +344,20 @@ export default {
   &:focus-visible {
     outline: 2px solid var(--js-sun);
     outline-offset: -2px;
+  }
+}
+
+// 나눈 동안에는 눌린 단추로 보인다. 탭이 하나뿐이면 누를 수 없다.
+.terminal-split {
+  &[aria-pressed='true'] {
+    color: var(--js-primary);
+  }
+
+  &:disabled {
+    background: transparent;
+    color: var(--js-text-muted);
+    opacity: 0.4;
+    cursor: default;
   }
 }
 

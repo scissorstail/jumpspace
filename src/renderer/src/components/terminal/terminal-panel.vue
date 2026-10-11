@@ -19,27 +19,44 @@
     <terminal-tabs
       :sessions="sessions"
       :active-key="activeKey"
+      :side-key="sideKey"
       :is-maximized="isMaximized"
       :is-minimized="!isOpen"
       @activate="activate"
       @close="closeSession"
       @reorder="$store.commit('terminalReorder', $event)"
+      @split="$store.commit('terminalSplit', $event)"
       @maximize="maximize"
       @hide="$store.commit('terminalPanel', false)"
       @show="$store.commit('terminalPanel', true)"
     />
 
-    <!-- 화면은 모든 item의 세션 것을 둔다: 다른 item으로 갔다 와도 내용이 남는다. 탭 줄은 지금 item의 것만 보여준다. -->
+    <!-- 화면은 모든 item의 세션 것을 둔다: 다른 item으로 갔다 와도 내용이 남는다. 탭 줄은 지금 item의 것만 보여준다.
+         좌우로 나눈 동안에는 두 탭의 화면이 반씩 보인다 (.is-left, .is-right). 가운데 줄과, 고른 칸 위의 줄이 그것을 알린다. -->
     <div
       v-show="isOpen"
       class="terminal-body"
+      :class="{ 'is-split': isSplit }"
     >
       <div
         v-for="session in allSessions"
-        v-show="session.key === activeKey"
+        v-show="session.key === panes.left || session.key === panes.right"
         :key="session.key"
         :ref="`term-${session.key}`"
         class="terminal-screen"
+        :class="{ 'is-left': isSplit && session.key === panes.left, 'is-right': isSplit && session.key === panes.right }"
+        @focusin="activate(session.key)"
+      />
+      <div
+        v-show="isSplit"
+        class="terminal-divider"
+        aria-hidden="true"
+      />
+      <div
+        v-show="isSplit"
+        class="terminal-pane-mark"
+        :class="activeKey === panes.right ? 'is-right' : 'is-left'"
+        aria-hidden="true"
       />
     </div>
   </section>
@@ -87,7 +104,18 @@ export default {
 
       return `${theme} ${terminalColors}`
     },
-    ...mapGetters({ sessions: 'terminalSessions', allSessions: 'allTerminalSessions', activeKey: 'activeTerminalKey', isOpen: 'isTerminalPanelOpen', isMaximized: 'isTerminalPanelMaximized' })
+    // 좌우로 나눴는지, 다른 칸에 보이는 탭 (없으면 null)
+    isSplit() {
+      return this.panes.right !== null
+    },
+    sideKey() {
+      return this.isSplit ? (this.activeKey === this.panes.right ? this.panes.left : this.panes.right) : null
+    },
+    // 보이는 화면과 고른 탭: 하나라도 바뀌면 크기를 다시 맞추고 포커스를 옮긴다.
+    shownKeys() {
+      return `${this.panes.left} ${this.panes.right} ${this.activeKey}`
+    },
+    ...mapGetters({ sessions: 'terminalSessions', allSessions: 'allTerminalSessions', activeKey: 'activeTerminalKey', panes: 'terminalPanes', isOpen: 'isTerminalPanelOpen', isMaximized: 'isTerminalPanelMaximized' })
   },
   watch: {
     // 색 묶음이나 색의 단계를 바꾸면 열린 터미널의 색도 바꾼다. (색 묶음의 CSS 변수는 다음 그리기에 바뀐다)
@@ -100,7 +128,7 @@ export default {
     allSessions(list) {
       this.$nextTick(() => list.filter(x => x.request && !this.terms.has(x.key)).forEach(x => this.start(x)))
     },
-    activeKey() {
+    shownKeys() {
       this.$nextTick(() => this.fitActive(true))
     },
     isOpen(open) {
@@ -311,7 +339,11 @@ export default {
     closeOwners(owners) {
       this.allSessions.filter(x => owners.includes(x.owner)).forEach(x => this.closeSession(x))
     },
+    // 탭을 누르거나, 나눈 패널의 다른 칸을 눌렀다(화면이 포커스를 받는다). 이미 고른 탭이면 할 일이 없다:
+    // 포커스를 줄 때마다 store를 건드리면 패널을 다시 여는 것(terminalActivate)까지 따라온다.
     activate(key) {
+      if (key === this.activeKey && this.isOpen) return
+
       this.$store.commit('terminalActivate', key)
     },
     // 최소화한 탭 줄에서 최대화를 누르면 패널도 다시 보인다.
@@ -328,10 +360,10 @@ export default {
         window.preload.terminal.resize(entry.id, entry.term.cols, entry.term.rows)
       }
     },
+    // 보이는 화면(나눈 동안에는 둘)의 크기를 맞추고, focus이면 고른 탭의 터미널에 포커스를 준다.
     fitActive(focus = false) {
-      const entry = this.terms.get(this.activeKey)
-      this.fit(entry)
-      if (focus) entry?.term.focus()
+      for (const key of [this.panes.left, this.panes.right]) this.fit(this.terms.get(key))
+      if (focus) this.terms.get(this.activeKey)?.term.focus()
     },
     startResize(event) {
       const startY = event.clientY
@@ -393,5 +425,41 @@ export default {
 .terminal-screen {
   position: absolute;
   inset: 6px 4px 4px 10px;
+
+  // 좌우로 나눈 동안: 반씩, 가운데 줄에서 같은 여백을 두고
+  &.is-left {
+    right: calc(50% + 5px);
+  }
+
+  &.is-right {
+    left: calc(50% + 11px);
+  }
+}
+
+// 두 칸 사이의 줄
+.terminal-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1px);
+  width: 2px;
+  background: var(--js-line);
+}
+
+// 고른 칸(키 입력을 받는다) 위의 줄
+.terminal-pane-mark {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 2px;
+  background: var(--js-secondary);
+
+  &.is-left {
+    left: 0;
+  }
+
+  &.is-right {
+    left: 50%;
+  }
 }
 </style>

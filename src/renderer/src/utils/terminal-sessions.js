@@ -28,6 +28,35 @@ export function numberedTitle(title, number) {
   return number ? `${title} (${number})` : title
 }
 
+// 패널을 좌우로 나눴을 때 두 칸에 보이는 탭 (owner, 2026-10-12).
+//   activeKey : 고른 탭 (키 입력을 받는 칸의 탭)
+//   sideKey   : 다른 칸에 함께 보이는 탭. null이면 나누지 않았다.
+//   activeSide: 고른 탭이 있는 칸 ('left' | 'right')
+// 돌려주는 값: { left, right } (나누지 않았으면 right는 null이고 left가 고른 탭이다)
+export function shownPanes({ activeKey = null, sideKey = null, activeSide = 'left' } = {}) {
+  if (sideKey === null || activeKey === null) return { left: activeKey, right: null }
+
+  return activeSide === 'right' ? { left: sideKey, right: activeKey } : { left: activeKey, right: sideKey }
+}
+
+// 탭을 골랐다. 다른 칸에 보이는 탭이면 그 칸으로 옮겨 가고 (두 칸의 탭은 그대로다),
+// 보이지 않던 탭이면 지금 칸의 탭을 그것으로 바꾼다.
+export function activatePane({ activeKey, sideKey, activeSide }, key) {
+  if (sideKey !== null && key === sideKey) {
+    return { activeKey: key, sideKey: activeKey, activeSide: activeSide === 'right' ? 'left' : 'right' }
+  }
+  return { activeKey: key, sideKey, activeSide }
+}
+
+// 나누기를 켤 때 오른쪽 칸에 놓을 탭: 고른 탭의 다음 탭, 없으면 앞의 탭. 탭이 하나뿐이면 null (나눌 수 없다).
+export function splitPartner(sessions, activeKey) {
+  const keys = (sessions || []).map(x => x.key)
+  const index = keys.indexOf(activeKey)
+  if (index < 0 || keys.length < 2) return null
+
+  return keys[index + 1] ?? keys[index - 1]
+}
+
 // 서버 하나(한 홉)를 가리키는 키. 캔버스의 노드와 열린 세션을 이 값으로 맞춰 본다.
 // (비밀번호나 키 경로는 넣지 않는다. 세션 목록에 남기 때문이다)
 export function hopKey(connection) {
