@@ -925,6 +925,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 660 passed (3 new, 4 mutations fail them), lint ok, build ok, headless UI checks passed, commit 13833b9. Not checked: the real window.
 - Found / next: nothing new. Next by age: `style`, then `ux`.
 
+### #144 2026-10-12 · style (run in the owner's session)
+- Did: the tab row of a minimized panel kept the line that separates the tabs from the terminals; with nothing under it, it was a line along the bottom edge of the window. It is transparent while minimized (its 2px stay, so the row and the canvas keep their heights).
+- Result: tests 661 passed (1 new, 2 mutations fail it and a new check of `check`, 64 now), lint ok, build ok, headless UI checks passed, commit 31c95e9. Not checked: the real window.
+- Found / next: nothing else. Next by age: `ux`, then `health`.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
