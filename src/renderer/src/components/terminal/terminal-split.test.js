@@ -205,7 +205,10 @@ describe('the split in the panel and the tab row', () => {
 
   it('has a split button that needs two tabs and is not there while the panel is minimized', () => {
     expect(tabs).toMatch(/<button\n\s+v-if="!isMinimized"\n\s+type="button"\n\s+class="terminal-split"/)
-    expect(tabs).toMatch(/:disabled="!isSplit && sessions\.length < 2"\n\s+@click="\$emit\('split', !isSplit\)"/)
+    expect(tabs).toMatch(/:disabled="!canSplit"\n\s+@click="\$emit\('split', !isSplit\)"/)
+    expect(tabs).toMatch(/canSplit\(\) \{\n\s+return this\.isSplit \|\| this\.sessions\.length >= 2\n/)
+    // 누를 수 없는 단추는 이유를 말한다
+    expect(tabs).toMatch(/return this\.canSplit \? 'Split: show two terminals side by side' : 'Split needs a second terminal'\n/)
     expect(panel).toMatch(/@split="\$store\.commit\('terminalSplit', \$event\)"/)
   })
 

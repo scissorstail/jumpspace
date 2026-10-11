@@ -64,9 +64,9 @@
       type="button"
       class="terminal-split"
       :aria-label="isSplit ? 'Show one terminal' : 'Split terminals left and right'"
-      :title="isSplit ? 'Show one terminal' : 'Split: show two terminals side by side'"
+      :title="splitTitle"
       :aria-pressed="isSplit ? 'true' : 'false'"
-      :disabled="!isSplit && sessions.length < 2"
+      :disabled="!canSplit"
       @click="$emit('split', !isSplit)"
     >
       <b-icon
@@ -144,6 +144,15 @@ export default {
   computed: {
     isSplit() {
       return this.sideKey !== null
+    },
+    // 나누려면 탭이 둘은 있어야 한다. (나눈 것을 합치는 것은 늘 된다)
+    canSplit() {
+      return this.isSplit || this.sessions.length >= 2
+    },
+    // 누를 수 없을 때는 왜인지 말한다: 흐린 단추만으로는 탭을 하나 더 열어야 한다는 것을 알 수 없다.
+    splitTitle() {
+      if (this.isSplit) return 'Show one terminal'
+      return this.canSplit ? 'Split: show two terminals side by side' : 'Split needs a second terminal'
     },
     // 이름이 같은 탭들의 번호 (key -> 번호)
     numbers() {
