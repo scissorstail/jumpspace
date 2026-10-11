@@ -9,7 +9,6 @@
       class="terminal-tab-list"
       role="tablist"
       direction="horizontal"
-      :animation="120"
       filter=".terminal-tab-button"
       :prevent-on-filter="false"
       ghost-class="terminal-tab-ghost"

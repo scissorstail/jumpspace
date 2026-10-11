@@ -349,7 +349,6 @@ export default {
   right: 0px;
   padding-bottom: 10px;
   opacity: 0;
-  transition: all 0.3s;
 }
 
 .menu-item {
@@ -372,7 +371,6 @@ export default {
   color: var(--js-secondary);
   line-height: 1;
   cursor: pointer;
-  transition: color 0.08s, background-color 0.08s, border-color 0.08s;
 
   &:hover {
     border-color: var(--js-primary);
@@ -547,14 +545,12 @@ export default {
   &[aria-hidden='true'] {
     visibility: hidden;
     opacity: 0;
-    transition: opacity 0.15s, visibility 0.15s;
   }
 
   &[aria-hidden='false'] {
     visibility: visible;
     // 뒤에 있는 노드가 비쳐서 글자를 읽기 어려우므로 불투명하게 둔다.
     opacity: 1;
-    transition: opacity 0.15s;
   }
 
   // 단색 패널, 위에 세 가지 색 띠

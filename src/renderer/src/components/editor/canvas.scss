@@ -29,7 +29,6 @@
     background: var(--js-surface);
     color: var(--js-text);
     box-shadow: 6px 6px 0 var(--js-shadow);
-    transition: transform 0.1s, box-shadow 0.1s;
 
     &:hover {
       box-shadow: 8px 8px 0 var(--js-shadow);
@@ -103,27 +102,12 @@
   }
 
   // 연결선: 쉬는 동안은 단색 청록 선과 분홍 화살표.
-  // 그 경로로 앱 안의 터미널 세션이 열려 있으면(.is-live) 분홍 선 위로 신호(--js-signal)가 앞 노드에서 다음 노드로 흐른다.
+  // 그 경로로 앱 안의 터미널 세션이 있으면 선의 색과 굵기, 화살표의 색이 그 상태를 알린다 (아래 is-live, is-connecting, is-failed).
+  // 움직이는 것은 없다 (owner, 2026-10): 선 위를 흐르던 신호도, 색이 바뀔 때의 transition도 뺐다. 상태는 가만히 있는 모양만으로 구분되어야 한다.
   .connection {
     .main-path {
       stroke-width: 3px;
       stroke: var(--js-secondary);
-      transition: stroke 0.15s;
-    }
-
-    // 신호: 선 안을 다음 노드 쪽으로 흘러가는 빛줄기. 긴 머리가 앞서고, 뒤로 갈수록 짧아지는 조각과 점이 꼬리로 따라온다.
-    // 끝이 둥글고 굵기는 세션이 있는 선과 같다 (네모 조각은 선 위에 얹힌 덩어리처럼 보였다).
-    // 모양과 빠르기는 여기 한 곳에만 적는다: 연결 중과 연결됨은 색만 다르고, 로그인하는 순간에도 끊기지 않고 이어서 흐른다.
-    // stroke-dasharray의 합(한 묶음의 길이)은 connection-flow가 움직이는 거리와 같아야 한다. 다르면 한 바퀴마다 튄다.
-    .flow-path {
-      display: none;
-      fill: none;
-      stroke: var(--js-signal);
-      stroke-width: 4px;
-      stroke-linecap: round;
-      stroke-dasharray: 0 8 3 8 8 8 15 50;
-      pointer-events: none;
-      animation: connection-flow 1.8s linear infinite;
     }
 
     .marker {
@@ -131,14 +115,11 @@
     }
   }
 
+  // 연결됨: 주색의 굵은 선, 화살표는 --js-signal.
   .is-live .connection {
     .main-path {
       stroke: var(--js-primary);
       stroke-width: 4px;
-    }
-
-    .flow-path {
-      display: inline;
     }
 
     .marker {
@@ -146,17 +127,11 @@
     }
   }
 
-  // 연결 중: 노란 선에 같은 신호가 흐른다. (로그인 표시가 오면 is-live로 바뀐다)
-  // 신호는 바탕색이다: 선과 같은 노랑이면 움직임이 보이지 않았다. 노란 선에 난 틈이 다음 노드 쪽으로 흘러간다.
+  // 연결 중: 굵은 노란 선과 노란 화살표. (로그인 표시가 오면 is-live로 바뀐다)
   .is-connecting .connection {
     .main-path {
       stroke: var(--js-connecting);
       stroke-width: 4px;
-    }
-
-    .flow-path {
-      display: inline;
-      stroke: var(--js-bg);
     }
 
     .marker {
@@ -164,7 +139,7 @@
     }
   }
 
-  // 실패: 빨간 점선, 흐르지 않는다. 탭을 닫거나 다시 연결할 때까지 남는다.
+  // 실패: 빨간 점선. 탭을 닫거나 다시 연결할 때까지 남는다.
   .is-failed .connection {
     .main-path {
       stroke: var(--js-danger);
@@ -177,7 +152,7 @@
     }
   }
 
-  // 열린 세션이 지나가는 노드: 안쪽 왼쪽 위에 깜박이는 작은 초록 네모 (터미널 탭의 점과 같은 모양)
+  // 열린 세션이 지나가는 노드: 안쪽 왼쪽 위에 작은 초록 네모 (터미널 탭의 점과 같은 모양). 깜박이지 않는다.
   // 노드 위에 뜨는 메뉴 단추와 겹치지 않도록 노드 안에 둔다.
   .is-live .node.site::after,
   .is-connecting .node.site::after,
@@ -191,18 +166,15 @@
     background: var(--js-live);
     box-shadow: 1px 1px 0 var(--js-shadow);
     pointer-events: none;
-    animation: live-blink 1.2s steps(1) infinite;
   }
 
-  // 연결 중은 노란 점이 빠르게, 실패는 빨간 점이 깜박이지 않고 켜져 있다.
+  // 연결 중은 노란 점, 실패는 빨간 점.
   .is-connecting .node.site::after {
     background: var(--js-connecting);
-    animation-duration: 0.6s;
   }
 
   .is-failed .node.site::after {
     background: var(--js-danger);
-    animation: none;
   }
 
   &.locked {
@@ -236,29 +208,7 @@
   filter: drop-shadow(0 0 3px var(--js-bg)) drop-shadow(0 0 8px var(--js-bg)) drop-shadow(0 0 8px var(--js-bg));
 }
 
-@keyframes connection-flow {
-  from {
-    stroke-dashoffset: 100;
-  }
-
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes live-blink {
-  50% {
-    opacity: 0.35;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  #rete .connection .flow-path,
-  #rete .is-live .node.site::after,
-  #rete .is-connecting .node.site::after {
-    animation: none;
-  }
-
   #rete .node.site:hover {
     transform: none;
   }

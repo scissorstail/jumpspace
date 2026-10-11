@@ -147,23 +147,6 @@ export default {
 
     this.editor.use(ReadonlyPlugin, { enabled: true })
 
-    // 연결선 위에 흐르는 점선을 한 겹 더 그려서 데이터가 앞 노드에서 다음 노드로 흐르는 것처럼 보이게 한다.
-    // (화살표 플러그인이 첫 번째 path를 기준으로 쓰므로 main-path 뒤에 넣는다)
-    this.editor.on('renderconnection', ({ el }) => {
-      const main = el.querySelector('path.main-path')
-      if (!main || el.querySelector('path.flow-path')) return
-
-      const flow = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-      flow.classList.add('flow-path')
-      flow.setAttribute('d', main.getAttribute('d'))
-      main.after(flow)
-    })
-    this.editor.on('updateconnection', ({ el }) => {
-      const main = el.querySelector('path.main-path')
-      const flow = el.querySelector('path.flow-path')
-      if (main && flow) flow.setAttribute('d', main.getAttribute('d'))
-    })
-
     // 프레임(주석)과 미니맵은 rete-comment-plugin / rete-minimap-plugin으로 만들 수 있다.
     // 쓰지 않아서 의존성에서 뺐다. 필요하면 패키지를 다시 추가한다.
 

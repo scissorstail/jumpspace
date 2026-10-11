@@ -149,7 +149,7 @@ $vignette: radial-gradient(ellipse 75% 70% at 50% 42%, transparent 45%, rgba(0, 
   }
 }
 
-// CRT: 오래된 브라운관처럼 가로 주사선과 천천히 내려가는 밝은 띠, 어두운 모서리
+// CRT: 오래된 브라운관처럼 가로 주사선과 어두운 모서리 (천천히 내려가던 밝은 띠는 뺐다: 움직이는 것은 두지 않는다)
 .scene-crt {
   .scene-art {
     opacity: 0.65;
@@ -160,16 +160,6 @@ $vignette: radial-gradient(ellipse 75% 70% at 50% 42%, transparent 45%, rgba(0, 
     background:
       repeating-linear-gradient(rgba(0, 0, 0, 0.5) 0 2px, transparent 2px 4px),
       radial-gradient(ellipse 80% 75% at 50% 45%, transparent 40%, rgba(0, 0, 0, 0.75) 100%);
-
-    &::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(transparent, rgba(255, 255, 255, 0.05) 50%, transparent);
-      background-size: 100% 30%;
-      background-repeat: no-repeat;
-      animation: crt-roll 7s linear infinite;
-    }
   }
 }
 
@@ -185,21 +175,5 @@ $vignette: radial-gradient(ellipse 75% 70% at 50% 42%, transparent 45%, rgba(0, 
 // Off: 풍경 없이 바탕색만
 .scene-off {
   display: none;
-}
-
-@keyframes crt-roll {
-  from {
-    background-position: 0 -40%;
-  }
-
-  to {
-    background-position: 0 140%;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .scene-crt .scene-fx::after {
-    animation: none;
-  }
 }
 </style>
