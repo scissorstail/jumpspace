@@ -17,7 +17,7 @@ import AreaPlugin from 'rete-area-plugin'
 import ReadonlyPlugin from 'rete-readonly-plugin'
 
 import SiteNode from './nodes/site-node'
-import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, scaleView, settleSize, viewOf } from '@/utils/view'
+import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, shownView, viewOf } from '@/utils/view'
 import { arrangeLayout, boxOf } from '@/utils/arrange'
 import { activeTerminalNode, hopKey, routeStates } from '@/utils/terminal-sessions'
 import { isCanvasDoubleClick, lockedPress } from '@/utils/locked-press'
@@ -190,6 +190,7 @@ export default {
     // 캔버스를 옮기거나 확대/축소할 때마다 알린다. (저장은 Layout이 한다)
     // 사용자가 정한 보기(base)는 그때의 영역 크기와 함께 기억한다. 영역 크기가 바뀌면 base에서 다시 계산하므로
     // (rescaleView) 창을 줄였다 늘리거나 터미널 패널을 열었다 닫아도 처음 보기로 정확히 돌아온다.
+    // 확대는 영역의 높이를 따르므로(utils/view.js의 scaleView), 패널을 연 채 정한 보기도 패널을 닫으면 같은 비율로 커진다.
     // 크기에 맞추느라 생긴 변화(isRescaling)는 사용자의 보기가 아니므로 기억하지도 알리지도 않는다.
     this.base = null
     this.isRescaling = false
@@ -197,9 +198,7 @@ export default {
       if (this.isRescaling) return
 
       const { k, x, y } = this.editor.view.area.transform
-      const size = this.areaSize()
-      this.base = { view: { k, x, y }, size }
-      this.$emit('view-change', { ...viewOf({ k, x, y }), ...(size.width > 0 && size.height > 0 && { w: size.width, h: size.height }) })
+      this.keepView({ k, x, y }, this.areaSize())
     })
 
     this.editor.on(
@@ -353,31 +352,41 @@ export default {
 
       return { width: area.clientWidth, height: area.clientHeight }
     },
+    // 터미널 패널이 자리를 차지하지 않을 때의 캔버스 영역 크기: 영역과 패널이 나눠 쓰는 #workspace의 크기다.
+    fullSize() {
+      const room = this.$el.parentElement.parentElement
+
+      return { width: room.clientWidth, height: room.clientHeight }
+    },
+    // 보기를 그 보기의 영역 크기와 함께 기억하고 Layout에 알린다. (저장은 Layout이 한다)
+    keepView(view, size) {
+      this.base = { view, size }
+      this.$emit('view-change', { ...viewOf(view), ...(size.width > 0 && size.height > 0 && { w: size.width, h: size.height }) })
+    },
     // 기억해 둔 보기(base)를 지금 영역 크기에 맞춰 보여준다. base는 그대로 둔다.
-    // 다만 영역이 접혀 있을 때(터미널 패널을 최대화한 동안) 연 보기는 크기를 모른 채 기억되므로,
-    // 영역이 처음 보일 때의 크기를 그 보기의 크기로 삼는다.
+    // 크기 없이 기억된 보기는 패널이 없을 때의 캔버스에서의 보기로 친다 (utils/view.js의 shownView).
     rescaleView() {
       if (!this.base) return
 
-      const now = this.areaSize()
-      this.base.size = settleSize(this.base.size, now)
-
       this.isRescaling = true
       try {
-        this.setView(scaleView(this.base.view, this.base.size, now))
+        this.setView(shownView(this.base, this.areaSize(), this.fullSize()))
       } finally {
         this.isRescaling = false
       }
     },
     // item을 열 때의 보기. 저장할 때의 영역 크기(w, h)가 있으면 지금 크기에 맞춘다.
+    // 없으면 크기를 비워 둔다: 여는 순간의 영역은 머리글이 다시 그려지기 전이라 조금 낮고, 패널이 열려 있을 수도 있다.
     openView({ k, x, y, w, h }) {
-      const size = w > 0 && h > 0 ? { width: w, height: h } : this.areaSize()
-      this.base = { view: { k, x, y }, size }
+      this.base = { view: { k, x, y }, size: w > 0 && h > 0 ? { width: w, height: h } : null }
       this.rescaleView()
     },
     // 처음 보기(기본 확대, 원점)로 돌린다. 머리글의 Reset view 단추와 캔버스의 더블클릭이 함께 쓴다. 바뀐 보기는 저장된다.
+    // 처음 보기는 터미널 패널이 없을 때의 캔버스에서의 보기다: 패널이 열려 있으면 다른 보기처럼 줄여서 보여주고,
+    // 패널을 닫으면 정확히 처음 보기가 된다. (열린 영역에 그대로 두면 닫을 때 커지면서 왼쪽이 화면 밖으로 나간다)
     resetView() {
-      this.setView(DEFAULT_VIEW)
+      this.keepView({ ...DEFAULT_VIEW }, this.fullSize())
+      this.rescaleView()
     },
     // 노드 상자에 그 밖으로 나온 부분(아래의 이름과 주소, 양옆 소켓)을 더한 영역. 캔버스 좌표로,
     // dx, dy는 노드 위치(상자의 왼쪽 위)에서 영역의 왼쪽 위까지. 마우스를 올리면 위에 뜨는 메뉴는 줄 간격 안에 들어간다.
@@ -397,8 +406,8 @@ export default {
       }
     },
     // 모든 노드를 연결 순서대로 정렬해서 보이는 캔버스의 가운데에 모은다. 다 보이지 않으면 그만큼 축소한다.
-    // insetLeft: 왼쪽에서 가려진 너비(열린 사이드바). 노드 위치는 끌어서 옮긴 것과 같아서 잠글 때 저장된다.
-    arrangeNodes({ insetLeft = 0 } = {}) {
+    // 노드 위치는 끌어서 옮긴 것과 같아서 잠글 때 저장된다.
+    arrangeNodes() {
       const { area, container, nodes: views, connections } = this.editor.view
       if (!this.editor.nodes.length) return
 
@@ -407,7 +416,9 @@ export default {
       const links = [...connections.keys()].map(c => [c.output.node.id, c.input.node.id])
       const positions = arrangeLayout(items, links)
 
-      const viewport = { left: insetLeft, top: 0, width: Math.max(1, container.clientWidth - insetLeft), height: container.clientHeight }
+      // 맞출 자리. 터미널 패널이 열려 있으면 영역의 가운데 부분이다 (utils/view.js의 fullCanvasIn):
+      // 낮고 넓은 영역의 너비에 맞추면 패널을 닫아 다이어그램이 다시 커질 때 양옆이 잘린다.
+      const viewport = fullCanvasIn({ width: container.clientWidth, height: container.clientHeight }, this.fullSize())
       const { k, x, y } = area.transform
       const cx = (viewport.left + viewport.width / 2 - x) / k
       const cy = (viewport.top + viewport.height / 2 - y) / k

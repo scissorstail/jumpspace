@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, isRealSize, sanitizeView, scaleView, settleSize, viewOf } from './view'
+import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, sanitizeView, scaleView, shownView, viewOf } from './view'
 
 describe('sanitizeView', () => {
   it('keeps a valid view and drops extra keys', () => {
@@ -51,24 +53,47 @@ describe('scaleView', () => {
     expect(canvasAt(half, 0, 0)).toEqual(canvasAt(view, 0, 0))
   })
 
-  it('follows the side that shrank more, so nothing that was visible leaves the area', () => {
-    const narrow = scaleView(view, from, { width: 500, height: 600 })
-    expect(narrow.k).toBe(0.5)
-    expect(canvasAt(narrow, 250, 300)).toEqual(canvasAt(view, 500, 300))
-
+  it('follows the height of the area, down and up, and stays centered', () => {
     const low = scaleView(view, from, { width: 1000, height: 300 })
     expect(low.k).toBe(0.5)
     expect(canvasAt(low, 500, 150)).toEqual(canvasAt(view, 500, 300))
-  })
 
-  it('does not zoom in when only one side grows, and stays centered', () => {
-    const wide = scaleView(view, from, { width: 2000, height: 600 })
-    expect(wide.k).toBe(1)
-    expect(canvasAt(wide, 1000, 300)).toEqual(canvasAt(view, 500, 300))
-  })
+    const high = scaleView(view, from, { width: 1000, height: 900 })
+    expect(high.k).toBe(1.5)
+    expect(canvasAt(high, 500, 450)).toEqual(canvasAt(view, 500, 300))
 
-  it('grows when both sides grow', () => {
     expect(scaleView(view, from, { width: 1500, height: 900 }).k).toBe(1.5)
+  })
+
+  it('keeps the size when only the width changes, and stays centered', () => {
+    for (const width of [500, 2000]) {
+      const other = scaleView(view, from, { width, height: 600 })
+      expect(other.k).toBe(1)
+      expect(canvasAt(other, width / 2, 300)).toEqual(canvasAt(view, 500, 300))
+    }
+  })
+
+  // 터미널 패널을 연 채 확대를 바꾸고 패널을 닫으면 다이어그램이 작은 채로 남았다 (owner, 2026-10-11):
+  // 더 많이 줄어든 쪽을 따르는 규칙은 높이만 커질 때 확대하지 않았다. 닫으면 패널이 줄였던 바로 그 비율로 커져야 한다.
+  it('undoes a change of the size exactly, whichever size the view was chosen in', () => {
+    const full = { width: 1100, height: 756 }
+    const withPanel = { width: 1100, height: 476 }
+    const chosen = { k: 0.593, x: 166, y: -23.8 } // 패널을 연 채 정한 보기
+
+    const closed = scaleView(chosen, withPanel, full)
+    expect(closed.k).toBeCloseTo(0.593 * 756 / 476, 10)
+    // 패널을 열 때 줄어드는 비율의 역수만큼 커진다
+    expect(closed.k / chosen.k).toBeCloseTo(view.k / scaleView(view, full, withPanel).k, 10)
+    // 가운데에 있던 점은 가운데에 남는다
+    const [cx, cy] = canvasAt(chosen, 550, 238)
+    expect(canvasAt(closed, 550, 378)[0]).toBeCloseTo(cx, 8)
+    expect(canvasAt(closed, 550, 378)[1]).toBeCloseTo(cy, 8)
+
+    // 닫힌 캔버스에서 그 보기를 다시 정했더라도(다시 기억했더라도) 패널을 열면 처음 정한 보기다
+    const back = scaleView(closed, full, withPanel)
+    expect(back.k).toBeCloseTo(chosen.k, 10)
+    expect(back.x).toBeCloseTo(chosen.x, 8)
+    expect(back.y).toBeCloseTo(chosen.y, 8)
   })
 
   it('comes back to the same view from the remembered one, whatever happened in between', () => {
@@ -102,33 +127,71 @@ describe('isRealSize', () => {
   })
 })
 
-// 터미널 패널을 최대화한 동안 캔버스 영역은 높이가 0이다. 그때 연 다이어그램의 보기는 크기를 모른 채 기억된다.
-describe('settleSize', () => {
-  const collapsed = { width: 1000, height: 0 }
-  const now = { width: 1000, height: 476 }
+// 기억해 둔 보기를 지금 영역에 보여줄 때. 크기 없이 기억된 보기도 있다: 처음 여는 다이어그램(기본 보기), 예전 파일,
+// 터미널 패널을 최대화한 동안(캔버스 영역의 높이가 0이다) 정한 것.
+describe('shownView', () => {
+  const full = { width: 1100, height: 756 }
+  const withPanel = { width: 1100, height: 476 }
+  const view = { k: 0.85, x: 0, y: 0 }
 
-  it('takes the first known size for a view that was opened in a collapsed area', () => {
-    expect(settleSize(collapsed, now)).toEqual(now)
-    expect(settleSize(collapsed, now)).not.toBe(now)
-    expect(settleSize(undefined, now)).toEqual(now)
+  it('scales a view from the size it was chosen in', () => {
+    expect(shownView({ view, size: withPanel }, full, full)).toEqual(scaleView(view, withPanel, full))
+    expect(shownView({ view, size: full }, withPanel, full)).toEqual(scaleView(view, full, withPanel))
+    expect(shownView({ view, size: full }, full, full)).toEqual(view)
   })
 
-  it('keeps a size that is already known', () => {
-    const seen = { width: 1000, height: 756 }
-    expect(settleSize(seen, now)).toBe(seen)
+  it('takes a view without a size as the view of the canvas without the terminal panel', () => {
+    for (const size of [null, undefined, { width: 1100, height: 0 }]) {
+      // 패널이 없으면 그대로
+      expect(shownView({ view, size }, full, full)).toEqual(view)
+      // 패널이 열려 있으면 다른 보기처럼 줄어든다 (그대로 두면 패널을 닫을 때 커져서 처음 보기가 아니게 된다)
+      const reduced = shownView({ view, size }, withPanel, full)
+      expect(reduced).toEqual(scaleView(view, full, withPanel))
+      expect(reduced.k).toBeCloseTo(0.85 * 476 / 756, 10)
+    }
   })
 
-  it('waits while the area is still collapsed', () => {
-    expect(settleSize(collapsed, { width: 1000, height: 0 })).toBe(collapsed)
-    expect(settleSize(collapsed, null)).toBe(collapsed)
+  it('shows it as it is while the area is collapsed', () => {
+    expect(shownView({ view, size: null }, { width: 1100, height: 0 }, full)).toEqual(view)
+    expect(shownView({ view, size: full }, { width: 1100, height: 0 }, full)).toEqual(view)
+  })
+})
+
+describe('fullCanvasIn', () => {
+  const full = { width: 1100, height: 756 }
+  const withPanel = { width: 1100, height: 476 }
+
+  it('is the whole area while no panel takes room', () => {
+    expect(fullCanvasIn(full, full)).toEqual({ left: 0, top: 0, width: 1100, height: 756 })
   })
 
-  // 크기를 알게 된 뒤에는 영역이 바뀔 때 보기가 따라간다 (모르는 채로는 scaleView가 그대로 돌려준다).
-  it('lets the view follow the area again', () => {
-    const view = { k: 1, x: 0, y: 0 }
-    const smaller = { width: 1000, height: 238 }
-    expect(scaleView(view, collapsed, smaller)).toEqual(view)
-    expect(scaleView(view, settleSize(collapsed, now), smaller).k).toBe(0.5)
+  it('is the middle of a lower area, as wide as the full canvas gets at that height', () => {
+    expect(fullCanvasIn({ width: 1100, height: 378 }, full)).toEqual({ left: 275, top: 0, width: 550, height: 378 })
+  })
+
+  // Arrange nodes가 여기에 맞춘다: 낮고 넓은 영역의 너비에 맞춘 넓은 다이어그램은 패널을 닫으면 양옆이 잘린다.
+  it('holds what still fits after the panel is closed', () => {
+    const box = { left: 0, top: 0, right: 1300, bottom: 250 }
+    const edges = v => [box.left * v.k + v.x, box.right * v.k + v.x]
+
+    const [left, right] = edges(scaleView(fitView(fullCanvasIn(withPanel, full), box, 1), withPanel, full))
+    expect(left).toBeGreaterThanOrEqual(0)
+    expect(right).toBeLessThanOrEqual(full.width)
+    // 닫은 뒤에는 캔버스 너비의 90%를 차지한다 (닫힌 캔버스에서 맞춘 것과 같다)
+    expect(right - left).toBeCloseTo(full.width * 0.9, 6)
+
+    const [, cut] = edges(scaleView(fitView({ left: 0, top: 0, ...withPanel }, box, 1), withPanel, full))
+    expect(cut).toBeGreaterThan(full.width)
+  })
+
+  it('is the whole area when a size is unknown or the area is not lower', () => {
+    const whole = { left: 0, top: 0, width: 1100, height: 476 }
+    for (const unknown of [null, undefined, {}, { width: 1100, height: 0 }]) {
+      expect(fullCanvasIn(withPanel, unknown)).toEqual(whole)
+    }
+    expect(fullCanvasIn(withPanel, { width: 1100, height: 400 })).toEqual(whole)
+    expect(fullCanvasIn({ width: 1100, height: 0 }, full)).toEqual({ left: 0, top: 0, width: 1100, height: 0 })
+    expect(fullCanvasIn(null, full)).toEqual({ left: 0, top: 0, width: 0, height: 0 })
   })
 })
 
@@ -157,8 +220,41 @@ describe('fitView', () => {
     expect(fitView(viewport, { left: 0, top: 0, right: 1e6, bottom: 1 }, 1).k).toBe(MIN_ZOOM)
   })
 
-  it('centers in the part of the window that is not covered (sidebar)', () => {
+  it('centers in a part of the canvas (the left and top of the viewport)', () => {
     const view = fitView({ left: 320, top: 0, width: 680, height: 600 }, { left: -10, top: -10, right: 10, bottom: 10 }, 1)
     expect(view).toEqual({ k: 1, x: 660, y: 300 })
+  })
+})
+
+// 편집기가 위의 함수들에 무엇을 넘기는지. (Node 환경이라 화면이 없어서 소스를 읽는다)
+describe('the view in the editor component', () => {
+  const read = (...parts) => readFileSync(join(__dirname, '..', ...parts), 'utf8').replace(/\r\n/g, '\n')
+  const editor = read('components', 'editor', 'index.vue')
+  const layout = read('views', 'Layout.vue')
+
+  it('shows the remembered view for the area of now', () => {
+    expect(editor).toMatch(/this\.setView\(shownView\(this\.base, this\.areaSize\(\), this\.fullSize\(\)\)\)/)
+  })
+
+  // 패널이 없을 때의 캔버스는 영역(#editor-area)과 터미널 패널을 함께 담는 #workspace의 크기다.
+  it('takes the canvas without the terminal panel from the element the area shares with the panel', () => {
+    expect(editor).toMatch(/\n\s+fullSize\(\) \{\n\s+const room = this\.\$el\.parentElement\.parentElement\n\n\s+return \{ width: room\.clientWidth, height: room\.clientHeight \}\n\s+\},/)
+    expect(editor).toMatch(/\n\s+areaSize\(\) \{\n\s+const area = this\.\$el\.parentElement\n/)
+    expect(layout).toMatch(/\n {6}<div\n {8}id="workspace"\n[\s\S]*?\n {6}>\n {8}<div\n {10}id="editor-area"\n[\s\S]*?\n {10}<Editor\n[\s\S]*?\n {8}<\/div>\n[\s\S]*?\n {8}<TerminalPanel ref="terminalPanel" \/>\n {6}<\/div>/)
+  })
+
+  it('remembers a view the user chose with the size of the area it was chosen in', () => {
+    expect(editor).toMatch(/const \{ k, x, y \} = this\.editor\.view\.area\.transform\n\s+this\.keepView\(\{ k, x, y \}, this\.areaSize\(\)\)/)
+  })
+
+  // 여는 순간의 영역 크기를 그 보기의 크기로 삼으면: 머리글이 다시 그려지기 전이라 영역이 몇 px 낮아서 처음 보기가
+  // 조금 커지고, 터미널 패널이 열려 있으면 줄어들지 않은 채로 보이다가 패널을 닫을 때 커진다.
+  it('opens a view that was saved without a size without one', () => {
+    expect(editor).toMatch(/this\.base = \{ view: \{ k, x, y \}, size: w > 0 && h > 0 \? \{ width: w, height: h \} : null \}/)
+  })
+
+  it('arranges the nodes into the part of the area that still fits when the panel is closed', () => {
+    expect(editor).toMatch(/const viewport = fullCanvasIn\(\{ width: container\.clientWidth, height: container\.clientHeight \}, this\.fullSize\(\)\)/)
+    expect(editor).toMatch(/this\.setView\(fitView\(viewport, box, k\)\)/)
   })
 })

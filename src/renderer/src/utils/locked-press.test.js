@@ -158,7 +158,9 @@ describe('Reset view', () => {
   const layout = read('views', 'Layout.vue')
 
   it('is one function of the editor, used by the header button and by the double click', () => {
-    expect(editor).toMatch(/\n\s+resetView\(\) \{\n\s+this\.setView\(DEFAULT_VIEW\)\n\s+\},/)
+    // 처음 보기는 터미널 패널이 없을 때의 캔버스(fullSize)에서의 보기로 기억하고, 지금 영역에 맞춰 보여준다.
+    // 패널이 열린 영역의 크기로 기억하면 패널을 닫을 때 커지면서 다이어그램의 왼쪽이 화면 밖으로 나간다.
+    expect(editor).toMatch(/\n\s+resetView\(\) \{\n\s+this\.keepView\(\{ \.\.\.DEFAULT_VIEW \}, this\.fullSize\(\)\)\n\s+this\.rescaleView\(\)\n\s+\},/)
     expect(editor).toMatch(/if \(this\.editorData && isCanvasDoubleClick\(e, \{ isLocked: this\.isLocked \}\)\) this\.resetView\(\)/)
     expect(editor).toMatch(/addEventListener\('dblclick', this\.onDoubleClick\)/)
     expect(layout).toMatch(/\n\s+resetView\(\) \{\n\s+this\.\$refs\.editorRef\.resetView\(\)\n\s+\},/)

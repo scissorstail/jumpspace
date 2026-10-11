@@ -32,22 +32,18 @@ export function isRealSize(size) {
   return [size?.width, size?.height].every(n => Number.isFinite(n) && n > 0)
 }
 
-// 보기와 함께 기억하는 영역 크기. 보기를 정할 때 영역이 접혀 있어서(터미널 패널을 최대화한 동안) 크기를 몰랐으면,
-// 처음으로 알게 된 크기(now)를 그 보기의 크기로 삼는다. 이미 아는 크기는 바꾸지 않는다.
-// (모르는 채로 두면 scaleView가 언제나 그대로 돌려줘서, 그 다이어그램은 영역 크기가 바뀌어도 따라가지 않는다)
-export function settleSize(size, now) {
-  return !isRealSize(size) && isRealSize(now) ? { width: now.width, height: now.height } : size
-}
-
-// 캔버스 영역의 크기가 from에서 to로 바뀔 때({ width, height }) 다이어그램이 영역에서 같은 자리와 같은 비율을 차지하게 하는 보기.
-// 배경 풍경이 영역에 맞춰 커지고 줄어드는 것과 같이 움직인다: 영역의 가운데에 있던 점은 가운데에 남고,
-// 확대는 가로와 세로 중 더 많이 줄어든(덜 늘어난) 쪽의 비율을 따라서 보이던 것이 영역 밖으로 나가지 않는다.
-// 크기를 알 수 없으면(0, 숨겨진 영역) 그대로 돌려준다.
+// 캔버스 영역의 크기가 from에서 to로 바뀔 때({ width, height }) 다이어그램이 배경 풍경처럼 커지고 줄어들게 하는 보기.
+// 확대는 영역의 높이를 따른다 (풍경의 지평선과 해도 높이를 따른다). 영역의 가운데에 있던 점은 가운데에 남는다.
+// 터미널 패널은 높이만 바꾸므로, 패널을 열면 그만큼 줄고 닫으면 줄었던 바로 그 비율로 다시 커진다:
+// from과 to를 바꾸면 정확히 반대가 되어서, 어느 크기에서 보기를 정했든 다른 크기에서의 보기가 서로 맞는다.
+// (처음에는 가로와 세로 중 더 많이 줄어든 쪽의 비율을 따랐다. 그 규칙은 높이만 커질 때 확대하지 않아서,
+// 패널을 연 채 확대를 바꾸고 닫으면 다이어그램이 작은 채로 남았다: owner, 2026-10-11)
+// 너비만 바뀌면 크기는 그대로다. 크기를 알 수 없으면(0, 숨겨진 영역) 그대로 돌려준다.
 export function scaleView(view, from, to) {
   const { k, x, y } = view
   if (!isRealSize(from) || !isRealSize(to)) return { k, x, y }
 
-  const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, k * Math.min(to.width / from.width, to.height / from.height)))
+  const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, k * (to.height / from.height)))
   const scale = zoom / k
 
   return {
@@ -55,4 +51,25 @@ export function scaleView(view, from, to) {
     x: to.width / 2 - (from.width / 2 - x) * scale,
     y: to.height / 2 - (from.height / 2 - y) * scale
   }
+}
+
+// 기억해 둔 보기(base: { view, size })를 지금의 캔버스 영역(area)에 맞춘 보기.
+// size는 그 보기를 정할 때의 영역 크기다. 크기 없이 기억된 보기(처음 여는 다이어그램, 예전 파일, 영역이 접혀 있을 때
+// 정한 것)는 터미널 패널이 자리를 차지하지 않을 때의 캔버스(full)에서의 보기로 친다: 패널이 없으면 그대로이고,
+// 패널이 열려 있으면 다른 보기처럼 줄어든다.
+export function shownView(base, area, full) {
+  return scaleView(base.view, isRealSize(base.size) ? base.size : full, area)
+}
+
+// 캔버스 영역(area) 안에서, 터미널 패널이 없을 때의 캔버스(full)가 그 높이로 줄어들면 차지하는 부분
+// ({ left, top, width, height }, 영역 안의 자리). 패널이 열려 있는 영역은 낮고 넓다. 그 너비를 다 쓰도록 맞춘 것은
+// 패널을 닫아 다이어그램이 높이만큼 다시 커질 때 양옆이 잘리지만, 이 부분에 맞춘 것은 닫은 뒤에도 다 보인다.
+// 패널이 없거나 크기를 모르면 영역 전체다.
+export function fullCanvasIn(area, full) {
+  const { width = 0, height = 0 } = area || {}
+  if (!isRealSize(area) || !isRealSize(full)) return { left: 0, top: 0, width, height }
+
+  const part = Math.min(width, full.width * height / full.height)
+
+  return { left: (width - part) / 2, top: 0, width: part, height }
 }
