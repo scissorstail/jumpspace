@@ -20,7 +20,7 @@ function headerButtons() {
   for (const [tag] of slot.matchAll(TAG)) {
     if (tag === '</template>') conditions.pop()
     else if (tag.startsWith('<template')) conditions.push(attribute(tag, 'v-if') || null)
-    else buttons.push({ label: attribute(tag, 'aria-label'), when: [...conditions, attribute(tag, 'v-if')].filter(Boolean) })
+    else buttons.push({ label: attribute(tag, 'aria-label'), when: [...conditions, attribute(tag, 'v-if')].filter(Boolean), classes: attribute(tag, 'class') })
   }
 
   return buttons
@@ -50,6 +50,12 @@ describe('the buttons at the right of the header', () => {
 
     // slot(다이어그램 단추들), 구분선, 톱니 메뉴: 그 사이에 다른 단추는 없다
     expect(order).toEqual(['<slot name="main-navigator-toolbar" />', '<hr', '<b-dropdown', 'icon="gear"'])
+  })
+
+  // 숫자 배지가 있는 단추는 글자 줄에 놓으면 그림만 있는 단추보다 1px쯤 높다. 터미널 패널을 숨길 때마다 머리글이
+  // 그만큼 높아져서 캔버스가 줄었고, 패널이 없을 때의 캔버스 높이가 패널을 숨겼을 때와 열었을 때 서로 달랐다.
+  it('keep the button with the count as high as the others', () => {
+    expect(named('Show terminals').classes).toBe('d-inline-flex align-items-center')
   })
 
   it('show the lock button whenever a diagram is on screen, locked or not', () => {

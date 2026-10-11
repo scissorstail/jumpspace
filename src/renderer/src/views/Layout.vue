@@ -18,9 +18,11 @@
           role="status"
           :aria-hidden="savingCount > 0 ? 'false' : 'true'"
         >Saving</span>
-        <!-- 숨긴 터미널 패널 다시 열기 -->
+        <!-- 숨긴 터미널 패널 다시 열기. 안의 그림과 숫자를 가운데에 맞춰 놓는다(flex): 글자 줄에 놓으면 숫자 배지 때문에
+             다른 단추보다 1px쯤 높아져서, 패널을 숨길 때마다 머리글이 높아지고 캔버스가 그만큼 줄었다. -->
         <b-button
           v-if="terminalCount > 0 && !isTerminalPanelOpen"
+          class="d-inline-flex align-items-center"
           size="sm"
           variant="light"
           :aria-label="`Show terminals (${terminalCount})`"
