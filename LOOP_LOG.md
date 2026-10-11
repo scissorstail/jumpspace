@@ -920,6 +920,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 657 passed (1 new; it fails with the old file), lint ok, build ok, headless UI checks passed, commit 86e3e5a. Not checked: the real window.
 - Found / next: exports that only tests use are kept on purpose (#8); nothing else unused. Next by age: `refactor`, then `style`.
 
+### #143 2026-10-12 · refactor (run in the owner's session)
+- Did: what happens to a split when a tab is closed was written out inside the store's `terminalRemove`, apart from the other split rules. It is `closePane` in `utils/terminal-sessions.js` now, next to `shownPanes`, `activatePane` and `splitPartner`; the store applies it.
+- Result: tests 660 passed (3 new, 4 mutations fail them), lint ok, build ok, headless UI checks passed, commit 13833b9. Not checked: the real window.
+- Found / next: nothing new. Next by age: `style`, then `ux`.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
