@@ -1,4 +1,5 @@
 // 터미널 패널이 화면에 쓰는 글과 색 (순수 함수). xterm에 쓰는 줄은 ANSI 색을 붙인다.
+import { tone } from './color.js'
 
 const GRAY = '\x1b[90m'
 const RED = '\x1b[31m'
@@ -36,22 +37,60 @@ export function errorLine(error) {
 // magenta와 cyan은 --js-ansi-*: 보통 주색과 보조색이고, Sunset Drive에서는 빨강·노랑과 겹치지 않게 따로 정한다.
 // 커서는 터미널이 보통 그러듯 글자색이고, 그 아래의 글자는 바탕색이다 (owner, 2026-10-11: 색 묶음의 주색으로 칠한
 // 커서는 화면을 다시 그리는 프로그램에서 번쩍이는 색 덩어리로 보였다).
-export function terminalTheme(color) {
-  return {
-    background: color('--js-bg'),
-    foreground: color('--js-text'),
-    cursor: color('--js-text'),
-    cursorAccent: color('--js-bg'),
-    selectionBackground: color('--js-line'),
+//
+// 색 묶음의 색은 네온이라, 점이나 선에는 맞지만 터미널 프로그램이 넓게 칠하면(tmux의 상태 줄은 초록 바탕이다) 눈이
+// 부시다 (owner, 2026-10-11: "너무 쨍한 것 같은데"). 그래서 여섯 색을 얼마나 낮출지 고른다 (설정 > Terminal colors,
+// src/shared/setting.js의 TERMINAL_COLORS). 낮춘 색은 여기서 계산한다 (utils/color.js의 tone): 같은 색상으로
+// 밝기와 선명함의 위만 자르므로 색 묶음의 색을 바꾸면 따라 바뀌고, 캔버스가 쓰는 --js-live 등은 그대로다.
+//   vivid: 색 묶음의 색 그대로. 이 선택이 생기기 전의 모습 그대로라서, 굵은 글자가 쓰는 밝은 색은 xterm의 기본값이다.
+//   soft, muted: 낮춘 색. 밝은 색(굵은 글자)은 그보다 조금 밝고 선명한 같은 색이고, 검정은 바탕색이다
+//   (색 위에 검정으로 쓰는 글자가 색 묶음의 어두운 색이 된다).
+const TONES = {
+  soft: { lightness: 0.76, chroma: 0.15 },
+  muted: { lightness: 0.68, chroma: 0.11 }
+}
+// 밝은 색은 보통 색보다 이만큼 더 밝고 선명해도 된다
+const BRIGHTER = { lightness: 0.06, chroma: 0.02 }
+// 노랑은 이보다 어둡거나 흐리면 올리브색이 된다: 어느 단계에서나 여기까지만 낮춘다
+const YELLOW_FLOOR = { lightness: 0.76, chroma: 0.13 }
+
+const ANSI = ['red', 'green', 'yellow', 'blue', 'magenta', 'cyan']
+const brightName = name => `bright${name[0].toUpperCase()}${name.slice(1)}`
+
+export function terminalTheme(color, level = 'vivid') {
+  const palette = {
     red: color('--js-danger'),
     green: color('--js-live'),
     yellow: color('--js-connecting'),
     blue: '#5aa9ff',
     magenta: color('--js-ansi-magenta'),
-    cyan: color('--js-ansi-cyan'),
+    cyan: color('--js-ansi-cyan')
+  }
+  const theme = {
+    background: color('--js-bg'),
+    foreground: color('--js-text'),
+    cursor: color('--js-text'),
+    cursorAccent: color('--js-bg'),
+    selectionBackground: color('--js-line'),
+    ...palette,
     white: color('--js-text'),
     brightBlack: color('--js-text-muted')
   }
+  // 모르는 단계는 vivid다 ('toString' 같은 이름도)
+  if (!Object.hasOwn(TONES, level)) return theme
+
+  const limit = TONES[level]
+
+  for (const name of ANSI) {
+    const floor = name === 'yellow' ? YELLOW_FLOOR : { lightness: 0, chroma: 0 }
+    const lightness = Math.max(limit.lightness, floor.lightness)
+    const chroma = Math.max(limit.chroma, floor.chroma)
+
+    theme[name] = tone(palette[name], lightness, chroma)
+    theme[brightName(name)] = tone(palette[name], lightness + BRIGHTER.lightness, chroma + BRIGHTER.chroma)
+  }
+
+  return { ...theme, black: theme.background, brightWhite: theme.foreground }
 }
 
 // 터미널 패널의 높이. 캔버스에 MIN_CANVAS_HEIGHT는 남기고, 패널은 MIN_PANEL_HEIGHT보다 낮아지지 않는다.

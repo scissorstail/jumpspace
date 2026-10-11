@@ -49,10 +49,10 @@ import { endedLine, errorLine, panelDrag, panelHeight, RECONNECTING_LINE, termin
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import TerminalTabs from './terminal-tabs'
 
-// 터미널 색은 지금 고른 테마(assets/theme.scss의 CSS 변수)에서 읽는다.
-function currentTerminalTheme() {
+// 터미널 색은 지금 고른 테마(assets/theme.scss의 CSS 변수)에서 읽고, 설정의 단계(terminalColors)만큼 낮춘다.
+function currentTerminalTheme(level) {
   const style = getComputedStyle(document.documentElement)
-  return terminalTheme(name => style.getPropertyValue(name).trim())
+  return terminalTheme(name => style.getPropertyValue(name).trim(), level)
 }
 
 // 하단의 터미널 패널. 탭마다 xterm.js 화면을 하나씩 두고, main의 pty와 키 입력/출력을 주고받는다.
@@ -74,13 +74,19 @@ export default {
     shownHeight() {
       return panelHeight(this.height, this.available)
     },
+    // 터미널 색을 정하는 두 설정: 색 묶음과, 그 색을 얼마나 낮추는지
+    colorSetting() {
+      const { theme, terminalColors } = this.$store.getters.setting
+
+      return `${theme} ${terminalColors}`
+    },
     ...mapGetters({ sessions: 'terminalSessions', allSessions: 'allTerminalSessions', activeKey: 'activeTerminalKey', isOpen: 'isTerminalPanelOpen', isMaximized: 'isTerminalPanelMaximized' })
   },
   watch: {
-    // 테마를 바꾸면 열린 터미널의 색도 바꾼다.
-    '$store.getters.setting.theme'() {
+    // 색 묶음이나 색의 단계를 바꾸면 열린 터미널의 색도 바꾼다. (색 묶음의 CSS 변수는 다음 그리기에 바뀐다)
+    colorSetting() {
       this.$nextTick(() => {
-        for (const [, entry] of this.terms) entry.term.options.theme = currentTerminalTheme()
+        for (const [, entry] of this.terms) entry.term.options.theme = this.colors()
       })
     },
     // 새 탭: 화면을 만들고 main에 세션을 연다.
@@ -121,6 +127,10 @@ export default {
     }
   },
   methods: {
+    // 지금의 색 묶음과 설정의 단계로 만든 터미널 색
+    colors() {
+      return currentTerminalTheme(this.$store.getters.setting.terminalColors)
+    },
     async start(session) {
       const { kind, payload } = session.request
       // 요청(비밀번호 포함)은 main에 넘기면 store에서 지운다.
@@ -132,7 +142,7 @@ export default {
         fontFamily: '"JetBrains Mono", Consolas, "Cascadia Mono", "DejaVu Sans Mono", monospace',
         fontSize: 13,
         scrollback: 5000,
-        theme: currentTerminalTheme()
+        theme: this.colors()
       })
       const fit = new FitAddon()
       term.loadAddon(fit)

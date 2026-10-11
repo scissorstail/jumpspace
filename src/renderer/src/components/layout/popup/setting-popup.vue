@@ -94,6 +94,25 @@
             <b-col>
               <b-form-group
                 class="mb-0"
+                label="Terminal colors"
+                label-align="left"
+                label-cols-sm="4"
+                description="How strong the colors of programs are in the terminal of this app. The canvas keeps its own."
+              >
+                <b-form-radio-group
+                  v-model="terminalColors"
+                  :options="terminalColorsOptions"
+                  buttons
+                  button-variant="outline-primary"
+                  size="sm"
+                />
+              </b-form-group>
+            </b-col>
+          </b-row>
+          <b-row class="mb-3">
+            <b-col>
+              <b-form-group
+                class="mb-0"
                 label="Node glass"
                 label-for="setting-node-blur"
                 label-align="left"
@@ -192,6 +211,13 @@ export default {
         { text: 'CRT', value: 'crt' },
         { text: 'Off', value: 'off' }
       ],
+      // 터미널 프로그램의 색을 얼마나 낮추는지 (src/shared/setting.js의 TERMINAL_COLORS)
+      terminalColors: null,
+      terminalColorsOptions: [
+        { text: 'Vivid', value: 'vivid' },
+        { text: 'Soft', value: 'soft' },
+        { text: 'Muted', value: 'muted' }
+      ],
       openInOptions: [
         { text: 'This app', value: 'app' },
         { text: 'Git Bash window', value: 'window' }
@@ -216,6 +242,7 @@ export default {
       this.openIn = this.setting.openIn
       this.theme = this.setting.theme
       this.backdrop = this.setting.backdrop
+      this.terminalColors = this.setting.terminalColors
       this.nodeBlur = this.setting.nodeBlur
     },
     async saveSetting() {
@@ -227,6 +254,7 @@ export default {
         openIn: this.openIn,
         theme: this.theme,
         backdrop: this.backdrop,
+        terminalColors: this.terminalColors,
         nodeBlur: this.nodeBlur
       })
       this.$emit('update:show', false)

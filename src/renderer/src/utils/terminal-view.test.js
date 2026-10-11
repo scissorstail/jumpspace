@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { THEMES } from '../../../shared/setting.js'
+import { TERMINAL_COLORS, THEMES } from '../../../shared/setting.js'
+import { toOklch } from './color'
 import { endedLine, errorLine, MAXIMIZE_SNAP, MIN_CANVAS_HEIGHT, MIN_PANEL_HEIGHT, panelDrag, panelHeight, RECONNECTING_LINE, revealScrollLeft, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
 
 describe('sessionStatusText', () => {
@@ -43,6 +44,67 @@ describe('terminalTheme', () => {
     expect(theme).toMatchObject({ background: '#000', foreground: '#fff', cursor: '#fff', cursorAccent: '#000', red: '#f00', green: '#0f0', yellow: '#ff0', magenta: '#f0e', cyan: '#0fe', brightBlack: '#999' })
     expect(Object.values(theme).every(Boolean)).toBe(true)
   })
+
+  // 설정의 Vivid는 단계를 고를 수 있기 전의 모습 그대로다: 색 묶음의 색 그대로이고, 굵은 글자가 쓰는 밝은 색과
+  // 검정은 정하지 않는다 (xterm의 기본값).
+  it('is the theme of before as vivid, without a level and with one it does not know', () => {
+    const color = paletteVars('sunset-drive')
+    const before = {
+      background: '#1a0633',
+      foreground: '#fff6ef',
+      cursor: '#fff6ef',
+      cursorAccent: '#1a0633',
+      selectionBackground: color('--js-line'),
+      red: '#ff4d6d',
+      green: '#3dff8a',
+      yellow: '#ffd319',
+      blue: '#5aa9ff',
+      magenta: '#d86bff',
+      cyan: '#4ff0ff',
+      white: '#fff6ef',
+      brightBlack: '#f0c6dc'
+    }
+
+    expect(terminalTheme(color)).toEqual(before)
+    expect(terminalTheme(color, 'vivid')).toEqual(before)
+    for (const odd of ['', 'Soft', 'toString', 'constructor', '__proto__', null, 7]) {
+      expect(terminalTheme(color, odd), String(odd)).toEqual(before)
+    }
+  })
+
+  // owner가 그림에서 본 색들 (2026-10-11, Sunset Drive). 밝은 색은 굵은 글자가 쓴다.
+  it('gives the colors the levels were chosen with', () => {
+    const color = paletteVars('sunset-drive')
+
+    expect(terminalTheme(color, 'soft')).toMatchObject({
+      red: '#e56c7a',
+      green: '#5dcc7f',
+      yellow: '#d2ae1c',
+      blue: '#5aa9ff',
+      magenta: '#c783e1',
+      cyan: '#01c8d7',
+      brightRed: '#ed6476',
+      brightGreen: '#60e38a',
+      brightYellow: '#e9c000',
+      brightBlue: '#5aa9ff',
+      brightMagenta: '#cc7de9',
+      brightCyan: '#31dceb'
+    })
+    expect(terminalTheme(color, 'muted')).toMatchObject({
+      red: '#d37a82',
+      green: '#61ac75',
+      yellow: '#cdaf42',
+      blue: '#649cda',
+      magenta: '#b383c6',
+      cyan: '#21acb7',
+      brightRed: '#dc747e',
+      brightGreen: '#66c280',
+      brightYellow: '#e5c13b',
+      brightBlue: '#66a9f4',
+      brightMagenta: '#c388d9',
+      brightCyan: '#02c1cf'
+    })
+  })
 })
 
 // theme.scss의 실제 색 묶음에서 터미널 색을 만든다. (공통 :root 블록 위에 색 묶음 블록을 덮는다)
@@ -68,16 +130,111 @@ function hue(hex) {
   return (h * 60 + 360) % 360
 }
 
+const ANSI = ['red', 'green', 'yellow', 'blue', 'magenta', 'cyan']
+const bright = name => `bright${name[0].toUpperCase()}${name.slice(1)}`
+// 낮춘 단계들 (vivid가 아닌 것)
+const TONED = TERMINAL_COLORS.filter(level => level !== 'vivid')
+const everyLevel = THEMES.flatMap(theme => TERMINAL_COLORS.map(level => [theme, level]))
+const everyToned = THEMES.flatMap(theme => TONED.map(level => [theme, level]))
+
+// WCAG의 대비 (1..21)
+function contrast(a, b) {
+  const luminance = hex => {
+    const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+  }
+  const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (high + 0.05) / (low + 0.05)
+}
+
+const hueDegrees = hex => ((toOklch(hex).h * 180) / Math.PI + 360) % 360
+// 8비트 색으로 맞추느라 어긋나는 만큼
+const ROUNDING = 0.004
+
 describe('terminal colors of every palette', () => {
-  it.each(THEMES)('%s keeps the six ANSI colors apart', theme => {
-    const t = terminalTheme(paletteVars(theme))
-    const names = ['red', 'green', 'yellow', 'blue', 'magenta', 'cyan']
-    for (const name of names) expect(t[name], `${theme} ${name}`).toMatch(/^#[0-9a-f]{6}$/i)
-    for (const [i, a] of names.entries()) {
-      for (const b of names.slice(i + 1)) {
-        const d = Math.abs(hue(t[a]) - hue(t[b]))
-        expect(Math.min(d, 360 - d), `${theme}: ${a} ${t[a]} vs ${b} ${t[b]}`).toBeGreaterThanOrEqual(15)
+  it.each(everyLevel)('%s %s keeps the six ANSI colors apart', (theme, level) => {
+    const t = terminalTheme(paletteVars(theme), level)
+    // 밝은 색은 낮춘 단계에만 있다
+    const groups = level === 'vivid' ? [ANSI] : [ANSI, ANSI.map(bright)]
+
+    for (const names of groups) {
+      for (const name of names) expect(t[name], `${theme} ${name}`).toMatch(/^#[0-9a-f]{6}$/i)
+      for (const [i, a] of names.entries()) {
+        for (const b of names.slice(i + 1)) {
+          const d = Math.abs(hue(t[a]) - hue(t[b]))
+          expect(Math.min(d, 360 - d), `${theme}: ${a} ${t[a]} vs ${b} ${t[b]}`).toBeGreaterThanOrEqual(15)
+        }
       }
+    }
+  })
+
+  // 색 글자는 바탕 위에서 읽혀야 하고, 색 바탕 위의 검정 글자도 (tmux의 상태 줄) 그래야 한다.
+  // 낮춘 단계의 검정은 바탕색이라서 두 대비는 같은 값이다.
+  it.each(everyLevel)('%s %s can be read on the background', (theme, level) => {
+    const t = terminalTheme(paletteVars(theme), level)
+    const names = level === 'vivid' ? ANSI : [...ANSI, ...ANSI.map(bright)]
+
+    for (const name of names) expect(contrast(t[name], t.background), `${name} ${t[name]}`).toBeGreaterThanOrEqual(4.5)
+    if (level !== 'vivid') expect(t.black).toBe(t.background)
+  })
+
+  it.each(everyToned)('%s %s fills all sixteen colors and leaves the rest of the theme alone', (theme, level) => {
+    const vivid = terminalTheme(paletteVars(theme))
+    const t = terminalTheme(paletteVars(theme), level)
+
+    expect(Object.keys(t).sort()).toEqual([...Object.keys(vivid), 'black', 'brightWhite', ...ANSI.map(bright)].sort())
+    for (const name of ['background', 'foreground', 'cursor', 'cursorAccent', 'selectionBackground', 'white', 'brightBlack']) {
+      expect(t[name], name).toBe(vivid[name])
+    }
+    expect(t.brightWhite).toBe(vivid.foreground)
+  })
+
+  it.each(everyToned)('%s %s keeps each hue and is never stronger than the palette color', (theme, level) => {
+    const vivid = terminalTheme(paletteVars(theme))
+    const t = terminalTheme(paletteVars(theme), level)
+
+    for (const name of ANSI) {
+      const [palette, normal, bolder] = [vivid[name], t[name], t[bright(name)]].map(toOklch)
+
+      for (const hex of [t[name], t[bright(name)]]) {
+        const turn = Math.abs(hueDegrees(hex) - hueDegrees(vivid[name]))
+        expect(Math.min(turn, 360 - turn), `${name} ${hex} hue`).toBeLessThan(2)
+        expect(toOklch(hex).l, `${name} ${hex} lightness`).toBeLessThanOrEqual(palette.l + ROUNDING)
+        expect(toOklch(hex).c, `${name} ${hex} chroma`).toBeLessThanOrEqual(palette.c + ROUNDING)
+      }
+      // 굵은 글자의 색은 보통 색보다 어둡거나 흐리지 않다
+      expect(bolder.l, `${name} bright lightness`).toBeGreaterThanOrEqual(normal.l - ROUNDING)
+      expect(bolder.c, `${name} bright chroma`).toBeGreaterThanOrEqual(normal.c - ROUNDING)
+    }
+  })
+
+  // 단계는 차례로 낮아진다: vivid >= soft >= muted. 초록(가장 밝고 선명한 색)은 단계마다 눈에 띄게 낮아진다.
+  it.each(THEMES)('%s gets calmer level by level', theme => {
+    const [vivid, soft, muted] = TERMINAL_COLORS.map(level => terminalTheme(paletteVars(theme), level))
+
+    for (const name of ANSI) {
+      const [a, b, c] = [vivid, soft, muted].map(t => toOklch(t[name]))
+      expect(b.l, `${name} soft lightness`).toBeLessThanOrEqual(a.l + ROUNDING)
+      expect(b.c, `${name} soft chroma`).toBeLessThanOrEqual(a.c + ROUNDING)
+      expect(c.l, `${name} muted lightness`).toBeLessThanOrEqual(b.l + ROUNDING)
+      expect(c.c, `${name} muted chroma`).toBeLessThanOrEqual(b.c + ROUNDING)
+    }
+
+    const [a, b, c] = [vivid, soft, muted].map(t => toOklch(t.green))
+    expect(a.l - b.l).toBeGreaterThan(0.08)
+    expect(a.c - b.c).toBeGreaterThan(0.05)
+    expect(b.l - c.l).toBeGreaterThan(0.05)
+    expect(b.c - c.c).toBeGreaterThan(0.03)
+  })
+
+  // 어둡고 흐린 노랑은 올리브색이다: 노랑은 어느 단계에서나 이만큼은 밝고 선명하다.
+  it.each(everyToned)('%s %s keeps the yellow a yellow', (theme, level) => {
+    const t = terminalTheme(paletteVars(theme), level)
+
+    for (const name of ['yellow', 'brightYellow']) {
+      const color = toOklch(t[name])
+      expect(color.l, name).toBeGreaterThanOrEqual(0.76 - ROUNDING)
+      expect(color.c, name).toBeGreaterThanOrEqual(0.13 - ROUNDING)
     }
   })
 })

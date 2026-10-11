@@ -9,6 +9,10 @@ export const THEMES = ['neon-night', 'sunset-drive', 'vapor-blue']
 // 배경 풍경의 효과 (renderer의 views/Layout.vue에 있는 .scene-* 클래스)
 export const BACKDROPS = ['vivid', 'soft', 'depth', 'crt', 'off']
 
+// 앱 안의 터미널이 프로그램의 색(ANSI 여섯 색)을 얼마나 낮춰서 보여주는지 (renderer의 utils/terminal-view.js).
+// 'vivid' = 색 묶음의 네온 색 그대로, 'soft' = 조금 낮춤, 'muted' = 많이 낮춤
+export const TERMINAL_COLORS = ['vivid', 'soft', 'muted']
+
 // 노드 뒤 유리판의 흐림(px). 0이면 유리판이 없다. (renderer의 components/editor/index.vue)
 export const NODE_BLUR_MAX = 20
 
@@ -18,6 +22,8 @@ export const DEFAULT_SETTING = {
   openIn: 'app',
   theme: 'neon-night',
   backdrop: 'depth',
+  // 네온 색 그대로(vivid)는 넓게 칠해지면 눈이 부셔서, 조금 낮춘 것이 기본이다 (owner, 2026-10-11)
+  terminalColors: 'soft',
   nodeBlur: 0,
   // 캔버스에서 노드의 접속 정보(user, host, port, 포워딩)를 숨기고 이름만 보인다 (머리글의 눈 단추)
   hideNodeInfo: false
@@ -41,6 +47,7 @@ export function normalizeSetting(data) {
     openIn: OPEN_IN.includes(data?.openIn) ? data.openIn : DEFAULT_SETTING.openIn,
     theme: THEMES.includes(data?.theme) ? data.theme : DEFAULT_SETTING.theme,
     backdrop: BACKDROPS.includes(data?.backdrop) ? data.backdrop : DEFAULT_SETTING.backdrop,
+    terminalColors: TERMINAL_COLORS.includes(data?.terminalColors) ? data.terminalColors : DEFAULT_SETTING.terminalColors,
     nodeBlur: normalizeNodeBlur(data?.nodeBlur),
     hideNodeInfo: data?.hideNodeInfo === true
   }

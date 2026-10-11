@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { BACKDROPS, DEFAULT_SETTING, NODE_BLUR_MAX, normalizeSetting, THEMES } from './setting.js'
+import { BACKDROPS, DEFAULT_SETTING, NODE_BLUR_MAX, normalizeSetting, TERMINAL_COLORS, THEMES } from './setting.js'
 
 describe('normalizeSetting', () => {
   it('keeps valid values', () => {
-    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', nodeBlur: 12, hideNodeInfo: true }))
-      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', nodeBlur: 12, hideNodeInfo: true })
+    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', terminalColors: 'muted', nodeBlur: 12, hideNodeInfo: true }))
+      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', terminalColors: 'muted', nodeBlur: 12, hideNodeInfo: true })
   })
 
   it('uses the default path when it is empty, blank or not a string', () => {
@@ -60,6 +60,21 @@ describe('normalizeSetting: backdrop', () => {
     }
     expect(normalizeSetting({ backdrop: 'x" onload="y' }).backdrop).toBe('depth')
     expect(normalizeSetting({ backdrop: 3 }).backdrop).toBe('depth')
+  })
+})
+
+describe('normalizeSetting: terminalColors', () => {
+  // 이 설정이 없던 때의 파일에는 키가 없다: 그때도 조금 낮춘 색이다.
+  it('tones the terminal colors down a little by default and accepts only known levels', () => {
+    expect(TERMINAL_COLORS).toEqual(['vivid', 'soft', 'muted'])
+    expect(DEFAULT_SETTING.terminalColors).toBe('soft')
+    expect(normalizeSetting({}).terminalColors).toBe('soft')
+    for (const terminalColors of TERMINAL_COLORS) {
+      expect(normalizeSetting({ terminalColors }).terminalColors).toBe(terminalColors)
+    }
+    for (const terminalColors of ['Vivid', 'toString', '#3dff8a', '', null, 2, ['vivid'], {}]) {
+      expect(normalizeSetting({ terminalColors }).terminalColors, String(terminalColors)).toBe('soft')
+    }
   })
 })
 
