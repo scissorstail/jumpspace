@@ -187,7 +187,8 @@ describe('createTerminalManager', () => {
   it('runs the generated script in a pty and forwards its output to the window that opened it', async () => {
     const { manager, spawnPty, ptys, send } = setup()
 
-    const id = await manager.open('connect', { ...node, password: 'pw' }, { owner: 7, cols: 120, rows: 30 })
+    // 임시 폴더 이름(무작위 글자)에 우연히 들어 있을 수 없는 값: 'pw'였을 때 이 테스트가 가끔 실패했다.
+    const id = await manager.open('connect', { ...node, password: 'pass word!' }, { owner: 7, cols: 120, rows: 30 })
     const [file, args, options] = spawnPty.mock.calls[0]
 
     expect(file).toBe('/bin/bash')
@@ -197,8 +198,8 @@ describe('createTerminalManager', () => {
     expect(options.env.TERM).toBe('xterm-256color')
     expect(options.env.JUMPSPACE_IN_APP).toBe('1')
     // 비밀번호는 환경변수로만 넘어가고 인자에는 없다.
-    expect(Object.values(options.env)).toContain('pw')
-    expect(args.join(' ')).not.toContain('pw')
+    expect(Object.values(options.env)).toContain('pass word!')
+    expect(args.join(' ')).not.toContain('pass word!')
 
     ptys[0].emitData('hello')
     ptys[0].emitExit(0)
