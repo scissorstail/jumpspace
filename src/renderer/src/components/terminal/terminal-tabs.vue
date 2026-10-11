@@ -242,10 +242,11 @@ export default {
     color: var(--js-on-primary);
   }
 
-  // 좌우로 나눈 동안 다른 칸에 보이는 탭: 고른 탭(분홍 바탕)과 구분되게 아래에 줄만 긋는다.
+  // 좌우로 나눈 동안 다른 칸에 보이는 탭: 고른 탭(분홍 바탕)의 빈 모양으로, 같은 색의 테두리만 두른다.
+  // (아래에 줄만 그었더니 탭 줄 아래의 같은 색 테두리와 붙어서 보이지 않았다)
   &.is-side {
     color: var(--js-text);
-    box-shadow: inset 0 -3px 0 var(--js-primary);
+    box-shadow: inset 0 0 0 2px var(--js-primary);
   }
 
   &:focus-visible {

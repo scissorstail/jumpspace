@@ -212,6 +212,8 @@ describe('the split in the panel and the tab row', () => {
   it('marks the tab of the other half in the tab row', () => {
     expect(tabs).toMatch(/'is-side': session\.key === sideKey && !isMinimized,/)
     expect(panel).toMatch(/:side-key="sideKey"/)
+    // 테두리를 두른다: 아래의 줄 하나는 탭 줄의 테두리와 붙어서 보이지 않았다
+    expect(tabs).toMatch(/&\.is-side \{\n\s+color: var\(--js-text\);\n\s+box-shadow: inset 0 0 0 2px var\(--js-primary\);\n/)
   })
 })
 
