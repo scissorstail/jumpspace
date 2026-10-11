@@ -39,6 +39,32 @@ describe('the signal on a path with a terminal session', () => {
     expect(block(idle, '.flow-path')).toMatch(/animation: connection-flow [\d.]+s linear infinite;/)
     expect(block(states[state], '.flow-path')).not.toMatch(/animation: none/)
   })
+
+  // 연결 중과 연결됨은 색만 다르다. 한쪽이 빠르기나 모양을 따로 정하면 로그인하는 순간 신호가 튀거나 처음부터 다시 흐른다.
+  it.each(Object.keys(states))('keeps its shape and its pace while %s: only the color is its own', state => {
+    expect(block(states[state], '.flow-path')).not.toMatch(/animation|stroke-dasharray|stroke-width|stroke-linecap/)
+  })
+
+  // 한 묶음의 길이(stroke-dasharray의 합)와 한 바퀴에 움직이는 거리가 다르면 바퀴마다 신호가 튄다.
+  // (값이 홀수 개이면 브라우저가 목록을 두 번 이어 붙여서 묶음의 길이가 합의 두 배가 된다)
+  it('loops without a jump: one round moves the pattern by exactly its own length', () => {
+    const pattern = block(idle, '.flow-path').match(/stroke-dasharray: ([\d. ]+);/)[1].trim().split(/\s+/).map(Number)
+    const keyframes = block(scss, '@keyframes connection-flow')
+    const offset = step => Number(block(keyframes, step).match(/stroke-dashoffset: ([\d.]+);/)[1])
+
+    expect(pattern.length % 2).toBe(0)
+    expect(offset('to')).toBe(0)
+    expect(offset('from')).toBe(pattern.reduce((sum, part) => sum + part, 0))
+  })
+
+  // 네모 조각이 아니라 끝이 둥근 빛줄기이고, 선 위에 얹히지 않고 선 안에서 흐른다.
+  it('is made of round-ended streaks as wide as the line they run in', () => {
+    const signal = block(idle, '.flow-path')
+    const width = text => Number(text.match(/stroke-width: ([\d.]+)px;/)?.[1])
+
+    expect(signal).toMatch(/stroke-linecap: round;/)
+    for (const state of Object.keys(states)) expect(width(block(states[state], '.main-path'))).toBe(width(signal))
+  })
 })
 
 // 고른 터미널 탭을 연 노드는 선택한 노드처럼 보인다. 모양을 두 군데에 적으면 어긋나므로 한 규칙을 함께 쓴다.

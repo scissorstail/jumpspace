@@ -103,7 +103,7 @@
   }
 
   // 연결선: 쉬는 동안은 단색 청록 선과 분홍 화살표.
-  // 그 경로로 앱 안의 터미널 세션이 열려 있으면(.is-live) 분홍 선 위로 네모 신호(--js-signal)가 앞 노드에서 다음 노드로 흐른다.
+  // 그 경로로 앱 안의 터미널 세션이 열려 있으면(.is-live) 분홍 선 위로 신호(--js-signal)가 앞 노드에서 다음 노드로 흐른다.
   .connection {
     .main-path {
       stroke-width: 3px;
@@ -111,15 +111,19 @@
       transition: stroke 0.15s;
     }
 
+    // 신호: 선 안을 다음 노드 쪽으로 흘러가는 빛줄기. 긴 머리가 앞서고, 뒤로 갈수록 짧아지는 조각과 점이 꼬리로 따라온다.
+    // 끝이 둥글고 굵기는 세션이 있는 선과 같다 (네모 조각은 선 위에 얹힌 덩어리처럼 보였다).
+    // 모양과 빠르기는 여기 한 곳에만 적는다: 연결 중과 연결됨은 색만 다르고, 로그인하는 순간에도 끊기지 않고 이어서 흐른다.
+    // stroke-dasharray의 합(한 묶음의 길이)은 connection-flow가 움직이는 거리와 같아야 한다. 다르면 한 바퀴마다 튄다.
     .flow-path {
       display: none;
       fill: none;
       stroke: var(--js-signal);
-      stroke-width: 7px;
-      stroke-linecap: butt;
-      stroke-dasharray: 7 17;
+      stroke-width: 4px;
+      stroke-linecap: round;
+      stroke-dasharray: 0 8 3 8 8 8 15 50;
       pointer-events: none;
-      animation: connection-flow 0.6s linear infinite;
+      animation: connection-flow 1.8s linear infinite;
     }
 
     .marker {
@@ -142,7 +146,7 @@
     }
   }
 
-  // 연결 중: 노란 선 위로 신호가 천천히 흐른다. (로그인 표시가 오면 is-live로 바뀐다)
+  // 연결 중: 노란 선에 같은 신호가 흐른다. (로그인 표시가 오면 is-live로 바뀐다)
   // 신호는 바탕색이다: 선과 같은 노랑이면 움직임이 보이지 않았다. 노란 선에 난 틈이 다음 노드 쪽으로 흘러간다.
   .is-connecting .connection {
     .main-path {
@@ -153,7 +157,6 @@
     .flow-path {
       display: inline;
       stroke: var(--js-bg);
-      animation-duration: 1.4s;
     }
 
     .marker {
@@ -235,7 +238,7 @@
 
 @keyframes connection-flow {
   from {
-    stroke-dashoffset: 24;
+    stroke-dashoffset: 100;
   }
 
   to {
