@@ -864,6 +864,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 605 passed, lint ok, build ok (README only, no UI check needed). `npm audit` still 11 (2 low, 7 moderate, 2 high), all of them behind a major version (vue 2, rete 1 and what they bring along).
 - Found / next: nothing new. Next by age: `tests`, then `cleanup`.
 
+### #132 2026-10-11 17:0x UTC · tests (run in the owner's session)
+- Did: the icon list of Node Setting had no test at all. New `icon-picker.test.js` (the radio group, the one item in the Tab order, the arrow keys, Home, End, nothing chosen while disabled, the focus follows) and 10 new checks of the same in the headless `setting-check` (the keys pressed for real, around both ends, the node shows the chosen image).
+- Result: tests 611 passed (6 new; 7 mutations fail them, and the 5 that can be reached in the UI fail the headless checks), lint ok, build ok, headless UI checks passed, commit abd03b5. No code changed. Not checked: the real window.
+- Found / next: nothing wrong in the picker. `forward-menu.vue` (374 lines) has no test of its own either. Next by age: `cleanup`, then `refactor`.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
