@@ -859,6 +859,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 605 passed (1 new, 2 mutations fail it), lint ok, build ok, headless UI checks passed (`colors-check` 29, 2 new; the 2 mutations fail them too), commit ad01dbd. Not checked: the real window, a real IME.
 - Found / next: nothing new. Next by age: `health`, then `tests`.
 
+### #131 2026-10-11 16:1x UTC · health (run in the owner's session)
+- Did: `npm outdated` has nothing inside the current major versions, Electron is at the newest 44.x (44.7.0), CI is green on the last three pushes. The README now says what #130 added (Enter in the *Git Bash path* field saves).
+- Result: tests 605 passed, lint ok, build ok (README only, no UI check needed). `npm audit` still 11 (2 low, 7 moderate, 2 high), all of them behind a major version (vue 2, rete 1 and what they bring along).
+- Found / next: nothing new. Next by age: `tests`, then `cleanup`.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
