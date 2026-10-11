@@ -55,6 +55,12 @@ describe('the minimized terminal panel', () => {
     expect(tabs).toMatch(/:aria-selected="session\.key === activeKey && !isMinimized \? 'true' : 'false'"/)
   })
 
+  // 탭 줄 아래의 줄은 탭과 터미널을 나누는 것이다. 터미널이 없으면 줄도 없다 (자리는 남는다: 높이가 그대로다).
+  it('has no line under its tab row', () => {
+    expect(tabs).toMatch(/<div\n\s+class="terminal-tabs"\n\s+:class="\{ 'is-minimized': isMinimized \}"\n/)
+    expect(tabs).toMatch(/&\.is-minimized \{\n\s+border-bottom-color: transparent;\n/)
+  })
+
   it('comes back when it is maximized from the tab row', () => {
     expect(panel).toMatch(/@maximize="maximize"/)
     expect(panel).toMatch(/maximize\(isMaximized\) \{\n\s+this\.\$store\.commit\('terminalMaximize', isMaximized\)\n\s+this\.\$store\.commit\('terminalPanel', true\)\n/)

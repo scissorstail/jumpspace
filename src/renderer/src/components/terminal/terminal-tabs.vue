@@ -1,5 +1,8 @@
 <template>
-  <div class="terminal-tabs">
+  <div
+    class="terminal-tabs"
+    :class="{ 'is-minimized': isMinimized }"
+  >
     <!-- 탭이 많으면 이 목록만 옆으로 넘긴다. 오른쪽 끝의 패널 단추(최대화, 최소화 또는 다시 보이기)는 늘 보인다.
          탭을 끌면 순서가 바뀐다 (닫기 단추에서는 끌리지 않는다). -->
     <draggable
@@ -210,6 +213,12 @@ export default {
   padding: 3px 8px 0 14px;
   background: var(--js-bg-raised);
   border-bottom: 2px solid var(--js-primary);
+
+  // 최소화한 동안에는 아래에 터미널이 없다: 줄은 창 아래 가장자리에 붙어서 아무것도 나누지 않는다.
+  // 자리는 남긴다 (탭 줄의 높이가 그대로여야 캔버스 높이가 바뀌지 않는다).
+  &.is-minimized {
+    border-bottom-color: transparent;
+  }
 }
 
 // 탭이 많으면 먼저 좁아지고(min-width까지), 그래도 넘치면 이 목록만 옆으로 넘긴다.
