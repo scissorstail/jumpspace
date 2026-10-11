@@ -7,7 +7,7 @@ The owner writes Korean: answer in Korean in chat, keep code, commit messages an
 ## Read first
 
 - `README.md`: features, usage, project layout, how ssh is started, tests.
-- `LOOP_LOG.md`: the protocol of the hourly maintenance routine, the **owner's decisions**, the backlog and the run log. It is the memory between sessions. Read it before working, append to it after a scheduled run.
+- `LOOP_LOG.md`: the protocol of the maintenance routine (every 40 minutes on the owner's PC), the **owner's decisions**, the backlog and the run log. It is the memory between sessions. Read it before working, append to it after a scheduled run.
 - `CHANGELOG.md`: keep the Unreleased section current for user-visible changes.
 
 ## Commands
@@ -38,11 +38,13 @@ Passwords stay plain text. The Vue 3 / Rete 2 migration is on hold. No Playwrigh
 
 - Work on `claude/cool-bardeen-9x9ymz`, push there, no pull request unless asked, no force push, no history rewriting.
 - Small commits whose message says why. End each commit with the trailer lines the session asks for (`Co-Authored-By: ...` with the model the session names, and the `Claude-Session:` line). Do not copy the model name from older commits.
-- CI (`.github/workflows/ci.yml`): Ubuntu runs lint, tests and build; Windows runs the tests, the bash based script tests under Git Bash and the real `git-bash.exe` launcher test; only a run started by hand (`workflow_dispatch`, GitHub MCP `actions_run_trigger` with the branch as ref) also builds the installer, checks the packaged node-pty (also that the bundled ConPTY starts) and uploads the artifact `jumpspace-windows-installer`. Check the result of the last run with the GitHub MCP tools (`gh` is not available).
+- CI (`.github/workflows/ci.yml`): Ubuntu runs lint, tests and build; Windows runs the tests, the bash based script tests under Git Bash and the real `git-bash.exe` launcher test; only a run started by hand (`workflow_dispatch`, GitHub MCP `actions_run_trigger` with the branch as ref) also builds the installer, checks the packaged node-pty (also that the bundled ConPTY starts) and uploads the artifact `jumpspace-windows-installer`. Check the result of the last run with `gh run list --branch claude/cool-bardeen-9x9ymz --limit 3` on the owner's PC, where `gh` is installed and signed in; in a cloud session without `gh`, with the GitHub MCP tools. The installer is built only when the owner says so.
 
 ## Checking the UI
 
-The app is checked in the real Electron with Playwright under `xvfb-run` (scripts are throwaway, not in the repo): launch `node_modules/electron/dist/electron` with the repo as the app, `--no-sandbox --disable-gpu --user-data-dir=<tmp>`, and seed `<tmp>/projects.json` (`{ "version": 1, "items": [...] }`). Build first (`npm run build`), the app loads `out/`.
+**On the owner's PC no window is started** (test windows of the app got in the owner's way, see the Protocol in `LOOP_LOG.md`). The UI is checked there with headless checks that are not in the repository (the owner decided against a Playwright test in the repo): the folder `jumpspace-checks` next to the repository, with its own README. They serve the built renderer (`out/renderer`) with a fake preload API and drive it in a headless Microsoft Edge: `npm run build`, `node <checks>/prepare.cjs <repo>`, `node <checks>/run-all-checks.cjs`. Every check must pass before a commit that touches the renderer; a change of the look also gets a look at the pictures they write. What they cannot see is the real window: main, the pty, the real preload. Say so in the log.
+
+Elsewhere (Linux, a cloud session) the app is checked in the real Electron with Playwright under `xvfb-run` (scripts are throwaway, not in the repo): launch `node_modules/electron/dist/electron` with the repo as the app, `--no-sandbox --disable-gpu --user-data-dir=<tmp>`, and seed `<tmp>/projects.json` (`{ "version": 1, "items": [...] }`). Build first (`npm run build`), the app loads `out/`.
 
 ## Gotchas learned the hard way
 
