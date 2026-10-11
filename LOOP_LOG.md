@@ -874,6 +874,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 619 passed (8 new, 6 mutations fail them), lint ok, build ok, headless UI checks passed (`check` 58, 5 new; the 5 mutations that show in the UI fail them), commit 16789d3. Not checked: the real window.
 - Found / next: the owner asked for two more things in the same message, done next one by one: the minimized panel stays at the bottom, and a left/right split of the terminals.
 
+### #134 2026-10-12 · ux (by hand, the owner: "can a minimized terminal be minimized at the bottom? going up and getting small there feels odd")
+- Did: a minimized terminal panel is its tab row at the bottom of the window. A tab or the button at the right end (the dash, now an arrow up) shows the terminals again; the terminal button of the header is gone. The canvas has everything above the row, so the diagram is 40px of height smaller than without terminals.
+- Result: tests 624 passed (5 new, 7 mutations fail them and the headless checks), lint ok, build ok, headless UI checks passed (`check` 63; `zoom-check`, `canvas-check` and `setting-check` changed to the new rule), commit 6f74911. Not checked: the real window.
+- Found / next: next is the left/right split of the terminals, the third thing the owner asked for.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
