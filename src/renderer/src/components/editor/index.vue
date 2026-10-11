@@ -222,6 +222,12 @@ export default {
       }
     )
 
+    // 편집을 끝내면(잠그면) 선택을 푼다. 잠긴 동안에는 노드를 고를 수도, 선택을 풀 수도 없어서 편집 중에 누른 노드가
+    // 선택된 모양으로 계속 남았다. 고른 터미널 탭의 노드도 같은 모양이라, 남은 선택이 그 노드처럼 보이기도 했다.
+    this.editor.on('readonly', isLocked => {
+      if (isLocked) this.clearSelection()
+    })
+
     // 빈 캔버스를 더블클릭하면 Rete는 확대한다. 대신 이 item을 열었을 때의 확대로 돌아간다 (더블클릭한 곳 기준).
     this.entry = null // { k, size }: item을 열었을 때의 확대와 그때의 영역 크기
     this.editor.on('zoom', ({ source }) => source !== 'dblclick')
@@ -281,6 +287,14 @@ export default {
         autoHideDelay: 2500,
         toaster: 'b-toaster-bottom-center'
       })
+    },
+    // 선택한 노드를 모두 푼다. Rete의 화면(vue-render-plugin)은 노드를 고를 때에만 선택 표시를 다시 그리므로,
+    // 풀린 노드를 직접 다시 그리게 한다. (지운 노드가 선택 목록에 남아 있을 수 있어서 지금 있는 노드만 그린다)
+    clearSelection() {
+      const selected = this.editor.selected.list.filter(node => this.editor.nodes.includes(node))
+
+      this.editor.selected.clear()
+      selected.forEach(node => node.update?.())
     },
     nodeHasContent(node) {
       const view = node.controls.get('connection').vueContext
