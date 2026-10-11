@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -39,6 +39,47 @@ describe('storage', () => {
     await writeFile(storage.file, '{broken')
 
     expect(JSON.parse(await storage.load())).toEqual(items)
+  })
+
+  // 화면은 여러 곳에서 저장을 부른다 (잠글 때, 목록을 고칠 때, 캔버스를 옮긴 뒤). 둘이 겹치면 같은 임시 파일을 쓰고,
+  // 먼저 끝난 쪽이 그 파일을 가져가서 나중 쪽이 "ENOENT ... rename projects.json.tmp -> projects.json"으로 실패했다.
+  it('lets saves overlap: every one succeeds and the last one asked for is what stays', async () => {
+    const versions = Array.from({ length: 8 }, (_, i) => JSON.stringify([{ name: `v${i}`, data: { nodes: {} } }]))
+
+    await Promise.all(versions.map(json => storage.save(json)))
+
+    expect(JSON.parse(await storage.load())[0].name).toBe('v7')
+    expect(JSON.parse(await readFile(storage.backup, 'utf-8')).items[0].name).toBe('v6')
+    expect((await readdir(dir)).sort()).toEqual(['projects.json', 'projects.json.bak'])
+  })
+
+  it('writes one save after the other, in the order they were asked for', async () => {
+    const order = []
+    const saves = ['a', 'b', 'c'].map(name => storage.save(JSON.stringify([{ name, data: { nodes: {} } }])).then(async () => {
+      order.push(`${name}:${JSON.parse(await readFile(storage.file, 'utf-8')).items[0].name}`)
+    }))
+
+    await Promise.all(saves)
+
+    // 저장이 끝난 순간 파일에는 그 저장의 내용이 있다: 다른 저장이 끼어들지 않았다
+    expect(order).toEqual(['a:a', 'b:b', 'c:c'])
+  })
+
+  it('goes on saving after a save that failed', async () => {
+    await rm(dir, { recursive: true, force: true })
+    await expect(storage.save(JSON.stringify(items))).rejects.toMatchObject({ code: 'ENOENT' })
+
+    await mkdir(dir)
+    await storage.save(JSON.stringify(items))
+
+    expect(JSON.parse(await storage.load())).toEqual(items)
+  })
+
+  it('rejects invalid data in a row of saves without holding up the others', async () => {
+    const results = await Promise.allSettled([storage.save(JSON.stringify(items)), storage.save('{"a":1}'), storage.save(JSON.stringify([...items, ...items]))])
+
+    expect(results.map(x => x.status)).toEqual(['fulfilled', 'rejected', 'fulfilled'])
+    expect(JSON.parse(await storage.load())).toHaveLength(2)
   })
 
   it('rejects invalid data without touching the saved file', async () => {

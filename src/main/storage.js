@@ -60,6 +60,22 @@ export function createProjectStorage(dir) {
     return normalizeItems(JSON.parse(await readFile(path, 'utf-8')))
   }
 
+  // 저장 도중 문제가 생겨도 이전 내용이 남도록 임시 파일에 쓴 뒤 교체하고, 직전 내용은 .bak로 남긴다.
+  async function writeItems(items) {
+    const tmp = `${file}.tmp`
+
+    await writeFile(tmp, JSON.stringify({ version: FILE_VERSION, items }), 'utf-8')
+    try {
+      await copyFile(file, backup)
+    } catch (e) {
+      if (e.code !== 'ENOENT') throw e
+    }
+    await rename(tmp, file)
+  }
+
+  // 앞선 저장이 끝난 뒤에 다음 저장을 시작하게 하는 줄. 실패한 저장도 줄에서는 끝난 것으로 친다.
+  let queue = Promise.resolve()
+
   return {
     file,
     backup,
@@ -74,18 +90,16 @@ export function createProjectStorage(dir) {
       }
       return null
     },
-    // 저장 도중 문제가 생겨도 이전 내용이 남도록 임시 파일에 쓴 뒤 교체하고, 직전 내용은 .bak로 남긴다.
+    // 저장은 한 번에 하나씩, 부른 순서대로 한다. 화면은 여러 곳에서 저장을 부르고(잠글 때, 목록을 고칠 때, 캔버스를 옮긴 뒤)
+    // 그것들이 겹치면 같은 임시 파일을 함께 썼다: 먼저 끝난 쪽이 그 파일을 가져가서 나중 쪽의 rename이
+    // "ENOENT ... projects.json.tmp -> projects.json"으로 실패했고, 끝난 순서에 따라 더 오래된 내용이 남을 수도 있었다.
     async save(json) {
+      // 쓸 수 없는 내용은 줄을 서기 전에 거절한다
       const items = normalizeItems(JSON.parse(json))
-      const tmp = `${file}.tmp`
+      const result = queue.then(() => writeItems(items))
 
-      await writeFile(tmp, JSON.stringify({ version: FILE_VERSION, items }), 'utf-8')
-      try {
-        await copyFile(file, backup)
-      } catch (e) {
-        if (e.code !== 'ENOENT') throw e
-      }
-      await rename(tmp, file)
+      queue = result.catch(() => {})
+      return result
     }
   }
 }
