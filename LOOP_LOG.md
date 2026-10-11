@@ -77,7 +77,6 @@ Said while the animations were being turned off (#110): "write these down separa
 - **The window freezes for seconds when a terminal is resized just as its session ends** (found 2026-10-10 on Windows, #101). Scratch check: open a terminal to a refused port, resize the window about 3 s later while the session is still `running` and about to exit: the main process did not answer for 0.6 s (width change) up to more than 7 s (height change, rows 13 -> 7); a resize 1 s after opening or after the session has `exited` answers in about 15 ms. `terminal.js` `resize` calls `session.pty.resize` synchronously (node-pty, ConPTY). Not understood yet: find out whether it is the exiting pty, and avoid blocking main (for example skip or defer the resize of a session that is ending). Needs a test with the fake pty and a check in the real app. **2026-10-11 (#103):** not reproduced in plain Node with either ConPTY (a resize took 1 ms at most, also on a session about to end). Seen instead: between the end of the program and `onExit`, node-pty's `resize` throws "Cannot resize a pty that has already exited", which was an uncaught error in the `terminal:resize` handler of main; `resize` and `write` swallow it now. Whether the freeze was that error or a blocking call of Windows' own ConPTY (no longer used) is open: needs the real app.
 
 ### UX candidates
-- The header is 5.8 px higher while no diagram is open (49.8 instead of 44 px): the app name in the title has the default line height (1.5 at 1.7rem), the name tag of an open diagram has 1.2. Opening the first diagram moves the lower edge of the header, and everything under it, up by that much (measured in #119). Left alone: it happens once after a start, and since #119 the view of a diagram does not depend on it.
 - The right-click menu does not open with its corner at the pointer, although the comment in `components/editor/context-menu.scss` says it does: the plugin's own margins (-60px, -20px, a scoped selector) win over our `margin`, so the menu opens around the pointer with its first item under it (measured in #116). Left alone: nobody asked, and it lets a second click add a node at once. If the owner wants the usual place, the margin belongs into the `#rete &` block that already sets the width.
 
 ### Code hot spots
@@ -849,6 +848,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Did: a `cleanup` look first (exports, dependencies, notes in the code) found nothing to remove. In `terminal-panel.vue` opening and reconnecting a session attached it to its screen with the same five steps written twice; they are one method now (`attach`), and the comment about the Windows pty, which stood above another method, is with it. No change of behavior.
 - Result: tests 603 passed (2 new on the order "pty told, then output taken"; 4 mutations each fail one), lint ok, build ok, headless UI checks passed, commit bc97378. Not checked: a reconnect in the real window.
 - Found / next: nothing. Next by age: `style`, then `ux`.
+
+### #129 2026-10-11 14:4x UTC · style (run in the owner's session)
+- Did: the header has one height with and without an open diagram. The name of the app in the title had the default line height and made the header 5.8 px higher, so everything under it moved up when the first diagram opened (the UX candidate from #119).
+- Result: tests 604 passed (1 new, 2 mutations fail it), lint ok, build ok, headless UI checks passed with a new `header-check` (7 checks, three palettes; the 2 mutations fail it too), commit f17ba05. Not checked: the real window.
+- Found / next: a test in `src/main/terminal.test.js` failed once in this run: it looked for the password `pw` in the path of the generated script, and the random name of the temporary folder contained those letters. The password of the test is another one now (b97500f). Next by age: `ux`, then `health`.
 
 ## Routine
 
