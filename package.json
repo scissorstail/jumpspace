@@ -1,11 +1,11 @@
 {
   "name": "jumpspace",
   "version": "0.3.0-beta",
-  "author": "@nameEO",
+  "author": "scissorstail",
   "description": "The visual SSH connection editor",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nameEO/jumpspace.git"
+    "url": "https://github.com/scissorstail/jumpspace.git"
   },
   "license": "MIT",
   "private": true,
