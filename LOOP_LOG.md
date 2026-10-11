@@ -845,6 +845,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 601 passed, lint ok, build ok, commit bb9033d.
 - Found / next: nothing.
 
+### #128 2026-10-11 14:2x UTC · refactor (run in the owner's session)
+- Did: a `cleanup` look first (exports, dependencies, notes in the code) found nothing to remove. In `terminal-panel.vue` opening and reconnecting a session attached it to its screen with the same five steps written twice; they are one method now (`attach`), and the comment about the Windows pty, which stood above another method, is with it. No change of behavior.
+- Result: tests 603 passed (2 new on the order "pty told, then output taken"; 4 mutations each fail one), lint ok, build ok, headless UI checks passed, commit bc97378. Not checked: a reconnect in the real window.
+- Found / next: nothing. Next by age: `style`, then `ux`.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
