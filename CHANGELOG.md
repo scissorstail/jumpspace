@@ -30,6 +30,7 @@ Everything since 0.2.2-beta.
 
 ### Changed
 
+- **Node Setting shows only what is filled in while the editor is locked.** Empty fields and the icon grid are left out, since nothing can be changed there; a node without any value says so. Unlock the editor to see and edit every field.
 - **Nothing is animated.** The buttons over a node and the popovers show at once instead of fading in, and so does everything new in this version: nothing on the canvas or behind it moves or blinks by itself, and the terminal tabs do not slide while one is dragged.
 - **In a locked diagram a drag on a node moves the canvas.** A locked node cannot be moved or selected, but it still took the mouse: a drag that started on its picture, name, details or sockets did nothing, so in a full diagram there was little room left to grab the canvas. Such a drag now moves the canvas as on the background. The buttons above a node (connect, forwards, settings) work as before, they still appear with the mouse over the node, and the details keep their tooltips. Nothing changes while the editor is unlocked.
 - **The terminal panel's arrow is now a minimize button.** The down arrow at the right end of the tab row looked like "lower" but hid the whole panel. It is a dash now, like a window's minimize button, next to the new maximize button; it still hides the panel while the sessions keep running, and the terminal button in the header still shows it again.

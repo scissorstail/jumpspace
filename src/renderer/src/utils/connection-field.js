@@ -21,3 +21,19 @@ export function fieldError(key, value) {
     return check[1]
   }
 }
+
+// 노드 설정(connection-settings.vue)의 칸, 보이는 순서대로
+export const SETTING_FIELDS = ['name', 'user', 'host', 'port', 'keyPath', 'password', 'exec']
+
+// 값이 들어 있는 칸인가. 비밀번호는 앞뒤 공백도 그대로 저장하므로 공백만 있어도 값이다.
+function isFilled(key, value) {
+  if (value === undefined || value === null) return false
+
+  return key === 'password' ? String(value) !== '' : String(value).trim() !== ''
+}
+
+// 노드 설정에 보여줄 칸. 편집 중이 아니면(잠근 동안) 값이 들어 있는 칸만 남긴다 (owner, 2026-10):
+// 고칠 수 없는 빈 칸은 자리만 차지하고, 무엇이 들어 있는지 한눈에 보이지 않게 한다.
+export function shownFields(value, isLocked) {
+  return SETTING_FIELDS.filter(key => !isLocked || isFilled(key, value?.[key]))
+}

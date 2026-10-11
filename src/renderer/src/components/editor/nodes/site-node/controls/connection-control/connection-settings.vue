@@ -26,7 +26,9 @@
             class="info-list"
             style="width: 340px;"
           >
+            <!-- 편집 중이 아니면(잠근 동안) 고를 수 없는 이미지 목록과 빈 칸은 보여주지 않는다 (utils/connection-field.js의 shownFields) -->
             <IconPicker
+              v-if="!disabled"
               ref="picker"
               class="mb-3"
               :value="value.diagram"
@@ -36,6 +38,7 @@
               @input="set('diagram', $event)"
             />
             <b-form-group
+              v-if="shown.name"
               class="mb-0"
               label="Name"
               :label-for="fieldId('name')"
@@ -52,6 +55,7 @@
               />
             </b-form-group>
             <b-form-group
+              v-if="shown.user"
               class="mb-0"
               label="User"
               :label-for="fieldId('user')"
@@ -71,6 +75,7 @@
               />
             </b-form-group>
             <b-form-group
+              v-if="shown.host"
               class="mb-0"
               label="Host"
               :label-for="fieldId('host')"
@@ -90,6 +95,7 @@
               />
             </b-form-group>
             <b-form-group
+              v-if="shown.port"
               class="mb-0"
               label="Port"
               :label-for="fieldId('port')"
@@ -109,6 +115,7 @@
               />
             </b-form-group>
             <b-form-group
+              v-if="shown.keyPath"
               class="mb-0"
               label="Key"
               :label-for="fieldId('keyPath')"
@@ -143,6 +150,7 @@
               </b-input-group>
             </b-form-group>
             <b-form-group
+              v-if="shown.password"
               class="mb-0"
               label="Password"
               :label-for="fieldId('password')"
@@ -177,6 +185,7 @@
               </b-input-group>
             </b-form-group>
             <b-form-group
+              v-if="shown.exec"
               class="mb-0"
               label="Exec"
               :label-for="fieldId('exec')"
@@ -195,6 +204,13 @@
                 @update="set('exec', $event)"
               />
             </b-form-group>
+            <!-- 잠근 동안 아무 칸도 채워져 있지 않으면 단추만 남는다: 빈 것이 고장이 아니라는 것을 알린다 -->
+            <p
+              v-if="isBlank"
+              class="info-blank small mb-0"
+            >
+              Nothing is filled in. Unlock the editor to edit this node.
+            </p>
             <div class="info-action mt-2">
               <b-button
                 size="sm"
@@ -218,7 +234,7 @@
 
 <script>
 import { closePopoverOnEscape } from '@/utils/dismiss'
-import { fieldError } from '@/utils/connection-field'
+import { fieldError, shownFields } from '@/utils/connection-field'
 import IconPicker from './icon-picker'
 
 // 노드의 접속 정보 입력(이름, user, host, port, 키, 비밀번호, exec, 이미지). 값은 v-model로 주고받고, 항상 새 객체로 돌려준다.
@@ -258,6 +274,14 @@ export default {
     }
   },
   computed: {
+    // 보여줄 칸. 잠근 동안에는 값이 들어 있는 칸만 남는다.
+    shown() {
+      return Object.fromEntries(shownFields(this.value, this.disabled).map(key => [key, true]))
+    },
+    // 잠근 동안 보여줄 칸이 하나도 없다
+    isBlank() {
+      return this.disabled && Object.keys(this.shown).length === 0
+    },
     // 칸마다 고쳐야 할 점(없으면 null). 접속할 때 main이 같은 규칙으로 다시 검사한다.
     errors() {
       const errors = {}
@@ -284,3 +308,9 @@ export default {
   }
 }
 </script>
+
+<style lang="scss">
+.vt-popover .info-blank {
+  color: var(--js-text-muted);
+}
+</style>
