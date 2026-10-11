@@ -879,6 +879,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 624 passed (5 new, 7 mutations fail them and the headless checks), lint ok, build ok, headless UI checks passed (`check` 63; `zoom-check`, `canvas-check` and `setting-check` changed to the new rule), commit 6f74911. Not checked: the real window.
 - Found / next: next is the left/right split of the terminals, the third thing the owner asked for.
 
+### #135 2026-10-12 · feature (by hand, the owner: "can you add splitting the terminal? left and right would be enough")
+- Did: the terminal panel can be split left and right with a button in the tab row: the selected tab left, its neighbor right, one tab row, a click into a half or on its tab moves the keyboard there, another tab or a new terminal replaces the tab of that half, closing one of the two ends the split. Remembered per diagram.
+- Result: tests 643 passed (19 new, 16 mutations fail them), lint ok, build ok, headless UI checks passed with a new `split-check` (31 checks; the 13 mutations that show in the UI fail it), commit ea4adb5. Not checked: the real window, real ssh sessions at half the width.
+- Found / next: the halves are fixed at 50%, and the tab row does not say which tab is left and which is right; both wait for the owner's word. The 40-minute cycle goes on with `cleanup`.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
