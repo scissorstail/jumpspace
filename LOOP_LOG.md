@@ -830,14 +830,10 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Not known yet: whether a fresh run gets through without stopping at a permission prompt. The first run of each task will show it.
 - Pushed with this entry: #120 to #124.
 
-### #125 2026-10-11 13:0x UTC · health (scheduled run, the first of the routine of #124)
-- Picked: `health`, the activity not done for the longest time (#77; tests #79, cleanup #81, refactor #91, style and ux since). The last three CI runs were green, the folder was clean and level with origin.
-- Did (3139e25, lockfile only): electron 44.5.1 -> 44.7.0 and vite 7.3.6 -> 7.3.7, the two updates inside the ranges of `package.json`; http-cache-semantics 4.2.0 -> 4.3.0 and source-map-js 1.2.1 -> 1.2.2, the two audit findings with a fix that is no major version (both dev tooling). `npm audit` went from 13 to 11, `npm audit --omit=dev` is 0 as before. The Dependencies block of the Backlog is rewritten.
-- Not taken: `npm audit fix` also moved `electron-builder` and its parts from 26.15.3 to 26.17.0. Taken back: it is the tool of the installer build that comes next, and these runs may not run it. Left for the owner's build (see Dependencies).
-- Checked: lint exit 0, vitest exit 0 (594 passed, 26 skipped), build exit 0 with vite 7.3.7; the headless UI checks on that build: every run passed. `npx electron --version` prints v44.7.0 (it fetched the binary; no window).
-- Not checked: the app was never started under Electron 44.7.0. The unit tests run in Node, the UI checks in a headless Edge, and the CI of a push starts no Electron either. The first `npm run dev` of the owner, or the installer build, is the first real start; if it misbehaves, `git revert 3139e25` and `npm ci` bring 44.5.1 back.
-- Seen, not changed: `package.json` still names another owner in `author` and `repository.url` than the repository this branch is pushed to. The owner's to say.
-- Found / next: nothing else. The docs were not compared with the code in this run (#120 to #123 each updated theirs). Next by age: `tests` (#79), then `cleanup` (#81).
+### #125 2026-10-11 13:0x UTC · health (scheduled run)
+- Did: electron 44.5.1 -> 44.7.0, vite 7.3.6 -> 7.3.7 and the two audit fixes that need no major version (lockfile only); `npm audit` 13 -> 11. `electron-builder` stays at 26.15.3: the routine may not run it.
+- Result: tests 594 passed, lint ok, build ok, headless UI checks passed, commit 3139e25. Not checked: the app was never started under Electron 44.7.0.
+- Found / next: `package.json` names another account in `author` and `repository.url` than this repository (the owner's to say). Next by age: `tests`, then `cleanup`.
 
 ## Routine
 
