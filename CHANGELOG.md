@@ -32,6 +32,8 @@ Everything since 0.2.2-beta.
 
 ### Changed
 
+- **Enter saves the settings.** In *Settings*, Enter in the *Git Bash path* field does what the Save button does. The Enter that only finishes a character while typing Korean, Japanese or Chinese does not.
+
 - **Node Setting shows only what is filled in while the editor is locked.** Empty fields and the icon grid are left out, since nothing can be changed there; a node without any value says so. Unlock the editor to see and edit every field.
 - **A node under the pointer changes color instead of moving, and a clicked node gets no look.** Hovering a node used to lift it by two pixels with a larger shadow; now its frame takes the palette's sun color and its background gets lighter, and it stays where it is. Clicking a node while editing no longer gives it a pink frame: there was nothing one could do with a selected node. The pink frame now only marks the node of the terminal tab in front.
 - **Saving shows in the header.** While the diagrams are being written to disk, a small, faint ring turns left of the header buttons (the buttons keep their places). Most saves take a moment only; it stays visible when the disk is slow or the file is held by another program.

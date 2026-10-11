@@ -28,6 +28,15 @@ describe('the settings window', () => {
     expect(method('saveSetting')).toContain('terminalColors: this.terminalColors')
   })
 
+  // 경로를 고치고 Enter를 누르면 저장한다. 한글 조합을 끝내는 Enter는 저장이 아니다.
+  it('saves on Enter in the path field, but not while a character is being composed', () => {
+    const onEnter = popup.match(/\n {4}saveOnEnter\(event\) \{\n([\s\S]*?)\n {4}\}/)?.[1] ?? ''
+
+    expect(popup).toMatch(/v-model="gitBashPath"\n\s+size="sm"\n\s+@keydown\.enter="saveOnEnter"/)
+    expect(onEnter).toMatch(/^\s+if \(event\.isComposing\) return\n/)
+    expect(onEnter).toContain('this.saveSetting()')
+  })
+
   // 이 창에 줄이 없는 설정(머리글의 눈 단추)은 저장할 때 지금 값 그대로다.
   it('reads and saves every setting that has a row, and keeps the others', () => {
     const rows = Object.keys(DEFAULT_SETTING).filter(key => key !== 'hideNodeInfo')

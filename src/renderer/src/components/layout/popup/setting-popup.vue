@@ -31,6 +31,7 @@
                   id="setting-git-bash"
                   v-model="gitBashPath"
                   size="sm"
+                  @keydown.enter="saveOnEnter"
                 />
               </b-form-group>
             </b-col>
@@ -244,6 +245,13 @@ export default {
       this.backdrop = this.setting.backdrop
       this.terminalColors = this.setting.terminalColors
       this.nodeBlur = this.setting.nodeBlur
+    },
+    // 경로 칸에서 Enter는 Save 단추와 같다. 한글을 조합하는 중의 Enter(글자를 확정한다)는 아니다.
+    saveOnEnter(event) {
+      if (event.isComposing) return
+
+      event.preventDefault()
+      this.saveSetting()
     },
     async saveSetting() {
       // 이 창에 없는 설정(노드 정보 숨기기 등)은 지금 값을 그대로 둔다.
