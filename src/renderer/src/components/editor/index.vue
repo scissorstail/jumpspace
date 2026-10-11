@@ -72,6 +72,7 @@ export default {
     this.engine = null
     this.lastLockedHintAt = 0
     this.confirmedRemoval = null
+    this.isAdding = false
   },
   mounted() {
     // Node
@@ -95,6 +96,15 @@ export default {
     this.editor.use(ContextMenuPlugin, {
       delay: 250,
       rename: () => 'Add node',
+      // 캔버스 메뉴의 둘째 항목: 붙여 넣은 SSH config로 노드를 만든다 (owner, 2026-10). 붙여 넣는 창은 Layout이 띄운다.
+      // 노드가 놓일 자리는 Add node와 같다: 항목을 누를 때 마우스가 있는 곳 (캔버스 좌표).
+      items: {
+        'From SSH config': () => {
+          const { x, y } = this.editor.view.area.mouse
+
+          this.$emit('ssh-config', [x, y])
+        }
+      },
       nodeItems: {
         Duplicate: async (args) => {
           const {
@@ -166,7 +176,9 @@ export default {
         'process'
       ],
       async () => {
-        if (this.editor.silent) return
+        // 여러 노드를 한꺼번에 더하는 동안(addFromConfig)에는 끝에 한 번만 계산한다.
+        // 노드마다 계산을 시작하면 서로 겹쳐서, 만든 노드에 값이 채워지지 않은 채 남았다.
+        if (this.editor.silent || this.isAdding) return
 
         await this.compile()
       }
@@ -411,6 +423,55 @@ export default {
         return { x: node.position[0] + dx, y: node.position[1] + dy, width, height }
       }))
       this.setView(fitView(viewport, box, k))
+    },
+    // SSH config에서 읽은 노드들을 더하고 잇는다 (utils/config-import.js의 importPlan이 만든 nodes와 links).
+    // origin: 놓을 자리 (캔버스 좌표). 하나 더할 때마다 다시 계산하지 않고(isAdding) 끝에 한 번 계산한다.
+    async addFromConfig({ nodes, links }, origin) {
+      const component = this.editor.components.get('Site')
+      const added = []
+
+      this.isAdding = true
+      try {
+        for (const data of nodes) {
+          const node = await component.createNode({ connection: cloneDeep(data) })
+
+          node.position = [...origin]
+          this.editor.addNode(node)
+          added.push(node)
+        }
+        for (const [from, to] of links) {
+          this.editor.connect(added[from].outputs.get('output1'), added[to].inputs.get('input1'))
+        }
+      } finally {
+        this.isAdding = false
+      }
+
+      // 노드 아래의 글자는 계산(worker)이 끝나고 다시 그려져야 채워진다. 그 크기로 재서 놓는다.
+      await this.compile()
+      await this.$nextTick()
+      this.placeGroup(added, origin)
+    },
+    // 방금 더한 노드들을 연결 순서대로 놓는다: Arrange nodes와 같은 규칙을 그 노드들에만 쓴다.
+    // 묶음의 왼쪽 위 노드가 origin에 온다 (Add node로 만든 노드처럼 상자의 모서리가 그 자리다).
+    placeGroup(nodes, [ox, oy]) {
+      if (!nodes.length) return
+
+      const { nodes: views, connections } = this.editor.view
+      const extents = new Map(nodes.map(node => [node, this.extentOf(node)]))
+      // 첫 열은 글에 나온 순서대로 위에서 아래로 놓인다
+      const items = nodes.map((node, index) => ({ id: node.id, x: 0, y: index, ...extents.get(node) }))
+      const links = [...connections.keys()].map(c => [c.output.node.id, c.input.node.id])
+      const positions = arrangeLayout(items, links)
+      const left = Math.min(...nodes.map(node => positions.get(node.id)[0]))
+      const top = Math.min(...nodes.map(node => positions.get(node.id)[1]))
+      const first = nodes.find(node => positions.get(node.id)[0] === left && positions.get(node.id)[1] === top) || nodes[0]
+      const corner = extents.get(first)
+
+      for (const node of nodes) {
+        const [px, py] = positions.get(node.id)
+        const { dx, dy } = extents.get(node)
+        views.get(node).translate(ox + px - left - dx + corner.dx, oy + py - top - dy + corner.dy)
+      }
     },
     emitNodeCount() {
       this.$emit('node-count', this.editor.nodes.length)

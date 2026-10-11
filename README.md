@@ -41,7 +41,7 @@ There is no release yet, but the CI can build a Windows installer on request: un
 ### nodes and paths
 
 1. Click the title in the header (it shows `jumpspace` until a diagram is open) to open the list of diagrams, add an item with `+` and give it a name.
-2. Unlock the editor (lock icon), right-click the canvas and choose *Add node*, and chain nodes (jump hosts) with two clicks: click a node's right socket (the line follows the mouse), then click another node's left socket. A click on empty canvas cancels. Clicking a connected left socket picks its line up again.
+2. Unlock the editor (lock icon), right-click the canvas and choose *Add node* (or *From SSH config* to make nodes out of pasted `~/.ssh/config` text, see below), and chain nodes (jump hosts) with two clicks: click a node's right socket (the line follows the mouse), then click another node's left socket. A click on empty canvas cancels. Clicking a connected left socket picks its line up again.
 3. Hover a node to open its menu:
    - terminal: **Connect** runs `ssh` to the node in a terminal tab of the app (or in a Git Bash window, see *Settings > Open SSH in*). When the node has previous nodes and every one of them has a user, host and port, it is **ProxyJump** instead, which connects through the whole chain.
    - link: **Port forwarding**, see below. The button with a counter next to it starts the enabled forwards.
@@ -100,6 +100,12 @@ Open the link icon of a node and add rows of `local port -> target host : target
 
 *Copy SSH config* in the settings copies the node in `~/.ssh/config` format. Previous nodes become `ProxyJump`, enabled forwards become `LocalForward`, `Exec` becomes `RemoteCommand`. Passwords are never included.
 
+### from SSH config
+
+The other way round: unlock the editor, right-click the canvas and choose *From SSH config*, then paste one or more `Host` blocks. Before anything is made, the dialog lists what the text gives: one node for each `Host`, with only the values written there (`HostName`, `User`, `Port`, `IdentityFile`, `RemoteCommand` as *Exec*, `LocalForward` as enabled forwards). Everything else stays empty, except the port: it is 22 when the text names none, as for ssh. A `ProxyJump` to another `Host` of the same text becomes a connection, so a path copied with *Copy SSH config* comes back as the same path. The nodes appear where the menu item was pressed and are saved when you lock the editor, like any other node.
+
+Not taken over, and named in the dialog: other keywords (`ForwardAgent`, `Include`, ...), blocks that are not one server (`Host *`, other patterns, `Match`), a `ProxyJump` to a host that is not in the text, and everything after the first 50 hosts. A config holds no passwords, so none is set. A value that ssh would be refused with (the rules of the node settings) is marked in the list; the node is made anyway and can be corrected in its settings.
+
 ### your data
 
 Projects are stored in `projects.json` in the app data folder (`%APPDATA%\jumpspace` on Windows). Each item keeps its name, its nodes and the last canvas view. The previous version of the file is kept as `projects.json.bak`. Settings are stored next to it. Data saved by v0.2.x in the browser storage is migrated automatically on first launch.
@@ -136,6 +142,8 @@ src/shared/     pure modules used by both main and renderer
   setting.js      the app settings and their defaults (Git Bash path, tray,
                   where ssh opens, theme, background, node glass)
   view.js         the canvas zoom range and the check of a saved view
+  ssh-config-parse.js  reads `Host` blocks of an SSH config ("From SSH config"), the
+                  reverse of ssh-config.js
   terminal-marker.js  the invisible "logged in" marker the app terminal shows as "connected"
   validate.js     validation of every value that ends up in a command (main checks
                   before running; the node settings show the same rules while typing)

@@ -130,6 +130,7 @@
             :class="[!editorData && 'layout-inactive']"
             @view-change="updateView"
             @node-count="nodeCount = $event"
+            @ssh-config="openConfigPopup"
           />
 
           <!-- 열려 있는 item이 없거나, 열린 item에 노드가 없을 때의 안내 (우클릭은 그대로 캔버스로 간다) -->
@@ -154,6 +155,12 @@
     <InfoPopup :show.sync="isShowInfoPopup" />
 
     <SettingPopup :show.sync="isShowSettingPopup" />
+
+    <!-- 캔버스 메뉴의 From SSH config: 붙여 넣은 SSH config로 노드를 만든다 -->
+    <ConfigPopup
+      :show.sync="isShowConfigPopup"
+      @create="addFromConfig"
+    />
   </div>
 </template>
 
@@ -163,6 +170,7 @@ import MainNavigator from '../components/layout/main-navigator'
 import Editor from '../components/editor'
 import InfoPopup from '../components/layout/popup/info-popup'
 import SettingPopup from '../components/layout/popup/setting-popup'
+import ConfigPopup from '../components/layout/popup/config-popup'
 import TerminalPanel from '../components/terminal/terminal-panel'
 import SceneBackdrop from '../components/layout/scene-backdrop'
 import { canvasHint, hasSavedPassword, loadProjectData, EXPORT_PASSWORD_WARNING } from '../utils/project'
@@ -189,6 +197,7 @@ export default {
     Editor,
     InfoPopup,
     SettingPopup,
+    ConfigPopup,
     TerminalPanel,
     SceneBackdrop
   },
@@ -196,6 +205,7 @@ export default {
     return {
       isShowInfoPopup: false,
       isShowSettingPopup: false,
+      isShowConfigPopup: false,
       isEditorLocked: true,
       projectData: null,
       editorData: null,
@@ -255,6 +265,8 @@ export default {
   created() {
     this.isRestoringView = false
     this.saveViewTimer = null
+    // From SSH config를 누른 자리 (캔버스 좌표). 만든 노드를 거기에 놓는다.
+    this.configPoint = [0, 0]
   },
   mounted() {
     this.loadProject()
@@ -288,6 +300,17 @@ export default {
     },
     arrangeNodes() {
       this.$refs.editorRef.arrangeNodes()
+    },
+    // 캔버스 메뉴의 From SSH config: 붙여 넣는 창을 연다. 메뉴는 잠금을 푼 동안에만 열린다.
+    openConfigPopup(point) {
+      this.configPoint = point
+      this.isShowConfigPopup = true
+    },
+    // 창에서 Create를 눌렀을 때. 다른 노드처럼 잠글 때 저장된다.
+    addFromConfig(plan) {
+      if (this.isEditorLocked || !this.editorData) return
+
+      this.$refs.editorRef.addFromConfig(plan, this.configPoint)
     },
     toggleSwitcher() {
       if (this.isSwitcherOpen) {
