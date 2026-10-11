@@ -77,11 +77,12 @@ Said while the animations were being turned off (#110): "write these down separa
 - **The window freezes for seconds when a terminal is resized just as its session ends** (found 2026-10-10 on Windows, #101). Scratch check: open a terminal to a refused port, resize the window about 3 s later while the session is still `running` and about to exit: the main process did not answer for 0.6 s (width change) up to more than 7 s (height change, rows 13 -> 7); a resize 1 s after opening or after the session has `exited` answers in about 15 ms. `terminal.js` `resize` calls `session.pty.resize` synchronously (node-pty, ConPTY). Not understood yet: find out whether it is the exiting pty, and avoid blocking main (for example skip or defer the resize of a session that is ending). Needs a test with the fake pty and a check in the real app. **2026-10-11 (#103):** not reproduced in plain Node with either ConPTY (a resize took 1 ms at most, also on a session about to end). Seen instead: between the end of the program and `onExit`, node-pty's `resize` throws "Cannot resize a pty that has already exited", which was an uncaught error in the `terminal:resize` handler of main; `resize` and `write` swallow it now. Whether the freeze was that error or a blocking call of Windows' own ConPTY (no longer used) is open: needs the real app.
 
 ### UX candidates
+- The split terminal panel (#135): no key moves between the two halves (only a click into a half or on its tab), and the tab row does not say which tab is left and which is right. Not asked for by the owner; build only on their word.
 - The right-click menu does not open with its corner at the pointer, although the comment in `components/editor/context-menu.scss` says it does: the plugin's own margins (-60px, -20px, a scoped selector) win over our `margin`, so the menu opens around the pointer with its first item under it (measured in #116). Left alone: nobody asked, and it lets a second click add a node at once. If the owner wants the usual place, the margin belongs into the `#rete &` block that already sets the width.
 
 ### Code hot spots
 - `src/renderer/src/components/layout/main-navigator.vue` (about 650 lines, the item menu moved out in #46): list, drag, select, rename, import/export. Most of the rest is its scoped CSS; the next seam would be the header toolbar (new, more actions).
-- `src/renderer/src/views/Layout.vue` (about 530 lines; the scene moved out, the diagram list and the header buttons for the terminal came in)
+- `src/renderer/src/views/Layout.vue` (about 550 lines; the scene moved out, the diagram list came in; the terminal button of the header left in #134)
 - `src/renderer/src/components/terminal/terminal-panel.vue` (about 350 lines; texts and colors moved to `utils/terminal-view.js` in #57, the tab row to `terminal-tabs.vue` in #75): session start, reconnect, clipboard, resize and maximize.
 - `src/main/index.js` (about 310 lines): mostly window, tray and IPC wiring now; the app:// path check, the `{ ok, error }` wrapper and the setting store moved out in #67.
 
@@ -883,6 +884,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Did: the terminal panel can be split left and right with a button in the tab row: the selected tab left, its neighbor right, one tab row, a click into a half or on its tab moves the keyboard there, another tab or a new terminal replaces the tab of that half, closing one of the two ends the split. Remembered per diagram.
 - Result: tests 643 passed (19 new, 16 mutations fail them), lint ok, build ok, headless UI checks passed with a new `split-check` (31 checks; the 13 mutations that show in the UI fail it), commit ea4adb5. Not checked: the real window, real ssh sessions at half the width.
 - Found / next: the halves are fixed at 50%, and the tab row does not say which tab is left and which is right; both wait for the owner's word. The 40-minute cycle goes on with `cleanup`.
+
+### #136 2026-10-12 · cleanup (run in the owner's session)
+- Did: comments in the terminal store, `utils/terminal-sessions.js`, the editor and one sentence of CLAUDE.md still said the panel is "hidden"; since #134 it is minimized to its tab row. `isPanelOpen` now says what false means. Backlog: the stale note about the header's terminal button, and two UX candidates of the split.
+- Result: tests 643 passed, lint ok, build ok (comments only, no UI check needed), commit 0d04fbe.
+- Found / next: nothing else left over from #133 to #135. Next by age: `refactor`, then `style`.
 
 ## Routine
 
