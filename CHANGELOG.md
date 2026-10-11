@@ -33,6 +33,8 @@ Everything since 0.2.2-beta.
 
 ### Changed
 
+- **A minimized terminal panel stays at the bottom.** The dash at the right end of the tab row used to take the whole panel away and put a terminal button with a count into the header. Now the tab row stays where it is, at the bottom of the window, without the terminals above it. A click on a tab shows that terminal again, and the dash has become an arrow up that shows the panel as it was. The header has no terminal button any more. No tab is marked as selected while the panel is minimized, and no node on the canvas.
+
 - **Enter saves the settings.** In *Settings*, Enter in the *Git Bash path* field does what the Save button does. The Enter that only finishes a character while typing Korean, Japanese or Chinese does not.
 
 - **Node Setting shows only what is filled in while the editor is locked.** Empty fields and the icon grid are left out, since nothing can be changed there; a node without any value says so. Unlock the editor to see and edit every field.

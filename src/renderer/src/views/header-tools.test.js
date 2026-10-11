@@ -32,7 +32,6 @@ describe('the buttons at the right of the header', () => {
 
   it('are read from the layout', () => {
     expect(buttons.map(x => x.label?.match(/Show terminals|node details|Reset view|Arrange nodes|Lock editor/)?.[0])).toEqual([
-      'Show terminals',
       'node details',
       'Arrange nodes',
       'Reset view',
@@ -52,10 +51,11 @@ describe('the buttons at the right of the header', () => {
     expect(order).toEqual(['<slot name="main-navigator-toolbar" />', '<hr', '<b-dropdown', 'icon="gear"'])
   })
 
-  // 숫자 배지가 있는 단추는 글자 줄에 놓으면 그림만 있는 단추보다 1px쯤 높다. 터미널 패널을 숨길 때마다 머리글이
-  // 그만큼 높아져서 캔버스가 줄었고, 패널이 없을 때의 캔버스 높이가 패널을 숨겼을 때와 열었을 때 서로 달랐다.
-  it('keep the button with the count as high as the others', () => {
-    expect(named('Show terminals').classes).toBe('d-inline-flex align-items-center')
+  // 최소화한 터미널은 창 아래쪽의 탭 줄에서 다시 연다 (owner, 2026-10-12: 위로 가서 작아지는 것이 이상했다).
+  // 머리글에는 그 단추가 없다: 터미널을 최소화해도 머리글의 단추는 그대로다.
+  it('have no button for minimized terminals', () => {
+    expect(named('Show terminals')).toBeUndefined()
+    expect(layout).not.toMatch(/terminalPanel', true/)
   })
 
   it('show the lock button whenever a diagram is on screen, locked or not', () => {

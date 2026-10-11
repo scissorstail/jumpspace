@@ -1,14 +1,16 @@
 <template>
-  <!-- 최대화하면 높이를 정하지 않는다: 캔버스 자리까지 #workspace를 다 차지한다 (.is-maximized) -->
+  <!-- 최대화하면 높이를 정하지 않는다: 캔버스 자리까지 #workspace를 다 차지한다 (.is-maximized).
+       최소화하면(owner, 2026-10-12) 탭 줄만 창 아래쪽에 남는다 (.is-minimized): 높이는 탭 줄의 것이고, 화면과 끄는 가장자리는 없다. -->
   <section
-    v-show="isOpen && sessions.length > 0"
+    v-show="sessions.length > 0"
     class="terminal-panel"
-    :class="{ 'is-maximized': isMaximized }"
-    :style="isMaximized ? null : { height: `${shownHeight}px` }"
+    :class="{ 'is-maximized': isMaximized, 'is-minimized': !isOpen }"
+    :style="isMaximized || !isOpen ? null : { height: `${shownHeight}px` }"
     aria-label="Terminals"
   >
     <!-- 위쪽 가장자리를 끌어서 높이를 바꾼다. 헤더 가까이 끌어 올리면 최대화하고, 최대화한 것을 끌어 내리면 풀린다. -->
     <div
+      v-show="isOpen"
       class="terminal-resize"
       :title="isMaximized ? 'Drag down to lower' : 'Drag to resize, up to the header to maximize'"
       @mousedown.prevent="startResize"
@@ -18,15 +20,20 @@
       :sessions="sessions"
       :active-key="activeKey"
       :is-maximized="isMaximized"
+      :is-minimized="!isOpen"
       @activate="activate"
       @close="closeSession"
       @reorder="$store.commit('terminalReorder', $event)"
-      @maximize="$store.commit('terminalMaximize', $event)"
+      @maximize="maximize"
       @hide="$store.commit('terminalPanel', false)"
+      @show="$store.commit('terminalPanel', true)"
     />
 
     <!-- 화면은 모든 item의 세션 것을 둔다: 다른 item으로 갔다 와도 내용이 남는다. 탭 줄은 지금 item의 것만 보여준다. -->
-    <div class="terminal-body">
+    <div
+      v-show="isOpen"
+      class="terminal-body"
+    >
       <div
         v-for="session in allSessions"
         v-show="session.key === activeKey"
@@ -306,6 +313,11 @@ export default {
     },
     activate(key) {
       this.$store.commit('terminalActivate', key)
+    },
+    // 최소화한 탭 줄에서 최대화를 누르면 패널도 다시 보인다.
+    maximize(isMaximized) {
+      this.$store.commit('terminalMaximize', isMaximized)
+      this.$store.commit('terminalPanel', true)
     },
     fit(entry, force = false) {
       if (!entry || !entry.term.element || entry.term.element.offsetParent === null) return

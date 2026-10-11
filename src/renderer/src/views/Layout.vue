@@ -21,26 +21,6 @@
             label="Saving"
           />
         </span>
-        <!-- 숨긴 터미널 패널 다시 열기. 안의 그림과 숫자를 가운데에 맞춰 놓는다(flex): 글자 줄에 놓으면 숫자 배지 때문에
-             다른 단추보다 1px쯤 높아져서, 패널을 숨길 때마다 머리글이 높아지고 캔버스가 그만큼 줄었다. -->
-        <b-button
-          v-if="terminalCount > 0 && !isTerminalPanelOpen"
-          class="d-inline-flex align-items-center"
-          size="sm"
-          variant="light"
-          :aria-label="`Show terminals (${terminalCount})`"
-          :title="`Show terminals (${terminalCount})`"
-          @click="$store.commit('terminalPanel', true)"
-        >
-          <b-icon icon="terminal" />
-          <b-badge
-            variant="primary"
-            pill
-            class="ml-1"
-          >
-            {{ terminalCount }}
-          </b-badge>
-        </b-button>
         <!-- 터미널을 최대화한 동안에는 캔버스가 보이지 않는다: 다이어그램 단추들을 두지 않는다. (내리기는 탭 줄의 단추) -->
         <template v-if="editorData && !isTerminalMaximized">
           <!-- 노드의 접속 정보 숨기기/보이기 (이름은 남는다). 화면을 보여줄 때 쓴다. -->
@@ -242,12 +222,6 @@ export default {
     },
     nodeBlur() {
       return this.$store.getters.setting.nodeBlur
-    },
-    terminalCount() {
-      return this.$store.getters.terminalSessions.length
-    },
-    isTerminalPanelOpen() {
-      return this.$store.getters.isTerminalPanelOpen
     },
     // 터미널 패널이 헤더 아래까지 올라가 캔버스 자리를 차지하고 있는지
     isTerminalMaximized() {

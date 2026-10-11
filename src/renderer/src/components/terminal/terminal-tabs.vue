@@ -1,6 +1,6 @@
 <template>
   <div class="terminal-tabs">
-    <!-- 탭이 많으면 이 목록만 옆으로 넘긴다. 오른쪽 끝의 패널 단추(최대화, 최소화)는 늘 보인다.
+    <!-- 탭이 많으면 이 목록만 옆으로 넘긴다. 오른쪽 끝의 패널 단추(최대화, 최소화 또는 다시 보이기)는 늘 보인다.
          탭을 끌면 순서가 바뀐다 (닫기 단추에서는 끌리지 않는다). -->
     <draggable
       ref="tabList"
@@ -20,9 +20,9 @@
         :key="session.key"
         :ref="`tab-${session.key}`"
         class="terminal-tab"
-        :class="{ active: session.key === activeKey, [`is-${session.status}`]: true, 'is-connecting': session.status === 'running' && !session.connected, 'has-error': session.status === 'exited' && !!session.exitCode }"
+        :class="{ active: session.key === activeKey && !isMinimized, [`is-${session.status}`]: true, 'is-connecting': session.status === 'running' && !session.connected, 'has-error': session.status === 'exited' && !!session.exitCode }"
         role="tab"
-        :aria-selected="session.key === activeKey ? 'true' : 'false'"
+        :aria-selected="session.key === activeKey && !isMinimized ? 'true' : 'false'"
         tabindex="0"
         :title="`${label(session)}: ${statusText(session)}`"
         @click="$emit('activate', session.key)"
@@ -57,7 +57,8 @@
       </div>
     </draggable>
 
-    <!-- 창의 단추처럼: 헤더 아래까지 올리기(최대화한 동안에는 내리기)와 최소화(패널을 숨긴다, 헤더의 터미널 단추로 다시 연다) -->
+    <!-- 창의 단추처럼: 헤더 아래까지 올리기(최대화한 동안에는 내리기)와 최소화(탭 줄만 아래쪽에 남는다).
+         최소화한 동안에는 최소화 단추가 다시 보이기 단추다 (같은 자리: 두 번 누르면 원래대로다). 탭을 눌러도 다시 보인다. -->
     <button
       type="button"
       class="terminal-maximize"
@@ -73,14 +74,14 @@
     <button
       type="button"
       class="terminal-hide"
-      aria-label="Minimize terminals"
-      title="Minimize terminals (they keep running)"
-      @click="$emit('hide')"
+      :aria-label="isMinimized ? 'Show terminals' : 'Minimize terminals'"
+      :title="isMinimized ? 'Show terminals' : 'Minimize terminals (they keep running)'"
+      @click="$emit(isMinimized ? 'show' : 'hide')"
     >
       <!-- 줄의 길이를 옆 단추의 가로줄에 맞춘다 (dash는 그대로 두면 짧다) -->
       <b-icon
-        icon="dash"
-        scale="1.4"
+        :icon="isMinimized ? 'chevron-up' : 'dash'"
+        :scale="isMinimized ? 1 : 1.4"
         aria-hidden="true"
       />
     </button>
@@ -93,7 +94,7 @@ import { duplicateNumbers, numberedTitle } from '@/utils/terminal-sessions'
 import { revealScrollLeft, sessionStatusText } from '@/utils/terminal-view'
 
 // 터미널 패널 위쪽의 탭 줄. 탭이 많으면 좁아졌다가 목록만 옆으로 넘어가고, 활성 탭은 늘 보이게 한다.
-// 탭을 고르기, 닫기, 끌어서 바꾼 순서, 패널 최대화/내리기, 패널 숨기기는 이벤트(activate, close, reorder, maximize, hide)로 패널에 알린다.
+// 탭을 고르기, 닫기, 끌어서 바꾼 순서, 패널 최대화/내리기, 패널 최소화/다시 보이기는 이벤트(activate, close, reorder, maximize, hide, show)로 패널에 알린다.
 export default {
   name: 'TerminalTabs',
   components: { draggable },
@@ -108,6 +109,11 @@ export default {
     },
     // 패널이 헤더 아래까지 올라가 있는지 (최대화 단추가 내리기 단추로 바뀐다)
     isMaximized: {
+      type: Boolean,
+      default: false
+    },
+    // 패널을 최소화해서 이 탭 줄만 남았는지 (고른 탭을 표시하지 않고, 최소화 단추가 다시 보이기 단추로 바뀐다)
+    isMinimized: {
       type: Boolean,
       default: false
     }
