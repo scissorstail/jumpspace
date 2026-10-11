@@ -34,8 +34,8 @@ describe('the buttons at the right of the header', () => {
     expect(buttons.map(x => x.label?.match(/Show terminals|node details|Reset view|Arrange nodes|Lock editor/)?.[0])).toEqual([
       'Show terminals',
       'node details',
-      'Reset view',
       'Arrange nodes',
+      'Reset view',
       'Lock editor'
     ])
   })
@@ -56,7 +56,14 @@ describe('the buttons at the right of the header', () => {
     expect(named('Lock editor').when).toEqual(['editorData && !isTerminalMaximized'])
   })
 
-  it('show the buttons that change the diagram only while it is unlocked', () => {
+  it('show the button that changes the diagram only while it is unlocked', () => {
     expect(named('Arrange nodes').when).toEqual(['editorData && !isTerminalMaximized', '!isEditorLocked'])
+  })
+
+  // 보기를 처음으로 돌리는 것은 다이어그램을 바꾸지 않는다: 잠긴 동안에도 있다 (owner, 2026-10).
+  // 자물쇠의 바로 왼쪽이라서, 잠금을 풀어 정렬 단추가 생겨도 제자리에 있다.
+  it('show Reset view whenever a diagram is on screen, right before the lock', () => {
+    expect(named('Reset view').when).toEqual(['editorData && !isTerminalMaximized'])
+    expect(buttons[buttons.length - 2].label).toBe('Reset view')
   })
 })

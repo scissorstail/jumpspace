@@ -20,3 +20,16 @@ export function lockedPress(event, { isLocked = false } = {}) {
 
   return target.closest(PRESS_KEEPERS) ? null : 'canvas'
 }
+
+// 더블클릭이 캔버스의 것인지: 그러면 보기를 처음으로 돌린다 (머리글의 Reset view와 같은 일).
+// 빈 캔버스 위는 언제나 그렇다. 노드 위는 잠긴 동안에만 그렇다: 그때 노드의 그림과 글자는 배경처럼 군다 (위의 lockedPress와 같은 규칙,
+// 단추와 입력칸은 뺀다). 편집 중의 노드, 연결선, 우클릭 메뉴 위의 더블클릭은 그대로 둔다 (글자를 고르는 것 등).
+//   event: dblclick ({ target })
+export function isCanvasDoubleClick(event, { isLocked = false } = {}) {
+  const target = event?.target
+  if (typeof target?.closest !== 'function') return false
+  if (target.closest('.connection, .context-menu')) return false
+  if (!target.closest('.node')) return true
+
+  return lockedPress(event, { isLocked }) === 'canvas'
+}

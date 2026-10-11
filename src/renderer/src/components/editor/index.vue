@@ -17,10 +17,10 @@ import AreaPlugin from 'rete-area-plugin'
 import ReadonlyPlugin from 'rete-readonly-plugin'
 
 import SiteNode from './nodes/site-node'
-import { MAX_ZOOM, MIN_ZOOM, fitView, scaleView, settleSize, viewOf, zoomAround } from '@/utils/view'
+import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, scaleView, settleSize, viewOf } from '@/utils/view'
 import { arrangeLayout, boxOf } from '@/utils/arrange'
 import { activeTerminalNode, hopKey, routeStates } from '@/utils/terminal-sessions'
-import { lockedPress } from '@/utils/locked-press'
+import { isCanvasDoubleClick, lockedPress } from '@/utils/locked-press'
 
 export default {
   name: 'EditorIndex',
@@ -211,10 +211,12 @@ export default {
       if (isLocked) this.clearSelection()
     })
 
-    // 빈 캔버스를 더블클릭하면 Rete는 확대한다. 대신 이 item을 열었을 때의 확대로 돌아간다 (더블클릭한 곳 기준).
-    this.entry = null // { k, size }: item을 열었을 때의 확대와 그때의 영역 크기
+    // 캔버스를 더블클릭하면 Rete는 확대한다. 대신 머리글의 Reset view와 똑같이 처음 보기로 돌아간다 (owner, 2026-10).
+    // 어디가 캔버스인지는 utils/locked-press.js의 isCanvasDoubleClick: 빈 곳은 언제나, 노드 위는 잠긴 동안에만.
     this.editor.on('zoom', ({ source }) => source !== 'dblclick')
-    this.onDoubleClick = e => this.restoreEntryZoom(e)
+    this.onDoubleClick = e => {
+      if (this.editorData && isCanvasDoubleClick(e, { isLocked: this.isLocked })) this.resetView()
+    }
     this.$el.addEventListener('dblclick', this.onDoubleClick)
 
     // 연결은 클릭 두 번으로만 잇는다: 시작 소켓을 클릭하면 선이 마우스를 따라오고, 도착 소켓을 클릭하면 이어진다.
@@ -341,13 +343,12 @@ export default {
     },
     // 기억해 둔 보기(base)를 지금 영역 크기에 맞춰 보여준다. base는 그대로 둔다.
     // 다만 영역이 접혀 있을 때(터미널 패널을 최대화한 동안) 연 보기는 크기를 모른 채 기억되므로,
-    // 영역이 처음 보일 때의 크기를 그 보기의 크기로 삼는다. (item을 열었을 때의 확대인 entry도 같다)
+    // 영역이 처음 보일 때의 크기를 그 보기의 크기로 삼는다.
     rescaleView() {
       if (!this.base) return
 
       const now = this.areaSize()
       this.base.size = settleSize(this.base.size, now)
-      if (this.entry) this.entry.size = settleSize(this.entry.size, now)
 
       this.isRescaling = true
       try {
@@ -357,20 +358,14 @@ export default {
       }
     },
     // item을 열 때의 보기. 저장할 때의 영역 크기(w, h)가 있으면 지금 크기에 맞춘다.
-    // 그때의 확대를 기억해 두었다가 더블클릭으로 되돌린다 (영역 크기가 바뀌면 그 확대도 같은 비율로 따라간다).
     openView({ k, x, y, w, h }) {
       const size = w > 0 && h > 0 ? { width: w, height: h } : this.areaSize()
       this.base = { view: { k, x, y }, size }
-      this.entry = { k, size }
       this.rescaleView()
     },
-    restoreEntryZoom(e) {
-      // 노드나 연결선, 메뉴 위의 더블클릭(글자 고르기 등)은 그대로 둔다.
-      if (!this.entry || e.target.closest('.node, .connection, .context-menu')) return
-
-      const rect = this.$el.getBoundingClientRect()
-      const entryZoom = scaleView({ k: this.entry.k, x: 0, y: 0 }, this.entry.size, this.areaSize()).k
-      this.setView(zoomAround(this.editor.view.area.transform, entryZoom, { x: e.clientX - rect.left, y: e.clientY - rect.top }))
+    // 처음 보기(기본 확대, 원점)로 돌린다. 머리글의 Reset view 단추와 캔버스의 더블클릭이 함께 쓴다. 바뀐 보기는 저장된다.
+    resetView() {
+      this.setView(DEFAULT_VIEW)
     },
     // 노드 상자에 그 밖으로 나온 부분(아래의 이름과 주소, 양옆 소켓)을 더한 영역. 캔버스 좌표로,
     // dx, dy는 노드 위치(상자의 왼쪽 위)에서 영역의 왼쪽 위까지. 마우스를 올리면 위에 뜨는 메뉴는 줄 간격 안에 들어간다.

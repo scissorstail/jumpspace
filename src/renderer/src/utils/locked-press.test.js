@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { lockedPress } from './locked-press'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { isCanvasDoubleClick, lockedPress } from './locked-press'
 
 // 테스트는 Node에서 돌아서 DOM이 없다. closest()만 있는 작은 요소를 만든다 (태그와 클래스 선택자만 안다).
 function el(tag, classes = [], parent = null) {
@@ -83,5 +85,87 @@ describe('lockedPress', () => {
     expect(lockedPress(press(null), locked)).toBe(null)
     expect(lockedPress(press({}), locked)).toBe(null)
     expect(lockedPress(undefined, locked)).toBe(null)
+  })
+})
+
+// 캔버스의 더블클릭은 머리글의 Reset view와 같은 일을 한다 (owner, 2026-10). 어디까지가 캔버스인지가 여기서 정해진다.
+describe('isCanvasDoubleClick', () => {
+  const twice = target => ({ target })
+  const background = el('div', ['background'], canvas)
+  const connection = el('div', ['connection'], canvas)
+  const line = el('path', ['main-path'], el('svg', [], connection))
+  const contextMenu = el('div', ['context-menu'], canvas)
+
+  it.each([[false], [true]])('takes a double click on the empty canvas, locked: %s', isLocked => {
+    expect(isCanvasDoubleClick(twice(canvas), { isLocked })).toBe(true)
+    expect(isCanvasDoubleClick(twice(background), { isLocked })).toBe(true)
+  })
+
+  it('takes it without being told about the lock', () => {
+    expect(isCanvasDoubleClick(twice(canvas))).toBe(true)
+  })
+
+  // 편집 중에는 노드 위의 더블클릭이 노드의 것이다 (이름을 고르는 것 등).
+  it.each([
+    ['the box of the node', node],
+    ['the icon', icon],
+    ['the name', name],
+    ['the details', details],
+    ['a socket', socket]
+  ])('leaves a double click on %s alone while the diagram is edited', (_, target) => {
+    expect(isCanvasDoubleClick(twice(target), { isLocked: false })).toBe(false)
+    expect(isCanvasDoubleClick(twice(target))).toBe(false)
+  })
+
+  // 잠긴 동안 노드의 그림과 글자는 배경처럼 군다: 그 위에서 끌면 캔버스가 움직이고, 더블클릭도 캔버스의 것이다.
+  it.each([
+    ['the box of the node', node],
+    ['the icon', icon],
+    ['the name', name],
+    ['the details', details],
+    ['a socket', socket]
+  ])('takes a double click on %s of a locked diagram', (_, target) => {
+    expect(isCanvasDoubleClick(twice(target), locked)).toBe(true)
+  })
+
+  it.each([
+    ['a button', button],
+    ['the icon inside a button', buttonIcon],
+    ['the badge next to a button', badge]
+  ])('never takes a double click on %s: pressing a button twice must not move the view', (_, target) => {
+    expect(isCanvasDoubleClick(twice(target), locked)).toBe(false)
+    expect(isCanvasDoubleClick(twice(target), { isLocked: false })).toBe(false)
+  })
+
+  it.each([[false], [true]])('leaves a double click on a line or on the right-click menu alone, locked: %s', isLocked => {
+    expect(isCanvasDoubleClick(twice(connection), { isLocked })).toBe(false)
+    expect(isCanvasDoubleClick(twice(line), { isLocked })).toBe(false)
+    expect(isCanvasDoubleClick(twice(contextMenu), { isLocked })).toBe(false)
+    expect(isCanvasDoubleClick(twice(el('div', ['item'], contextMenu)), { isLocked })).toBe(false)
+  })
+
+  it('copes with a target that is not an element', () => {
+    expect(isCanvasDoubleClick(twice(null), locked)).toBe(false)
+    expect(isCanvasDoubleClick(twice({}), locked)).toBe(false)
+    expect(isCanvasDoubleClick(undefined)).toBe(false)
+  })
+})
+
+// 단추와 더블클릭이 같은 일을 하려면 같은 함수를 불러야 한다. 한쪽만 다른 보기로 가게 고치면 여기서 걸린다.
+describe('Reset view', () => {
+  const read = (...parts) => readFileSync(join(__dirname, '..', ...parts), 'utf8').replace(/\r\n/g, '\n')
+  const editor = read('components', 'editor', 'index.vue')
+  const layout = read('views', 'Layout.vue')
+
+  it('is one function of the editor, used by the header button and by the double click', () => {
+    expect(editor).toMatch(/\n\s+resetView\(\) \{\n\s+this\.setView\(DEFAULT_VIEW\)\n\s+\},/)
+    expect(editor).toMatch(/if \(this\.editorData && isCanvasDoubleClick\(e, \{ isLocked: this\.isLocked \}\)\) this\.resetView\(\)/)
+    expect(editor).toMatch(/addEventListener\('dblclick', this\.onDoubleClick\)/)
+    expect(layout).toMatch(/\n\s+resetView\(\) \{\n\s+this\.\$refs\.editorRef\.resetView\(\)\n\s+\},/)
+  })
+
+  // Rete는 더블클릭하면 확대한다. 그 확대가 남아 있으면 처음 보기로 돌린 뒤에 다시 확대된다.
+  it('replaces the zoom Rete does on a double click', () => {
+    expect(editor).toMatch(/this\.editor\.on\('zoom', \(\{ source \}\) => source !== 'dblclick'\)/)
   })
 })

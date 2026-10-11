@@ -42,28 +42,28 @@
           >
             <b-icon :icon="hideNodeInfo ? 'eye-slash' : 'eye'" />
           </b-button>
-          <!-- 잠금을 풀었을 때만: 보기 초기화, 노드 정렬 -->
-          <template v-if="!isEditorLocked">
-            <b-button
-              size="sm"
-              title="Reset view"
-              aria-label="Reset view"
-              variant="light"
-              @click="resetView"
-            >
-              <b-icon icon="arrow-counterclockwise" />
-            </b-button>
-            <b-button
-              size="sm"
-              title="Arrange nodes"
-              aria-label="Arrange nodes"
-              variant="light"
-              :disabled="nodeCount === 0"
-              @click="arrangeNodes"
-            >
-              <b-icon icon="diagram-3" />
-            </b-button>
-          </template>
+          <!-- 잠금을 풀었을 때만: 노드 정렬 (노드의 위치를 바꾼다) -->
+          <b-button
+            v-if="!isEditorLocked"
+            size="sm"
+            title="Arrange nodes"
+            aria-label="Arrange nodes"
+            variant="light"
+            :disabled="nodeCount === 0"
+            @click="arrangeNodes"
+          >
+            <b-icon icon="diagram-3" />
+          </b-button>
+          <!-- 보기 초기화: 보기만 바꾸므로 잠긴 동안에도 있다 (캔버스의 더블클릭과 같은 일). 자물쇠처럼 늘 같은 자리에 있도록 그 바로 왼쪽에 둔다. -->
+          <b-button
+            size="sm"
+            title="Reset view (or double-click the canvas)"
+            aria-label="Reset view"
+            variant="light"
+            @click="resetView"
+          >
+            <b-icon icon="arrow-counterclockwise" />
+          </b-button>
           <!-- Editor Lock/Unlock button (다른 머리글 단추처럼 기본 title을 쓴다. b-tooltip은 누른 뒤에도 남아 있었다)
                편집 모드를 바꾸는 중요한 단추라서 늘 같은 자리, 설정(톱니) 단추의 바로 왼쪽에 둔다 (owner, 2026-10):
                다른 단추는 이 단추의 왼쪽에 생기고 사라진다. 그래서 이 단추가 이 묶음의 마지막이어야 한다. -->
@@ -282,9 +282,9 @@ export default {
     toggleNodeInfo() {
       this.$store.dispatch('settingSave', { ...this.$store.getters.setting, hideNodeInfo: !this.hideNodeInfo })
     },
-    // 처음 보기(기본 확대, 원점)로 돌린다. 바뀐 보기는 저장된다.
+    // 처음 보기(기본 확대, 원점)로 돌린다 (캔버스의 더블클릭과 같은 일: 에디터의 resetView). 바뀐 보기는 저장된다.
     resetView() {
-      this.$refs.editorRef.setView(DEFAULT_VIEW)
+      this.$refs.editorRef.resetView()
     },
     arrangeNodes() {
       this.$refs.editorRef.arrangeNodes()
