@@ -895,6 +895,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 645 passed (2 new, 2 mutations fail them and `split-check`), lint ok, build ok, headless UI checks passed, commit 9b239bb. Not checked: the real window.
 - Found / next: nothing new. Next by age: `style`, then `ux`.
 
+### #138 2026-10-12 · style (run in the owner's session)
+- Did: in a split panel the tab of the other half was marked with a line under its name, which merged with the border of the tab row in the same color and could hardly be seen. It has a frame in that color now: the hollow form of the selected tab.
+- Result: tests 645 passed (1 assertion added; the mutation fails it and a new check of `split-check`, 32 now), lint ok, build ok, headless UI checks passed, looked at in two palettes, commit dbeaf21. Not checked: the real window.
+- Found / next: nothing else. Next by age: `ux`, then `health`.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
