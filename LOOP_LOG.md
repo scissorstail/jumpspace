@@ -735,6 +735,13 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Docs: README, CHANGELOG (the unreleased entries on the double click and on the two buttons), CLAUDE.md.
 - Found / next: the full test run failed once here in a test of #112: see #115.
 
+### #115 2026-10-11 · fix (by hand, found while checking #114: a second way for a save to fail)
+- Found: in one full test run a test of #112 failed with `EPERM: operation not permitted, rename ...projects.json.tmp -> ...projects.json`. That test reads `projects.json` right after each save while the next save is already running, and Windows refuses to rename onto a file that something has open. Alone the test passed 8 times of 8, so it needs the timing of a full run. In the app nothing of ours reads the file while saving, but a virus scanner or an indexer opening the file that was just written would give the user the same "Failed to save projects"; whether that ever happened to the owner is not known (the message the owner saw was the ENOENT of #112).
+- Did: the rename onto `projects.json` is tried again after EPERM, EBUSY or EACCES, with waits of 20, 50, 100, 200, 400 and 800 ms, then it gives up with the error. Other errors are not retried. The row of #112 keeps the order while a save waits.
+- Checked: 6 new tests with a rename that fails a given number of times (446 passed): it saves after three failures of each of the three codes, the waits grow and it gives up after the sixth, another error is not retried, three saves stay in order while one waits. 6 mutations each fail a test. The whole suite passed 3 times in a row afterwards. lint and vitest exit 0. Not checked: a real file held open by another program.
+- Docs: CHANGELOG (the same Fixed entry), CLAUDE.md.
+- Found / next: nothing.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
