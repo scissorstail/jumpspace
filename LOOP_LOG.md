@@ -900,6 +900,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Result: tests 645 passed (1 assertion added; the mutation fails it and a new check of `split-check`, 32 now), lint ok, build ok, headless UI checks passed, looked at in two palettes, commit dbeaf21. Not checked: the real window.
 - Found / next: nothing else. Next by age: `ux`, then `health`.
 
+### #139 2026-10-12 · ux (run in the owner's session)
+- Did: with one terminal tab the split button is greyed out, and its tooltip still said what a split does. It now says what is missing: "Split needs a second terminal".
+- Result: tests 645 passed (2 assertions added, 3 mutations fail them and `split-check`, 34 checks now), lint ok, build ok, headless UI checks passed, commit 43d048d. Not checked: the real window.
+- Found / next: nothing else. Next by age: `health`, then `tests` (`forward-menu.vue` has none of its own, #132).
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
