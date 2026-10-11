@@ -54,9 +54,10 @@ export function scaleView(view, from, to) {
 }
 
 // 기억해 둔 보기(base: { view, size })를 지금의 캔버스 영역(area)에 맞춘 보기.
-// size는 그 보기를 정할 때의 영역 크기다. 크기 없이 기억된 보기(처음 여는 다이어그램, 예전 파일, 영역이 접혀 있을 때
-// 정한 것)는 터미널 패널이 자리를 차지하지 않을 때의 캔버스(full)에서의 보기로 친다: 패널이 없으면 그대로이고,
-// 패널이 열려 있으면 다른 보기처럼 줄어든다.
+// size는 그 보기를 정할 때의 영역 크기다. 크기 없이 기억된 보기(처음 여는 다이어그램, Reset view로 돌린 처음 보기,
+// 예전 파일, 영역이 접혀 있을 때 정한 것)는 터미널 패널이 자리를 차지하지 않을 때의 캔버스(full)에서의 보기로 친다:
+// 패널이 없으면 그대로이고, 패널이 열려 있으면 다른 보기처럼 줄어든다. 그 캔버스가 어떤 크기든 그렇다: 사용자가 정한
+// 보기는 창 높이를 따라 커지고 줄지만, 처음 보기는 어느 창에서나 처음 보기다.
 export function shownView(base, area, full) {
   return scaleView(base.view, isRealSize(base.size) ? base.size : full, area)
 }

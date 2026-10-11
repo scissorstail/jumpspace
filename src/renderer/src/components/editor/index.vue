@@ -17,7 +17,7 @@ import AreaPlugin from 'rete-area-plugin'
 import ReadonlyPlugin from 'rete-readonly-plugin'
 
 import SiteNode from './nodes/site-node'
-import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, shownView, viewOf } from '@/utils/view'
+import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, shownView, viewOf } from '@/utils/view'
 import { arrangeLayout, boxOf } from '@/utils/arrange'
 import { activeTerminalNode, hopKey, routeStates } from '@/utils/terminal-sessions'
 import { isCanvasDoubleClick, lockedPress } from '@/utils/locked-press'
@@ -255,11 +255,15 @@ export default {
     // Rete는 캔버스 크기를 불러올 때와 창 크기가 바뀔 때만 픽셀로 고정한다. 터미널 패널을 열고 닫거나 높이를 바꾸면
     // 캔버스 영역이 달라지므로 그때도 맞춘다. (패널이 열린 채 다른 item을 열고 패널을 닫으면 캔버스가 잘린 채 남았다)
     // 영역 크기가 바뀌면 다이어그램도 배경 풍경처럼 같은 비율로 커지고 줄어든다.
+    // 영역과 패널이 나눠 쓰는 #workspace도 본다: 크기 없이 기억된 보기(처음 보기)는 그 크기에서의 보기라서, 패널이
+    // 캔버스를 가장 낮은 높이까지 밀어 올린 창에서는 창 높이가 바뀌어도 영역은 그대로인데 보여줄 보기는 달라진다.
+    // (지금은 패널이 제 높이를 한 박자 늦게 맞추는 동안 영역도 잠깐 바뀌어서 영역만 봐도 맞게 끝난다. 거기에 기대지 않는다)
     this.areaObserver = new ResizeObserver(() => {
       this.editor.view.resize()
       this.rescaleView()
     })
     this.areaObserver.observe(this.$el.parentElement)
+    this.areaObserver.observe(this.$el.parentElement.parentElement)
   },
   beforeDestroy() {
     this.$el.removeEventListener('dblclick', this.onDoubleClick)
@@ -359,9 +363,10 @@ export default {
       return { width: room.clientWidth, height: room.clientHeight }
     },
     // 보기를 그 보기의 영역 크기와 함께 기억하고 Layout에 알린다. (저장은 Layout이 한다)
+    // 크기가 없는 보기(처음 보기)는 크기 없이 저장된다: 다시 열어도 한 번도 옮기지 않은 다이어그램과 같다.
     keepView(view, size) {
       this.base = { view, size }
-      this.$emit('view-change', { ...viewOf(view), ...(size.width > 0 && size.height > 0 && { w: size.width, h: size.height }) })
+      this.$emit('view-change', { ...viewOf(view), ...(isRealSize(size) && { w: size.width, h: size.height }) })
     },
     // 기억해 둔 보기(base)를 지금 영역 크기에 맞춰 보여준다. base는 그대로 둔다.
     // 크기 없이 기억된 보기는 패널이 없을 때의 캔버스에서의 보기로 친다 (utils/view.js의 shownView).
@@ -384,8 +389,11 @@ export default {
     // 처음 보기(기본 확대, 원점)로 돌린다. 머리글의 Reset view 단추와 캔버스의 더블클릭이 함께 쓴다. 바뀐 보기는 저장된다.
     // 처음 보기는 터미널 패널이 없을 때의 캔버스에서의 보기다: 패널이 열려 있으면 다른 보기처럼 줄여서 보여주고,
     // 패널을 닫으면 정확히 처음 보기가 된다. (열린 영역에 그대로 두면 닫을 때 커지면서 왼쪽이 화면 밖으로 나간다)
+    // 크기 없이 기억한다, 한 번도 옮기지 않은 다이어그램처럼: 처음 보기는 어느 크기의 창에서나 처음 보기다.
+    // (누른 때의 캔버스 크기와 함께 기억했더니, 창 높이를 바꾸면 그 크기에서 줄이거나 키운 보기가 되어서
+    // 다시 누를 때마다 다이어그램이 조금씩 옮겨졌다: owner, 2026-10-11 "묘하게 어긋납니다")
     resetView() {
-      this.keepView({ ...DEFAULT_VIEW }, this.fullSize())
+      this.keepView({ ...DEFAULT_VIEW }, null)
       this.rescaleView()
     },
     // 노드 상자에 그 밖으로 나온 부분(아래의 이름과 주소, 양옆 소켓)을 더한 영역. 캔버스 좌표로,

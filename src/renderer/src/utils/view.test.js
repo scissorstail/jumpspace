@@ -151,6 +151,35 @@ describe('shownView', () => {
     }
   })
 
+  // 처음 보기(Reset view)는 크기 없이 기억한다. 누른 때의 캔버스 크기와 함께 기억하면 그 뒤로 창 높이를 따라 커지고
+  // 줄어서, 창 높이를 바꾼 뒤의 화면이 그 창에서 Reset view가 주는 화면과 달라진다 (owner, 2026-10-11:
+  // "터미널을 켠 상태로 프로그램 전체 높이를 조절하다 보면 reset view 했을 때 묘하게 어긋납니다").
+  it('is the starting view in a window of every height when it has no size', () => {
+    const home = { view, size: null }
+    const panel = 280
+
+    for (const height of [396, 596, 716, 756, 956]) {
+      const canvas = { width: 1100, height }
+      const area = { width: 1100, height: Math.max(200, height - panel) }
+
+      // 패널이 없으면 어느 높이의 창에서나 처음 보기 그대로
+      expect(shownView(home, canvas, canvas)).toEqual(view)
+      // 패널이 열려 있으면 그 창의 캔버스에서 패널이 남긴 만큼으로 줄어든다. 가운데 줄은 가운데에 남는다.
+      const shown = shownView(home, area, canvas)
+      expect(shown.k).toBeCloseTo(0.85 * area.height / height, 10)
+      expect(shown.x).toBeCloseTo(550 * (1 - area.height / height), 10)
+      expect(shown.y).toBeCloseTo(0, 10)
+    }
+
+    // 크기와 함께 기억한 처음 보기는 다른 높이의 창에서 처음 보기가 아니다: 창 높이의 비율만큼 작고, 옆으로 밀려 있다.
+    const lower = { width: 1100, height: 716 }
+    const lowerArea = { width: 1100, height: 436 }
+    const kept = shownView({ view, size: full }, lowerArea, lower)
+    const fresh = shownView(home, lowerArea, lower)
+    expect(kept.k / fresh.k).toBeCloseTo(716 / 756, 10)
+    expect(kept.x - fresh.x).toBeCloseTo(550 * 436 * (1 / 716 - 1 / 756), 10)
+  })
+
   it('shows it as it is while the area is collapsed', () => {
     expect(shownView({ view, size: null }, { width: 1100, height: 0 }, full)).toEqual(view)
     expect(shownView({ view, size: full }, { width: 1100, height: 0 }, full)).toEqual(view)
@@ -245,6 +274,18 @@ describe('the view in the editor component', () => {
 
   it('remembers a view the user chose with the size of the area it was chosen in', () => {
     expect(editor).toMatch(/const \{ k, x, y \} = this\.editor\.view\.area\.transform\n\s+this\.keepView\(\{ k, x, y \}, this\.areaSize\(\)\)/)
+  })
+
+  // 크기가 없는 보기(처음 보기)는 크기 없이 저장된다. 다시 열면 한 번도 옮기지 않은 다이어그램과 같다.
+  it('saves no size with a view that has none', () => {
+    expect(editor).toMatch(/this\.\$emit\('view-change', \{ \.\.\.viewOf\(view\), \.\.\.\(isRealSize\(size\) && \{ w: size\.width, h: size\.height \}\) \}\)/)
+  })
+
+  // 크기가 없는 보기는 패널이 없을 때의 캔버스(#workspace)에서의 보기라서, 그 크기가 바뀌면 영역이 그대로여도
+  // 다시 보여줘야 한다: 패널이 캔버스를 가장 낮은 높이까지 밀어 올린 창에서는 창 높이를 바꿔도 영역은 그대로다.
+  // (화면 검사로는 가릴 수 없다: 지금의 패널은 높이를 한 박자 늦게 맞춰서 그동안 영역도 잠깐 바뀐다)
+  it('shows the view again when the area or the canvas without the panel changes size', () => {
+    expect(editor).toMatch(/this\.areaObserver = new ResizeObserver\(\(\) => \{\n\s+this\.editor\.view\.resize\(\)\n\s+this\.rescaleView\(\)\n\s+\}\)\n\s+this\.areaObserver\.observe\(this\.\$el\.parentElement\)\n\s+this\.areaObserver\.observe\(this\.\$el\.parentElement\.parentElement\)\n/)
   })
 
   // 여는 순간의 영역 크기를 그 보기의 크기로 삼으면: 머리글이 다시 그려지기 전이라 영역이 몇 px 낮아서 처음 보기가
