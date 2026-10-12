@@ -107,10 +107,10 @@ Empty. Done: the terminal font size (#152), the search in the terminal scrollbac
 
 ### Proposals for the owner (need a decision)
 - **A window closed while the editor is unlocked loses the changes without a word.** Changes are saved when the editor is locked; switching the diagram asks first, closing the window, *Refresh Window* and quitting from the tray do not. Either ask before the window closes (main has to hold the close and the page has to answer; needs the real window to check) or save while editing, which would end "lock to save" as a rule.
-- **The window opens at 1024 x 768 every time**; its size and place are not remembered. Main only, so it needs the real window too.
 
 ### Questions for the owner
 Things decided on the way that the owner has not confirmed; the entry has the details.
+- #156: the window is remembered with its place, also on a second monitor, and as maximized; smaller than 400 x 300 or with its title bar on no screen it starts at 1024 x 768 in the middle. No minimum size was added to the window itself.
 - #155: the picture in the README is the headless screen with five made-up servers and two made-up sessions; the owner allowed it without seeing it.
 - #153: Enter finds upwards (older output) and Shift+Enter downwards; the search ignores case, has no options and no count of matches, and closes when another tab is selected.
 - #152: the font size is one for all terminals, 8 to 32 px, has no row in the Settings window, and Ctrl+0 means 13.
@@ -982,6 +982,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: the picture at the top of the README was the app of 2021 on GitHub's image host. It is `docs/screenshot.png` now (218 KB): the app of today on the headless screen, a made-up diagram of five servers (`example.com`, `10.0.x.x`) with two terminals.
 - Result: tests 684 passed, lint ok (docs and a picture only), commit 96d0a1a. `docs/` is not packed into the installer.
 - Found / next: taking it showed the bold text bug of #154. One headless run of #154 failed once under load (`zoom-check vapor-blue`, the view after the window is wide again) and passed 6 times after; the commit went out before I saw it. Next: the window size.
+
+### #156 2026-10-12 · feature (by hand, a proposal the owner allowed on 2026-10-12)
+- Did: the window opened at 1024 x 768 every time. Main remembers its size, its place and whether it was maximized under its own key `window` in the settings file (not inside the setting, which the page writes as a whole), half a second after a move or resize and when it closes.
+- Result: tests 696 passed (12 new, 9 mutations fail them), lint ok, build ok, commit 5ae01b2. **Not checked at all in a window**: main only, so no headless check either; what a screen and a window report is taken from the Electron documentation.
+- Found / next: the first thing to try in the next installer: move and resize, close, open; then the same maximized. Next: the question before closing while unlocked.
 
 ## Routine
 
