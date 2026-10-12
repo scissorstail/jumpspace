@@ -96,7 +96,7 @@ Both lists of 2026-10-11 are done (1 to 5 in #103 to #108, 6 to 10 in #111 to #1
 2. **Old forwards on a node with user/host/port:** migrate automatically (done, `src/main/legacy-forwards.js`).
 3. **Canvas pan limit:** removed (done).
 4. **Deleting a node:** confirm only when the node has content (done). No undo for now.
-5. **Vue 3 / Bootstrap-vue-next / Rete 2 migration:** on hold. Do not start it; do not re-propose it in the loop unless something breaks that needs it.
+5. **Vue 3 / Bootstrap-vue-next / Rete 2 migration:** on hold. Do not start it; do not re-propose it in the loop unless something breaks that needs it. Asked about again on 2026-10-12 and decided the same: "do not migrate".
 6. **Playwright + Electron smoke test in the repo:** not now. Keep the UI checks as scratch scripts and the unit tests in the repo.
 7. **Research on similar programs:** removed from the routine. Do not research other projects, websites or issues.
 
@@ -109,7 +109,6 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 ### Proposals for the owner (need a decision)
 - **A window closed while the editor is unlocked loses the changes without a word.** Changes are saved when the editor is locked; switching the diagram asks first, closing the window, *Refresh Window* and quitting from the tray do not. Either ask before the window closes (main has to hold the close and the page has to answer; needs the real window to check) or save while editing, which would end "lock to save" as a rule.
 - **The window opens at 1024 x 768 every time**; its size and place are not remembered. Main only, so it needs the real window too.
-- **Dependencies (asked on 2026-10-12, the owner: "do not migrate").** Decision 5 stands.
 
 ### Questions for the owner
 Things decided on the way that the owner has not confirmed; the entry has the details.
@@ -121,7 +120,7 @@ Things decided on the way that the owner has not confirmed; the entry has the de
 - #147: the list says *diagram*; *Export Space* was left. Still double: *New diagram* is in the menu and on the `+` next to it.
 
 ### Seen in the real window, and not yet
-The owner runs the app on Windows since 2026-10-03 (installers of #83, #107 to #119). Confirmed there by the owner: connecting by two clicks (#95), the line changing color at the login (#118), the placing and scaling of the diagram (#121), the terminal colors chosen from (#122). Measured on the owner's PC without a window: password login, the marker, ProxyJump, Ctrl+C while connecting (#103).
+The owner runs the app on Windows since 2026-10-03 (installers of #83, #107 to #119). Confirmed there by the owner: connecting by two clicks (#95), the line changing color at the login (#118), the placing and scaling of the diagram (#121), the terminal with the palette's own colors, which the owner found too glaring (#122; the calmer levels were chosen from a sheet of pictures). Measured on the owner's PC without a window: password login, the marker, ProxyJump, Ctrl+C while connecting (#103).
 - Never reported from a real window: port forwarding against a real server, *Open SSH in: Git Bash window*, Korean typed with the IME in the terminal, close to tray.
 - Built after the last installer the owner tried (#119) and seen only on the headless screen: #120 to #148, above all the three terminal color levels, the Settings window in a low window, numbered tabs, the minimized panel at the bottom, the split, the middle click.
 Anything that fails goes to Known bugs (first in any phase).
