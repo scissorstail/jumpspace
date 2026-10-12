@@ -29,6 +29,21 @@ describe('the numbers of terminal tabs with the same name', () => {
   })
 })
 
+// 글꼴 크기는 설정에 있고 (Ctrl +/-/0), 화면마다 보일 때 맞춘다: 숨은 화면은 잴 수 없다.
+describe('the font size of the terminals', () => {
+  it('comes from the settings, for a new terminal and for the one that is shown', () => {
+    expect(panel).toMatch(/fontSize\(\) \{\n\s+return this\.\$store\.getters\.setting\.terminalFontSize\n/)
+    expect(panel).toMatch(/\n\s+fontSize: this\.fontSize,\n/)
+    expect(panel).toMatch(/if \(entry\.term\.options\.fontSize !== this\.fontSize\) entry\.term\.options\.fontSize = this\.fontSize\n\n\s+const before = \[entry\.term\.cols, entry\.term\.rows\]\n\s+entry\.fit\.fit\(\)/)
+    expect(panel).toMatch(/\n {4}fontSize\(\) \{\n\s+this\.fitActive\(\)\n/)
+  })
+
+  it('is changed by the keys, and only when the size changes', () => {
+    expect(panel).toMatch(/if \(shortcut\.startsWith\('font-'\)\) \{?\n?\s*this\.changeFontSize\(shortcut\)/)
+    expect(panel).toMatch(/const terminalFontSize = nextFontSize\(this\.fontSize, shortcut\)\n\s+if \(terminalFontSize !== this\.fontSize\) this\.\$store\.dispatch\('settingChange', \{ terminalFontSize \}\)/)
+  })
+})
+
 describe('closing a terminal tab', () => {
   // 브라우저의 탭처럼. mousedown을 막지 않으면 Windows에서 가운데 단추가 자동 스크롤을 시작한다.
   it('works with a middle click on the tab, like the close button', () => {

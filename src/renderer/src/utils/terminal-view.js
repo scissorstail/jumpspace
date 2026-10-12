@@ -1,9 +1,18 @@
 // 터미널 패널이 화면에 쓰는 글과 색 (순수 함수). xterm에 쓰는 줄은 ANSI 색을 붙인다.
 import { tone } from './color.js'
+import { DEFAULT_SETTING, TERMINAL_FONT_SIZE_MAX, TERMINAL_FONT_SIZE_MIN } from '../../../shared/setting.js'
 
 const GRAY = '\x1b[90m'
 const RED = '\x1b[31m'
 const RESET = '\x1b[0m'
+
+// 글꼴 크기 단축키(utils/terminal-sessions.js의 terminalShortcut)를 누른 뒤의 크기: 1px씩, 설정의 범위 안에서.
+export function nextFontSize(size, shortcut) {
+  if (shortcut === 'font-reset') return DEFAULT_SETTING.terminalFontSize
+
+  const step = { 'font-up': 1, 'font-down': -1 }[shortcut] || 0
+  return Math.min(TERMINAL_FONT_SIZE_MAX, Math.max(TERMINAL_FONT_SIZE_MIN, size + step))
+}
 
 // 탭에 마우스를 올렸을 때 보이는 상태. 실행 중이어도 로그인 표시가 오기 전에는 "연결 중"이다. (캔버스와 같다)
 export function sessionStatusText(session) {

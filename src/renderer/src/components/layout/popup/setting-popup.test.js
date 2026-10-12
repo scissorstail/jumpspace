@@ -37,9 +37,9 @@ describe('the settings window', () => {
     expect(onEnter).toContain('this.saveSetting()')
   })
 
-  // 이 창에 줄이 없는 설정(머리글의 눈 단추)은 저장할 때 지금 값 그대로다.
+  // 이 창에 줄이 없는 설정(머리글의 눈 단추, 터미널에서 Ctrl +/-로 바꾸는 글꼴 크기)은 저장할 때 지금 값 그대로다.
   it('reads and saves every setting that has a row, and keeps the others', () => {
-    const rows = Object.keys(DEFAULT_SETTING).filter(key => key !== 'hideNodeInfo')
+    const rows = Object.keys(DEFAULT_SETTING).filter(key => !['hideNodeInfo', 'terminalFontSize'].includes(key))
 
     for (const key of rows) {
       expect(method('init'), key).toContain(`this.${key} = this.setting.${key}`)

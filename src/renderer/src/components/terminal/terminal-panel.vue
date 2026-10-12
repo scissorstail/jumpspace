@@ -69,7 +69,7 @@ import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
 import { canReconnect, createOutputRouter, endedByUser, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
-import { endedLine, errorLine, panelDrag, panelHeight, RECONNECTING_LINE, terminalTheme } from '@/utils/terminal-view'
+import { endedLine, errorLine, nextFontSize, panelDrag, panelHeight, RECONNECTING_LINE, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import TerminalTabs from './terminal-tabs'
 
@@ -104,6 +104,10 @@ export default {
 
       return `${theme} ${terminalColors}`
     },
+    // 터미널 글꼴 크기 (설정). 터미널에서 Ctrl +/-/0으로 바꾼다.
+    fontSize() {
+      return this.$store.getters.setting.terminalFontSize
+    },
     // 좌우로 나눴는지 (다른 칸에 보이는 탭이 있다)
     isSplit() {
       return this.sideKey !== null
@@ -120,6 +124,10 @@ export default {
       this.$nextTick(() => {
         for (const [, entry] of this.terms) entry.term.options.theme = this.colors()
       })
+    },
+    // 보이는 터미널의 글꼴을 바꾸고 크기를 다시 맞춘다. 보이지 않는 터미널은 다시 보일 때 맞춘다 (fit).
+    fontSize() {
+      this.fitActive()
     },
     // 새 탭: 화면을 만들고 main에 세션을 연다.
     allSessions(list) {
@@ -172,7 +180,7 @@ export default {
         // 깜빡이지 않는다: 로딩 표시처럼 화면을 빠르게 다시 그리는 프로그램에서 커서가 번쩍거렸다.
         cursorBlink: false,
         fontFamily: '"JetBrains Mono", Consolas, "Cascadia Mono", "DejaVu Sans Mono", monospace',
-        fontSize: 13,
+        fontSize: this.fontSize,
         scrollback: 5000,
         theme: this.colors()
       })
@@ -197,7 +205,7 @@ export default {
         if (data.includes('\x03')) entry.interruptedAt = Date.now()
         if (entry.id !== null) window.preload.terminal.write(entry.id, data)
       })
-      this.enableClipboard(term, el)
+      this.enableShortcuts(term, el)
       // 로그인하면 ssh가 보이지 않는 표시를 보낸다 (main의 ssh.js). 받으면 캔버스의 경로가 "연결됨"이 된다.
       term.parser.registerOscHandler(CONNECTED_OSC, data => {
         if (data === CONNECTED_DATA) this.$store.commit('terminalUpdate', { key: session.key, connected: true })
@@ -240,7 +248,8 @@ export default {
     // Windows 터미널처럼. 복사: 선택하고 Ctrl+C (또는 Ctrl+Shift+C, Ctrl+Insert). 고른 글자가 없는 Ctrl+C는 그대로 중단이다.
     // 붙여넣기: Ctrl+V (또는 Ctrl+Shift+V; Shift+Insert는 브라우저가 처리). 오른쪽 클릭: 선택한 글자가 있으면 복사, 없으면 붙여넣기.
     // 프로그램이 마우스를 받는 동안의 오른쪽 클릭은 프로그램의 것이다 (rightClickAction).
-    enableClipboard(term, el) {
+    // 글꼴 크기: Ctrl +/-/0 (changeFontSize).
+    enableShortcuts(term, el) {
       const copySelection = () => {
         if (!term.hasSelection()) return false
         window.preload.clipboard.writeText(term.getSelection())
@@ -256,7 +265,9 @@ export default {
 
         // 브라우저도 붙여넣지 않게 막는다 (두 번 들어간다).
         event.preventDefault()
-        if (shortcut === 'paste') {
+        if (shortcut.startsWith('font-')) {
+          this.changeFontSize(shortcut)
+        } else if (shortcut === 'paste') {
           paste()
         } else if (copySelection() && !event.shiftKey && event.code === 'KeyC') {
           // Ctrl+C로 복사했으면 선택을 푼다: 다음 Ctrl+C는 중단이다.
@@ -348,8 +359,17 @@ export default {
       this.$store.commit('terminalMaximize', isMaximized)
       this.$store.commit('terminalPanel', true)
     },
+    // 글꼴 크기를 바꾼다 (모든 터미널이 함께 쓰는 설정). 바뀐 값은 잠시 뒤에 저장된다 (store의 settingChange).
+    changeFontSize(shortcut) {
+      const terminalFontSize = nextFontSize(this.fontSize, shortcut)
+      if (terminalFontSize !== this.fontSize) this.$store.dispatch('settingChange', { terminalFontSize })
+    },
     fit(entry, force = false) {
       if (!entry || !entry.term.element || entry.term.element.offsetParent === null) return
+
+      // 글꼴 크기는 보이는 화면에서만 바꾼다: 여기는 보이는 화면만 지나가고, 숨은 화면은 다시 보일 때 여기로 온다.
+      // (xterm.js가 글자 크기를 화면에서 재는 경우, 숨은 화면에서는 잴 수 없어서 옛 크기가 남는다)
+      if (entry.term.options.fontSize !== this.fontSize) entry.term.options.fontSize = this.fontSize
 
       const before = [entry.term.cols, entry.term.rows]
       entry.fit.fit()

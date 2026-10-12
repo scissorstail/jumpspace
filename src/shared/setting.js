@@ -16,6 +16,10 @@ export const TERMINAL_COLORS = ['vivid', 'soft', 'muted']
 // 노드 뒤 유리판의 흐림(px). 0이면 유리판이 없다. (renderer의 components/editor/index.vue)
 export const NODE_BLUR_MAX = 20
 
+// 앱 안의 터미널의 글꼴 크기(px). 터미널에서 Ctrl +/-로 바꾸고 Ctrl 0으로 기본값으로 돌린다 (renderer의 utils/terminal-view.js).
+export const TERMINAL_FONT_SIZE_MIN = 8
+export const TERMINAL_FONT_SIZE_MAX = 32
+
 export const DEFAULT_SETTING = {
   gitBashPath: '%ProgramFiles%\\Git\\git-bash.exe',
   isHideToTrayOnClose: false,
@@ -25,16 +29,17 @@ export const DEFAULT_SETTING = {
   // 네온 색 그대로(vivid)는 넓게 칠해지면 눈이 부셔서, 조금 낮춘 것이 기본이다 (owner, 2026-10-11)
   terminalColors: 'soft',
   nodeBlur: 0,
+  terminalFontSize: 13,
   // 캔버스에서 노드의 접속 정보(user, host, port, 포워딩)를 숨기고 이름만 보인다 (머리글의 눈 단추)
   hideNodeInfo: false
 }
 
-// 0..NODE_BLUR_MAX의 정수. 숫자가 아니면 기본값
-function normalizeNodeBlur(value) {
+// min..max의 정수. 숫자가 아니면 fallback (숫자를 적은 글자는 숫자로 읽는다: 슬라이더가 글자를 준다)
+function wholeNumber(value, min, max, fallback) {
   const number = typeof value === 'string' && value.trim() !== '' ? Number(value) : value
-  if (typeof number !== 'number' || !Number.isFinite(number)) return DEFAULT_SETTING.nodeBlur
+  if (typeof number !== 'number' || !Number.isFinite(number)) return fallback
 
-  return Math.min(NODE_BLUR_MAX, Math.max(0, Math.round(number)))
+  return Math.min(max, Math.max(min, Math.round(number)))
 }
 
 // 저장하거나 읽은 설정을 정리한다. Git Bash 경로를 비워 두면 기본값을 쓴다. (화면은 빈 값을 기본값으로 보여준다)
@@ -48,7 +53,8 @@ export function normalizeSetting(data) {
     theme: THEMES.includes(data?.theme) ? data.theme : DEFAULT_SETTING.theme,
     backdrop: BACKDROPS.includes(data?.backdrop) ? data.backdrop : DEFAULT_SETTING.backdrop,
     terminalColors: TERMINAL_COLORS.includes(data?.terminalColors) ? data.terminalColors : DEFAULT_SETTING.terminalColors,
-    nodeBlur: normalizeNodeBlur(data?.nodeBlur),
+    nodeBlur: wholeNumber(data?.nodeBlur, 0, NODE_BLUR_MAX, DEFAULT_SETTING.nodeBlur),
+    terminalFontSize: wholeNumber(data?.terminalFontSize, TERMINAL_FONT_SIZE_MIN, TERMINAL_FONT_SIZE_MAX, DEFAULT_SETTING.terminalFontSize),
     hideNodeInfo: data?.hideNodeInfo === true
   }
 }

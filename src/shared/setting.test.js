@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { BACKDROPS, DEFAULT_SETTING, NODE_BLUR_MAX, normalizeSetting, TERMINAL_COLORS, THEMES } from './setting.js'
+import { BACKDROPS, DEFAULT_SETTING, NODE_BLUR_MAX, normalizeSetting, TERMINAL_COLORS, TERMINAL_FONT_SIZE_MAX, TERMINAL_FONT_SIZE_MIN, THEMES } from './setting.js'
 
 describe('normalizeSetting', () => {
   it('keeps valid values', () => {
-    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', terminalColors: 'muted', nodeBlur: 12, hideNodeInfo: true }))
-      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', terminalColors: 'muted', nodeBlur: 12, hideNodeInfo: true })
+    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', terminalColors: 'muted', nodeBlur: 12, terminalFontSize: 16, hideNodeInfo: true }))
+      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', terminalColors: 'muted', nodeBlur: 12, terminalFontSize: 16, hideNodeInfo: true })
   })
 
   it('uses the default path when it is empty, blank or not a string', () => {
@@ -75,6 +75,25 @@ describe('normalizeSetting: terminalColors', () => {
     for (const terminalColors of ['Vivid', 'toString', '#3dff8a', '', null, 2, ['vivid'], {}]) {
       expect(normalizeSetting({ terminalColors }).terminalColors, String(terminalColors)).toBe('soft')
     }
+  })
+})
+
+describe('normalizeSetting: terminalFontSize', () => {
+  it('is 13 by default, also for a setting file from before the key', () => {
+    expect(DEFAULT_SETTING.terminalFontSize).toBe(13)
+    expect(normalizeSetting({}).terminalFontSize).toBe(13)
+    expect(normalizeSetting({ terminalFontSize: 'big' }).terminalFontSize).toBe(13)
+    expect(normalizeSetting({ terminalFontSize: null }).terminalFontSize).toBe(13)
+    expect(normalizeSetting({ terminalFontSize: NaN }).terminalFontSize).toBe(13)
+  })
+
+  it('keeps whole sizes inside its range', () => {
+    expect(normalizeSetting({ terminalFontSize: 18 }).terminalFontSize).toBe(18)
+    expect(normalizeSetting({ terminalFontSize: '15' }).terminalFontSize).toBe(15)
+    expect(normalizeSetting({ terminalFontSize: 14.4 }).terminalFontSize).toBe(14)
+    expect(normalizeSetting({ terminalFontSize: 2 }).terminalFontSize).toBe(TERMINAL_FONT_SIZE_MIN)
+    expect(normalizeSetting({ terminalFontSize: 500 }).terminalFontSize).toBe(TERMINAL_FONT_SIZE_MAX)
+    expect([TERMINAL_FONT_SIZE_MIN, TERMINAL_FONT_SIZE_MAX]).toEqual([8, 32])
   })
 })
 

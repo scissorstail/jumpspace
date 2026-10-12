@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { TERMINAL_COLORS, THEMES } from '../../../shared/setting.js'
 import { toOklch } from './color'
-import { endedLine, errorLine, MAXIMIZE_SNAP, MIN_CANVAS_HEIGHT, MIN_PANEL_HEIGHT, panelDrag, panelHeight, RECONNECTING_LINE, revealScrollLeft, sessionRouteText, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
+import { endedLine, errorLine, nextFontSize, MAXIMIZE_SNAP, MIN_CANVAS_HEIGHT, MIN_PANEL_HEIGHT, panelDrag, panelHeight, RECONNECTING_LINE, revealScrollLeft, sessionRouteText, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
 
 describe('sessionStatusText', () => {
   it('names every state and gives the exit status of a failed end', () => {
@@ -13,6 +13,17 @@ describe('sessionStatusText', () => {
     expect(sessionStatusText({ status: 'exited', exitCode: 255 })).toBe('Ended (exit status 255)')
     expect(sessionStatusText({ status: 'failed' })).toBe('Could not start')
     expect(sessionStatusText(null)).toBeUndefined()
+  })
+})
+
+describe('nextFontSize', () => {
+  it('steps by one, stops at both ends and goes back to the default', () => {
+    expect(nextFontSize(13, 'font-up')).toBe(14)
+    expect(nextFontSize(13, 'font-down')).toBe(12)
+    expect(nextFontSize(32, 'font-up')).toBe(32)
+    expect(nextFontSize(8, 'font-down')).toBe(8)
+    expect(nextFontSize(27, 'font-reset')).toBe(13)
+    expect(nextFontSize(13, 'copy')).toBe(13)
   })
 })
 

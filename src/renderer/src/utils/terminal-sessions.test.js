@@ -254,6 +254,27 @@ describe('terminalShortcut', () => {
     expect(terminalShortcut(key('KeyV', { ctrlKey: true, altKey: true }, 'v'))).toBe(null)
   })
 
+  it('changes the font size with Ctrl and +, =, - or 0, also on the number pad', () => {
+    expect(terminalShortcut(key('Equal', { ctrlKey: true }, '='))).toBe('font-up')
+    expect(terminalShortcut(key('Equal', { ctrlKey: true, shiftKey: true }, '+'))).toBe('font-up')
+    expect(terminalShortcut(key('NumpadAdd', { ctrlKey: true }, '+'))).toBe('font-up')
+    expect(terminalShortcut(key('Minus', { ctrlKey: true }, '-'))).toBe('font-down')
+    expect(terminalShortcut(key('NumpadSubtract', { ctrlKey: true }, '-'))).toBe('font-down')
+    expect(terminalShortcut(key('Digit0', { ctrlKey: true }, '0'))).toBe('font-reset')
+    expect(terminalShortcut(key('Numpad0', { ctrlKey: true }, '0'))).toBe('font-reset')
+  })
+
+  // Ctrl+Shift+-는 ^_ (emacs와 nano의 undo): xterm.js가 보내게 둔다.
+  it('leaves Ctrl+_ to the program, and the same keys without Ctrl or with Alt', () => {
+    expect(terminalShortcut(key('Minus', { ctrlKey: true, shiftKey: true }, '_'))).toBe(null)
+    expect(terminalShortcut(key('Equal', {}, '='))).toBe(null)
+    expect(terminalShortcut(key('Minus', {}, '-'))).toBe(null)
+    expect(terminalShortcut(key('Digit0', {}, '0'))).toBe(null)
+    expect(terminalShortcut(key('Equal', { ctrlKey: true, altKey: true }, '='))).toBe(null)
+    expect(terminalShortcut(key('Digit1', { ctrlKey: true }, '1'))).toBe(null)
+    expect(terminalShortcut({ ...key('Equal', { ctrlKey: true }, '='), type: 'keyup' })).toBe(null)
+  })
+
   it('leaves Ctrl+C (interrupt), plain keys, other modifiers and key-up alone', () => {
     expect(terminalShortcut(key('KeyC', { ctrlKey: true }, 'c'))).toBe(null)
     expect(terminalShortcut(key('KeyC', { shiftKey: true }, 'C'))).toBe(null)
