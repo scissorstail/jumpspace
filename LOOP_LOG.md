@@ -102,8 +102,8 @@ Both lists of 2026-10-11 are done (1 to 5 in #103 to #108, 6 to 10 in #111 to #1
 
 ### Feature queue (owner, 2026-09-30; top first)
 The routine takes the top item in a `feature` run. The owner may reorder, add or remove items.
-1. **Terminal font size** with Ctrl +/- / Ctrl 0 on the terminal, remembered in the settings.
-2. **Search in the terminal scrollback** (Ctrl+Shift+F). Waits for the first question below.
+1. **Search in the terminal scrollback** (Ctrl+Shift+F), with `@xterm/addon-search` (allowed by the owner on 2026-10-12).
+- Done: the terminal font size (#152).
 - Dropped by the owner on 2026-10-12 ("not needed"): find a node by name, user or host. Done: the Windows installer build in CI (#83).
 
 ### Proposals for the owner (need a decision)
@@ -112,7 +112,7 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 
 ### Questions for the owner
 Things decided on the way that the owner has not confirmed; the entry has the details.
-- Scrollback search (queue 2): may `@xterm/addon-search` be installed (a download), or should it be written on xterm's own buffer API?
+- #152: the font size is one for all terminals, 8 to 32 px, has no row in the Settings window, and Ctrl+0 means 13.
 - The picture at the top of the README is the app of 2021 (#29). A new one can come from the headless checks (sample hosts only) or from the owner's real window; adding a picture to the repository is the owner's call.
 - #106: a double click on a locked node resets the view (#114) but a slow double click can still select a word of its text. #111: the port forwarding popover is the same locked or not.
 - #116, From SSH config: several hosts at once (at most 50), `ProxyJump` becomes a connection, port 22 when none is named, what is left out, bad values are marked but the node is made.
@@ -962,6 +962,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: a terminal tab is named like its node; the `(+1)` of a session through previous nodes ran into the number of tabs with the same name (`app (+1) (2)`). The tooltip of the tab says "through 1 previous node" instead, without addresses.
 - Result: tests 664 passed (2 new, 2 mutations fail them), lint ok, build ok, headless UI checks passed, commit cbbbef9. Not checked: the real window.
 - Found / next: allowed with the same word: the font size, the scrollback search with `@xterm/addon-search`, a new picture for the README, the window size, the question before closing while unlocked.
+
+### #152 2026-10-12 · feature (by hand, queue 1)
+- Did: Ctrl with + or = and Ctrl with - change the text size of all terminals, Ctrl+0 puts it back to 13; remembered as the setting `terminalFontSize` (8 to 32), written 300 ms after the last key. Ctrl+Shift+- still goes to the program as `^_`.
+- Result: tests 673 passed (9 new, 6 mutations fail them), lint ok, build ok, headless UI checks passed with the new `font-check` (17), commit 0695405. Not checked: the real window, above all the WebGL renderer after a size change.
+- Found / next: a hidden tab cannot be measured, so it gets the size when it is shown. Next: the scrollback search.
 
 ## Routine
 
