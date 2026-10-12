@@ -10,8 +10,9 @@ describe('terminalTitle', () => {
 
   it('marks forwards and jumps', () => {
     expect(terminalTitle('forward', { name: 'db' })).toBe('⇄ db')
-    expect(terminalTitle('proxyJump', { name: 'db' }, 2)).toBe('db (+2)')
-    expect(terminalTitle('proxyJump', { name: 'db' }, 0)).toBe('db')
+    // 거치는 노드 수는 이름에 넣지 않는다 (같은 이름의 번호와 겹친다)
+    expect(terminalTitle('proxyJump', { name: 'db' }, 2)).toBe('db')
+    expect(terminalTitle('proxyJump', { name: 'db' })).toBe('db')
   })
 })
 

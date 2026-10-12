@@ -1,10 +1,10 @@
 // 앱 안의 터미널 탭에 쓰는 순수 로직
 
-// 탭 이름: 노드 이름(없으면 host). 포워딩은 앞에 ⇄, ProxyJump는 거치는 노드 수를 붙인다.
-export function terminalTitle(kind, connection, hops = 0) {
+// 탭 이름: 노드 이름(없으면 host). 포워딩은 앞에 ⇄를 붙인다. 거치는 노드 수는 이름에 넣지 않는다 (owner, 2026-10-12):
+// 이름이 같은 탭의 번호와 겹쳐 'app (+1) (2)'가 되었다. 툴팁이 말한다 (utils/terminal-view.js의 sessionRouteText).
+export function terminalTitle(kind, connection) {
   const name = connection?.name || connection?.host || 'ssh'
   if (kind === 'forward') return `⇄ ${name}`
-  if (kind === 'proxyJump' && hops > 0) return `${name} (+${hops})`
   return name
 }
 

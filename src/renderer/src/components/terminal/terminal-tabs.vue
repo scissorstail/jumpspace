@@ -27,7 +27,7 @@
         role="tab"
         :aria-selected="session.key === activeKey && !isMinimized ? 'true' : 'false'"
         tabindex="0"
-        :title="`${label(session)}: ${statusText(session)}`"
+        :title="`${label(session)}: ${statusText(session)}${routeText(session)}`"
         @click="$emit('activate', session.key)"
         @mousedown.middle.prevent
         @auxclick.middle="$emit('close', session)"
@@ -114,7 +114,7 @@
 <script>
 import draggable from 'vuedraggable'
 import { duplicateNumbers, numberedTitle } from '@/utils/terminal-sessions'
-import { revealScrollLeft, sessionStatusText } from '@/utils/terminal-view'
+import { revealScrollLeft, sessionRouteText, sessionStatusText } from '@/utils/terminal-view'
 
 // 터미널 패널 위쪽의 탭 줄. 탭이 많으면 좁아졌다가 목록만 옆으로 넘어가고, 활성 탭은 늘 보이게 한다.
 // 탭을 고르기, 닫기, 끌어서 바꾼 순서, 좌우로 나누기/합치기, 패널 최대화/내리기, 패널 최소화/다시 보이기는
@@ -180,6 +180,7 @@ export default {
   },
   methods: {
     statusText: sessionStatusText,
+    routeText: sessionRouteText,
     label(session) {
       return numberedTitle(session.title, this.numbers.get(session.key))
     },

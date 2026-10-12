@@ -35,6 +35,7 @@ Everything since 0.2.2-beta.
 
 ### Changed
 
+- **A terminal tab is named like its node, without the count of jump hosts.** A session through previous nodes had `(+1)` after the name, which ran into the number of tabs with the same name (`app (+1) (2)`). The tooltip of the tab says it now ("through 1 previous node"), and the diagram shows the path anyway.
 - **The list of diagrams says "diagram".** Its buttons, menu and messages still said *item* (*New item*, *Import Items...*, *No items yet*) while the header and the canvas said *diagram*. They are *New diagram*, *Remove diagrams*, *Import diagrams...*, *Export diagrams...* and *No diagrams yet* now. Nothing else changed; *Export Space* in the gear menu keeps its name.
 - **A minimized terminal panel stays at the bottom.** The dash at the right end of the tab row used to take the whole panel away and put a terminal button with a count into the header. Now the tab row stays where it is, at the bottom of the window, without the terminals above it. A click on a tab shows that terminal again, and the dash has become an arrow up that shows the panel as it was. The header has no terminal button any more. No tab is marked as selected while the panel is minimized, and no node on the canvas.
 

@@ -24,7 +24,7 @@ describe('the numbers of terminal tabs with the same name', () => {
   })
 
   it('are part of the name in the tooltip and on the close button', () => {
-    expect(tabs).toMatch(/:title="`\$\{label\(session\)\}: \$\{statusText\(session\)\}`"/)
+    expect(tabs).toMatch(/:title="`\$\{label\(session\)\}: \$\{statusText\(session\)\}\$\{routeText\(session\)\}`"/)
     expect(tabs).toMatch(/:aria-label="`Close \$\{label\(session\)\}`"/)
   })
 })

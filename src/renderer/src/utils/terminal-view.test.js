@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { TERMINAL_COLORS, THEMES } from '../../../shared/setting.js'
 import { toOklch } from './color'
-import { endedLine, errorLine, MAXIMIZE_SNAP, MIN_CANVAS_HEIGHT, MIN_PANEL_HEIGHT, panelDrag, panelHeight, RECONNECTING_LINE, revealScrollLeft, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
+import { endedLine, errorLine, MAXIMIZE_SNAP, MIN_CANVAS_HEIGHT, MIN_PANEL_HEIGHT, panelDrag, panelHeight, RECONNECTING_LINE, revealScrollLeft, sessionRouteText, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
 
 describe('sessionStatusText', () => {
   it('names every state and gives the exit status of a failed end', () => {
@@ -13,6 +13,20 @@ describe('sessionStatusText', () => {
     expect(sessionStatusText({ status: 'exited', exitCode: 255 })).toBe('Ended (exit status 255)')
     expect(sessionStatusText({ status: 'failed' })).toBe('Could not start')
     expect(sessionStatusText(null)).toBeUndefined()
+  })
+})
+
+describe('sessionRouteText', () => {
+  it('counts the nodes before the last one, and says nothing for a direct session', () => {
+    expect(sessionRouteText({ hops: ['u@a:22'] })).toBe('')
+    expect(sessionRouteText({ hops: [] })).toBe('')
+    expect(sessionRouteText(null)).toBe('')
+    expect(sessionRouteText({ hops: ['u@a:22', 'u@b:22'] })).toBe(', through 1 previous node')
+    expect(sessionRouteText({ hops: ['u@a:22', 'u@b:22', 'u@c:22'] })).toBe(', through 2 previous nodes')
+  })
+
+  it('names no address', () => {
+    expect(sessionRouteText({ hops: ['secret@host:22', 'u@b:22'] })).not.toMatch(/secret|host/)
   })
 })
 

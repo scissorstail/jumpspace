@@ -253,12 +253,12 @@ export default {
     },
     // 설정에 따라 앱 안의 터미널 또는 Git Bash 창에서 연다.
     // route: 세션이 지나가는 노드들(경로 순서). 앱 안의 터미널이 열려 있는 동안 캔버스가 그 연결선을 움직여 보인다.
-    launch(kind, payload, route, hops = 0) {
+    launch(kind, payload, route) {
       if (this.$store.getters.setting.openIn === 'window') {
         return this.run(() => window.preload.ssh[kind](payload))
       }
 
-      this.$store.dispatch('terminalOpen', { kind, payload, route, title: terminalTitle(kind, this.$data, hops) })
+      this.$store.dispatch('terminalOpen', { kind, payload, route, title: terminalTitle(kind, this.$data) })
     },
     // 앞 노드들과 이 노드
     routeToHere() {
@@ -285,7 +285,7 @@ export default {
     proxyJump() {
       const nodes = this.routeToHere()
 
-      return this.launch('proxyJump', nodes, nodes, nodes.length - 1)
+      return this.launch('proxyJump', nodes, nodes)
     },
     async copyConfig() {
       const request = configRequest(this.connectionOf(this.$data), this.prevNodeDataList, this.forwards, this.forwardPlan)

@@ -15,6 +15,15 @@ export function sessionStatusText(session) {
   }[session?.status]
 }
 
+// 탭의 툴팁에서 상태 뒤에 붙는 말: 세션이 앞의 노드들을 거쳐 왔으면 그 수. 바로 접속했으면 빈 글자.
+// (주소는 넣지 않는다: 노드 정보를 가린 동안에도 툴팁은 보인다)
+export function sessionRouteText(session) {
+  const previous = (session?.hops?.length || 0) - 1
+  if (previous < 1) return ''
+
+  return previous === 1 ? ', through 1 previous node' : `, through ${previous} previous nodes`
+}
+
 // 목록의 item 옆 숫자에 붙는 설명 (마우스를 올렸을 때, 화면 읽기)
 export function terminalCountText(count) {
   return count === 1 ? '1 terminal open' : `${count} terminals open`
