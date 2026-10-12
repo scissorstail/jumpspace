@@ -188,6 +188,7 @@ import { countByOwner } from '@/utils/terminal-sessions'
 import { terminalCountText } from '@/utils/terminal-view'
 import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from '@/utils/navigator-items'
 import { toastError } from '@/utils/notify'
+import { UNSAVED_TEXT, UNSAVED_TITLE } from '../../../../shared/unsaved.js'
 import NavigatorItemMenu from './navigator-item-menu'
 
 // 다이어그램(item) 목록: 고르기, 검색, 새로 만들기, 이름 바꾸기, 순서 바꾸기, 가져오기/내보내기.
@@ -441,8 +442,8 @@ export default {
     },
     confirmUnlockedChangeWillBeLost() {
       // 제목은 다른 확인 창(Remove, Export)처럼 짧게 두고, 무엇을 잃는지는 본문에서 말한다.
-      return this.$bvModal.msgBoxConfirm('Changes made since you unlocked the editor are saved only when you lock it again. They will be lost. Continue?', {
-        title: 'Unsaved changes',
+      return this.$bvModal.msgBoxConfirm(`${UNSAVED_TEXT} Continue?`, {
+        title: UNSAVED_TITLE,
         okTitle: 'Continue',
         returnFocus: '[id^=list-item-].active'
       })

@@ -21,6 +21,12 @@ export function listEmptyText(items, keyword) {
   return `No diagram matches "${String(keyword).trim()}".`
 }
 
+// 창을 닫거나 새로 고치면 잃는 것이 있는지: 다이어그램을 열고 잠금을 푼 동안이다 (바꾼 것은 잠글 때 저장된다).
+// 다이어그램을 바꿀 때 묻는 것과 같은 기준이다: 정말 바뀌었는지는 따지지 않는다.
+export function losesChangesOnUnload({ isOpen, isLocked }) {
+  return Boolean(isOpen) && !isLocked
+}
+
 export const EXPORT_PASSWORD_WARNING = 'Some nodes have a saved password. The exported file will contain it as plain text. Continue?'
 
 // 저장된 항목 목록을 읽는다. load()는 저장 파일의 JSON 문자열(없으면 null), save(json)는 저장이다.

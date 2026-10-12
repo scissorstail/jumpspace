@@ -163,7 +163,7 @@ import SettingPopup from '../components/layout/popup/setting-popup'
 import ConfigPopup from '../components/layout/popup/config-popup'
 import TerminalPanel from '../components/terminal/terminal-panel'
 import SceneBackdrop from '../components/layout/scene-backdrop'
-import { canvasHint, hasSavedPassword, loadProjectData, EXPORT_PASSWORD_WARNING } from '../utils/project'
+import { canvasHint, hasSavedPassword, loadProjectData, losesChangesOnUnload, EXPORT_PASSWORD_WARNING } from '../utils/project'
 import { toastError } from '../utils/notify'
 import { DEFAULT_VIEW, sanitizeView } from '../utils/view'
 
@@ -256,11 +256,21 @@ export default {
   },
   mounted() {
     this.loadProject()
+    window.addEventListener('beforeunload', this.holdUnload)
   },
   beforeDestroy() {
     clearTimeout(this.saveViewTimer)
+    window.removeEventListener('beforeunload', this.holdUnload)
   },
   methods: {
+    // 잠금을 푼 채로 창을 닫거나 새로 고치려 하면 막는다: 바꾼 것은 잠글 때 저장된다. 막으면 main이 묻고
+    // (will-prevent-unload), 버린다고 하면 그대로 닫는다. Electron은 returnValue를 정하라고 한다.
+    holdUnload(event) {
+      if (!losesChangesOnUnload({ isOpen: this.openedItemIndex !== null, isLocked: this.isEditorLocked })) return
+
+      event.preventDefault()
+      event.returnValue = false
+    },
     loadEditor({ item, index, isLocked }) {
       // If not use timestamp, the editor does not update its content while editorData is exactly same. ex) select copied item
       this.editorData = JSON.stringify({ ...item.data, timestamp: Date.now() })

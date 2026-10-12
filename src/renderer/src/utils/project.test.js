@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { canvasHint, hasSavedPassword, listEmptyText, loadProjectData, matchesKeyword } from './project'
+import { canvasHint, hasSavedPassword, listEmptyText, loadProjectData, losesChangesOnUnload, matchesKeyword } from './project'
 
 const item = connection => ({ name: 'a', data: { nodes: { 1: { data: { connection } } } } })
 
@@ -93,6 +93,15 @@ describe('loadProjectData', () => {
 
     // 해석할 수 없는 내용도 실패다. (예전에는 이 오류가 저장 막기를 건너뛰어 다음 저장이 파일을 빈 목록으로 덮어쓸 수 있었다)
     expect(await loadProjectData({ load: async () => '{broken', save: vi.fn() })).toMatchObject({ items: [], failed: true })
+  })
+})
+
+describe('losesChangesOnUnload', () => {
+  it('is true only while a diagram is open and unlocked', () => {
+    expect(losesChangesOnUnload({ isOpen: true, isLocked: false })).toBe(true)
+    expect(losesChangesOnUnload({ isOpen: true, isLocked: true })).toBe(false)
+    expect(losesChangesOnUnload({ isOpen: false, isLocked: false })).toBe(false)
+    expect(losesChangesOnUnload({ isOpen: false, isLocked: true })).toBe(false)
   })
 })
 

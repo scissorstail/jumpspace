@@ -27,6 +27,7 @@ import { createSettingStore } from './setting-store.js'
 import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
 import { createWindowStore, restoreBounds } from './window-bounds.js'
+import { mayUnload } from './unload-question.js'
 
 // 터미널에서 복사/붙여넣기로 오가는 글자 수의 상한
 const MAX_CLIPBOARD = 1024 * 1024
@@ -173,7 +174,8 @@ function main() {
     })
     contents.on('destroyed', () => terminals.closeAll(owner))
   })
-  app.on('before-quit', () => terminals.closeAll())
+  // (before-quit가 아니다: 그것은 창이 닫히기 전에 온다. 잠금을 푼 채로 끝내려다 취소하면 터미널은 살아 있어야 한다)
+  app.on('will-quit', () => terminals.closeAll())
 
   // 앱 안의 터미널의 복사/붙여넣기. (샌드박스 렌더러는 클립보드에 직접 접근하지 않는다)
   // (Electron 44의 clipboard.readText()는 Promise를 돌려준다)
@@ -317,6 +319,22 @@ async function createWindow(getSetting, windows) {
   win.webContents.on('will-navigate', (event, url) => {
     if (!isAppUrl(url, process.env.ELECTRON_RENDERER_URL)) {
       event.preventDefault()
+    }
+  })
+
+  // 잠금을 푼 채로 닫기, 새로 고침, 종료: 화면이 막으면(views/Layout.vue의 beforeunload) 여기서 묻는다.
+  // 버린다고 하면 preventDefault로 화면의 막기를 무시하고 하던 일(닫기, 새로 고침, 종료)을 그대로 한다.
+  // 트레이로 숨기는 닫기는 여기까지 오지 않는다: 아래의 close에서 먼저 막고, 잃는 것도 없다.
+  win.webContents.on('will-prevent-unload', event => {
+    const leave = mayUnload(options => {
+      if (target.isMinimized()) target.restore()
+      if (!target.isVisible()) target.show()
+      return dialog.showMessageBoxSync(target, options)
+    })
+    if (leave) {
+      event.preventDefault()
+    } else {
+      isQuitting = false
     }
   })
 
