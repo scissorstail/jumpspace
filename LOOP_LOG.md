@@ -113,6 +113,7 @@ Things decided on the way that the owner has not confirmed; the entry has the de
 - #157: the question before the window closes is a system dialog of main (*Discard changes* / *Cancel*), not the app's own window; it is asked whenever the editor is unlocked, changed or not (as before another diagram is opened); there is no "save and close"; closing to the tray does not ask; a Windows shutdown may wait for the answer.
 - #156: the window is remembered with its place, also on a second monitor, and as maximized; smaller than 400 x 300 or with its title bar on no screen it starts at 1024 x 768 in the middle. No minimum size was added to the window itself.
 - #155: the picture in the README is the headless screen with five made-up servers and two made-up sessions; the owner allowed it without seeing it.
+- #162: text selected in the terminal becomes the text to find when the field is opened (one line, at most 200 characters); not asked for.
 - #153: Enter finds upwards (older output) and Shift+Enter downwards; the search ignores case, has no options and no count of matches, and closes when another tab is selected.
 - #152: the font size is one for all terminals, 8 to 32 px, has no row in the Settings window, and Ctrl+0 means 13.
 - #106: a double click on a locked node resets the view (#114) but a slow double click can still select a word of its text. #111: the port forwarding popover is the same locked or not.
@@ -1014,6 +1015,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: looked only. `npm outdated` has nothing inside the current major versions (the new `@xterm/addon-search` 0.16.0 is the newest), Electron is at the newest 44.x (44.7.0), `npm audit --omit=dev` 0 and `npm audit` unchanged at 11 (all behind a major version), CI green on the last five pushes. The renderer script is 2.76 MB with the search addon.
 - Result: nothing to change in the code; no code commit.
 - Found / next: the owner asked about starting the app here with a window (Playwright's Electron launcher or computer-use), then said to wait and do other work: no window was started. Rotation next: ux.
+
+### #162 2026-10-12 · ux (run in the owner's session)
+- Did: Ctrl+Shift+F with text selected in the terminal takes that text as the text to find, as editors do: select a word, press the key, press Enter for the one before. Only a selection inside one line; several lines or more than 200 characters leave the text of before.
+- Result: tests 717 passed (3 new, 5 mutations fail them), lint ok, build ok, headless UI checks passed (`search-check` 26), commit bfa4b39. Not checked: the real window.
+- Found / next: the check found that the first Shift+Enter stayed on the selected place (the addon starts at the selection when the text is new to it); the selection is registered as a match now. Rotation next: style.
 
 ## Routine
 
