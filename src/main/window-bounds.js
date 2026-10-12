@@ -14,7 +14,19 @@ export const BOUNDS_SAVE_DELAY_MS = 500
 
 const fresh = () => ({ ...DEFAULT_SIZE, isMaximized: false })
 
-// 저장된 값(saved)으로 새 창의 크기와 자리를 정한다. workAreas는 지금 있는 화면들의 쓸 수 있는 영역({ x, y, width, height })이다.
+// 화면 배율(scaleFactor)에서 물리 픽셀로 딱 떨어지는 가장 작은 걸음: 100 %는 1, 150 %는 2, 125 %와 175 %는 4.
+// 창의 크기와 자리는 이 걸음에 맞춘다. Electron은 물리 픽셀과 오갈 때마다 바깥쪽으로 올림을 해서, 맞지 않는 값으로
+// 연 창은 열 때마다 몇 px씩 커진다 (125 %에서 잼, 2026-10-12: 900 x 640으로 다섯 번 열면 931 x 671).
+export function pixelStep(scaleFactor) {
+  if (!Number.isFinite(scaleFactor) || scaleFactor <= 0) return 1
+  for (let step = 1; step <= 20; step++) {
+    if (Math.abs(step * scaleFactor - Math.round(step * scaleFactor)) < 1e-6) return step
+  }
+  return 1
+}
+
+// 저장된 값(saved)으로 새 창의 크기와 자리를 정한다. workAreas는 지금 있는 화면들의 쓸 수 있는 영역({ x, y, width, height })이고,
+// 그 화면의 배율(scaleFactor)이 같이 오면 값을 그 배율의 걸음(pixelStep)에 맞춘다: 가까운 쪽으로, 크기는 화면보다 크지 않게.
 // 쓸 수 없는 값이면 기본 크기만 돌려준다 (자리가 없으면 Electron이 가운데에 둔다): 처음 실행, 깨진 값, 너무 작은 창,
 // 제목 줄이 어느 화면에도 없는 창 (그 모니터를 뺐다). 화면보다 큰 창은 그 화면의 크기로 줄인다.
 export function restoreBounds(saved, workAreas = []) {
@@ -27,11 +39,15 @@ export function restoreBounds(saved, workAreas = []) {
   )
   if (!area) return fresh()
 
+  const step = pixelStep(area.scaleFactor ?? 1)
+  const near = value => Math.round(value / step) * step
+  const within = (value, limit) => Math.min(near(value), Math.floor(limit / step) * step)
+
   return {
-    x: Math.round(x),
-    y: Math.round(y),
-    width: Math.round(Math.min(width, area.width)),
-    height: Math.round(Math.min(height, area.height)),
+    x: near(x),
+    y: near(y),
+    width: within(width, area.width),
+    height: within(height, area.height),
     isMaximized: saved.isMaximized === true
   }
 }

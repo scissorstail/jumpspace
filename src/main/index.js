@@ -264,7 +264,10 @@ function registerAppProtocol() {
 
 // 창은 지난번의 크기와 자리로 연다 (window-bounds.js). 처음이거나 그 자리가 지금의 화면에 없으면 1024 x 768로 가운데에.
 async function createWindow(getSetting, windows) {
-  const { isMaximized, ...bounds } = restoreBounds(windows.get(), screen.getAllDisplays().map(display => display.workArea))
+  const { isMaximized, ...bounds } = restoreBounds(
+    windows.get(),
+    screen.getAllDisplays().map(display => ({ ...display.workArea, scaleFactor: display.scaleFactor }))
+  )
 
   win = new BrowserWindow({
     ...bounds,
@@ -277,6 +280,9 @@ async function createWindow(getSetting, windows) {
     icon,
     show: false
   })
+
+  // 자리를 주고 만든 창은 배율이 100 %가 아니면 준 크기보다 몇 px 크게 만들어진다 (125 %에서 900이 904). 한 번 더 준다.
+  if (Number.isFinite(bounds.x)) win.setBounds(bounds)
 
   win.removeMenu()
 

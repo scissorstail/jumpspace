@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { BOUNDS_SAVE_DELAY_MS, createBoundsSaver, createWindowStore, DEFAULT_SIZE, MIN_SIZE, restoreBounds } from './window-bounds.js'
+import { BOUNDS_SAVE_DELAY_MS, createBoundsSaver, createWindowStore, DEFAULT_SIZE, MIN_SIZE, pixelStep, restoreBounds } from './window-bounds.js'
 
 const fresh = { width: 1024, height: 768, isMaximized: false }
 // 왼쪽에 주 화면, 오른쪽에 둘째 화면 (작업 표시줄 40px을 뺀 영역)
@@ -65,6 +65,57 @@ describe('restoreBounds', () => {
   })
 })
 
+// 배율이 100 %가 아닌 화면: Electron은 물리 픽셀로 딱 떨어지지 않는 값을 올려서, 창이 열 때마다 커졌다 (실제 창에서 봄)
+describe('the bounds on a scaled screen', () => {
+  const scaled = scaleFactor => ({ ...main, scaleFactor })
+  // 값의 네 변이 그 배율에서 물리 픽셀로 딱 떨어지는지
+  const isWhole = (bounds, scaleFactor) => [bounds.x, bounds.y, bounds.width, bounds.height].every(v => Number.isInteger(Math.round(v * scaleFactor * 1e6) / 1e6))
+
+  it('has a step that makes whole pixels at every usual scale', () => {
+    expect([1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3].map(pixelStep)).toEqual([1, 4, 2, 4, 1, 4, 2, 1])
+    expect([undefined, NaN, 0, -1, Infinity, '1.25'].map(pixelStep)).toEqual([1, 1, 1, 1, 1, 1])
+    // 그런 걸음이 없는 배율은 그대로 둔다
+    expect(pixelStep(1.2345)).toBe(1)
+  })
+
+  it('moves a stored window to the nearest values that are whole pixels', () => {
+    expect(restoreBounds({ x: 90, y: 70, width: 902, height: 642 }, [scaled(1.25)])).toEqual({ x: 92, y: 72, width: 904, height: 644, isMaximized: false })
+    expect(restoreBounds({ x: 89, y: 69, width: 901, height: 641 }, [scaled(1.25)])).toEqual({ x: 88, y: 68, width: 900, height: 640, isMaximized: false })
+    expect(restoreBounds({ x: 91, y: 71, width: 901, height: 641 }, [scaled(1.5)])).toEqual({ x: 92, y: 72, width: 902, height: 642, isMaximized: false })
+    expect(restoreBounds({ x: -7, y: 0, width: 974, height: 700 }, [scaled(1.25)]).x).toBe(-8)
+  })
+
+  it('opens the same window again and again: what it gives is whole, and stays', () => {
+    for (const scaleFactor of [1.25, 1.5, 1.75, 2.25]) {
+      for (const saved of [{ x: 90, y: 70, width: 902, height: 642 }, { x: 101, y: 103, width: 1023, height: 767 }, { x: -7, y: 3, width: 401, height: 301 }]) {
+        const once = restoreBounds(saved, [scaled(scaleFactor)])
+        expect(isWhole(once, scaleFactor)).toBe(true)
+        expect(restoreBounds(once, [scaled(scaleFactor)])).toEqual(once)
+        for (const key of ['x', 'y', 'width', 'height']) expect(Math.abs(once[key] - saved[key])).toBeLessThan(pixelStep(scaleFactor))
+      }
+    }
+  })
+
+  it('leaves the values alone at 100 % and without a scale', () => {
+    const saved = { x: 91, y: 71, width: 901, height: 641 }
+    expect(restoreBounds(saved, [scaled(1)])).toEqual({ ...saved, isMaximized: false })
+    expect(restoreBounds(saved, [scaled(2)])).toEqual({ ...saved, isMaximized: false })
+    expect(restoreBounds(saved, [main])).toEqual({ ...saved, isMaximized: false })
+  })
+
+  it('takes the scale of the screen the window is on', () => {
+    const saved = { x: 2001, y: 41, width: 1001, height: 701 }
+    expect(restoreBounds(saved, [scaled(1.25), second])).toEqual({ ...saved, isMaximized: false })
+    expect(restoreBounds(saved, [main, { ...second, scaleFactor: 1.5 }])).toEqual({ x: 2002, y: 42, width: 1002, height: 702, isMaximized: false })
+  })
+
+  it('stays inside the screen after rounding', () => {
+    const narrow = { x: 0, y: 0, width: 1366, height: 729, scaleFactor: 1.25 }
+    expect(restoreBounds({ x: 0, y: 0, width: 1366, height: 729 }, [narrow])).toEqual({ x: 0, y: 0, width: 1364, height: 728, isMaximized: false })
+    expect(restoreBounds({ x: 0, y: 0, width: 2000, height: 2000 }, [narrow])).toEqual({ x: 0, y: 0, width: 1364, height: 728, isMaximized: false })
+  })
+})
+
 describe('createWindowStore', () => {
   const fakeStore = initial => {
     const data = new Map(initial === undefined ? [] : [['window', initial]])
@@ -92,8 +143,13 @@ describe('the window of the app', () => {
   const index = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'index.js'), 'utf8').replace(/\r\n/g, '\n')
 
   it('opens where it was, from the screens that are there now', () => {
-    expect(index).toMatch(/const \{ isMaximized, \.\.\.bounds \} = restoreBounds\(windows\.get\(\), screen\.getAllDisplays\(\)\.map\(display => display\.workArea\)\)/)
+    expect(index).toMatch(/const \{ isMaximized, \.\.\.bounds \} = restoreBounds\(\n\s+windows\.get\(\),\n/)
+    // 화면마다 그 배율도 같이 준다
+    expect(index).toContain('screen.getAllDisplays().map(display => ({ ...display.workArea, scaleFactor: display.scaleFactor }))')
     expect(index).toMatch(/win = new BrowserWindow\(\{\n\s+\.\.\.bounds,\n/)
+    // 자리를 주고 만든 창은 배율이 있는 화면에서 준 크기보다 크게 만들어진다: 만든 뒤에 한 번 더 준다 (처음 여는 창은 아니다)
+    expect(index).toContain('if (Number.isFinite(bounds.x)) win.setBounds(bounds)')
+    expect(index.indexOf('win.setBounds(bounds)')).toBeGreaterThan(index.indexOf('win = new BrowserWindow({'))
     expect(index).toMatch(/if \(isMaximized\) win\.maximize\(\)\n\s+win\.show\(\)/)
   })
 
