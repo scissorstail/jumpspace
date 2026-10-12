@@ -1010,6 +1010,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 714 passed (6 behavior tests replace 2 source-reading ones, 7 mutations fail them), lint ok, build ok, headless UI checks passed, commit 3d48672. Still not tried in a window (main only).
 - Found / next: the owner asked whether the app can be started and driven here; it can (Playwright's Electron launcher is in the checks' packages), but "no window on this PC" stands until the owner lifts it. Rotation next: health.
 
+### #161 2026-10-12 · health (run in the owner's session)
+- Did: looked only. `npm outdated` has nothing inside the current major versions (the new `@xterm/addon-search` 0.16.0 is the newest), Electron is at the newest 44.x (44.7.0), `npm audit --omit=dev` 0 and `npm audit` unchanged at 11 (all behind a major version), CI green on the last five pushes. The renderer script is 2.76 MB with the search addon.
+- Result: nothing to change in the code; no code commit.
+- Found / next: the owner asked about starting the app here with a window (Playwright's Electron launcher or computer-use), then said to wait and do other work: no window was started. Rotation next: ux.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
