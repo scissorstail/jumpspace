@@ -139,6 +139,7 @@ src/main/       Electron main process
                   and which page file an app:// request may read
   ipc-result.js   answers { ok, error } to the page instead of throwing
   setting-store.js  reads and saves the settings (defaults for broken values)
+  window-bounds.js  remembers the size and place of the window (and when not to use them)
   storage.js      projects.json (atomic write, .bak), import parsing
   legacy-forwards.js  moves forwards saved by older versions to their current place
 src/shared/     pure modules used by both main and renderer

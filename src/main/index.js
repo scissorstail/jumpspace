@@ -12,6 +12,7 @@ import {
   shell,
   dialog,
   clipboard,
+  screen,
   webContents
 } from 'electron'
 import Store from 'electron-store'
@@ -25,9 +26,13 @@ import { toResult } from './ipc-result.js'
 import { createSettingStore } from './setting-store.js'
 import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
+import { createWindowStore, restoreBounds } from './window-bounds.js'
 
 // 터미널에서 복사/붙여넣기로 오가는 글자 수의 상한
 const MAX_CLIPBOARD = 1024 * 1024
+
+// 창을 옮기거나 크기를 바꾼 뒤 이만큼 지나면 저장한다 (끄는 동안에는 이벤트가 픽셀마다 온다)
+const BOUNDS_SAVE_DELAY_MS = 500
 
 const isMac = process.platform === 'darwin'
 
@@ -50,7 +55,9 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 function main() {
-  const settings = createSettingStore(new Store())
+  const store = new Store()
+  const settings = createSettingStore(store)
+  const windows = createWindowStore(store)
   const getSetting = settings.get
   const projects = createProjectStorage(app.getPath('userData'))
   const tempDir = join(app.getPath('temp'), 'jumpspace')
@@ -200,7 +207,7 @@ function main() {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow(getSetting)
+      createWindow(getSetting, windows)
     }
   })
 
@@ -222,7 +229,7 @@ function main() {
     tray.setToolTip(info.name)
     tray.on('double-click', () => showWindow())
 
-    return createWindow(getSetting)
+    return createWindow(getSetting, windows)
   }).catch(e => {
     // 창이 없는 상태로 프로세스만 남지 않도록 알리고 종료한다.
     console.error(e)
@@ -256,10 +263,12 @@ function registerAppProtocol() {
   })
 }
 
-async function createWindow(getSetting) {
+// 창은 지난번의 크기와 자리로 연다 (window-bounds.js). 처음이거나 그 자리가 지금의 화면에 없으면 1024 x 768로 가운데에.
+async function createWindow(getSetting, windows) {
+  const { isMaximized, ...bounds } = restoreBounds(windows.get(), screen.getAllDisplays().map(display => display.workArea))
+
   win = new BrowserWindow({
-    width: 1024,
-    height: 768,
+    ...bounds,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,
@@ -272,7 +281,29 @@ async function createWindow(getSetting) {
 
   win.removeMenu()
 
-  win.once('ready-to-show', () => win.show())
+  win.once('ready-to-show', () => {
+    if (isMaximized) win.maximize()
+    win.show()
+  })
+
+  // 크기와 자리를 기억한다: 옮기거나 크기를 바꾼 조금 뒤에, 그리고 닫을 때 바로. 최소화한 동안에는 그대로 둔다
+  // (그때는 최대화했었는지 알 수 없다). 저장하지 못해도 창은 닫혀야 한다.
+  const target = win
+  let saveTimer = null
+  const saveNow = () => {
+    clearTimeout(saveTimer)
+    try {
+      if (target.isDestroyed() || target.isMinimized()) return
+      windows.set(target.getNormalBounds(), target.isMaximized())
+    } catch (e) {
+      console.error('The window bounds could not be saved', e)
+    }
+  }
+  const saveSoon = () => {
+    clearTimeout(saveTimer)
+    saveTimer = setTimeout(saveNow, BOUNDS_SAVE_DELAY_MS)
+  }
+  for (const name of ['resize', 'move', 'maximize', 'unmaximize']) win.on(name, saveSoon)
 
   // https://www.electronjs.org/docs/api/window-open#native-window-example
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -292,6 +323,7 @@ async function createWindow(getSetting) {
   win.on('show', () => win.setSkipTaskbar(false))
 
   win.on('close', event => {
+    saveNow()
     if (!isQuitting && getSetting().isHideToTrayOnClose) {
       event.preventDefault()
       win.setSkipTaskbar(true)
@@ -300,6 +332,7 @@ async function createWindow(getSetting) {
   })
 
   win.on('closed', () => {
+    clearTimeout(saveTimer)
     win = null
   })
 
