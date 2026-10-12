@@ -58,14 +58,8 @@ This file is its memory. **Read the whole file before doing anything, and append
 
 Ordered roughly by value. Move an item to the log when it is done.
 
-### Requests by the owner (2026-10-11)
-Items 1 to 3 were said while the maximize feature (#102) was being built ("not now; write it down somewhere and take your time"), items 4 and 5 after it ("write them down separately and handle them one by one"). On 2026-10-11 the owner said to work through them one at a time with a commit each and to push at the end. In this order unless the owner says otherwise; an item moves to the log when it is done. Each starts with finding the cause; the places to look are guesses, nothing below is verified yet. Done: 1 (#103), 2 (#108), 3 (#104), 4 (#105), 5 (#106). Nothing is left here.
-
-### Requests by the owner (2026-10-11, second list)
-Said while the animations were being turned off (#110): "write these down separately". Handled like the first list: one at a time, a commit each, in this order unless the owner says otherwise; an item moves to the log when it is done. The words in quotes are the owner's (translated); the rest is how they were read and is not verified yet. Done: 6 (#111), 7 (#113), 8 (#116), 9 (#114), 10 (#112, #115). Nothing of this list is left.
-
-10. **Saving sometimes fails with ENOENT.** Said while 6 was being finished, with the message: `ENOENT: no such file or directory, rename '%APPDATA%\jumpspace\projects.json.tmp' -> '%APPDATA%\jumpspace\projects.json'` (the folder is written here without the user name): "this error shows sometimes. Fixing it goes into the next queue as well." A bug, so it was taken first: done in #112.
-
+### Requests by the owner
+Both lists of 2026-10-11 are done (1 to 5 in #103 to #108, 6 to 10 in #111 to #116); the entries say what was asked and what was decided on the way.
 
 ### Known bugs (first in any phase)
 - **Git's ssh drops window size changes on Windows and can end the session at the next key** (found 2026-10-11, #103; Git for Windows 2.55.0, OpenSSH 10.5p1, MSYS runtime 3.6.10, Windows 10 19045). Measured without a window: node-pty, bash, the real `ssh` and a throwaway SSH server on 127.0.0.1 that logs every `window-change` and every byte it receives.
@@ -109,24 +103,28 @@ Said while the animations were being turned off (#110): "write these down separa
 ### Feature queue (owner, 2026-09-30; top first)
 The routine takes the top item in a `feature` run. The owner may reorder, add or remove items.
 1. **Terminal font size** with Ctrl +/- / Ctrl 0 on the terminal, remembered in the settings.
-2. **Search in the terminal scrollback** (Ctrl+Shift+F, `@xterm/addon-search`).
-3. **Find a node** by name, user or host on the canvas and center it.
-4. ~~**Windows installer build in CI**~~ done in #83 (installer artifact + packaged node-pty check).
+2. **Search in the terminal scrollback** (Ctrl+Shift+F). Waits for the first question below.
+- Dropped by the owner on 2026-10-12 ("not needed"): find a node by name, user or host. Done: the Windows installer build in CI (#83).
 
 ### Proposals for the owner (need a decision)
-- (none open)
+- **A window closed while the editor is unlocked loses the changes without a word.** Changes are saved when the editor is locked; switching the diagram asks first, closing the window, *Refresh Window* and quitting from the tray do not. Either ask before the window closes (main has to hold the close and the page has to answer; needs the real window to check) or save while editing, which would end "lock to save" as a rule.
+- **The window opens at 1024 x 768 every time**; its size and place are not remembered. Main only, so it needs the real window too.
+- **Dependencies (asked on 2026-10-12, the owner: "do not migrate").** Decision 5 stands.
 
 ### Questions for the owner
-- (none yet)
+Things decided on the way that the owner has not confirmed; the entry has the details.
+- Scrollback search (queue 2): may `@xterm/addon-search` be installed (a download), or should it be written on xterm's own buffer API?
+- The picture at the top of the README is the app of 2021 (#29). A new one can come from the headless checks (sample hosts only) or from the owner's real window; adding a picture to the repository is the owner's call.
+- #106: a double click on a locked node resets the view (#114) but a slow double click can still select a word of its text. #111: the port forwarding popover is the same locked or not.
+- #116, From SSH config: several hosts at once (at most 50), `ProxyJump` becomes a connection, port 22 when none is named, what is left out, bad values are marked but the node is made.
+- #134: a minimized panel costs the canvas 40px. #135: the halves are 50:50, no key moves between them, the tab row does not say left or right. #145: a middle click closes a tab (not asked for).
+- #147: the list says *diagram*; *Export Space* was left. Still double: *New diagram* is in the menu and on the `+` next to it.
 
-### Windows check by the owner (pending, 2026-10-02)
-Never run on a real Windows machine so far (CI covers the unit tests, the generated scripts under Git Bash, ConPTY and the `git-bash.exe` launcher). Worth checking on the first real run:
-1. `npm ci` and `npm run dev` start the app; `npm run dist` builds the installer and the installed app starts with a working in-app terminal (CI now builds the installer and checks the packaged node-pty, #83; installing and opening a terminal in the installed app is still the owner's).
-2. Connect in the app terminal against a real server: the path goes yellow, then green once logged in (the `LocalCommand` marker through Git for Windows' ssh).
-3. Password sign-in (askpass, needs OpenSSH 8.4+), a ProxyJump chain with different authentication per hop, and port forwarding.
-4. *Open SSH in: Git Bash window*.
-5. Korean text in the terminal, copy/paste, close to tray.
-Anything that fails goes to the Backlog as a real bug (first in any phase).
+### Seen in the real window, and not yet
+The owner runs the app on Windows since 2026-10-03 (installers of #83, #107 to #119). Confirmed there by the owner: connecting by two clicks (#95), the line changing color at the login (#118), the placing and scaling of the diagram (#121), the terminal colors chosen from (#122). Measured on the owner's PC without a window: password login, the marker, ProxyJump, Ctrl+C while connecting (#103).
+- Never reported from a real window: port forwarding against a real server, *Open SSH in: Git Bash window*, Korean typed with the IME in the terminal, close to tray.
+- Built after the last installer the owner tried (#119) and seen only on the headless screen: #120 to #148, above all the three terminal color levels, the Settings window in a low window, numbered tabs, the minimized panel at the bottom, the split, the middle click.
+Anything that fails goes to Known bugs (first in any phase).
 
 ## Log
 
@@ -949,6 +947,16 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Did: `Layout.vue` no longer listens for `lock` and `unlock` from the header, which emits neither (noted in #113); three comments said sidebar where the diagram list is meant.
 - Result: tests 662 passed, lint ok, build ok, headless UI checks passed, commit f7849d6. No change of behavior.
 - Found / next: the top of the README and the stale sentences in the docs.
+
+### #149 2026-10-12 · docs (by hand, the concept review of #147)
+- Did: the first lines of the README said what the app was in 2020 ("Quick Open Git Bash"); they say what it is now, and the feature list names the terminals of a diagram and From SSH config. Stale sentences: the frame of the other half's tab, the settings list, "Node settings", the header count in CLAUDE.md.
+- Result: tests 662 passed, lint ok (docs only), commit 4085b85.
+- Found / next: the picture at the top is still the old app; a question for the owner.
+
+### #150 2026-10-12 · backlog (by hand, the concept review of #147)
+- Did: the Backlog says what is true: the finished request lists are one line, the feature queue is without the node search (dropped by the owner), the open points scattered over #106 to #147 are under Questions, two proposals, and "never run on Windows" became what was seen in the real window and what was not.
+- Result: log only.
+- Found / next: the owner asked about a dependency migration and decided against it. Next in the queue is the terminal font size.
 
 ## Routine
 
