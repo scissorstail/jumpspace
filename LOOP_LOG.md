@@ -1091,6 +1091,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 755 passed (7 new, 12 mutations fail them), lint ok, build ok, commit 0df03a7. No behavior changed, so no UI check.
 - Found / next: no bug. Known test gaps that are left: the scripts of `connection-settings.vue` and `main-navigator.vue` (Backlog); while one of them is open a run still has something to do. Rotation next: cleanup.
 
+### #177 2026-10-13 · cleanup (run in the owner's session)
+- Did: looked only. Every export of `src` is used by another source file or by its own file and a test; three constants are exported without any reader outside their file (`PRESS_KEEPERS`, `OPEN_IN`, `MAX_AREA`), which harms nothing and was left. No to-do marks, no leftover files in the repository, no unused dependency found.
+- Result: log only, no code.
+- Found / next: nothing to fix (first run without a find). What is still open are the two known test gaps of #176; the next run takes one of them instead of following the rotation, so the cycle can come to its end.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
