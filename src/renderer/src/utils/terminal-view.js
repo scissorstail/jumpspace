@@ -14,6 +14,15 @@ export function nextFontSize(size, shortcut) {
   return Math.min(TERMINAL_FONT_SIZE_MAX, Math.max(TERMINAL_FONT_SIZE_MIN, size + step))
 }
 
+// 찾는 칸을 열 때 터미널에서 고른 글을 찾는 글로 쓴다 (에디터들처럼). 한 줄 안에서 고른 것만: 여러 줄이나
+// 아주 긴 것은 찾으려던 글이 아니다. 쓸 것이 없으면 ''(전에 찾던 글을 둔다).
+export const SEARCH_SEED_MAX = 200
+export function searchSeed(selection) {
+  const text = String(selection ?? '')
+
+  return /[\r\n]/.test(text) || text.trim() === '' || text.length > SEARCH_SEED_MAX ? '' : text
+}
+
 // 탭에 마우스를 올렸을 때 보이는 상태. 실행 중이어도 로그인 표시가 오기 전에는 "연결 중"이다. (캔버스와 같다)
 export function sessionStatusText(session) {
   return {

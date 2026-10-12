@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { TERMINAL_COLORS, THEMES } from '../../../shared/setting.js'
 import { toOklch } from './color'
-import { endedLine, errorLine, nextFontSize, MAXIMIZE_SNAP, MIN_CANVAS_HEIGHT, MIN_PANEL_HEIGHT, panelDrag, panelHeight, RECONNECTING_LINE, revealScrollLeft, sessionRouteText, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
+import { endedLine, errorLine, nextFontSize, searchSeed, SEARCH_SEED_MAX, MAXIMIZE_SNAP, MIN_CANVAS_HEIGHT, MIN_PANEL_HEIGHT, panelDrag, panelHeight, RECONNECTING_LINE, revealScrollLeft, sessionRouteText, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
 
 describe('sessionStatusText', () => {
   it('names every state and gives the exit status of a failed end', () => {
@@ -24,6 +24,23 @@ describe('nextFontSize', () => {
     expect(nextFontSize(8, 'font-down')).toBe(8)
     expect(nextFontSize(27, 'font-reset')).toBe(13)
     expect(nextFontSize(13, 'copy')).toBe(13)
+  })
+})
+
+describe('searchSeed', () => {
+  it('is the text selected inside one line, as it is', () => {
+    expect(searchSeed('needle')).toBe('needle')
+    expect(searchSeed(' two words ')).toBe(' two words ')
+    expect(searchSeed('x'.repeat(SEARCH_SEED_MAX))).toHaveLength(200)
+  })
+
+  it('is nothing for no selection, blanks, several lines or a very long text', () => {
+    expect(searchSeed('')).toBe('')
+    expect(searchSeed(undefined)).toBe('')
+    expect(searchSeed('   ')).toBe('')
+    expect(searchSeed('one\ntwo')).toBe('')
+    expect(searchSeed('one\r\ntwo')).toBe('')
+    expect(searchSeed('x'.repeat(SEARCH_SEED_MAX + 1))).toBe('')
   })
 })
 

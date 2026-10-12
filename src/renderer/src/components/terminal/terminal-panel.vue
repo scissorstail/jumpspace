@@ -81,7 +81,7 @@ import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
 import { canReconnect, createOutputRouter, endedByUser, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
-import { endedLine, errorLine, nextFontSize, panelDrag, panelHeight, RECONNECTING_LINE, terminalTheme } from '@/utils/terminal-view'
+import { endedLine, errorLine, nextFontSize, panelDrag, panelHeight, RECONNECTING_LINE, searchSeed, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import TerminalSearch from './terminal-search'
 import TerminalTabs from './terminal-tabs'
@@ -410,8 +410,16 @@ export default {
       const terminalFontSize = nextFontSize(this.fontSize, shortcut)
       if (terminalFontSize !== this.fontSize) this.$store.dispatch('settingChange', { terminalFontSize })
     },
-    // 찾는 칸을 열고(열려 있으면 그대로) 거기로 포커스를 준다.
+    // 찾는 칸을 열고(열려 있으면 그대로) 거기로 포커스를 준다. 터미널에서 한 줄 안의 글을 골라 두었으면 그것을 찾는다.
     openSearch() {
+      const entry = this.terms.get(this.activeKey)
+      const seed = searchSeed(entry?.term.getSelection())
+      if (seed) {
+        this.search.text = seed
+        this.search.isMissing = false
+        // 고른 그 자리를 찾은 것으로 해 둔다: 그래야 다음 Enter가 같은 자리에 머물지 않고 넘어간다.
+        entry.search.findNext(seed)
+      }
       this.search.isOpen = true
       this.$nextTick(() => this.$refs.search?.focus())
     },

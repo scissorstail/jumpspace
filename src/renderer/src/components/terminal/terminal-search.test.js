@@ -36,8 +36,13 @@ describe('finding in a terminal', () => {
 
   it('opens with the key, over the half that is selected', () => {
     expect(panel).toMatch(/\} else if \(shortcut === 'find'\) \{\n\s+this\.openSearch\(\)\n/)
-    expect(panel).toMatch(/openSearch\(\) \{\n\s+this\.search\.isOpen = true\n\s+this\.\$nextTick\(\(\) => this\.\$refs\.search\?\.focus\(\)\)\n/)
+    expect(panel).toMatch(/this\.search\.isOpen = true\n\s+this\.\$nextTick\(\(\) => this\.\$refs\.search\?\.focus\(\)\)\n/)
     expect(panel).toMatch(/v-if="search\.isOpen"\n\s+ref="search"\n\s+v-model="search\.text"\n\s+:class="\{ 'is-left': isSplit && activeKey === panes\.left \}"/)
+  })
+
+  // 에디터들처럼: 고른 글이 있으면 그것을 찾는다
+  it('takes the text selected in the terminal as the text to find', () => {
+    expect(panel).toMatch(/openSearch\(\) \{\n\s+const entry = this\.terms\.get\(this\.activeKey\)\n\s+const seed = searchSeed\(entry\?\.term\.getSelection\(\)\)\n\s+if \(seed\) \{\n\s+this\.search\.text = seed\n\s+this\.search\.isMissing = false\n(?:\s+\/\/.*\n)?\s+entry\.search\.findNext\(seed\)\n\s+\}\n/)
   })
 
   // 글을 칠 때마다 가장 새 것부터 다시 찾는다: 고른 것을 지우면 맨 아래에서 시작한다.
