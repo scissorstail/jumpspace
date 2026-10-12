@@ -29,6 +29,7 @@ describe('the search field of the terminal panel', () => {
   })
 })
 
+// 패널이 찾는 칸을 어떻게 잇는지. 찾는 일 자체(find, openSearch, closeSearch)는 terminal-panel-methods.test.js가 돌려 본다.
 describe('finding in a terminal', () => {
   it('is on for every terminal', () => {
     expect(panel).toMatch(/const search = new SearchAddon\(\)\n\s+term\.loadAddon\(fit\)\n\s+term\.loadAddon\(search\)\n\s+const entry = \{ term, fit, search, /)
@@ -36,27 +37,10 @@ describe('finding in a terminal', () => {
 
   it('opens with the key, over the half that is selected', () => {
     expect(panel).toMatch(/\} else if \(shortcut === 'find'\) \{\n\s+this\.openSearch\(\)\n/)
-    expect(panel).toMatch(/this\.search\.isOpen = true\n\s+this\.\$nextTick\(\(\) => this\.\$refs\.search\?\.focus\(\)\)\n/)
     expect(panel).toMatch(/v-if="search\.isOpen"\n\s+ref="search"\n\s+v-model="search\.text"\n\s+:class="\{ 'is-left': isSplit && activeKey === panes\.left \}"/)
   })
 
-  // 에디터들처럼: 고른 글이 있으면 그것을 찾는다
-  it('takes the text selected in the terminal as the text to find', () => {
-    expect(panel).toMatch(/openSearch\(\) \{\n\s+const entry = this\.terms\.get\(this\.activeKey\)\n\s+const seed = searchSeed\(entry\?\.term\.getSelection\(\)\)\n\s+if \(seed\) \{\n\s+this\.search\.text = seed\n\s+this\.search\.isMissing = false\n(?:\s+\/\/.*\n)?\s+entry\.search\.findNext\(seed\)\n\s+\}\n/)
-  })
-
-  // 글을 칠 때마다 가장 새 것부터 다시 찾는다: 고른 것을 지우면 맨 아래에서 시작한다.
-  it('starts from the newest output while typing, and moves from the match otherwise', () => {
+  it('starts again while typing, and moves from the match with the keys and buttons of the field', () => {
     expect(panel).toMatch(/@input="find\('first'\)"\n\s+@find="find"\n\s+@close="closeSearch"/)
-    expect(panel).toMatch(/if \(direction === 'first'\) entry\.term\.clearSelection\(\)\n\s+const found = text !== '' && \(direction === 'next' \? entry\.search\.findNext\(text\) : entry\.search\.findPrevious\(text\)\)\n\s+this\.search\.isMissing = text !== '' && !found\n/)
-  })
-
-  // 찾는 칸은 그것을 연 탭의 것이다
-  it('closes when another tab is selected', () => {
-    expect(panel).toMatch(/\n {4}activeKey\(\) \{\n\s+this\.search\.isOpen = false\n\s+this\.search\.isMissing = false\n/)
-  })
-
-  it('gives the keyboard back to the terminal when it closes', () => {
-    expect(panel).toMatch(/closeSearch\(\) \{\n\s+this\.search\.isOpen = false\n\s+this\.search\.isMissing = false\n\s+this\.terms\.get\(this\.activeKey\)\?\.term\.focus\(\)\n/)
   })
 })

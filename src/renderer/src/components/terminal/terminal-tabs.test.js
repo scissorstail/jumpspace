@@ -31,16 +31,15 @@ describe('the numbers of terminal tabs with the same name', () => {
 
 // 글꼴 크기는 설정에 있고 (Ctrl +/-/0), 화면마다 보일 때 맞춘다: 숨은 화면은 잴 수 없다.
 describe('the font size of the terminals', () => {
-  it('comes from the settings, for a new terminal and for the one that is shown', () => {
+  // 보이는 화면에만 맞추는 일(fit)과 키가 바꾸는 값(changeFontSize)은 terminal-panel-methods.test.js가 돌려 본다.
+  it('comes from the settings, for a new terminal and when the setting changes', () => {
     expect(panel).toMatch(/fontSize\(\) \{\n\s+return this\.\$store\.getters\.setting\.terminalFontSize\n/)
     expect(panel).toMatch(/\n\s+fontSize: this\.fontSize,\n/)
-    expect(panel).toMatch(/if \(entry\.term\.options\.fontSize !== this\.fontSize\) entry\.term\.options\.fontSize = this\.fontSize\n\n\s+const before = \[entry\.term\.cols, entry\.term\.rows\]\n\s+entry\.fit\.fit\(\)/)
     expect(panel).toMatch(/\n {4}fontSize\(\) \{\n\s+this\.fitActive\(\)\n/)
   })
 
-  it('is changed by the keys, and only when the size changes', () => {
+  it('is changed by the keys', () => {
     expect(panel).toMatch(/if \(shortcut\.startsWith\('font-'\)\) \{?\n?\s*this\.changeFontSize\(shortcut\)/)
-    expect(panel).toMatch(/const terminalFontSize = nextFontSize\(this\.fontSize, shortcut\)\n\s+if \(terminalFontSize !== this\.fontSize\) this\.\$store\.dispatch\('settingChange', \{ terminalFontSize \}\)/)
   })
 })
 
