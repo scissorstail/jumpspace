@@ -81,8 +81,8 @@ Both lists of 2026-10-11 are done (1 to 5 in #103 to #108, 6 to 10 in #111 to #1
 - `src/main/index.js` (about 310 lines): mostly window, tray and IPC wiring now; the app:// path check, the `{ ok, error }` wrapper and the setting store moved out in #67.
 
 ### Missing or thin tests
-- No component is mounted in a test; logic lives in `utils/` on purpose. Since #141 a test can run the script of a component with a fake `this` (`forward-menu.test.js`); `connection-settings.vue` has one since #178; `main-navigator.vue` has none yet. Consider `@vue/test-utils` only if it stays cheap.
-- `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts; copying and removing items are unit tested since #71.
+- No component is mounted in a test; logic lives in `utils/` on purpose. Since #141 a test can run the script of a component with a fake `this` (`forward-menu.test.js`); `connection-settings.vue` (#178) and `main-navigator.vue` (#179) have one too. Consider `@vue/test-utils` only if it stays cheap.
+- `main-navigator.vue`: its methods are tested since #179 (`main-navigator-methods.test.js`); what needs the DOM (focus of the name box, the drag) is seen only by the headless checks.
 - A Playwright + Electron smoke test in the repo was considered and turned down by the owner (decision 6).
 
 ### Dependencies (checked 2026-10-12, #146; last change #125)
@@ -1100,6 +1100,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: the script of the Node Setting popover (`connection-settings.vue`) has its own test, run with a fake `this` like `forward-menu.test.js`: the fields shown while locked, the line for a node without values, the notes on values ssh would not take, `set()` giving a new object, the key file dialog that may be cancelled, and the template sending each field under its own name. 11 tests.
 - Result: tests 766 passed (11 new, 7 mutations fail them; an eighth, dropping `this.disabled &&` in `isBlank`, changes nothing because an unlocked node shows every field), lint ok, build ok, commit 75c4d59. No behavior changed, so no UI check.
 - Found / next: no bug. One known test gap is left: the script of `main-navigator.vue`; the next run takes it.
+
+### #179 2026-10-13 · tests (run in the owner's session; the last known gap, see #177)
+- Did: the script of the diagram list (`main-navigator.vue`) has its own test, 28 in `main-navigator-methods.test.js`: opening with and without the question about unlocked changes, Ctrl+click selecting, adding, copying, a cancelled rename, removing (also the open diagram), export with the password warning, import, and what it tells its parent.
+- Result: tests 794 passed (28 new, 22 mutations fail them), lint ok, build ok, commit 462b3b4. No behavior changed, so no UI check.
+- Found / next: no bug. The known test gaps are closed, the Feature queue is empty, no bug is known. From here two runs in a row without a find end the cycle (the count starts at 0). Rotation next: refactor.
 
 ## Routine
 
