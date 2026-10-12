@@ -973,6 +973,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 682 passed (9 new, 5 mutations fail them), lint ok, build ok, headless UI checks passed with the new `search-check` (23), commit 3338f74. Not checked: the real window.
 - Found / next: matches are not highlighted all at once (that needs xterm's proposed API); the match is the selection. Ctrl+F stays `^F` for the program. Next: the README picture.
 
+### #154 2026-10-12 · fix (by hand, found while taking the README picture)
+- Did: bold text in the app terminal was drawn in two fonts (the name in a colored prompt). The bold weight of JetBrains Mono was fetched on its first use, after the WebGL renderer had drawn and kept those letters with the fallback font. The panel loads both weights when it is made and lets terminals that already drew start their glyphs again.
+- Result: tests 684 passed (2 new, 3 mutations fail them), lint ok, build ok, headless UI checks passed (the font check fails without the fix: the bold weight was not loaded), commit bbf28ec. Not checked: the real window.
+- Found / next: seen in the enlarged headless picture, before and after. The owner may have seen it in the real window without naming it. Next: the README picture.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
