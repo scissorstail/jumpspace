@@ -29,6 +29,8 @@
         tabindex="0"
         :title="`${label(session)}: ${statusText(session)}`"
         @click="$emit('activate', session.key)"
+        @mousedown.middle.prevent
+        @auxclick.middle="$emit('close', session)"
         @keydown.enter.self="$emit('activate', session.key)"
         @keydown.space.self.prevent="$emit('activate', session.key)"
       >
@@ -42,6 +44,7 @@
           v-if="numbers.has(session.key)"
           class="terminal-tab-number"
         >({{ numbers.get(session.key) }})</span>
+        <!-- 가운데 단추(휠)로 눌러도 닫힌다, 브라우저의 탭처럼. 누를 때 Windows의 자동 스크롤이 시작되지 않게 막는다. -->
         <!-- 닫기는 탭 오른쪽 끝에 둔다. 끝난 세션은 터미널에서 Enter로 다시 연결한다 (단추는 두지 않는다). -->
         <span class="terminal-tab-actions">
           <button

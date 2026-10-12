@@ -29,6 +29,14 @@ describe('the numbers of terminal tabs with the same name', () => {
   })
 })
 
+describe('closing a terminal tab', () => {
+  // 브라우저의 탭처럼. mousedown을 막지 않으면 Windows에서 가운데 단추가 자동 스크롤을 시작한다.
+  it('works with a middle click on the tab, like the close button', () => {
+    expect(tabs).toMatch(/@mousedown\.middle\.prevent\n\s+@auxclick\.middle="\$emit\('close', session\)"/)
+    expect(tabs).toMatch(/@click\.stop="\$emit\('close', session\)"/)
+  })
+})
+
 // 최소화하면 탭 줄만 창 아래쪽에 남는다 (owner, 2026-10-12). 전에는 패널이 통째로 사라지고 머리글에 단추가 생겼다.
 describe('the minimized terminal panel', () => {
   it('stays as long as the diagram has terminals, without its screens and its resize edge', () => {
