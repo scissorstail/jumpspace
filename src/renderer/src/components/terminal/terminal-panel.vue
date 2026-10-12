@@ -169,7 +169,8 @@ export default {
     }
   },
   created() {
-    this.terms = new Map() // key -> { term, fit, id }
+    // key -> 그 탭의 화면: xterm(term)과 그 애드온(fit, search, webgl), main의 세션 번호(id), 그리고 start()가 두는 상태
+    this.terms = new Map()
     this.router = createOutputRouter()
   },
   mounted() {

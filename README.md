@@ -146,11 +146,12 @@ src/main/       Electron main process
 src/shared/     pure modules used by both main and renderer
   setting.js      the app settings and their defaults (Git Bash path, tray,
                   where ssh opens, theme, background, terminal colors, node glass,
-                  hidden node details)
+                  terminal font size, hidden node details)
   view.js         the canvas zoom range and the check of a saved view
   ssh-config-parse.js  reads `Host` blocks of an SSH config ("From SSH config"), the
                   reverse of ssh-config.js
   terminal-marker.js  the invisible "logged in" marker the app terminal shows as "connected"
+  unsaved.js      the words of the question before unlocked changes are lost
   validate.js     validation of every value that ends up in a command (main checks
                   before running; the node settings show the same rules while typing)
 src/preload/    the small API exposed to the renderer (window.preload)
@@ -165,7 +166,8 @@ src/renderer/   Vue 2 + Rete v1 UI ("@" is an alias for src/renderer/src)
   src/components/terminal/terminal-panel.vue
                   the terminal panel (xterm.js), one tab per session; terminal-tabs.vue
                   is its tab row (scrolls when there are many tabs) with the panel's
-                  split, maximize and minimize buttons
+                  split, maximize and minimize buttons; terminal-search.vue is the
+                  field of Ctrl+Shift+F
 ```
 
 ### how ssh is started
