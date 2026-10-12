@@ -15,6 +15,7 @@
         aria-modal="true"
         aria-label="Info"
         header="Info"
+        header-class="text-left"
         class="text-center"
       >
         <b-card-text class="mb-2">

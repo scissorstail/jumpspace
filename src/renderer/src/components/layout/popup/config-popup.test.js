@@ -102,6 +102,11 @@ describe('the popups that close on Escape', () => {
     expect(popups.sort()).toEqual(['config-popup.vue', 'info-popup.vue', 'setting-popup.vue'])
   })
 
+  // 세 창의 제목은 왼쪽에 있다. Info 창은 내용이 가운데 정렬이라 제목에 따로 적는다.
+  it('have their title on the left, also the centered Info window', () => {
+    expect(read('info-popup.vue')).toMatch(/header="Info"\n\s+header-class="text-left"\n\s+class="text-center"/)
+  })
+
   it.each(popups)('%s is a dialog the mixin can find', name => {
     const source = read(name)
 
