@@ -1021,6 +1021,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 717 passed (3 new, 5 mutations fail them), lint ok, build ok, headless UI checks passed (`search-check` 26), commit bfa4b39. Not checked: the real window.
 - Found / next: the check found that the first Shift+Enter stayed on the selected place (the addon starts at the selection when the text is new to it); the selection is registered as a match now. Rotation next: style.
 
+### #163 2026-10-12 · style (run in the owner's session)
+- Did: looked at the search field of #153 in the three color sets (enlarged headless pictures): open, a match, "No match", and over the left half of a split. The frame, the field, the danger color and the buttons come from the color set in each; the match is the terminal's selection and reads well on all three grounds.
+- Result: nothing to change in the app; no code commit. The search check takes a color set now and runs in all three.
+- Found / next: nothing. Rotation next: tests.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
