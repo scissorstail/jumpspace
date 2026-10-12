@@ -1005,6 +1005,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 709 passed, lint ok, build ok (a comment and docs; no behavior, so no headless run), commit fc5e231.
 - Found / next: nothing else stale was found by searching for the names today's work replaced. Rotation next: refactor.
 
+### #160 2026-10-12 · refactor (run in the owner's session)
+- Did: the saving of the window bounds (#156: the timer, not while minimized, never throwing) was written inside `createWindow` in main, where only its source could be read by a test. It is `createBoundsSaver` in `window-bounds.js` now, with tests that run it against a fake window and fake timers; main keeps three lines of wiring.
+- Result: tests 714 passed (6 behavior tests replace 2 source-reading ones, 7 mutations fail them), lint ok, build ok, headless UI checks passed, commit 3d48672. Still not tried in a window (main only).
+- Found / next: the owner asked whether the app can be started and driven here; it can (Playwright's Electron launcher is in the checks' packages), but "no window on this PC" stands until the owner lifts it. Rotation next: health.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
