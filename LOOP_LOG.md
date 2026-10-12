@@ -1031,6 +1031,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 735 passed (18 new, 11 mutations of the panel fail them), lint ok, build ok, commit f26f69e. Tests only, so no headless run.
 - Found / next: no bug. The same way would reach `start`, `onExit` and `reconnect` of the panel, which are still source-read only. Rotation next: cleanup.
 
+### #165 2026-10-12 · cleanup (run in the owner's session)
+- Did: removed the source-reading assertions that #164 made double: seven patterns in `terminal-search.test.js` and `terminal-tabs.test.js` pinned the text of `find`, `openSearch`, `closeSearch`, `changeFontSize` and the font line of `fit`, which the behavior tests now run. What only the source can say (the template, the key handler, the watchers' wiring) stays.
+- Result: tests 732 passed (3 fewer test cases; the 11 panel mutations of #164 still fail), lint ok, build ok, commit 7db4116. Tests only, so no headless run.
+- Found / next: a rewrite of those methods no longer has to keep their text. Rotation next: refactor.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
