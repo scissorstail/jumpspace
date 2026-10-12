@@ -2,9 +2,9 @@
 
 The visual SSH connection editor. **Draw your servers, chain them into jump-host paths and open the right `ssh` session with one click, in terminals inside the app.**
 
-![1](https://user-images.githubusercontent.com/93466598/144472417-13bef28d-a4e8-43f2-a0ec-16b27f46b103.PNG)
+![A diagram of five servers with two terminals open below it](docs/screenshot.png)
 
-(The picture shows an older version: the app has its terminals inside and another look now, see *terminals* and *look* below.)
+(The servers in the picture are made up.)
 
 note: Windows only for now (it needs Git for Windows)
 
