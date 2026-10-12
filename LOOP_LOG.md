@@ -81,7 +81,7 @@ Both lists of 2026-10-11 are done (1 to 5 in #103 to #108, 6 to 10 in #111 to #1
 - `src/main/index.js` (about 310 lines): mostly window, tray and IPC wiring now; the app:// path check, the `{ ok, error }` wrapper and the setting store moved out in #67.
 
 ### Missing or thin tests
-- No component is mounted in a test; logic lives in `utils/` on purpose. Since #141 a test can run the script of a component with a fake `this` (`forward-menu.test.js`); `connection-settings.vue` and `main-navigator.vue` have none yet. Consider `@vue/test-utils` only if it stays cheap.
+- No component is mounted in a test; logic lives in `utils/` on purpose. Since #141 a test can run the script of a component with a fake `this` (`forward-menu.test.js`); `connection-settings.vue` has one since #178; `main-navigator.vue` has none yet. Consider `@vue/test-utils` only if it stays cheap.
 - `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts; copying and removing items are unit tested since #71.
 - A Playwright + Electron smoke test in the repo was considered and turned down by the owner (decision 6).
 
@@ -1095,6 +1095,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: looked only. Every export of `src` is used by another source file or by its own file and a test; three constants are exported without any reader outside their file (`PRESS_KEEPERS`, `OPEN_IN`, `MAX_AREA`), which harms nothing and was left. No to-do marks, no leftover files in the repository, no unused dependency found.
 - Result: log only, no code.
 - Found / next: nothing to fix (first run without a find). What is still open are the two known test gaps of #176; the next run takes one of them instead of following the rotation, so the cycle can come to its end.
+
+### #178 2026-10-13 · tests (run in the owner's session; a known gap instead of the rotation, see #177)
+- Did: the script of the Node Setting popover (`connection-settings.vue`) has its own test, run with a fake `this` like `forward-menu.test.js`: the fields shown while locked, the line for a node without values, the notes on values ssh would not take, `set()` giving a new object, the key file dialog that may be cancelled, and the template sending each field under its own name. 11 tests.
+- Result: tests 766 passed (11 new, 7 mutations fail them; an eighth, dropping `this.disabled &&` in `isBlank`, changes nothing because an unlocked node shows every field), lint ok, build ok, commit 75c4d59. No behavior changed, so no UI check.
+- Found / next: no bug. One known test gap is left: the script of `main-navigator.vue`; the next run takes it.
 
 ## Routine
 
