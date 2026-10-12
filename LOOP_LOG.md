@@ -1081,6 +1081,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 747 passed (5 new, 6 mutations fail them), lint ok, build ok, headless UI checks passed with the new `info-check` (three palettes, pictures looked at), commit eebce68. Renderer only, so no real-window run.
 - Found / next: the first layout made the Info window scroll in the default window; texts were shortened for it. The Feature queue is empty again. Rotation next: style.
 
+### #175 2026-10-13 · style (run in the owner's session)
+- Did: the title of the Info window stood in the middle, the titles of Settings and From SSH config on the left. It is on the left now (`header-class`); the content of the window stays centered.
+- Result: tests 748 passed (1 new, 1 mutation fails it), lint ok, build ok, headless UI checks passed (`info-check` reads the alignment in all three palettes, picture looked at), commit 28dcba3.
+- Found / next: looked at the Settings, From SSH config, split and Info pictures; nothing else. This run found something, so the count of runs without a find starts again. Rotation next: tests.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
