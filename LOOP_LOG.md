@@ -1111,6 +1111,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 804 passed (10 new, 13 mutations fail them), lint ok, build ok, commit 476baf2. No code changed, so no UI check.
 - Found / next: no bug; a gap in the tests was found, so this does not count as a run without a find (count 0). Rotation next: health.
 
+### #181 2026-10-13 · health (run in the owner's session)
+- Did: looked only. `npm outdated` has nothing inside the current major versions, Electron is at the newest 44.x (44.7.0), `npm audit --omit=dev` 0 and `npm audit` unchanged at 11 (all behind a major version), CI green on the last five pushes. As a check of the whole before an installer: every headless check passed, and the real-window run of #168 passed again on today's build (39 of 39, no Electron left running).
+- Result: log only, no code.
+- Found / next: nothing to fix (first run without a find). Rotation next: ux.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
