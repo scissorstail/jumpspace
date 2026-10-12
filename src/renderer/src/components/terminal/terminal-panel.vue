@@ -235,16 +235,7 @@ export default {
       this.fit(entry)
       term.focus()
 
-      term.onData(data => {
-        // 끝난 세션에서는 Enter가 다시 접속이다.
-        if (entry.ended) {
-          if (data === '\r') this.reconnect(this.allSessions.find(x => x.key === session.key))
-          return
-        }
-        // Ctrl+C를 누른 때를 기억한다: 포워딩(ssh -N)은 Ctrl+C로 끝내도 오류(255)로 끝난다.
-        if (data.includes('\x03')) entry.interruptedAt = Date.now()
-        if (entry.id !== null) window.preload.terminal.write(entry.id, data)
-      })
+      term.onData(data => this.typed(session.key, entry, data))
       this.enableShortcuts(term, el)
       // 로그인하면 ssh가 보이지 않는 표시를 보낸다 (main의 ssh.js). 받으면 캔버스의 경로가 "연결됨"이 된다.
       term.parser.registerOscHandler(CONNECTED_OSC, data => {
@@ -260,6 +251,16 @@ export default {
       }
 
       this.attach(session, entry, result)
+    },
+    // 터미널에 친 것(붙여 넣은 것도)을 세션으로 보낸다. 끝난 세션에서는 Enter만 받는다: 다시 접속이다.
+    typed(key, entry, data) {
+      if (entry.ended) {
+        if (data === '\r') this.reconnect(this.allSessions.find(x => x.key === key))
+        return
+      }
+      // Ctrl+C를 누른 때를 기억한다: 포워딩(ssh -N)은 Ctrl+C로 끝내도 오류(255)로 끝난다.
+      if (data.includes('\x03')) entry.interruptedAt = Date.now()
+      if (entry.id !== null) window.preload.terminal.write(entry.id, data)
     },
     // 선과 블록 문자(─ │ █ 등)를 xterm.js가 칸에 꼭 맞게 직접 그리게 한다 (owner, 2026-10-11: Claude Code의 선 사이에
     // 틈이 보였다). 기본 그리기(DOM)는 그 문자를 글꼴로 그려서, 화면 배율에 따라 줄과 줄, 칸과 칸 사이가 끊긴다.

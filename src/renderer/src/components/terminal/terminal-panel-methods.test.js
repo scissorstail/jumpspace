@@ -62,6 +62,70 @@ describe('the script of the terminal panel', () => {
   })
 })
 
+describe('what is typed into a terminal', () => {
+  const written = () => {
+    const calls = []
+    vi.stubGlobal('window', { preload: { terminal: { write: (...args) => calls.push(args) } } })
+    return calls
+  }
+  // 가짜 this에 세션 목록과 다시 접속한 것의 기록을 더한다
+  const typing = entry => {
+    const { vm } = panel(entry)
+    const reconnected = []
+    vm.allSessions = [{ key: 1, title: 'app' }, { key: 2, title: 'db' }]
+    vm.reconnect = session => reconnected.push(session)
+    return { vm, reconnected }
+  }
+
+  it('goes to the session of that terminal', () => {
+    const calls = written()
+    const entry = { ...terminal(), ended: false, interruptedAt: null }
+    const { vm, reconnected } = typing(entry)
+
+    vm.typed(1, entry, 'ls\r')
+    expect(calls).toEqual([[7, 'ls\r']])
+    expect(entry.interruptedAt).toBe(null)
+    expect(reconnected).toEqual([])
+  })
+
+  // 포워딩(ssh -N)은 Ctrl+C로 끝내도 오류로 끝난다: 누른 때로 가려낸다
+  it('remembers when Ctrl+C was pressed, also inside a paste', () => {
+    written()
+    vi.useFakeTimers()
+    vi.setSystemTime(123456)
+    const entry = { ...terminal(), ended: false, interruptedAt: null }
+    const { vm } = typing(entry)
+
+    vm.typed(1, entry, 'a\x03b')
+    expect(entry.interruptedAt).toBe(123456)
+    vi.useRealTimers()
+  })
+
+  it('waits while the session is not open yet', () => {
+    const calls = written()
+    const entry = { ...terminal(), id: null, ended: false, interruptedAt: null }
+    const { vm } = typing(entry)
+
+    vm.typed(1, entry, 'x')
+    expect(calls).toEqual([])
+  })
+
+  it('is not sent to an ended session: Enter connects again, anything else is dropped', () => {
+    const calls = written()
+    const entry = { ...terminal(), ended: true, interruptedAt: null }
+    const { vm, reconnected } = typing(entry)
+
+    vm.typed(1, entry, 'x')
+    vm.typed(1, entry, '\x03')
+    expect(reconnected).toEqual([])
+    expect(entry.interruptedAt).toBe(null)
+
+    vm.typed(1, entry, '\r')
+    expect(reconnected).toEqual([{ key: 1, title: 'app' }])
+    expect(calls).toEqual([])
+  })
+})
+
 describe('finding in the terminal of the selected tab', () => {
   it('starts from the newest output while typing: the selection goes first, then upwards', () => {
     const entry = terminal()
