@@ -1036,6 +1036,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 732 passed (3 fewer test cases; the 11 panel mutations of #164 still fail), lint ok, build ok, commit 7db4116. Tests only, so no headless run.
 - Found / next: a rewrite of those methods no longer has to keep their text. Rotation next: refactor.
 
+### #166 2026-10-12 · refactor (run in the owner's session)
+- Did: what happens to text typed into a terminal (sent to its session; in an ended session Enter connects again and the rest is dropped; the time of a Ctrl+C is remembered) was an arrow function inside `start()` of the panel that no test could call. It is the method `typed(key, entry, data)` now, with four behavior tests in `terminal-panel-methods.test.js`. No change in behavior.
+- Result: tests 736 passed (4 new, 5 mutations fail them), lint ok, build ok, headless UI checks passed, commit fb9ba1f. Not checked: the real window.
+- Found / next: `onExit` and `reconnect` can be called the same way and have no behavior test yet. Rotation next: health.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
