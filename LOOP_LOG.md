@@ -117,6 +117,7 @@ Things decided on the way that the owner has not confirmed; the entry has the de
 - #106: a double click on a locked node resets the view (#114) but a slow double click can still select a word of its text. #111: the port forwarding popover is the same locked or not.
 - #116, From SSH config: several hosts at once (at most 50), `ProxyJump` becomes a connection, port 22 when none is named, what is left out, bad values are marked but the node is made.
 - #134: a minimized panel costs the canvas 40px. #135: the halves are 50:50, no key moves between them, the tab row does not say left or right. #145: a middle click closes a tab (not asked for).
+- #151: the hop count left the tab name for the tooltip (the owner said yes to the proposal without seeing it).
 - #147: the list says *diagram*; *Export Space* was left. Still double: *New diagram* is in the menu and on the `+` next to it.
 
 ### Seen in the real window, and not yet
@@ -956,6 +957,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: the Backlog says what is true: the finished request lists are one line, the feature queue is without the node search (dropped by the owner), the open points scattered over #106 to #147 are under Questions, two proposals, and "never run on Windows" became what was seen in the real window and what was not.
 - Result: log only.
 - Found / next: the owner asked about a dependency migration and decided against it. Next in the queue is the terminal font size.
+
+### #151 2026-10-12 · ux (by hand, the owner: "yes, allowed, do all of it" to the open points of the review)
+- Did: a terminal tab is named like its node; the `(+1)` of a session through previous nodes ran into the number of tabs with the same name (`app (+1) (2)`). The tooltip of the tab says "through 1 previous node" instead, without addresses.
+- Result: tests 664 passed (2 new, 2 mutations fail them), lint ok, build ok, headless UI checks passed, commit cbbbef9. Not checked: the real window.
+- Found / next: allowed with the same word: the font size, the scrollback search with `@xterm/addon-search`, a new picture for the README, the window size, the question before closing while unlocked.
 
 ## Routine
 
