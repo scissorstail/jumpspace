@@ -1106,6 +1106,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 794 passed (28 new, 22 mutations fail them), lint ok, build ok, commit 462b3b4. No behavior changed, so no UI check.
 - Found / next: no bug. The known test gaps are closed, the Feature queue is empty, no bug is known. From here two runs in a row without a find end the cycle (the count starts at 0). Rotation next: refactor.
 
+### #180 2026-10-13 · refactor (run in the owner's session; became tests)
+- Did: looked at the largest scripts for something to split (the terminal panel 407 lines, the editor 499, the diagram list 270). Nothing needs splitting, but the key and right-click handlers inside `enableShortcuts` of the panel had no unit test, and they can be called as they are: a fake terminal hands the handlers out. Ten tests: keys that stay with the terminal, Ctrl+C copying and letting go, one paste only, the font and search keys, the right click with and without a program that takes the mouse.
+- Result: tests 804 passed (10 new, 13 mutations fail them), lint ok, build ok, commit 476baf2. No code changed, so no UI check.
+- Found / next: no bug; a gap in the tests was found, so this does not count as a run without a find (count 0). Rotation next: health.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
