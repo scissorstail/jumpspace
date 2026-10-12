@@ -225,6 +225,8 @@ export function terminalShortcut(event, { hasSelection = false } = {}) {
   if (!event.shiftKey && event.key === 'Insert') return 'copy'
   // 글꼴 크기: Ctrl +/= (크게), Ctrl - (작게), Ctrl 0 (기본값). 숫자판의 키도 같은 글자를 준다.
   // xterm.js는 이 키들에 아무것도 보내지 않는다. Ctrl+Shift+-는 글자가 '_'라서 여기에 걸리지 않고 ^_(emacs의 undo)로 간다.
+  // 지나간 출력에서 찾기. Shift 없는 Ctrl+F는 프로그램의 것이다 (^F: 셸에서 한 글자 앞으로, less에서 한 쪽 아래로).
+  if (event.shiftKey && event.code === 'KeyF') return 'find'
   if (event.key === '+' || event.key === '=') return 'font-up'
   if (event.key === '-') return 'font-down'
   if (event.key === '0') return 'font-reset'

@@ -58,6 +58,17 @@
         :class="activeKey === panes.right ? 'is-right' : 'is-left'"
         aria-hidden="true"
       />
+      <!-- 지나간 출력에서 찾기 (Ctrl+Shift+F): 고른 탭의 화면 위에 뜬다. -->
+      <terminal-search
+        v-if="search.isOpen"
+        ref="search"
+        v-model="search.text"
+        :class="{ 'is-left': isSplit && activeKey === panes.left }"
+        :is-missing="search.isMissing"
+        @input="find('first')"
+        @find="find"
+        @close="closeSearch"
+      />
     </div>
   </section>
 </template>
@@ -65,12 +76,14 @@
 <script>
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { SearchAddon } from '@xterm/addon-search'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
 import { canReconnect, createOutputRouter, endedByUser, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, panelDrag, panelHeight, RECONNECTING_LINE, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
+import TerminalSearch from './terminal-search'
 import TerminalTabs from './terminal-tabs'
 
 // 터미널 색은 지금 고른 테마(assets/theme.scss의 CSS 변수)에서 읽고, 설정의 단계(terminalColors)만큼 낮춘다.
@@ -84,13 +97,15 @@ function currentTerminalTheme(level) {
 // 다른 item의 세션은 보이지 않을 뿐 계속 돌고, 그 item을 다시 열면 나타난다.
 export default {
   name: 'TerminalPanel',
-  components: { TerminalTabs },
+  components: { TerminalSearch, TerminalTabs },
   data() {
     return {
       // 사용자가 정한 높이. 창이 낮으면 보이는 높이(shownHeight)만 줄어든다. 최대화한 동안에도 남아서, 내리면 이 높이로 돌아온다.
       height: 280,
       // 캔버스와 패널이 나눠 쓰는 높이 (#workspace). 창 크기가 바뀌면 다시 잰다.
-      available: Infinity
+      available: Infinity,
+      // 지나간 출력에서 찾기 (Ctrl+Shift+F). 찾는 글은 닫아도 남는다.
+      search: { isOpen: false, text: '', isMissing: false }
     }
   },
   computed: {
@@ -135,6 +150,11 @@ export default {
     },
     shownKeys() {
       this.$nextTick(() => this.fitActive(true))
+    },
+    // 찾는 칸은 그것을 연 탭의 것이다: 다른 탭을 고르면(새 터미널도) 닫힌다. 찾던 글은 남는다.
+    activeKey() {
+      this.search.isOpen = false
+      this.search.isMissing = false
     },
     isOpen(open) {
       if (open) this.$nextTick(() => this.fitActive(true))
@@ -185,8 +205,10 @@ export default {
         theme: this.colors()
       })
       const fit = new FitAddon()
+      const search = new SearchAddon()
       term.loadAddon(fit)
-      const entry = { term, fit, id: null, ended: false, reconnecting: false, interruptedAt: null }
+      term.loadAddon(search)
+      const entry = { term, fit, search, id: null, ended: false, reconnecting: false, interruptedAt: null }
       this.terms.set(session.key, entry)
 
       const el = this.$refs[`term-${session.key}`]?.[0]
@@ -248,7 +270,7 @@ export default {
     // Windows 터미널처럼. 복사: 선택하고 Ctrl+C (또는 Ctrl+Shift+C, Ctrl+Insert). 고른 글자가 없는 Ctrl+C는 그대로 중단이다.
     // 붙여넣기: Ctrl+V (또는 Ctrl+Shift+V; Shift+Insert는 브라우저가 처리). 오른쪽 클릭: 선택한 글자가 있으면 복사, 없으면 붙여넣기.
     // 프로그램이 마우스를 받는 동안의 오른쪽 클릭은 프로그램의 것이다 (rightClickAction).
-    // 글꼴 크기: Ctrl +/-/0 (changeFontSize).
+    // 글꼴 크기: Ctrl +/-/0 (changeFontSize). 지나간 출력에서 찾기: Ctrl+Shift+F (openSearch).
     enableShortcuts(term, el) {
       const copySelection = () => {
         if (!term.hasSelection()) return false
@@ -267,6 +289,8 @@ export default {
         event.preventDefault()
         if (shortcut.startsWith('font-')) {
           this.changeFontSize(shortcut)
+        } else if (shortcut === 'find') {
+          this.openSearch()
         } else if (shortcut === 'paste') {
           paste()
         } else if (copySelection() && !event.shiftKey && event.code === 'KeyC') {
@@ -363,6 +387,28 @@ export default {
     changeFontSize(shortcut) {
       const terminalFontSize = nextFontSize(this.fontSize, shortcut)
       if (terminalFontSize !== this.fontSize) this.$store.dispatch('settingChange', { terminalFontSize })
+    },
+    // 찾는 칸을 열고(열려 있으면 그대로) 거기로 포커스를 준다.
+    openSearch() {
+      this.search.isOpen = true
+      this.$nextTick(() => this.$refs.search?.focus())
+    },
+    // 닫으면 터미널로 돌아간다. 찾은 글은 고른 채로 남는다 (Ctrl+C로 복사할 수 있다).
+    closeSearch() {
+      this.search.isOpen = false
+      this.search.isMissing = false
+      this.terms.get(this.activeKey)?.term.focus()
+    },
+    // 고른 탭의 터미널에서 찾는다. 찾으면 xterm.js가 그 글을 고르고 그 줄로 넘긴다.
+    // first: 글을 칠 때마다, 맨 아래(가장 새 출력)에서 위로. previous와 next: 지금 고른 곳에서 위로, 아래로.
+    find(direction) {
+      const entry = this.terms.get(this.activeKey)
+      if (!entry) return
+
+      const { text } = this.search
+      if (direction === 'first') entry.term.clearSelection()
+      const found = text !== '' && (direction === 'next' ? entry.search.findNext(text) : entry.search.findPrevious(text))
+      this.search.isMissing = text !== '' && !found
     },
     fit(entry, force = false) {
       if (!entry || !entry.term.element || entry.term.element.offsetParent === null) return

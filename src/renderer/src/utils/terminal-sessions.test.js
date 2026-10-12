@@ -254,6 +254,13 @@ describe('terminalShortcut', () => {
     expect(terminalShortcut(key('KeyV', { ctrlKey: true, altKey: true }, 'v'))).toBe(null)
   })
 
+  it('opens the search with Ctrl+Shift+F and leaves Ctrl+F to the program', () => {
+    expect(terminalShortcut(key('KeyF', { ctrlKey: true, shiftKey: true }, 'F'))).toBe('find')
+    expect(terminalShortcut(key('KeyF', { ctrlKey: true }, 'f'))).toBe(null)
+    expect(terminalShortcut(key('KeyF', { shiftKey: true }, 'F'))).toBe(null)
+    expect(terminalShortcut(key('KeyF', { ctrlKey: true, shiftKey: true, altKey: true }, 'F'))).toBe(null)
+  })
+
   it('changes the font size with Ctrl and +, =, - or 0, also on the number pad', () => {
     expect(terminalShortcut(key('Equal', { ctrlKey: true }, '='))).toBe('font-up')
     expect(terminalShortcut(key('Equal', { ctrlKey: true, shiftKey: true }, '+'))).toBe('font-up')
