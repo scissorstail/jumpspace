@@ -9,6 +9,9 @@ const REACH = { width: 100, height: 32 }
 // 화면 가장자리에 붙인 창은 보이지 않는 테두리만큼 화면 밖에 있다 (Windows)
 const EDGE = 10
 
+// 창을 옮기거나 크기를 바꾼 뒤 이만큼 지나면 저장한다 (끄는 동안에는 이벤트가 픽셀마다 온다)
+export const BOUNDS_SAVE_DELAY_MS = 500
+
 const fresh = () => ({ ...DEFAULT_SIZE, isMaximized: false })
 
 // 저장된 값(saved)으로 새 창의 크기와 자리를 정한다. workAreas는 지금 있는 화면들의 쓸 수 있는 영역({ x, y, width, height })이다.
@@ -49,4 +52,27 @@ export function createWindowStore(store) {
       store.set('window', { x, y, width, height, isMaximized: Boolean(isMaximized) })
     }
   }
+}
+
+// 창(target: BrowserWindow)의 크기와 자리를 windows(createWindowStore)에 저장하는 일.
+// soon: 옮기거나 크기를 바꿀 때마다 부른다, 멈춘 뒤에 한 번 저장한다. now: 닫을 때, 바로. stop: 창이 닫힌 뒤, 기다리던 저장을 버린다.
+// 최소화한 동안에는 저장하지 않는다 (그때는 최대화했었는지 알 수 없다). 최대화한 창의 getBounds()는 화면 전체라서
+// 돌아갈 크기는 getNormalBounds()에서 읽는다. 저장하지 못해도 예외를 내지 않는다: 창은 닫혀야 한다.
+export function createBoundsSaver(target, windows, delay = BOUNDS_SAVE_DELAY_MS) {
+  let timer = null
+  const now = () => {
+    clearTimeout(timer)
+    try {
+      if (target.isDestroyed() || target.isMinimized()) return
+      windows.set(target.getNormalBounds(), target.isMaximized())
+    } catch (e) {
+      console.error('The window bounds could not be saved', e)
+    }
+  }
+  const soon = () => {
+    clearTimeout(timer)
+    timer = setTimeout(now, delay)
+  }
+
+  return { now, soon, stop: () => clearTimeout(timer) }
 }

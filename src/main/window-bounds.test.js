@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, expect, it } from 'vitest'
-import { createWindowStore, DEFAULT_SIZE, MIN_SIZE, restoreBounds } from './window-bounds.js'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { BOUNDS_SAVE_DELAY_MS, createBoundsSaver, createWindowStore, DEFAULT_SIZE, MIN_SIZE, restoreBounds } from './window-bounds.js'
 
 const fresh = { width: 1024, height: 768, isMaximized: false }
 // 왼쪽에 주 화면, 오른쪽에 둘째 화면 (작업 표시줄 40px을 뺀 영역)
@@ -97,14 +97,83 @@ describe('the window of the app', () => {
     expect(index).toMatch(/if \(isMaximized\) win\.maximize\(\)\n\s+win\.show\(\)/)
   })
 
-  // 최대화한 창의 getBounds()는 화면 전체다: 돌아갈 크기는 getNormalBounds()에 있다
-  it('remembers its normal bounds, not while it is minimized, and never fails for it', () => {
-    expect(index).toMatch(/if \(target\.isDestroyed\(\) \|\| target\.isMinimized\(\)\) return\n\s+windows\.set\(target\.getNormalBounds\(\), target\.isMaximized\(\)\)/)
-    expect(index).toMatch(/\} catch \(e\) \{\n\s+console\.error\('The window bounds could not be saved', e\)/)
+  it('saves a moment after it is moved or resized, at once when it closes, and drops a waiting save when it is gone', () => {
+    expect(index).toMatch(/const saver = createBoundsSaver\(target, windows\)\n\s+for \(const name of \['resize', 'move', 'maximize', 'unmaximize'\]\) win\.on\(name, saver\.soon\)/)
+    expect(index).toMatch(/win\.on\('close', event => \{\n\s+saver\.now\(\)\n/)
+    expect(index).toMatch(/win\.on\('closed', \(\) => \{\n\s+saver\.stop\(\)\n/)
+  })
+})
+
+describe('createBoundsSaver', () => {
+  afterEach(() => vi.useRealTimers())
+
+  // 최대화한 창: getBounds()는 화면 전체이고, 돌아갈 크기는 getNormalBounds()에 있다
+  const fakeWindow = (state = {}) => ({
+    isDestroyed: () => Boolean(state.destroyed),
+    isMinimized: () => Boolean(state.minimized),
+    isMaximized: () => Boolean(state.maximized),
+    getNormalBounds: () => ({ x: 10, y: 20, width: 900, height: 600 }),
+    getBounds: () => ({ x: 0, y: 0, width: 1920, height: 1040 })
+  })
+  const fakeStore = () => ({ set: vi.fn() })
+
+  it('saves the normal bounds and whether the window is maximized, at once', () => {
+    const windows = fakeStore()
+    createBoundsSaver(fakeWindow({ maximized: true }), windows).now()
+    expect(windows.set).toHaveBeenCalledExactlyOnceWith({ x: 10, y: 20, width: 900, height: 600 }, true)
   })
 
-  it('saves a moment after it is moved or resized, and at once when it closes', () => {
-    expect(index).toMatch(/for \(const name of \['resize', 'move', 'maximize', 'unmaximize'\]\) win\.on\(name, saveSoon\)/)
-    expect(index).toMatch(/win\.on\('close', event => \{\n\s+saveNow\(\)\n/)
+  it('saves once, half a second after the last of many moves', () => {
+    vi.useFakeTimers()
+    const windows = fakeStore()
+    const saver = createBoundsSaver(fakeWindow(), windows)
+
+    expect(BOUNDS_SAVE_DELAY_MS).toBe(500)
+    for (let i = 0; i < 20; i++) {
+      saver.soon()
+      vi.advanceTimersByTime(BOUNDS_SAVE_DELAY_MS - 1)
+    }
+    expect(windows.set).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1)
+    expect(windows.set).toHaveBeenCalledExactlyOnceWith({ x: 10, y: 20, width: 900, height: 600 }, false)
+  })
+
+  it('does not save a second time after the save of the close', () => {
+    vi.useFakeTimers()
+    const windows = fakeStore()
+    const saver = createBoundsSaver(fakeWindow(), windows)
+
+    saver.soon()
+    saver.now()
+    vi.advanceTimersByTime(BOUNDS_SAVE_DELAY_MS * 2)
+    expect(windows.set).toHaveBeenCalledOnce()
+  })
+
+  it('drops a waiting save when the window is gone', () => {
+    vi.useFakeTimers()
+    const windows = fakeStore()
+    const saver = createBoundsSaver(fakeWindow(), windows)
+
+    saver.soon()
+    saver.stop()
+    vi.advanceTimersByTime(BOUNDS_SAVE_DELAY_MS * 2)
+    expect(windows.set).not.toHaveBeenCalled()
+  })
+
+  // 최소화한 동안에는 최대화했었는지 알 수 없다: 그 전에 저장한 것을 둔다
+  it('leaves what is stored while the window is minimized or destroyed', () => {
+    const windows = fakeStore()
+    createBoundsSaver(fakeWindow({ minimized: true }), windows).now()
+    createBoundsSaver(fakeWindow({ destroyed: true }), windows).now()
+    expect(windows.set).not.toHaveBeenCalled()
+  })
+
+  // 창은 닫혀야 한다
+  it('never throws when the bounds cannot be saved', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const failure = new Error('disk full')
+    expect(() => createBoundsSaver(fakeWindow(), { set() { throw failure } }).now()).not.toThrow()
+    expect(error).toHaveBeenCalledWith('The window bounds could not be saved', failure)
+    error.mockRestore()
   })
 })

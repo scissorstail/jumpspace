@@ -26,14 +26,11 @@ import { toResult } from './ipc-result.js'
 import { createSettingStore } from './setting-store.js'
 import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
-import { createWindowStore, restoreBounds } from './window-bounds.js'
+import { createBoundsSaver, createWindowStore, restoreBounds } from './window-bounds.js'
 import { mayUnload } from './unload-question.js'
 
 // 터미널에서 복사/붙여넣기로 오가는 글자 수의 상한
 const MAX_CLIPBOARD = 1024 * 1024
-
-// 창을 옮기거나 크기를 바꾼 뒤 이만큼 지나면 저장한다 (끄는 동안에는 이벤트가 픽셀마다 온다)
-const BOUNDS_SAVE_DELAY_MS = 500
 
 const isMac = process.platform === 'darwin'
 
@@ -288,24 +285,10 @@ async function createWindow(getSetting, windows) {
     win.show()
   })
 
-  // 크기와 자리를 기억한다: 옮기거나 크기를 바꾼 조금 뒤에, 그리고 닫을 때 바로. 최소화한 동안에는 그대로 둔다
-  // (그때는 최대화했었는지 알 수 없다). 저장하지 못해도 창은 닫혀야 한다.
+  // 크기와 자리를 기억한다: 옮기거나 크기를 바꾼 조금 뒤에, 그리고 닫을 때 바로 (window-bounds.js의 createBoundsSaver).
   const target = win
-  let saveTimer = null
-  const saveNow = () => {
-    clearTimeout(saveTimer)
-    try {
-      if (target.isDestroyed() || target.isMinimized()) return
-      windows.set(target.getNormalBounds(), target.isMaximized())
-    } catch (e) {
-      console.error('The window bounds could not be saved', e)
-    }
-  }
-  const saveSoon = () => {
-    clearTimeout(saveTimer)
-    saveTimer = setTimeout(saveNow, BOUNDS_SAVE_DELAY_MS)
-  }
-  for (const name of ['resize', 'move', 'maximize', 'unmaximize']) win.on(name, saveSoon)
+  const saver = createBoundsSaver(target, windows)
+  for (const name of ['resize', 'move', 'maximize', 'unmaximize']) win.on(name, saver.soon)
 
   // https://www.electronjs.org/docs/api/window-open#native-window-example
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -341,7 +324,7 @@ async function createWindow(getSetting, windows) {
   win.on('show', () => win.setSkipTaskbar(false))
 
   win.on('close', event => {
-    saveNow()
+    saver.now()
     if (!isQuitting && getSetting().isHideToTrayOnClose) {
       event.preventDefault()
       win.setSkipTaskbar(true)
@@ -350,7 +333,7 @@ async function createWindow(getSetting, windows) {
   })
 
   win.on('closed', () => {
-    clearTimeout(saveTimer)
+    saver.stop()
     win = null
   })
 
