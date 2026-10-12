@@ -102,7 +102,9 @@ Both lists of 2026-10-11 are done (1 to 5 in #103 to #108, 6 to 10 in #111 to #1
 
 ### Feature queue (owner, 2026-09-30; top first)
 The routine takes the top item in a `feature` run. The owner may reorder, add or remove items.
-Empty. Done: the terminal font size (#152), the search in the terminal scrollback (#153).
+1. The keys of the terminal (find: Ctrl+Shift+F; font size: Ctrl + / - / 0; copy and paste; Enter to reconnect) are told only in the README. Show them in the app, for instance as a short list in the Info window (found in #172).
+
+Done: the terminal font size (#152), the search in the terminal scrollback (#153).
 - Dropped by the owner on 2026-10-12 ("not needed"): find a node by name, user or host. Done: the Windows installer build in CI (#83).
 
 ### Proposals for the owner (need a decision)
@@ -1065,6 +1067,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: `npm outdated` has nothing inside the current major versions, Electron is at the newest 44.x (44.7.0), `npm audit --omit=dev` 0 and `npm audit` unchanged at 11 (all behind a major version), CI green on the last pushes. The README lacked two things the changelog has: that edits are saved on locking and that leaving unlocked asks first (#157), and that the window opens where it was (#156). Added as steps 7 and 8 of the usage.
 - Result: tests 742 passed, lint ok, build ok (README only, no UI check needed), commit 962110a.
 - Found / next: nothing else. Rotation next: ux.
+
+### #172 2026-10-13 · ux (run in the owner's session)
+- Did: looked only, at the pictures of the real-window run of #168 (the start without a diagram, a failed session, the find field with and without a match) and at the find field's markup (label, status text, keys, titles). Nothing to fix.
+- Result: log only, no code.
+- Found / next: nothing in the app tells the terminal keys (find, font size); that is an addition, not a fix, so it went to the Feature queue as its only item. The polish phase found nothing in this run. Rotation next: style.
 
 ## Routine
 
