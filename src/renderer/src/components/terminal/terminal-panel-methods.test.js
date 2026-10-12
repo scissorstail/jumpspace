@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runInThisContext } from 'node:vm'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { canReconnect, endedByUser } from '../../utils/terminal-sessions'
+import { canReconnect, endedByUser, rightClickAction, terminalShortcut } from '../../utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, RECONNECTING_LINE, searchSeed } from '../../utils/terminal-view'
 
 // 터미널 패널의 찾기와 글꼴 크기. DOM 없이 도는 테스트라서 .vue를 불러올 수 없다: <script>의 내용을 꺼내 import만 바꿔서
@@ -12,7 +12,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const source = readFileSync(join(here, 'terminal-panel.vue'), 'utf8').replace(/\r\n/g, '\n')
 const script = source.match(/<script>\n([\s\S]*?)<\/script>/)[1]
 const imported = [...script.matchAll(/^import (?:\{ ([^}]+) \}|(\w+)) from .*$/gm)].flatMap(match => (match[1] ?? match[2]).split(', '))
-const given = { nextFontSize, searchSeed, canReconnect, endedByUser, endedLine, errorLine, RECONNECTING_LINE, mapGetters: () => ({}) }
+const given = { nextFontSize, searchSeed, canReconnect, endedByUser, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, mapGetters: () => ({}) }
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 const component = runInThisContext(`(function (${imported.join(', ')}) {\n${body}\n})`)(...imported.map(name => given[name]))
 
@@ -456,5 +456,114 @@ describe('connecting an ended tab again', () => {
     expect(entry.id).toBe(7)
     expect(seen.registered).toEqual([])
     expect(seen.commits).toHaveLength(1)
+  })
+})
+
+// 터미널의 키와 오른쪽 클릭. 가짜 터미널이 받은 처리기를 꺼내서 부른다.
+describe('the keys and the right click of a terminal', () => {
+  const wired = ({ selection = '', clipboard = 'PASTED', mouseTracking = 'none' } = {}) => {
+    const calls = []
+    let selected = selection
+    let onKey, onMenu
+    const term = {
+      modes: { mouseTrackingMode: mouseTracking },
+      hasSelection: () => selected !== '',
+      getSelection: () => selected,
+      clearSelection: () => { selected = ''; calls.push('clearSelection') },
+      paste: text => calls.push(['paste', text]),
+      focus: () => calls.push('focus'),
+      attachCustomKeyEventHandler: fn => { onKey = fn }
+    }
+    const el = { addEventListener: (name, fn) => { if (name === 'contextmenu') onMenu = fn } }
+    vi.stubGlobal('window', {
+      preload: { clipboard: { writeText: text => calls.push(['copy', text]), readText: async () => clipboard } }
+    })
+    const { vm } = panel(null)
+    vm.changeFontSize = shortcut => calls.push(['font', shortcut])
+    vm.openSearch = () => calls.push('find')
+    vm.enableShortcuts(term, el)
+    // 키 하나를 누른다: 처리기의 답(true = 터미널이 그대로 처리)과, 브라우저의 기본 동작을 막았는지
+    const press = async (code, key, more = {}) => {
+      let prevented = false
+      const passed = onKey({ type: 'keydown', ctrlKey: true, code, key, preventDefault: () => { prevented = true }, ...more })
+      await Promise.resolve()
+      await Promise.resolve()
+      return { passed, prevented }
+    }
+    const rightClick = async (more = {}) => {
+      let prevented = false
+      await onMenu({ preventDefault: () => { prevented = true }, shiftKey: false, ...more })
+      return prevented
+    }
+    return { calls, press, rightClick }
+  }
+
+  it('leaves a key that is no shortcut to the terminal', async () => {
+    const { calls, press } = wired()
+    expect(await press('KeyA', 'a')).toEqual({ passed: true, prevented: false })
+    expect(await press('KeyC', 'c')).toEqual({ passed: true, prevented: false })
+    expect(calls).toEqual([])
+  })
+
+  it('copies the selection with Ctrl+C and lets go of it, so the next Ctrl+C interrupts', async () => {
+    const { calls, press } = wired({ selection: 'picked' })
+    expect(await press('KeyC', 'c')).toEqual({ passed: false, prevented: true })
+    expect(calls).toEqual([['copy', 'picked'], 'clearSelection'])
+    expect(await press('KeyC', 'c')).toEqual({ passed: true, prevented: false })
+  })
+
+  it('keeps the selection after Ctrl+Shift+C and Ctrl+Insert', async () => {
+    const { calls, press } = wired({ selection: 'picked' })
+    await press('KeyC', 'C', { shiftKey: true })
+    await press('Insert', 'Insert')
+    expect(calls).toEqual([['copy', 'picked'], ['copy', 'picked']])
+  })
+
+  it('copies nothing with Ctrl+Shift+C when nothing is selected, and still keeps the key from the program', async () => {
+    const { calls, press } = wired()
+    expect(await press('KeyC', 'C', { shiftKey: true })).toEqual({ passed: false, prevented: true })
+    expect(calls).toEqual([])
+  })
+
+  it('pastes the clipboard with Ctrl+V, once: the browser is kept from pasting too', async () => {
+    const { calls, press } = wired()
+    expect(await press('KeyV', 'v')).toEqual({ passed: false, prevented: true })
+    expect(calls).toEqual([['paste', 'PASTED']])
+  })
+
+  it('pastes nothing from an empty clipboard', async () => {
+    const { calls, press } = wired({ clipboard: '' })
+    await press('KeyV', 'v')
+    expect(calls).toEqual([])
+  })
+
+  it('hands the font size keys and the search key to the panel', async () => {
+    const { calls, press } = wired()
+    await press('Equal', '=')
+    await press('Minus', '-')
+    await press('Digit0', '0')
+    expect(await press('KeyF', 'F', { shiftKey: true })).toEqual({ passed: false, prevented: true })
+    expect(calls).toEqual([['font', 'font-up'], ['font', 'font-down'], ['font', 'font-reset'], 'find'])
+  })
+
+  it('copies on a right click with a selection and lets go of it', async () => {
+    const { calls, rightClick } = wired({ selection: 'picked' })
+    expect(await rightClick()).toBe(true)
+    expect(calls).toEqual([['copy', 'picked'], 'clearSelection'])
+  })
+
+  it('pastes on a right click without a selection and keeps the keyboard in the terminal', async () => {
+    const { calls, rightClick } = wired()
+    await rightClick()
+    expect(calls).toEqual([['paste', 'PASTED'], 'focus'])
+  })
+
+  // tmux의 mouse on, vim: 그 클릭은 프로그램의 것이다. 여기서 붙여넣으면 클립보드의 글이 프로그램에 함께 들어간다.
+  it('does nothing on a right click while the program takes the mouse, unless Shift is held', async () => {
+    const { calls, rightClick } = wired({ mouseTracking: 'vt200' })
+    expect(await rightClick()).toBe(true)
+    expect(calls).toEqual([])
+    await rightClick({ shiftKey: true })
+    expect(calls).toEqual([['paste', 'PASTED'], 'focus'])
   })
 })
