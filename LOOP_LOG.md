@@ -106,6 +106,7 @@ Empty. Done: the terminal font size (#152), the search in the terminal scrollbac
 - Dropped by the owner on 2026-10-12 ("not needed"): find a node by name, user or host. Done: the Windows installer build in CI (#83).
 
 ### Proposals for the owner (need a decision)
+None. The two of 2026-10-12 are done (#156, #157).
 
 ### Questions for the owner
 Things decided on the way that the owner has not confirmed; the entry has the details.
@@ -123,7 +124,8 @@ Things decided on the way that the owner has not confirmed; the entry has the de
 ### Seen in the real window, and not yet
 The owner runs the app on Windows since 2026-10-03 (installers of #83, #107 to #119). Confirmed there by the owner: connecting by two clicks (#95), the line changing color at the login (#118), the placing and scaling of the diagram (#121), the terminal with the palette's own colors, which the owner found too glaring (#122; the calmer levels were chosen from a sheet of pictures). Measured on the owner's PC without a window: password login, the marker, ProxyJump, Ctrl+C while connecting (#103).
 - Never reported from a real window: port forwarding against a real server, *Open SSH in: Git Bash window*, Korean typed with the IME in the terminal, close to tray.
-- Built after the last installer the owner tried (#119) and seen only on the headless screen: #120 to #148, above all the three terminal color levels, the Settings window in a low window, numbered tabs, the minimized panel at the bottom, the split, the middle click.
+- Built after the last installer the owner tried (#119) and seen only on the headless screen: #120 to #157, above all the three terminal color levels, the Settings window in a low window, numbered tabs, the minimized panel at the bottom, the split, the middle click, the font size keys (#152), the search (#153), bold text (#154).
+- **Seen nowhere, main only:** the window opening where it was (#156), and the question before closing with the editor unlocked, also from *Quit* in the tray and with close to tray on (#157). These two are the first to try in the next installer.
 Anything that fails goes to Known bugs (first in any phase).
 
 ## Log
