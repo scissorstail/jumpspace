@@ -87,11 +87,11 @@ Said while the animations were being turned off (#110): "write these down separa
 - `src/main/index.js` (about 310 lines): mostly window, tray and IPC wiring now; the app:// path check, the `{ ok, error }` wrapper and the setting store moved out in #67.
 
 ### Missing or thin tests
-- No component tests (Vue) at all; logic lives in `utils/` on purpose. Consider `@vue/test-utils` only if it stays cheap.
+- No component is mounted in a test; logic lives in `utils/` on purpose. Since #141 a test can run the script of a component with a fake `this` (`forward-menu.test.js`); `connection-settings.vue` and `main-navigator.vue` have none yet. Consider `@vue/test-utils` only if it stays cheap.
 - `main-navigator.vue` behavior (rename cancel, keyword reset on add) is only verified by scratch E2E scripts; copying and removing items are unit tested since #71.
 - A Playwright + Electron smoke test in the repo was considered and turned down by the owner (decision 6).
 
-### Dependencies (checked 2026-10-11, #125)
+### Dependencies (checked 2026-10-12, #146; last change #125)
 - `npm audit --omit=dev`: 0 vulnerabilities. `npm audit` (dev tooling included) reports 11 (2 low, 7 moderate, 2 high), none with a fix inside the major versions: `vue` 2 and `rete-vue-render-plugin` (low; the fix is Vue 3, decision 5), `lodash-es` through `rete-context-menu-plugin` (high; the fix is Rete 2, decision 5), and `sprintf-js` through `roarr`, `global-agent` and `@electron/get` in `electron-builder` (moderate; the "fix" npm names is a step back to electron-builder 26.5.0). They stay.
 - `electron-builder` is 26.15.3 in the lockfile while 26.17.0 is inside its range: held back in #125, because the routine may not run it. Take it together with an installer build that is looked at.
 - Held back on purpose (major versions): Vue 2.7, Rete v1 plugins, Bootstrap 4, vuex 3 (vue-router was removed in #81). Not checked or updated by the routine: eslint 10, vite 8, vitest 5 and `@eslint/js` 10 are newer majors; look at them only if something needs them, with tests and a build first.
@@ -934,6 +934,11 @@ Anything that fails goes to the Backlog as a real bug (first in any phase).
 - Did: a middle click on a terminal tab closes it, like the x at its right end and like tabs elsewhere. The press of the middle button is kept from starting the auto-scroll of Windows.
 - Result: tests 662 passed (1 new, 2 mutations fail it and two new checks of `check`, 66 now), lint ok, build ok, headless UI checks passed, commit 6a7c0d0. Not checked: the real window, a real mouse wheel button.
 - Found / next: nothing else. Next by age: `health`, then `tests`.
+
+### #146 2026-10-12 · health (run in the owner's session)
+- Did: looked only. `npm outdated` has nothing inside the current major versions, Electron is at the newest 44.x (44.7.0), `npm audit` is unchanged at 11 (all behind a major version), CI is green on the last three pushes, README and CHANGELOG match what #133 to #145 added.
+- Result: nothing to change in the code; no code commit. The Backlog notes on dependencies and on missing tests say what is true now.
+- Found / next: nothing new. Next by age: `tests` (`connection-settings.vue`), then `cleanup`.
 
 ## Routine
 
