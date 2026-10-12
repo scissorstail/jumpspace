@@ -1000,6 +1000,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 709 passed (2 new, 2 mutations fail them), lint ok, build ok, commit dd29bd4. Tests only, so no headless run.
 - Found / next: no bug. Rotation next: cleanup.
 
+### #159 2026-10-12 · cleanup (run in the owner's session)
+- Did: what #152 to #157 left stale: the comment on the panel's map of terminals still named three of its fields, and the file list of the README did not have `terminal-search.vue`, `shared/unsaved.js` and the font size among the settings.
+- Result: tests 709 passed, lint ok, build ok (a comment and docs; no behavior, so no headless run), commit fc5e231.
+- Found / next: nothing else stale was found by searching for the names today's work replaced. Rotation next: refactor.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
