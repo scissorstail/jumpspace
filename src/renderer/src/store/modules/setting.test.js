@@ -57,6 +57,40 @@ describe('setting store', () => {
     vi.useRealTimers()
   })
 
+  // 파일에 쓰지 못해도 (디스크, 권한) 화면의 값은 남고, 처리되지 않은 거부로 끝나지 않는다
+  it('keeps the changed value and reports it when the delayed save fails', async () => {
+    vi.useFakeTimers()
+    const failure = new Error('disk full')
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.stubGlobal('window', { preload: { setSetting: vi.fn(async () => { throw failure }) } })
+    const state = JSON.parse(JSON.stringify(setting.state))
+
+    setting.actions.settingChange({ state, commit: (name, value) => setting.mutations[name](state, value) }, { terminalFontSize: 20 })
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS)
+
+    expect(error).toHaveBeenCalledWith(failure)
+    expect(state.setting.terminalFontSize).toBe(20)
+    error.mockRestore()
+    vi.useRealTimers()
+  })
+
+  // 설정 창의 저장(settingSave)이 사이에 와도, 늦은 저장은 그때의 설정을 쓴다: 옛 값으로 덮지 않는다
+  it('writes the setting of the moment it saves, not of the moment it was asked', async () => {
+    vi.useFakeTimers()
+    const setSetting = vi.fn(async value => value)
+    vi.stubGlobal('window', { preload: { setSetting } })
+    const state = JSON.parse(JSON.stringify(setting.state))
+    const context = { state, commit: (name, value) => setting.mutations[name](state, value) }
+
+    setting.actions.settingChange(context, { terminalFontSize: 18 })
+    await setting.actions.settingSave(context, { ...state.setting, theme: 'vapor-blue' })
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS)
+
+    expect(setSetting).toHaveBeenLastCalledWith({ ...DEFAULT_SETTING, terminalFontSize: 18, theme: 'vapor-blue' })
+    expect(state.setting).toEqual({ ...DEFAULT_SETTING, terminalFontSize: 18, theme: 'vapor-blue' })
+    vi.useRealTimers()
+  })
+
   it('changes only to a value main would accept', () => {
     vi.useFakeTimers()
     vi.stubGlobal('window', { preload: { setSetting: vi.fn(async value => value) } })
