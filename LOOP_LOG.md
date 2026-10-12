@@ -995,6 +995,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 707 passed (11 new, 9 mutations fail them), lint ok, build ok, headless UI checks passed with the new `close-check` (7: the page's half, with a real reload), commit 385b4f4. **Main's half is not checked in a window**: the dialog, the tray quit, close to tray. If the dialog fails, the window closes.
 - Found / next: chosen over a question in the app's own window because that needs state and three IPC channels in main that no check here can run. Nothing is left in the feature queue or the proposals; the next installer has #120 to #157 to look at.
 
+### #158 2026-10-12 · tests (run in the owner's session)
+- Did: two cases of the delayed save of #152 (`settingChange`) had no test: the save fails (the value on the screen stays, the error is reported, no unhandled rejection), and the Settings window saves in between (the late save writes the setting of that moment, not the older one).
+- Result: tests 709 passed (2 new, 2 mutations fail them), lint ok, build ok, commit dd29bd4. Tests only, so no headless run.
+- Found / next: no bug. Rotation next: cleanup.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
