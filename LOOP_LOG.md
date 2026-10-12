@@ -1086,6 +1086,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 748 passed (1 new, 1 mutation fails it), lint ok, build ok, headless UI checks passed (`info-check` reads the alignment in all three palettes, picture looked at), commit 28dcba3.
 - Found / next: looked at the Settings, From SSH config, split and Info pictures; nothing else. This run found something, so the count of runs without a find starts again. Rotation next: tests.
 
+### #176 2026-10-13 · tests (run in the owner's session)
+- Did: `onExit` and `reconnect` of the terminal panel (left open in #166) have behavior tests now, seven in `terminal-panel-methods.test.js`: which ended sessions keep their tab, the line and state of a failed one, one reopen at a time, the old exit code after a failed reopen, the new session ended when its tab was closed meanwhile. A stale comment that listed the shortcuts without `find` was corrected.
+- Result: tests 755 passed (7 new, 12 mutations fail them), lint ok, build ok, commit 0df03a7. No behavior changed, so no UI check.
+- Found / next: no bug. Known test gaps that are left: the scripts of `connection-settings.vue` and `main-navigator.vue` (Backlog); while one of them is open a run still has something to do. Rotation next: cleanup.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
