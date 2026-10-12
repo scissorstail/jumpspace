@@ -102,9 +102,7 @@ Both lists of 2026-10-11 are done (1 to 5 in #103 to #108, 6 to 10 in #111 to #1
 
 ### Feature queue (owner, 2026-09-30; top first)
 The routine takes the top item in a `feature` run. The owner may reorder, add or remove items.
-1. The keys of the terminal (find: Ctrl+Shift+F; font size: Ctrl + / - / 0; copy and paste; Enter to reconnect) are told only in the README. Show them in the app, for instance as a short list in the Info window (found in #172).
-
-Done: the terminal font size (#152), the search in the terminal scrollback (#153).
+Empty. Done: the terminal font size (#152), the search in the terminal scrollback (#153), the terminal keys in the Info window (#174).
 - Dropped by the owner on 2026-10-12 ("not needed"): find a node by name, user or host. Done: the Windows installer build in CI (#83).
 
 ### Proposals for the owner (need a decision)
@@ -1077,6 +1075,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: wrote the end of the cycle into the Routine section and into the prompt of the two session timers (made again for it): CI green, no known bug, the Feature queue empty and two runs in a row without a find; then the installer is built by a run started by hand in CI and the timers are deleted.
 - Result: log only.
 - Found / next: the Feature queue has one item (the terminal keys in the app, #172), so the cycle does not end before it is built or the owner drops it. Rotation next: style.
+
+### #174 2026-10-13 · feature (run in the owner's session; the only item of the queue)
+- Did: the Info window lists the keys of the terminal (copy, paste, find, text size, Enter to reconnect, the middle click on a tab) from `TERMINAL_KEYS` in `utils/terminal-keys.js`. A test presses every listed key through `terminalShortcut` and fails when a shortcut has no row. The icon went from 150 to 96 px and each row is one line, so the window fits the default window without scrolling.
+- Result: tests 747 passed (5 new, 6 mutations fail them), lint ok, build ok, headless UI checks passed with the new `info-check` (three palettes, pictures looked at), commit eebce68. Renderer only, so no real-window run.
+- Found / next: the first layout made the Info window scroll in the default window; texts were shortened for it. The Feature queue is empty again. Rotation next: style.
 
 ## Routine
 
