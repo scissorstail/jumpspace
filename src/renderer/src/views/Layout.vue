@@ -7,8 +7,6 @@
       @export="exportProject"
       @info="isShowInfoPopup = true"
       @setting="isShowSettingPopup = true"
-      @lock="isEditorLocked = true"
-      @unlock="isEditorLocked = false"
     >
       <template #main-navigator-toolbar>
         <!-- 저장하는 동안의 표시 (owner, 2026-10-11): 흐리게 도는 고리. 글자 "Saving"은 저장할 때마다 번쩍여서 눈에 거슬렸다.

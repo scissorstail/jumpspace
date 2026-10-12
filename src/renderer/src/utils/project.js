@@ -5,14 +5,14 @@ export function hasSavedPassword(items) {
   )
 }
 
-// 사이드바 검색: 대소문자와 앞뒤 공백은 무시하고, 이름에 검색어가 들어 있으면 일치한다. 검색어가 비어 있으면 모두 일치한다.
+// 다이어그램 목록의 검색: 대소문자와 앞뒤 공백은 무시하고, 이름에 검색어가 들어 있으면 일치한다. 검색어가 비어 있으면 모두 일치한다.
 export function matchesKeyword(name, keyword) {
   const needle = String(keyword ?? '').trim().toLowerCase()
 
   return needle === '' || String(name ?? '').toLowerCase().includes(needle)
 }
 
-// 사이드바 목록에 보이는 항목이 하나도 없을 때 보여줄 글. 보이는 항목이 있으면 null.
+// 다이어그램 목록에 보이는 항목이 하나도 없을 때 보여줄 글. 보이는 항목이 있으면 null.
 // (이름을 바꾸는 중인 항목은 검색과 상관없이 보인다)
 export function listEmptyText(items, keyword) {
   const list = items || []
