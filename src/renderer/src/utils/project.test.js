@@ -51,12 +51,12 @@ describe('listEmptyText', () => {
   })
 
   it('invites to add an item when the list is empty', () => {
-    expect(listEmptyText([], '')).toBe('No items yet. Add one with +.')
-    expect(listEmptyText(undefined, 'x')).toBe('No items yet. Add one with +.')
+    expect(listEmptyText([], '')).toBe('No diagrams yet. Add one with +.')
+    expect(listEmptyText(undefined, 'x')).toBe('No diagrams yet. Add one with +.')
   })
 
   it('says that the search found nothing', () => {
-    expect(listEmptyText(items, '  zzz ')).toBe('No item matches "zzz".')
+    expect(listEmptyText(items, '  zzz ')).toBe('No diagram matches "zzz".')
   })
 
   it('counts an item being renamed as visible', () => {

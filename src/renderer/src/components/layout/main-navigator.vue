@@ -16,7 +16,7 @@
         </b-input-group-prepend>
         <b-form-input
           v-model="keyword"
-          aria-label="Search items"
+          aria-label="Search diagrams"
           :debounce="150"
           type="search"
         />
@@ -25,8 +25,8 @@
       <b-button
         size="sm"
         variant="light"
-        aria-label="New item"
-        title="New item"
+        aria-label="New diagram"
+        title="New diagram"
         :disabled="isSelecting"
         @click="addNewItem"
       >
@@ -58,26 +58,26 @@
           :disabled="isSelecting"
           @click="addNewItem"
         >
-          <small>New Item</small>
+          <small>New diagram</small>
         </b-dropdown-item>
         <b-dropdown-item
           :disabled="!isSelecting"
           @click="removeSelectedItems"
         >
-          <small>Remove Items</small>
+          <small>Remove diagrams</small>
         </b-dropdown-item>
         <b-dropdown-divider />
         <b-dropdown-item
           :disabled="isSelecting"
           @click="importItems"
         >
-          <small>Import Items...</small>
+          <small>Import diagrams...</small>
         </b-dropdown-item>
         <b-dropdown-item
           :disabled="!isSelecting"
           @click="exportSelectedItems"
         >
-          <small>Export Items...</small>
+          <small>Export diagrams...</small>
         </b-dropdown-item>
       </b-dropdown>
     </div>
@@ -355,7 +355,7 @@ export default {
       this.removeItems([item])
     },
     async removeSelectedItems() {
-      if (!(await this.confirmRemove(`Remove ${this.selectedItems.length} selected item(s)?`))) {
+      if (!(await this.confirmRemove(`Remove ${this.selectedItems.length} selected diagram(s)?`))) {
         return
       }
 

@@ -40,13 +40,13 @@ There is no release yet, but the CI can build a Windows installer on request: un
 
 ### nodes and paths
 
-1. Click the title in the header (it shows `jumpspace` until a diagram is open) to open the list of diagrams, add an item with `+` and give it a name.
+1. Click the title in the header (it shows `jumpspace` until a diagram is open) to open the list of diagrams, add a diagram with `+` and give it a name.
 2. Unlock the editor (lock icon), right-click the canvas and choose *Add node* (or *From SSH config* to make nodes out of pasted `~/.ssh/config` text, see below), and chain nodes (jump hosts) with two clicks: click a node's right socket (the line follows the mouse), then click another node's left socket. A click on empty canvas cancels. Clicking a connected left socket picks its line up again.
 3. Hover a node to open its menu:
    - terminal: **Connect** runs `ssh` to the node in a terminal tab of the app (or in a Git Bash window, see *Settings > Open SSH in*). When the node has previous nodes and every one of them has a user, host and port, it is **ProxyJump** instead, which connects through the whole chain.
    - link: **Port forwarding**, see below. The button with a counter next to it starts the enabled forwards.
    - gear: **Setting** (icon picked from a grid, name, user, host, port, key, password, exec) and *Copy SSH config*. A value that ssh would not accept gets a red border while you type; the note on what is allowed shows under the field while it has the focus or the pointer. While the editor is locked the popover is for reading: it shows only the fields that are filled in, without the icon grid.
-4. The canvas position and zoom of each item are remembered and restored when you open it again. The diagram follows the height of the canvas, like the scenery behind it: it is shown smaller while the terminal panel is open and comes back by the same ratio when the panel is closed (a minimized panel still takes the height of its tab row), whichever of the two canvases you changed the zoom in. A change of the width alone leaves its size as it is. Double-click the canvas to bring back the starting zoom and position, like the **Reset view** button in the header (in a locked diagram a double-click on a node counts as the canvas too; on a line or a button it does nothing). With the terminal panel open you see the starting view reduced like every other view, and it is exactly the starting view when the panel closes. The starting view is the same in a window of every size: unlike a view you chose it does not grow and shrink with the height of the window, so **Reset view** after resizing the window gives what you already see. Lock the editor to save changes to the diagram; while a save runs, a faint ring turns in the header left of the buttons. A node under the pointer changes its frame and background color; a node you clicked gets no look of its own. You can start connections while it is locked. In a locked diagram the nodes cannot be moved, so a drag that starts on a node (its picture, name, details or sockets) moves the canvas like a drag on the background; only the buttons above a node take clicks.
+4. The canvas position and zoom of each diagram are remembered and restored when you open it again. The diagram follows the height of the canvas, like the scenery behind it: it is shown smaller while the terminal panel is open and comes back by the same ratio when the panel is closed (a minimized panel still takes the height of its tab row), whichever of the two canvases you changed the zoom in. A change of the width alone leaves its size as it is. Double-click the canvas to bring back the starting zoom and position, like the **Reset view** button in the header (in a locked diagram a double-click on a node counts as the canvas too; on a line or a button it does nothing). With the terminal panel open you see the starting view reduced like every other view, and it is exactly the starting view when the panel closes. The starting view is the same in a window of every size: unlike a view you chose it does not grow and shrink with the height of the window, so **Reset view** after resizing the window gives what you already see. Lock the editor to save changes to the diagram; while a save runs, a faint ring turns in the header left of the buttons. A node under the pointer changes its frame and background color; a node you clicked gets no look of its own. You can start connections while it is locked. In a locked diagram the nodes cannot be moved, so a drag that starts on a node (its picture, name, details or sockets) moves the canvas like a drag on the background; only the buttons above a node take clicks.
 5. The eye button left of the lock masks the details under every node (user, host, port, forwards) with `***` (an address becomes `***.***.***.***`) and keeps only the names, for example while sharing the screen; click it again to show them. The choice is remembered.
 6. The lock is always the button right next to the gear menu; the other diagram buttons come and go to its left, so it stays under the pointer when you press it. **Reset view** (counterclockwise arrow), left of the lock and there whether the editor is locked or not, brings back the starting zoom and position. While the editor is unlocked, **Arrange nodes** (tree icon) shows left of it and lines all nodes up in the middle of the visible canvas, each path left to right on its own row, and zooms out if they do not fit (with the terminal panel open it keeps to the middle part of the canvas, so that nothing is cut off at the sides when the panel closes and the diagram grows again). Lock the editor to keep the new positions.
 
@@ -66,13 +66,13 @@ Connect, ProxyJump and port forwarding open in a **terminal panel at the bottom 
 
 A flat, high-contrast synthwave night: a neon grid floor, a striped sun behind a pixel skyline, square panels with hard shadows and pixel lettering. *Settings > Theme* picks one of three palettes: **Neon Night** (pink, yellow and cyan, the default), **Sunset Drive** (coral and orange) and **Vapor Blue** (magenta and mint on navy). *Settings > Background* tones the scenery down: **Depth** (blurred with a haze, the default), **CRT** (scan lines), **Soft**, **Vivid** or **Off**. *Settings > Node glass* (off by default) puts the text under each node on a frosted glass panel; the slider sets how strongly it blurs. *Settings > Terminal colors* sets how strong the colors of programs are in the terminal of the app (the prompt, `ls`, the status line of tmux): **Vivid** uses the neon colors of the palette as they are, **Soft** (the default) the same colors a little less bright and less colorful, **Muted** the calmest ones. It takes effect in the open terminals as soon as it is saved, and the canvas keeps its own colors. Nothing is animated: nothing moves or blinks by itself, and menus, popovers and highlights show at once instead of fading in. The one exception is the small ring in the header that turns while the diagrams are being saved.
 
-### items (the diagram list)
+### diagrams (the list under the title)
 
 - The title in the middle of the header names the open diagram and is the button for the list: it opens under the title and closes when you pick a diagram, press Escape or click outside. Nothing is docked at the side, so the canvas and the terminals always have the whole window. The list is open when the app starts.
 - A small terminal mark with a number next to a name tells how many terminal tabs that diagram has open.
-- `+` adds an item. Double-click a name (or *Edit* in its `...` menu) to rename it, Escape cancels. *Copy* duplicates an item, *Remove* asks first.
-- The search box filters by name and ignores case. Drag an item to reorder the list, Ctrl+click selects several items for *Export* or *Remove*.
-- *Import Items* adds the items of a JSON file. *Export Space* in the gear menu of the header exports everything.
+- `+` adds a diagram. Double-click a name (or *Edit* in its `...` menu) to rename it, Escape cancels. *Copy* duplicates a diagram, *Remove* asks first.
+- The search box filters by name and ignores case. Drag a diagram to reorder the list, Ctrl+click selects several for *Export diagrams* or *Remove diagrams* in the menu next to `+`.
+- *Import diagrams* adds the diagrams of a JSON file. *Export Space* in the gear menu of the header exports everything.
 
 ### authentication
 
@@ -85,7 +85,7 @@ Each node has its **own authentication**, so a path can mix them freely (for exa
 
 Password prompts (both the `password` and the `keyboard-interactive` styles) are answered for the hop they belong to. Anything else, such as a key passphrase or a one-time code, is asked in the terminal window.
 
-Passwords are stored as **plain text** in `projects.json` and are part of an exported item (you are asked to confirm the export).
+Passwords are stored as **plain text** in `projects.json` and are part of an exported diagram (you are asked to confirm the export).
 
 ### port forwarding
 
@@ -108,7 +108,7 @@ Not taken over, and named in the dialog: other keywords (`ForwardAgent`, `Includ
 
 ### your data
 
-Projects are stored in `projects.json` in the app data folder (`%APPDATA%\jumpspace` on Windows). Each item keeps its name, its nodes and the last canvas view. The previous version of the file is kept as `projects.json.bak`. Settings are stored next to it. Data saved by v0.2.x in the browser storage is migrated automatically on first launch.
+Projects are stored in `projects.json` in the app data folder (`%APPDATA%\jumpspace` on Windows). Each diagram keeps its name, its nodes and the last canvas view. The previous version of the file is kept as `projects.json.bak`. Settings are stored next to it. Data saved by v0.2.x in the browser storage is migrated automatically on first launch.
 
 ## development
 

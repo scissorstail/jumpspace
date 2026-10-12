@@ -17,8 +17,8 @@ export function matchesKeyword(name, keyword) {
 export function listEmptyText(items, keyword) {
   const list = items || []
   if (list.some(x => x.isEditing || matchesKeyword(x.name, keyword))) return null
-  if (list.length === 0) return 'No items yet. Add one with +.'
-  return `No item matches "${String(keyword).trim()}".`
+  if (list.length === 0) return 'No diagrams yet. Add one with +.'
+  return `No diagram matches "${String(keyword).trim()}".`
 }
 
 export const EXPORT_PASSWORD_WARNING = 'Some nodes have a saved password. The exported file will contain it as plain text. Continue?'
