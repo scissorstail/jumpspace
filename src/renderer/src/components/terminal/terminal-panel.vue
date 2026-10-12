@@ -86,6 +86,10 @@ import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marke
 import TerminalSearch from './terminal-search'
 import TerminalTabs from './terminal-tabs'
 
+// 터미널의 글꼴. 앞의 것은 앱에 들어 있다 (assets/theme.scss), 나머지는 그것을 읽지 못했을 때의 것이다.
+const FONT = '"JetBrains Mono"'
+const FONT_FAMILY = `${FONT}, Consolas, "Cascadia Mono", "DejaVu Sans Mono", monospace`
+
 // 터미널 색은 지금 고른 테마(assets/theme.scss의 CSS 변수)에서 읽고, 설정의 단계(terminalColors)만큼 낮춘다.
 function currentTerminalTheme(level) {
   const style = getComputedStyle(document.documentElement)
@@ -175,6 +179,7 @@ export default {
     this.observer.observe(this.$el)
     this.spaceObserver = new ResizeObserver(([entry]) => { this.available = entry.contentRect.height })
     this.spaceObserver.observe(this.$el.parentElement)
+    this.loadFonts()
   },
   beforeDestroy() {
     this.stopData?.()
@@ -187,6 +192,18 @@ export default {
     }
   },
   methods: {
+    // 터미널 글꼴의 보통 굵기와 굵은 굵기를 미리 읽는다. 브라우저는 글꼴 파일을 처음 쓰일 때 읽는데, 굵은 것은 터미널의
+    // 굵은 글자가 처음이다: 그때 xterm.js(WebGL)는 아직 없는 글꼴 대신 다른 글꼴로 글자를 그려서 간직하고, 뒤에 그린 글자와
+    // 섞인다 (프롬프트의 굵은 이름이 두 글꼴로 보였다). 읽기 전에 그린 글자가 있으면 버리고 다시 그리게 한다.
+    async loadFonts() {
+      try {
+        await Promise.all(['400', '700'].map(weight => document.fonts.load(`${weight} ${this.fontSize}px ${FONT}`)))
+      } catch (e) {
+        console.warn('The terminal font could not be loaded', e)
+        return
+      }
+      for (const [, entry] of this.terms) entry.webgl?.clearTextureAtlas()
+    },
     // 지금의 색 묶음과 설정의 단계로 만든 터미널 색
     colors() {
       return currentTerminalTheme(this.$store.getters.setting.terminalColors)
@@ -199,7 +216,7 @@ export default {
       const term = new Terminal({
         // 깜빡이지 않는다: 로딩 표시처럼 화면을 빠르게 다시 그리는 프로그램에서 커서가 번쩍거렸다.
         cursorBlink: false,
-        fontFamily: '"JetBrains Mono", Consolas, "Cascadia Mono", "DejaVu Sans Mono", monospace',
+        fontFamily: FONT_FAMILY,
         fontSize: this.fontSize,
         scrollback: 5000,
         theme: this.colors()
@@ -208,12 +225,12 @@ export default {
       const search = new SearchAddon()
       term.loadAddon(fit)
       term.loadAddon(search)
-      const entry = { term, fit, search, id: null, ended: false, reconnecting: false, interruptedAt: null }
+      const entry = { term, fit, search, webgl: null, id: null, ended: false, reconnecting: false, interruptedAt: null }
       this.terms.set(session.key, entry)
 
       const el = this.$refs[`term-${session.key}`]?.[0]
       term.open(el)
-      this.drawWithWebgl(term)
+      this.drawWithWebgl(entry)
       this.fit(entry)
       term.focus()
 
@@ -246,11 +263,15 @@ export default {
     // 선과 블록 문자(─ │ █ 등)를 xterm.js가 칸에 꼭 맞게 직접 그리게 한다 (owner, 2026-10-11: Claude Code의 선 사이에
     // 틈이 보였다). 기본 그리기(DOM)는 그 문자를 글꼴로 그려서, 화면 배율에 따라 줄과 줄, 칸과 칸 사이가 끊긴다.
     // WebGL을 쓸 수 없거나 브라우저가 그 컨텍스트를 거두면(동시에 16개쯤까지) 기본 그리기로 돌아간다.
-    drawWithWebgl(term) {
+    drawWithWebgl(entry) {
       try {
         const webgl = new WebglAddon()
-        webgl.onContextLoss(() => webgl.dispose())
-        term.loadAddon(webgl)
+        webgl.onContextLoss(() => {
+          webgl.dispose()
+          entry.webgl = null
+        })
+        entry.term.loadAddon(webgl)
+        entry.webgl = webgl
       } catch (e) {
         console.warn('WebGL terminal renderer is not available', e)
       }

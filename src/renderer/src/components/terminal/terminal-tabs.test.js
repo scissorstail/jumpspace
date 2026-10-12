@@ -44,6 +44,22 @@ describe('the font size of the terminals', () => {
   })
 })
 
+// 굵은 글꼴을 터미널보다 늦게 읽으면 굵은 글자가 두 글꼴로 섞여 보인다 (#154)
+describe('the font of the terminals', () => {
+  it('is loaded in both weights when the panel is made, before a terminal draws with it', () => {
+    expect(panel).toMatch(/\n {4}this\.loadFonts\(\)\n {2}\},\n {2}beforeDestroy/)
+    expect(panel).toMatch(/await Promise\.all\(\['400', '700'\]\.map\(weight => document\.fonts\.load\(`\$\{weight\} \$\{this\.fontSize\}px \$\{FONT\}`\)\)\)/)
+    expect(panel).toMatch(/const FONT = '"JetBrains Mono"'\nconst FONT_FAMILY = `\$\{FONT\}, /)
+    expect(panel).toMatch(/fontFamily: FONT_FAMILY,/)
+  })
+
+  it('is drawn again by the terminals that were there before it was loaded', () => {
+    expect(panel).toMatch(/for \(const \[, entry\] of this\.terms\) entry\.webgl\?\.clearTextureAtlas\(\)/)
+    expect(panel).toMatch(/entry\.term\.loadAddon\(webgl\)\n\s+entry\.webgl = webgl\n/)
+    expect(panel).toMatch(/webgl\.dispose\(\)\n\s+entry\.webgl = null\n/)
+  })
+})
+
 describe('closing a terminal tab', () => {
   // 브라우저의 탭처럼. mousedown을 막지 않으면 Windows에서 가운데 단추가 자동 스크롤을 시작한다.
   it('works with a middle click on the tab, like the close button', () => {
