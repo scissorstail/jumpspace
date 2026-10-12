@@ -1061,6 +1061,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: log only.
 - Found / next: the timers end with the session and after 7 days. No installer. Rotation next: health.
 
+### #171 2026-10-12 · health (run in the owner's session)
+- Did: `npm outdated` has nothing inside the current major versions, Electron is at the newest 44.x (44.7.0), `npm audit --omit=dev` 0 and `npm audit` unchanged at 11 (all behind a major version), CI green on the last pushes. The README lacked two things the changelog has: that edits are saved on locking and that leaving unlocked asks first (#157), and that the window opens where it was (#156). Added as steps 7 and 8 of the usage.
+- Result: tests 742 passed, lint ok, build ok (README only, no UI check needed), commit 962110a.
+- Found / next: nothing else. Rotation next: ux.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
