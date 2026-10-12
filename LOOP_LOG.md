@@ -102,8 +102,7 @@ Both lists of 2026-10-11 are done (1 to 5 in #103 to #108, 6 to 10 in #111 to #1
 
 ### Feature queue (owner, 2026-09-30; top first)
 The routine takes the top item in a `feature` run. The owner may reorder, add or remove items.
-1. **Search in the terminal scrollback** (Ctrl+Shift+F), with `@xterm/addon-search` (allowed by the owner on 2026-10-12).
-- Done: the terminal font size (#152).
+Empty. Done: the terminal font size (#152), the search in the terminal scrollback (#153).
 - Dropped by the owner on 2026-10-12 ("not needed"): find a node by name, user or host. Done: the Windows installer build in CI (#83).
 
 ### Proposals for the owner (need a decision)
@@ -112,6 +111,7 @@ The routine takes the top item in a `feature` run. The owner may reorder, add or
 
 ### Questions for the owner
 Things decided on the way that the owner has not confirmed; the entry has the details.
+- #153: Enter finds upwards (older output) and Shift+Enter downwards; the search ignores case, has no options and no count of matches, and closes when another tab is selected.
 - #152: the font size is one for all terminals, 8 to 32 px, has no row in the Settings window, and Ctrl+0 means 13.
 - The picture at the top of the README is the app of 2021 (#29). A new one can come from the headless checks (sample hosts only) or from the owner's real window; adding a picture to the repository is the owner's call.
 - #106: a double click on a locked node resets the view (#114) but a slow double click can still select a word of its text. #111: the port forwarding popover is the same locked or not.
@@ -967,6 +967,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: Ctrl with + or = and Ctrl with - change the text size of all terminals, Ctrl+0 puts it back to 13; remembered as the setting `terminalFontSize` (8 to 32), written 300 ms after the last key. Ctrl+Shift+- still goes to the program as `^_`.
 - Result: tests 673 passed (9 new, 6 mutations fail them), lint ok, build ok, headless UI checks passed with the new `font-check` (17), commit 0695405. Not checked: the real window, above all the WebGL renderer after a size change.
 - Found / next: a hidden tab cannot be measured, so it gets the size when it is shown. Next: the scrollback search.
+
+### #153 2026-10-12 · feature (by hand, queue 1)
+- Did: Ctrl+Shift+F opens a search field over the terminal of the selected tab: the newest match is selected while typing, Enter goes up, Shift+Enter down, Esc closes. New dev dependency `@xterm/addon-search` 0.16 (MIT, 9 lines in the lockfile), downloaded from npm with the owner's permission of 2026-10-12, bundled into the renderer like the other two addons.
+- Result: tests 682 passed (9 new, 5 mutations fail them), lint ok, build ok, headless UI checks passed with the new `search-check` (23), commit 3338f74. Not checked: the real window.
+- Found / next: matches are not highlighted all at once (that needs xterm's proposed API); the match is the selection. Ctrl+F stays `^F` for the program. Next: the README picture.
 
 ## Routine
 
