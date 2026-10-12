@@ -111,9 +111,9 @@ Empty. Done: the terminal font size (#152), the search in the terminal scrollbac
 
 ### Questions for the owner
 Things decided on the way that the owner has not confirmed; the entry has the details.
+- #155: the picture in the README is the headless screen with five made-up servers and two made-up sessions; the owner allowed it without seeing it.
 - #153: Enter finds upwards (older output) and Shift+Enter downwards; the search ignores case, has no options and no count of matches, and closes when another tab is selected.
 - #152: the font size is one for all terminals, 8 to 32 px, has no row in the Settings window, and Ctrl+0 means 13.
-- The picture at the top of the README is the app of 2021 (#29). A new one can come from the headless checks (sample hosts only) or from the owner's real window; adding a picture to the repository is the owner's call.
 - #106: a double click on a locked node resets the view (#114) but a slow double click can still select a word of its text. #111: the port forwarding popover is the same locked or not.
 - #116, From SSH config: several hosts at once (at most 50), `ProxyJump` becomes a connection, port 22 when none is named, what is left out, bad values are marked but the node is made.
 - #134: a minimized panel costs the canvas 40px. #135: the halves are 50:50, no key moves between them, the tab row does not say left or right. #145: a middle click closes a tab (not asked for).
@@ -977,6 +977,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: bold text in the app terminal was drawn in two fonts (the name in a colored prompt). The bold weight of JetBrains Mono was fetched on its first use, after the WebGL renderer had drawn and kept those letters with the fallback font. The panel loads both weights when it is made and lets terminals that already drew start their glyphs again.
 - Result: tests 684 passed (2 new, 3 mutations fail them), lint ok, build ok, headless UI checks passed (the font check fails without the fix: the bold weight was not loaded), commit bbf28ec. Not checked: the real window.
 - Found / next: seen in the enlarged headless picture, before and after. The owner may have seen it in the real window without naming it. Next: the README picture.
+
+### #155 2026-10-12 · docs (by hand, allowed by the owner on 2026-10-12)
+- Did: the picture at the top of the README was the app of 2021 on GitHub's image host. It is `docs/screenshot.png` now (218 KB): the app of today on the headless screen, a made-up diagram of five servers (`example.com`, `10.0.x.x`) with two terminals.
+- Result: tests 684 passed, lint ok (docs and a picture only), commit 96d0a1a. `docs/` is not packed into the installer.
+- Found / next: taking it showed the bold text bug of #154. One headless run of #154 failed once under load (`zoom-check vapor-blue`, the view after the window is wide again) and passed 6 times after; the commit went out before I saw it. Next: the window size.
 
 ## Routine
 
