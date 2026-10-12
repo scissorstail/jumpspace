@@ -205,7 +205,7 @@ export function canReconnect(session) {
   return session?.status === 'exited' && session.id !== null && session.id !== undefined
 }
 
-// 터미널에서 가로채는 단축키: 'copy', 'paste', 'font-up', 'font-down', 'font-reset', 아니면 null(터미널이 그대로 처리).
+// 터미널에서 가로채는 단축키: 'copy', 'paste', 'find', 'font-up', 'font-down', 'font-reset', 아니면 null(터미널이 그대로 처리).
 // Windows 터미널처럼 Ctrl+C는 고른 글자가 있을 때만 복사이고(없으면 실행 중인 프로그램을 중단시킨다), Ctrl+V는 붙여넣기다.
 // Shift+Insert 붙여넣기는 브라우저가 처리하므로 여기서 다루지 않는다.
 // 터미널에서 오른쪽 클릭이 하는 일: 'copy'(고른 글자가 있다), 'paste', 아니면 'program'.

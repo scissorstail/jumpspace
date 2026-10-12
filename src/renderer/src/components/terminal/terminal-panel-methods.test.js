@@ -3,7 +3,8 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runInThisContext } from 'node:vm'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { nextFontSize, searchSeed } from '../../utils/terminal-view'
+import { canReconnect, endedByUser } from '../../utils/terminal-sessions'
+import { endedLine, errorLine, nextFontSize, RECONNECTING_LINE, searchSeed } from '../../utils/terminal-view'
 
 // 터미널 패널의 찾기와 글꼴 크기. DOM 없이 도는 테스트라서 .vue를 불러올 수 없다: <script>의 내용을 꺼내 import만 바꿔서
 // 돌리고, methods와 watch를 가짜 this로 부른다 (forward-menu.test.js와 같은 방법). xterm.js와 그 애드온은 쓰이지 않는다.
@@ -11,7 +12,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const source = readFileSync(join(here, 'terminal-panel.vue'), 'utf8').replace(/\r\n/g, '\n')
 const script = source.match(/<script>\n([\s\S]*?)<\/script>/)[1]
 const imported = [...script.matchAll(/^import (?:\{ ([^}]+) \}|(\w+)) from .*$/gm)].flatMap(match => (match[1] ?? match[2]).split(', '))
-const given = { nextFontSize, searchSeed, mapGetters: () => ({}) }
+const given = { nextFontSize, searchSeed, canReconnect, endedByUser, endedLine, errorLine, RECONNECTING_LINE, mapGetters: () => ({}) }
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 const component = runInThisContext(`(function (${imported.join(', ')}) {\n${body}\n})`)(...imported.map(name => given[name]))
 
@@ -25,6 +26,7 @@ function terminal({ selection = '', found = true, shown = true, cols = 80, rows 
     element: { offsetParent: shown ? {} : null },
     getSelection: () => selection,
     clearSelection: () => calls.push('clearSelection'),
+    write: data => calls.push(['write', data]),
     focus: () => calls.push('focus')
   }
   const search = {
@@ -313,5 +315,146 @@ describe('fitting a terminal', () => {
     expect([left.calls, right.calls]).toEqual([['fit'], ['fit']])
     vm.fitActive(true)
     expect([left.calls, right.calls]).toEqual([['fit', 'fit'], ['fit', 'fit', 'focus']])
+  })
+})
+
+// 세션이 끝났을 때와 다시 접속할 때. 가짜 this에 세션 목록, 출력의 길(router), store에 한 commit의 기록을 더한다.
+function ending(entry, session) {
+  const { vm } = panel(entry)
+  const seen = { commits: [], unregistered: [], registered: [], closed: [] }
+  vm.allSessions = [session]
+  vm.router = { unregister: id => seen.unregistered.push(id), register: id => seen.registered.push(id) }
+  vm.$store = { commit: (...args) => seen.commits.push(args) }
+  vm.closeSession = closing => seen.closed.push(closing)
+  return { vm, seen }
+}
+
+describe('a session that ends', () => {
+  it('stays for reconnecting when the connection failed: a line says so and the tab is marked', () => {
+    const entry = { ...terminal(), ended: false, interruptedAt: null }
+    const session = { key: 1, id: 7, connected: false }
+    const { vm, seen } = ending(entry, session)
+
+    vm.onExit(7, 255)
+    expect(entry.calls).toEqual([['write', endedLine(255)]])
+    expect(entry.ended).toBe(true)
+    expect(seen.commits).toEqual([['terminalUpdate', { key: 1, status: 'exited', exitCode: 255 }]])
+    expect(seen.unregistered).toEqual([7])
+    expect(seen.closed).toEqual([])
+  })
+
+  it('closes its tab when the user ended it: exit after the login, or Ctrl+C just before a 255', () => {
+    const entry = { ...terminal(), ended: false, interruptedAt: null }
+    const session = { key: 1, id: 7, connected: true }
+    const first = ending(entry, session)
+    first.vm.onExit(7, 0)
+    expect(first.seen.closed).toEqual([session])
+    expect(entry.calls).toEqual([])
+    expect(entry.ended).toBe(false)
+    expect(first.seen.commits).toEqual([])
+    expect(first.seen.unregistered).toEqual([7])
+
+    const stopped = { ...terminal(), ended: false, interruptedAt: Date.now() }
+    const forward = { key: 1, id: 7, connected: false }
+    const second = ending(stopped, forward)
+    second.vm.onExit(7, 255)
+    expect(second.seen.closed).toEqual([forward])
+  })
+
+  it('is nothing to the panel when the id is of no tab', () => {
+    const entry = { ...terminal(), ended: false, interruptedAt: null }
+    const { vm, seen } = ending(entry, { key: 1, id: 7, connected: false })
+
+    vm.onExit(8, 255)
+    expect(seen).toEqual({ commits: [], unregistered: [], registered: [], closed: [] })
+    expect(entry.calls).toEqual([])
+  })
+})
+
+describe('connecting an ended tab again', () => {
+  // main이 다시 연 세션의 답을 테스트가 정한다
+  const reopening = () => {
+    const calls = []
+    let answer
+    const asked = new Promise(resolve => { answer = resolve })
+    vi.stubGlobal('window', {
+      preload: {
+        terminal: {
+          reopen: (...args) => { calls.push(['reopen', ...args]); return asked },
+          close: id => calls.push(['close', id]),
+          resize: () => {}
+        }
+      }
+    })
+    return { calls, answer }
+  }
+  const ended = () => {
+    const entry = { ...terminal(), ended: true, reconnecting: false, interruptedAt: 5 }
+    const session = { key: 1, id: 7, status: 'exited', exitCode: 255, connected: false }
+    return { entry, session, ...ending(entry, session) }
+  }
+
+  it('asks main for the same session with the size of the screen, and says so in the tab', async () => {
+    const { calls, answer } = reopening()
+    const { entry, session, vm, seen } = ended()
+
+    const done = vm.reconnect(session)
+    expect(calls).toEqual([['reopen', 7, { cols: 80, rows: 24 }]])
+    expect(seen.commits).toEqual([['terminalUpdate', { key: 1, status: 'starting', connected: false, exitCode: null }]])
+    expect(entry.calls).toEqual([['write', RECONNECTING_LINE]])
+    expect(entry.reconnecting).toBe(true)
+
+    answer({ ok: true, id: 9, windowsPty: { backend: 'conpty', buildNumber: 21376 } })
+    await done
+    expect(entry).toMatchObject({ id: 9, ended: false, reconnecting: false, interruptedAt: null })
+    expect(entry.term.options.windowsPty).toEqual({ backend: 'conpty', buildNumber: 21376 })
+    expect(seen.registered).toEqual([9])
+    expect(seen.commits[1]).toEqual(['terminalUpdate', { key: 1, id: 9, status: 'running' }])
+    expect(entry.calls.at(-1)).toBe('focus')
+  })
+
+  it('does not ask twice while the answer is not there, and not for a tab that cannot be reconnected', async () => {
+    const { calls, answer } = reopening()
+    const { entry, session, vm } = ended()
+
+    const done = vm.reconnect(session)
+    vm.reconnect(session)
+    expect(calls).toHaveLength(1)
+    answer({ ok: true, id: 9 })
+    await done
+
+    await vm.reconnect({ key: 1, id: 9, status: 'running' })
+    await vm.reconnect({ key: 1, id: null, status: 'exited' })
+    await vm.reconnect({ key: 99, id: 7, status: 'exited' })
+    await vm.reconnect(undefined)
+    expect(calls).toHaveLength(1)
+    expect(entry.reconnecting).toBe(false)
+  })
+
+  it('stays ended with the reason and the old exit code when main cannot open it', async () => {
+    const { answer } = reopening()
+    const { entry, session, vm, seen } = ended()
+
+    const done = vm.reconnect(session)
+    answer({ ok: false, error: 'no bash' })
+    await done
+    expect(entry.calls).toEqual([['write', RECONNECTING_LINE], ['write', errorLine('no bash')]])
+    expect(entry).toMatchObject({ id: 7, ended: true, reconnecting: false, interruptedAt: 5 })
+    expect(seen.commits[1]).toEqual(['terminalUpdate', { key: 1, status: 'exited', exitCode: 255 }])
+    expect(seen.registered).toEqual([])
+  })
+
+  it('ends the new session when the tab was closed while waiting', async () => {
+    const { calls, answer } = reopening()
+    const { entry, session, vm, seen } = ended()
+
+    const done = vm.reconnect(session)
+    vm.terms.delete(1)
+    answer({ ok: true, id: 9 })
+    await done
+    expect(calls.at(-1)).toEqual(['close', 9])
+    expect(entry.id).toBe(7)
+    expect(seen.registered).toEqual([])
+    expect(seen.commits).toHaveLength(1)
   })
 })
