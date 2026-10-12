@@ -106,10 +106,10 @@ Empty. Done: the terminal font size (#152), the search in the terminal scrollbac
 - Dropped by the owner on 2026-10-12 ("not needed"): find a node by name, user or host. Done: the Windows installer build in CI (#83).
 
 ### Proposals for the owner (need a decision)
-- **A window closed while the editor is unlocked loses the changes without a word.** Changes are saved when the editor is locked; switching the diagram asks first, closing the window, *Refresh Window* and quitting from the tray do not. Either ask before the window closes (main has to hold the close and the page has to answer; needs the real window to check) or save while editing, which would end "lock to save" as a rule.
 
 ### Questions for the owner
 Things decided on the way that the owner has not confirmed; the entry has the details.
+- #157: the question before the window closes is a system dialog of main (*Discard changes* / *Cancel*), not the app's own window; it is asked whenever the editor is unlocked, changed or not (as before another diagram is opened); there is no "save and close"; closing to the tray does not ask; a Windows shutdown may wait for the answer.
 - #156: the window is remembered with its place, also on a second monitor, and as maximized; smaller than 400 x 300 or with its title bar on no screen it starts at 1024 x 768 in the middle. No minimum size was added to the window itself.
 - #155: the picture in the README is the headless screen with five made-up servers and two made-up sessions; the owner allowed it without seeing it.
 - #153: Enter finds upwards (older output) and Shift+Enter downwards; the search ignores case, has no options and no count of matches, and closes when another tab is selected.
@@ -987,6 +987,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: the window opened at 1024 x 768 every time. Main remembers its size, its place and whether it was maximized under its own key `window` in the settings file (not inside the setting, which the page writes as a whole), half a second after a move or resize and when it closes.
 - Result: tests 696 passed (12 new, 9 mutations fail them), lint ok, build ok, commit 5ae01b2. **Not checked at all in a window**: main only, so no headless check either; what a screen and a window report is taken from the Electron documentation.
 - Found / next: the first thing to try in the next installer: move and resize, close, open; then the same maximized. Next: the question before closing while unlocked.
+
+### #157 2026-10-12 · fix (by hand, a proposal the owner allowed on 2026-10-12)
+- Did: the close button, *Refresh Window* and *Quit* in the tray lost what was changed since the unlock without a word. The page holds the unload while a diagram is open and unlocked, main asks in Electron's `will-prevent-unload` and goes on when the answer is *Discard changes*. A cancelled quit is forgotten, and terminals end in `will-quit` now, so they survive it.
+- Result: tests 707 passed (11 new, 9 mutations fail them), lint ok, build ok, headless UI checks passed with the new `close-check` (7: the page's half, with a real reload), commit 385b4f4. **Main's half is not checked in a window**: the dialog, the tray quit, close to tray. If the dialog fails, the window closes.
+- Found / next: chosen over a question in the app's own window because that needs state and three IPC channels in main that no check here can run. Nothing is left in the feature queue or the proposals; the next installer has #120 to #157 to look at.
 
 ## Routine
 
