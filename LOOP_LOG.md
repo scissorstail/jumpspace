@@ -1157,6 +1157,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 829 passed, lint ok, build ok, every headless run passed; the new check failed on the old build (4 buttons covered) and the mutation (back to the top) was caught. Commit 82ee711.
 - Found / next: the message at the bottom center (the canvas) was not touched. Rotation next: style.
 
+### #190 2026-10-13 · style (run in the owner's session)
+- Did: the x that closes an error message was the light text color at 80 % on the red header (contrast about 3 with the title next to it in the dark color); seen in the pictures of #189. It now has the color of the title (`--js-on-primary`, no opacity). `theme.test.js` checks the rule and the contrast in every palette; the palette and contrast helpers there moved to the top of the file for it.
+- Result: tests 832 passed, lint ok, build ok, every headless run passed, both mutations caught, looked at the picture. Commit c69d2fc.
+- Found / next: too small for the changelog (part of the message fix of #189). Rotation next: health.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
