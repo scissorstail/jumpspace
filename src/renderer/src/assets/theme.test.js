@@ -19,6 +19,15 @@ describe('header and diagram list buttons', () => {
   })
 })
 
+// 오류 토스트가 창의 맨 위에 뜨면 사라질 때까지 머리글의 잠금, 설정 단추를 가린다.
+describe('error toasts', () => {
+  it('open under the header, not over its buttons', () => {
+    const top = theme.match(/\n\.b-toaster\.b-toaster-top-right \.b-toaster-slot \{\n {2}top: ([\d.]+)rem;\n\}/)?.[1]
+    // 머리글 44px과 그 아래의 색 줄 4px (header-check가 실제 높이를 잰다)
+    expect(Number(top) * 16).toBeGreaterThanOrEqual(48)
+  })
+})
+
 // 그림자는 흐리지 않은 단색 판이다. 검정이던 때에는 어두운 바탕과 구별되지 않아서 그림자도, 그 위 패널의 모서리도 보이지 않았다.
 describe('the color of the hard shadows', () => {
   const palettes = [...theme.matchAll(/:root\[data-theme='([a-z-]+)'\] \{\n([^}]+)\}/g)].map(([, name, body]) => ({

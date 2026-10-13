@@ -580,6 +580,12 @@ $dialog-margin: 16px;
   color: var(--js-on-primary);
 }
 
+// 오류 토스트는 머리글 아래에 뜬다. 창의 맨 위에 뜨면 사라질 때까지(5초) 잠금, 설정 단추를 가린다.
+// (머리글 44px + 색 줄 4px + 틈. bootstrap-vue의 같은 규칙과 구체성이 같고, 이 파일이 나중에 읽혀서 이긴다)
+.b-toaster.b-toaster-top-right .b-toaster-slot {
+  top: 3.5rem;
+}
+
 .tooltip-inner {
   border-radius: 0;
   background: var(--js-sun);

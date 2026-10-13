@@ -70,6 +70,7 @@ Everything since 0.2.2-beta.
 
 ### Fixed
 
+- **An error message no longer covers the buttons of the header.** A message such as *Failed to save projects* opened at the very top of the window, over the lock and the gear, and stayed there for five seconds. It now opens just under the header.
 - **Closing the window while the editor was unlocked lost the changes without a word.** Changes are saved when the editor is locked; opening another diagram asked first, but the close button, *Refresh Window* and *Quit* in the tray menu did not. They ask now (*Discard changes* or *Cancel*, Cancel is the default). Closing to the tray does not ask: nothing is lost there. Terminals also stay alive when a quit is cancelled.
 - **Bold text in the terminal was drawn in two fonts.** The first bold letters of a session (the name in a colored prompt, for example) came out in another font, mixed with the right one, and stayed that way. The bold weight of the terminal font was only read when it was first needed, which was too late for the terminal; both weights are read when the app starts now.
 - **Gaps in the lines that programs draw in the app terminal.** Rulers, frames and filled bars (Claude Code, tmux, progress bars) were drawn with the letters of the font, so at some display scales they broke between the rows or between the cells. The terminal now draws these characters itself, exactly as large as a cell (the WebGL renderer of xterm.js; it falls back to the old way of drawing when WebGL is not available).
