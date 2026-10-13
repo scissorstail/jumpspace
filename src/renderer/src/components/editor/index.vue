@@ -21,6 +21,10 @@ import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, sh
 import { arrangeLayout, boxOf } from '@/utils/arrange'
 import { activeTerminalNode, hopKey, routeStates } from '@/utils/terminal-sessions'
 import { isCanvasDoubleClick, lockedPress } from '@/utils/locked-press'
+import { closesLoop } from '@/utils/link-loop'
+
+// 캔버스 아래의 안내가 떠 있는 시간 (ms). 그동안에는 같은 안내를 겹쳐 띄우지 않는다.
+const LOOP_HINT_MS = 2500
 
 export default {
   name: 'EditorIndex',
@@ -73,6 +77,9 @@ export default {
     this.lastLockedHintAt = 0
     this.confirmedRemoval = null
     this.isAdding = false
+    this.lastLoopHintAt = 0
+    this.justRemovedLink = null
+    this.isRestoringLink = false
   },
   mounted() {
     // Node
@@ -241,6 +248,18 @@ export default {
     window.addEventListener('pointerup', this.onPointerRelease, true)
     this.editor.on('connectionpick', () => !this.isReleasing)
 
+    // 고리를 닫는 연결은 받지 않는다 (refuseLoop). 연결 플러그인은 새 연결을 만들기 전에 도착 소켓에 있던 연결을 먼저 지우므로,
+    // 방금(같은 차례에) 지워진 연결을 기억해 둔다: 새 연결을 거절하면 그것을 되돌린다. 불러오는 중에 지워지는 것은 기억하지 않는다.
+    this.editor.on('connectionremoved', connection => {
+      if (this.editor.silent) return
+
+      this.justRemovedLink = connection
+      setTimeout(() => {
+        if (this.justRemovedLink === connection) this.justRemovedLink = null
+      })
+    })
+    this.editor.on('connectioncreate', link => this.refuseLoop(link))
+
     // 잠겨 있는 동안 노드의 그림, 이름, 접속 정보, 소켓은 배경처럼 군다: 그 위에서 끌면 캔버스가 움직인다 (utils/locked-press.js).
     // Rete는 노드 위의 누름을 노드의 것으로 삼고 멈추므로, 노드에 닿기 전에(capture) 멈추고 같은 누름을 캔버스에 다시 보낸다.
     // 다시 보낸 누름은 캔버스 자신이 target이라 여기서 또 걸리지 않고, Rete의 캔버스 끌기가 받는다.
@@ -285,6 +304,50 @@ export default {
         solid: true,
         noCloseButton: true,
         autoHideDelay: 2500,
+        toaster: 'b-toaster-bottom-center'
+      })
+    },
+    // 연결이 고리를 닫으면 받지 않는다 (false를 답하면 Rete가 그 연결을 만들지 않는다; utils/link-loop.js).
+    // 고리가 있으면 Rete의 엔진이 다이어그램 전체의 계산을 거부해서, 어느 노드도 제 앞의 노드를 알지 못하게 된다.
+    // 불러오는 중(silent)에는 막지 않는다: 저장된 다이어그램은 고리가 있어도 있는 그대로 열린다.
+    refuseLoop({ output, input }) {
+      if (this.editor.silent || this.isRestoringLink) return true
+
+      const links = [...this.editor.view.connections.keys()].map(c => [c.output.node.id, c.input.node.id])
+      if (!closesLoop(links, output.node.id, input.node.id)) return true
+
+      // 플러그인이 이 연결을 만들려고 도착 소켓의 연결을 방금 지웠으면 되돌린다: 거절은 아무것도 바꾸지 않는다.
+      // Rete가 이 연결의 이벤트를 돌리는 중이므로 그것이 끝난 바로 다음에 (화면이 다시 그려지기 전에) 잇는다.
+      // 되돌리는 연결은 막지 않는다: 파일에서 온 고리의 일부였더라도 있던 그대로 돌아가야 한다.
+      const replaced = this.justRemovedLink
+      if (replaced && replaced.input === input) {
+        this.justRemovedLink = null
+        Promise.resolve().then(() => {
+          this.isRestoringLink = true
+          try {
+            this.editor.connect(replaced.output, replaced.input, replaced.data)
+          } finally {
+            this.isRestoringLink = false
+          }
+        })
+      }
+
+      this.showLoopHint()
+      return false
+    },
+    // 고리를 닫는 연결을 받지 않았다고 알린다 (잠긴 캔버스의 안내와 같은 자리, 같은 모양). 안내가 떠 있는 동안에는 겹쳐 띄우지 않는다.
+    showLoopHint() {
+      const now = Date.now()
+      if (now - this.lastLoopHintAt < LOOP_HINT_MS) {
+        return
+      }
+
+      this.lastLoopHintAt = now
+      this.$bvToast.toast('Not linked: that link would make a loop.', {
+        variant: 'secondary',
+        solid: true,
+        noCloseButton: true,
+        autoHideDelay: LOOP_HINT_MS,
         toaster: 'b-toaster-bottom-center'
       })
     },

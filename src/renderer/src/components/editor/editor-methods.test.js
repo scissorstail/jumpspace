@@ -8,6 +8,7 @@ import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, sh
 import { ARRANGE_GAP, arrangeLayout, boxOf } from '../../utils/arrange'
 import { activeTerminalNode, hopKey, routeStates } from '../../utils/terminal-sessions'
 import { isCanvasDoubleClick, lockedPress } from '../../utils/locked-press'
+import { closesLoop } from '../../utils/link-loop'
 
 // 캔버스(components/editor/index.vue)가 하는 일. DOM 없이 도는 테스트라서 .vue도 Rete도 불러올 수 없다: <script>의 내용을 꺼내
 // import만 바꿔서 돌리고, mounted와 methods, computed, watch를 가짜 this로 부른다 (Layout-methods.test.js와 같은 방법).
@@ -68,11 +69,20 @@ class FakeEditor {
     this.fire('nodecreate', node)
   }
 
-  connect(output, input) {
-    const connection = { output, input }
-    this.view.connections.set(connection, { el: element() })
+  // 진짜처럼: 듣는 것 하나라도 false를 답하면 연결을 만들지 않는다 (만들기 전에 묻는다)
+  connect(output, input, data) {
+    const connection = { output, input, data }
     log.push(['connect', output.node.id, input.node.id])
-    this.fire('connectioncreate', connection)
+    if (this.fire('connectioncreate', connection).includes(false)) return
+
+    this.view.connections.set(connection, { el: element() })
+  }
+
+  removeConnection(connection) {
+    if (this.fire('connectionremove', connection).includes(false)) return
+
+    this.view.connections.delete(connection)
+    this.fire('connectionremoved', connection)
   }
 
   removeNode(node) { log.push(['removeNode', node.id]) }
@@ -118,7 +128,8 @@ const given = {
   hopKey,
   routeStates,
   isCanvasDoubleClick,
-  lockedPress
+  lockedPress,
+  closesLoop
 }
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 const component = runInThisContext(`(function (${imported.join(', ')}) {\n${body}\n})`)(...imported.map(name => given[name]))
@@ -476,6 +487,149 @@ describe('connecting two nodes', () => {
     vi.advanceTimersByTime(0)
     expect(editor.fire('connectionpick')).toEqual([true])
   })
+
+  // 고리가 있으면 Rete의 엔진이 다이어그램 전체의 계산을 거부한다 (utils/link-loop.js). 그래서 고리를 닫는 연결은 받지 않는다.
+  describe('a link that would close a loop', () => {
+    const HINT = ['Not linked: that link would make a loop.', { variant: 'secondary', solid: true, noCloseButton: true, autoHideDelay: 2500, toaster: 'b-toaster-bottom-center' }]
+    const out = node => node.outputs.get('output1')
+    const into = node => node.inputs.get('input1')
+    const linkOf = (editor, from, to) => [...editor.view.connections.keys()].find(c => c.output.node === from && c.input.node === to)
+    const links = editor => [...editor.view.connections.keys()].map(c => `${c.output.node.id}>${c.input.node.id}`)
+    // 1 -> 2 -> 3, 그리고 4 -> 1 (노드 1의 입력에는 이미 연결이 있다)
+    function chain() {
+      const result = setup()
+      const [a, b, c, x] = put(result.editor, makeNode({ name: 'a' }), makeNode({ name: 'b' }), makeNode({ name: 'c' }), makeNode({ name: 'x' }))
+      link(result.editor, a, b)
+      link(result.editor, b, c)
+      link(result.editor, x, a)
+      return { ...result, a, b, c, x }
+    }
+
+    it('is not made, and a hint says so', () => {
+      const { editor, a, b, c } = chain()
+
+      expect(editor.fire('connectioncreate', { output: out(c), input: into(b) })).toContain(false)
+      editor.connect(out(c), into(b))
+      expect(links(editor)).toEqual(['1>2', '2>3', '4>1'])
+      expect(logged('toast')).toEqual([HINT])
+
+      // 길의 끝에서 처음으로 돌아가는 연결, 제 자신으로 가는 연결
+      vi.advanceTimersByTime(2500)
+      editor.connect(out(c), into(a))
+      vi.advanceTimersByTime(2500)
+      editor.connect(out(a), into(a))
+      expect(links(editor)).toEqual(['1>2', '2>3', '4>1'])
+      expect(logged('toast')).toEqual([HINT, HINT, HINT])
+    })
+
+    it('leaves every other link alone', () => {
+      const { editor, a, c, x } = chain()
+      const [d] = put(editor, makeNode({ name: 'd' }))
+
+      expect(editor.fire('connectioncreate', { output: out(c), input: into(d) })).not.toContain(false)
+      editor.connect(out(c), into(d))
+      editor.connect(out(x), into(c))
+      editor.connect(out(a), into(c))
+      expect(links(editor)).toEqual(['1>2', '2>3', '4>1', '3>5', '4>3', '1>3'])
+      expect(logged('toast')).toEqual([])
+    })
+
+    it('shows one hint at a time: no second one while the first is on the screen', () => {
+      const { editor, a, c } = chain()
+
+      editor.connect(out(c), into(a))
+      editor.connect(out(c), into(a))
+      vi.advanceTimersByTime(2499)
+      editor.connect(out(c), into(a))
+      expect(logged('toast')).toEqual([HINT])
+
+      vi.advanceTimersByTime(1)
+      editor.connect(out(c), into(a))
+      expect(logged('toast')).toEqual([HINT, HINT])
+    })
+
+    // 저장된 다이어그램은 고리가 있어도 있는 그대로 열린다 (Rete는 불러오는 동안 silent다)
+    it('is made while a diagram is being loaded', () => {
+      const { editor, a, c } = chain()
+
+      editor.silent = true
+      editor.connect(out(c), into(a))
+      expect(links(editor)).toEqual(['1>2', '2>3', '4>1', '3>1'])
+      expect(logged('toast')).toEqual([])
+    })
+
+    // 연결 플러그인은 도착 소켓에 있던 연결을 먼저 지우고 나서 새 연결을 만든다 (rete-connection-plugin의 pickInput)
+    it('puts back the link the plugin took away for it, with its data', async () => {
+      const { editor, a, c, x } = chain()
+      const old = linkOf(editor, x, a)
+      old.data = { kept: true }
+
+      editor.removeConnection(old)
+      editor.connect(out(c), into(a))
+      expect(links(editor)).toEqual(['1>2', '2>3'])
+
+      await flush()
+      expect(links(editor)).toEqual(['1>2', '2>3', '4>1'])
+      expect(linkOf(editor, x, a).data).toEqual({ kept: true })
+      expect(logged('toast')).toEqual([HINT])
+
+      // 되돌린 다음에도 고리는 받지 않는다
+      vi.advanceTimersByTime(2500)
+      editor.connect(out(c), into(a))
+      await flush()
+      expect(links(editor)).toEqual(['1>2', '2>3', '4>1'])
+      expect(logged('toast')).toEqual([HINT, HINT])
+    })
+
+    // 파일에서 온 고리의 연결이었더라도 있던 그대로 돌아간다: 거절은 아무것도 바꾸지 않는다
+    it('puts it back even where that link is part of a loop that was there before', async () => {
+      const { editor } = setup()
+      const [a, b] = put(editor, makeNode({ name: 'a' }), makeNode({ name: 'b' }))
+      link(editor, a, b)
+      link(editor, b, a)
+
+      editor.removeConnection(linkOf(editor, a, b))
+      editor.connect(out(a), into(b))
+      await flush()
+
+      expect(links(editor)).toEqual(['2>1', '1>2'])
+      expect(logged('toast')).toEqual([HINT])
+    })
+
+    it('does not put back a link that was taken away earlier (picked up and dropped on a socket it cannot go to)', async () => {
+      const { editor, a, c, x } = chain()
+
+      editor.removeConnection(linkOf(editor, x, a))
+      vi.advanceTimersByTime(0)
+      editor.connect(out(c), into(a))
+      await flush()
+
+      expect(links(editor)).toEqual(['1>2', '2>3'])
+      expect(logged('toast')).toEqual([HINT])
+    })
+
+    it('does not put back a link that led into another node', async () => {
+      const { editor, a, b, c } = chain()
+
+      editor.removeConnection(linkOf(editor, b, c))
+      editor.connect(out(b), into(a))
+      await flush()
+
+      expect(links(editor)).toEqual(['1>2', '4>1'])
+    })
+
+    it('does not put back a link that went with the diagram loaded before', async () => {
+      const { editor, a, c, x } = chain()
+
+      editor.silent = true
+      editor.removeConnection(linkOf(editor, x, a))
+      editor.silent = false
+      editor.connect(out(c), into(a))
+      await flush()
+
+      expect(links(editor)).toEqual(['1>2', '2>3'])
+    })
+  })
 })
 
 describe('a locked diagram', () => {
@@ -777,8 +931,10 @@ describe('loading a diagram and working its values out', () => {
 
   it.each(['connectioncreate', 'connectionremove', 'nodecreate', 'noderemove', 'process'])('works the values out again after %s', async name => {
     const { editor } = setup()
+    const [from, to] = put(editor, makeNode(), makeNode())
 
-    await Promise.all(editor.fire(name, makeNode()))
+    // 연결의 이벤트는 그 연결의 두 끝을, 노드의 이벤트는 노드를 받는다
+    await Promise.all(editor.fire(name, name.startsWith('connection') ? { output: from.outputs.get('output1'), input: to.inputs.get('input1') } : makeNode()))
 
     expect(logged('process')).toHaveLength(1)
   })
@@ -790,7 +946,8 @@ describe('loading a diagram and working its values out', () => {
     await Promise.all(editor.fire('nodecreate', makeNode()))
     editor.silent = false
     vm.isAdding = true
-    await Promise.all(editor.fire('connectioncreate', {}))
+    const [from, to] = put(editor, makeNode(), makeNode())
+    await Promise.all(editor.fire('connectioncreate', { output: from.outputs.get('output1'), input: to.inputs.get('input1') }))
 
     expect(logged('process')).toEqual([])
   })
