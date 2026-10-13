@@ -1152,6 +1152,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: log only, no code. Folding those two into one helper would save a few lines and change two tested components for it; left as it is.
 - Found / next: nothing to fix. Rotation next: ux.
 
+### #189 2026-10-13 · ux (run in the owner's session)
+- Did: an error message (*Failed to save projects*, *Failed to import*) opened at the very top right of the window, over the eye, reset, lock and gear buttons, for the five seconds it stays; seen in a picture of the real window in #184. It now opens under the header (`.b-toaster-top-right .b-toaster-slot` in `theme.scss`). A test in `theme.test.js`, and the save check of the headless checks measures that the message covers no header button.
+- Result: tests 829 passed, lint ok, build ok, every headless run passed; the new check failed on the old build (4 buttons covered) and the mutation (back to the top) was caught. Commit 82ee711.
+- Found / next: the message at the bottom center (the canvas) was not touched. Rotation next: style.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
