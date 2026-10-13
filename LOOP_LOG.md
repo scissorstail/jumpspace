@@ -1147,6 +1147,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 828 passed, lint ok, build ok; 22 of 22 mutations of `Layout.vue` caught (one survived first: adding config nodes with nothing open, the test got that case). Commit b260400.
 - Found / next: no bug found. Still without a test that runs their script: `components/editor/index.vue` and `connection-control/component.vue`. Rotation next: refactor.
 
+### #188 2026-10-13 · refactor (run in the owner's session)
+- Did: looked for dead code and repeats: every method of `Layout.vue` is called, the list of exports used only by their own file and tests has nothing new, the three largest components are unchanged in size. The one repeat found is the export warning (ask before a file with a saved password, then send, report a failure) in `Layout.vue` and `main-navigator.vue`, about eight lines each, both under test since #179 and #187.
+- Result: log only, no code. Folding those two into one helper would save a few lines and change two tested components for it; left as it is.
+- Found / next: nothing to fix. Rotation next: ux.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
