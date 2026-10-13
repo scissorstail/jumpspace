@@ -22,7 +22,8 @@ const given = {
   EXPORT_PASSWORD_WARNING,
   DEFAULT_VIEW,
   sanitizeView,
-  toastError: (vm, title, error) => toasts.push([title, String(error?.message ?? error)])
+  // 세 번째 칸: 토스트에 더한 옵션 (없으면 칸도 없다)
+  toastError: (vm, title, error, options) => toasts.push([title, String(error?.message ?? error), ...(options ? [options] : [])])
 }
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 // 자식 컴포넌트는 여기서 쓰이지 않는다: 이름만 채운다
@@ -146,7 +147,8 @@ describe('what is saved, and when', () => {
 
     expect(vm.isProjectLoadFailed).toBe(true)
     expect(vm.projectData).toEqual([])
-    expect(toasts).toEqual([['Failed to load projects. Changes will not be saved.', 'unreadable']])
+    // 닫을 때까지 남는 알림이다
+    expect(toasts).toEqual([['Failed to load projects. Changes will not be saved.', 'unreadable', { noAutoHide: true }]])
 
     vm.updateProject({ items: [diagram('typed meanwhile')], index: null })
     await vm.saveProject()

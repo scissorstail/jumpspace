@@ -43,6 +43,76 @@ describe('storage', () => {
 
   // 화면은 여러 곳에서 저장을 부른다 (잠글 때, 목록을 고칠 때, 캔버스를 옮긴 뒤). 둘이 겹치면 같은 임시 파일을 쓰고,
   // 먼저 끝난 쪽이 그 파일을 가져가서 나중 쪽이 "ENOENT ... rename projects.json.tmp -> projects.json"으로 실패했다.
+  // 읽을 수 없는 파일은 "저장된 것이 없다"와 다르다. 없다고 하면 화면이 빈 목록으로 시작해서 그 파일과 백업을 덮어쓴다.
+  describe('when what is saved cannot be read', () => {
+    const cut = '{"version":1,"items":[{"name":"a","data":{"id":"test@0.1.0","nodes":{'
+    const folder = async () => Object.fromEntries(await Promise.all((await readdir(dir)).sort().map(async name => [name, await readFile(join(dir, name), 'utf-8')])))
+    const seed = async files => {
+      for (const [name, text] of Object.entries(files)) await writeFile(join(dir, name), text)
+    }
+
+    it.each([
+      ['the file is cut off and there is no backup', { 'projects.json': cut }, ['projects.json is not valid JSON.', 'projects.json.bak is missing.']],
+      ['the file is empty and there is no backup', { 'projects.json': '' }, ['projects.json is not valid JSON.', 'projects.json.bak is missing.']],
+      ['the file and its backup are cut off', { 'projects.json': cut, 'projects.json.bak': cut }, ['projects.json is not valid JSON.', 'projects.json.bak is not valid JSON.']],
+      ['the file is missing and its backup is cut off', { 'projects.json.bak': cut }, ['projects.json is missing.', 'projects.json.bak is not valid JSON.']],
+      ['the file is JSON without diagrams and there is no backup', { 'projects.json': '{"version":1}' }, ['projects.json does not hold a list of diagrams.', 'projects.json.bak is missing.']]
+    ])('%s: load fails, says so file by file, and leaves the folder as it was', async (name, files, said) => {
+      await seed(files)
+
+      const error = await storage.load().then(() => null, e => e)
+
+      expect(error).toBeInstanceOf(Error)
+      expect(error.message.split('\n')).toEqual([
+        ...said,
+        'Nothing was changed. Repair or remove what cannot be read, then start the app again. The folder:',
+        dir
+      ])
+      expect(await folder()).toEqual(files)
+    })
+
+    it('says so for a file that cannot be opened, with the code of the error', async () => {
+      // 파일이 있을 자리에 폴더가 있다 (읽으면 EISDIR)
+      await mkdir(storage.file)
+
+      await expect(storage.load()).rejects.toThrow(/^projects\.json could not be opened \(E[A-Z]+\)\.\nprojects\.json\.bak is missing\.\n/)
+    })
+
+    // JSON.parse의 문구는 틀린 곳 둘레의 글자를 옮긴다. 저장 파일에는 비밀번호가 평문으로 있으므로 그 문구를 화면으로도 콘솔로도 보내지 않는다.
+    it('does not repeat the words of the JSON parser, which quote the file', async () => {
+      const text = '{"items": quoted}'
+      expect(() => JSON.parse(text)).toThrow(/quoted/)
+      await seed({ 'projects.json': text })
+
+      const error = await storage.load().then(() => null, e => e)
+
+      expect(error.message).toMatch(/^projects\.json is not valid JSON\.\n/)
+      expect(error.message).not.toMatch(/quoted|Unexpected/)
+      // 콘솔에는 어느 파일이 왜 읽히지 않았는지만 남는다
+      expect(console.error.mock.calls).toEqual([[`Failed to read ${storage.file}: is not valid JSON`]])
+    })
+
+    it('still opens the backup when only the file itself cannot be read', async () => {
+      await seed({ 'projects.json': cut, 'projects.json.bak': JSON.stringify({ version: 1, items }) })
+
+      expect(JSON.parse(await storage.load())).toEqual(items)
+    })
+
+    it('still opens the backup when the file itself is gone', async () => {
+      await seed({ 'projects.json.bak': JSON.stringify({ version: 1, items }) })
+
+      expect(JSON.parse(await storage.load())).toEqual(items)
+      // 없는 파일은 콘솔에 남길 일이 아니다 (처음 켤 때마다 그렇다)
+      expect(console.error).not.toHaveBeenCalled()
+    })
+
+    it('reads a file that is fine without looking at a backup that is not', async () => {
+      await seed({ 'projects.json': JSON.stringify({ version: 1, items }), 'projects.json.bak': cut })
+
+      expect(JSON.parse(await storage.load())).toEqual(items)
+    })
+  })
+
   it('lets saves overlap: every one succeeds and the last one asked for is what stays', async () => {
     const versions = Array.from({ length: 8 }, (_, i) => JSON.stringify([{ name: `v${i}`, data: { nodes: {} } }]))
 

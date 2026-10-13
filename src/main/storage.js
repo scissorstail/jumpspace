@@ -1,5 +1,5 @@
 import { copyFile, readFile, rename, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { migrateLegacyForwards } from './legacy-forwards.js'
 import { sanitizeView } from '../shared/view.js'
 
@@ -57,6 +57,15 @@ export function parseItems(text) {
 const RENAME_RETRY_MS = [20, 50, 100, 200, 400, 800]
 const BUSY = ['EPERM', 'EBUSY', 'EACCES']
 
+// 저장 파일을 읽지 못한 까닭을 화면과 콘솔에 보일 말로. JSON.parse의 문구는 옮기지 않는다: 틀린 곳 둘레의 글자 몇 개가 들어 있을 수 있고,
+// 이 파일에는 비밀번호가 평문으로 있다.
+function unreadableReason(e) {
+  if (e.code === 'ENOENT') return 'is missing'
+  if (e instanceof SyntaxError) return 'is not valid JSON'
+  if (e.code) return 'could not be opened (' + e.code + ')'
+  return 'does not hold a list of diagrams'
+}
+
 // renameFile, wait: 테스트가 실패하는 rename과 기다리지 않는 기다림을 끼워 넣는다
 export function createProjectStorage(dir, { renameFile = rename, wait = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
   const file = join(dir, 'projects.json')
@@ -93,16 +102,29 @@ export function createProjectStorage(dir, { renameFile = rename, wait = ms => ne
   return {
     file,
     backup,
-    // 저장된 project(JSON 문자열)를 반환한다. 저장된 것이 없으면 null.
+    // 저장된 project(JSON 문자열)를 반환한다. 저장된 것이 없으면(두 파일이 다 없으면) null.
+    // 파일이 있는데 읽을 수 없고 백업으로도 열지 못하면 던진다. 전에는 그때도 null이었다: 화면은 빈 목록으로 시작했고, 그 뒤의 저장이
+    // 읽지 못한 파일과 그 백업을 차례로 덮어썼다 (다이어그램 하나를 만들면 저장이 두 번이라 둘 다 사라졌다).
+    // 던지면 화면이 알리고 저장을 막는다 (Layout.vue의 isProjectLoadFailed). 파일은 손대지 않는다: 고칠 수 있는 것은 사람뿐이다.
     async load() {
+      const unread = []
       for (const path of [file, backup]) {
         try {
           return JSON.stringify(await readItems(path))
         } catch (e) {
-          if (e.code !== 'ENOENT') console.error(`Failed to read ${path}:`, e)
+          const isMissing = e.code === 'ENOENT'
+          const reason = unreadableReason(e)
+          if (!isMissing) console.error(`Failed to read ${path}: ${reason}`)
+          unread.push({ isMissing, text: `${basename(path)} ${reason}.` })
         }
       }
-      return null
+      if (unread.every(x => x.isMissing)) return null
+
+      throw new Error([
+        ...unread.map(x => x.text),
+        'Nothing was changed. Repair or remove what cannot be read, then start the app again. The folder:',
+        dir
+      ].join('\n'))
     },
     // 저장은 한 번에 하나씩, 부른 순서대로 한다. 화면은 여러 곳에서 저장을 부르고(잠글 때, 목록을 고칠 때, 캔버스를 옮긴 뒤)
     // 그것들이 겹치면 같은 임시 파일을 함께 썼다: 먼저 끝난 쪽이 그 파일을 가져가서 나중 쪽의 rename이

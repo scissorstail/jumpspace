@@ -28,6 +28,14 @@ describe('toastError', () => {
 
     expect(vm.$bvToast.toast).toHaveBeenCalledWith('The file is not valid JSON.', { title: 'Failed to import', variant: 'danger', solid: true, bodyClass: 'msg-pre-line' })
   })
+
+  it('can be told to stay until it is closed', () => {
+    const vm = { $bvToast: { toast: vi.fn() } }
+
+    toastError(vm, 'Failed to load', new Error('projects.json is not valid JSON.'), { noAutoHide: true })
+
+    expect(vm.$bvToast.toast).toHaveBeenCalledWith('projects.json is not valid JSON.', { title: 'Failed to load', variant: 'danger', solid: true, bodyClass: 'msg-pre-line', noAutoHide: true })
+  })
 })
 
 describe('errorBox', () => {

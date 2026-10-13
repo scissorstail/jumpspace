@@ -378,8 +378,9 @@ export default {
       if (failed) {
         console.error(error)
         // 읽기에 실패한 상태에서 저장하면 기존 데이터를 빈 목록으로 덮어쓰게 되므로 저장을 막는다.
+        // 이 알림은 닫을 때까지 남는다: 5초 뒤에 사라지면, 그 사이 화면을 보지 않은 사람은 저장되지 않는 줄 모르고 일한다.
         this.isProjectLoadFailed = true
-        this.notifyError('Failed to load projects. Changes will not be saved.', error)
+        this.notifyError('Failed to load projects. Changes will not be saved.', error, { noAutoHide: true })
       }
 
       this.projectData = items
@@ -415,8 +416,8 @@ export default {
         this.notifyError('Failed to export', e)
       }
     },
-    notifyError(title, error) {
-      toastError(this, title, error)
+    notifyError(title, error, options) {
+      toastError(this, title, error, options)
     }
   }
 }

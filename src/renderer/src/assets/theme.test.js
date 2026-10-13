@@ -57,6 +57,18 @@ describe('error toasts', () => {
   })
 })
 
+// 오류 문구에는 경로가 들어간다 (읽지 못한 저장 파일의 폴더, 찾지 못한 Git Bash). 빈칸이 없어서 그대로는 꺾이지 않는다.
+describe('the text of an error message', () => {
+  it('keeps its line breaks and wraps a long path instead of running out of the box', () => {
+    const start = theme.indexOf('\n.msg-pre-line {')
+    const block = theme.slice(start, theme.indexOf('\n}\n', start))
+
+    expect(start).toBeGreaterThan(-1)
+    expect(block).toMatch(/\n {2}white-space: pre-line;/)
+    expect(block).toMatch(/\n {2}overflow-wrap: anywhere;/)
+  })
+})
+
 // 그림자는 흐리지 않은 단색 판이다. 검정이던 때에는 어두운 바탕과 구별되지 않아서 그림자도, 그 위 패널의 모서리도 보이지 않았다.
 describe('the color of the hard shadows', () => {
   it('is set by every palette', () => {

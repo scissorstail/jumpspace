@@ -10,8 +10,9 @@ export function errorMessage(error) {
 const PRE_LINE = 'msg-pre-line'
 
 // 오류를 화면에 토스트로 알린다. vm은 BootstrapVue가 설치된 Vue 컴포넌트 인스턴스이다.
-export function toastError(vm, title, error) {
-  vm.$bvToast.toast(errorMessage(error), { title, variant: 'danger', solid: true, bodyClass: PRE_LINE })
+// options: 토스트에 더할 것. { noAutoHide: true }면 5초 뒤에 사라지지 않고 닫을 때까지 남는다 (읽지 못한 저장 파일처럼 놓치면 안 되는 것).
+export function toastError(vm, title, error, options = {}) {
+  vm.$bvToast.toast(errorMessage(error), { title, variant: 'danger', solid: true, bodyClass: PRE_LINE, ...options })
 }
 
 // 오류를 확인 창으로 알린다. 포커스는 OK 단추에 두어 Enter로 닫을 수 있다.
