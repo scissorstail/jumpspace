@@ -38,10 +38,14 @@ class FakeEditor {
     this.isReadonly = false
     this.components = new Map()
     this.selected = { list: [], clear: () => { log.push(['selected.clear']); this.selected.list = [] } }
+    // 연결 플러그인이 손에 든 선을 그리는 요소: 비어 있지 않으면(childElementCount) 소켓 하나가 손에 들려 있다
+    this.pickerLine = { childElementCount: 0 }
     const transform = { k: 1, x: 0, y: 0 }
     this.view = {
       // 진짜처럼 보기를 바꾸면 zoomed, translated가 일어난다
       area: {
+        // 캔버스에 붙은 요소들: 플러그인이 붙이는 차례대로 (use)
+        el: { children: [], get lastElementChild() { return this.children[this.children.length - 1] || null } },
         mouse: { x: 0, y: 0 },
         transform,
         zoom: (k, ox, oy) => { log.push(['zoom', k, ox, oy]); transform.k = k; this.fire('zoomed') },
@@ -54,7 +58,13 @@ class FakeEditor {
     }
   }
 
-  use(plugin, options) { this.plugins.set(plugin.name, options) }
+  // 진짜처럼: 연결 플러그인은 손에 든 선의 요소를, 영역 플러그인은 배경을 캔버스에 붙인다
+  use(plugin, options) {
+    this.plugins.set(plugin.name, options)
+    if (plugin.name === 'connection') this.view.area.el.children.push(this.pickerLine)
+    if (plugin.name === 'area') this.view.area.el.children.push({ childElementCount: 0 })
+  }
+
   on(names, handler) { for (const name of [names].flat()) this.handlers.set(name, [...(this.handlers.get(name) || []), handler]) }
   register(component) { this.registered.push(component) }
   exist(name) { return name === 'isreadonly' && this.hasReadonly }
@@ -490,6 +500,65 @@ describe('connecting two nodes', () => {
     // 놓는 일이 끝난 다음 차례부터는 다시 고를 수 있다
     vi.advanceTimersByTime(0)
     expect(editor.fire('connectionpick')).toEqual([true])
+  })
+
+  // 연결 플러그인은 왼쪽 소켓을 든 채 누른 왼쪽 소켓의 연결을 지우고 아무것도 잇지 않는다 (pickInput).
+  // 손에 든 소켓은 버튼을 놓을 때 connectiondrop으로 알려지고, 들고 있는 동안에는 선의 요소가 비어 있지 않다.
+  describe('with a socket in the hand', () => {
+    const out = node => node.outputs.get('output1')
+    const into = node => node.inputs.get('input1')
+    function holding(pick) {
+      const result = setup()
+      const [a, b] = put(result.editor, makeNode({ name: 'a' }), makeNode({ name: 'b' }))
+      result.editor.fire('connectiondrop', pick(a))
+      result.editor.pickerLine.childElementCount = 1
+      return { ...result, a, b }
+    }
+
+    it('takes the line of the hand from the element the connection plugin put on the canvas', () => {
+      const { vm, editor } = setup()
+
+      expect(vm.heldLine).toBe(editor.pickerLine)
+      expect(editor.view.area.el.children).toHaveLength(2)
+    })
+
+    it('does not pick a left socket while a left socket is in the hand', () => {
+      const { editor, a, b } = holding(into)
+
+      expect(editor.fire('connectionpick', into(b))).toEqual([false])
+      expect(editor.fire('connectionpick', into(a))).toEqual([false])
+    })
+
+    it('picks a right socket while a left socket is in the hand (the link is made from there)', () => {
+      const { editor, a, b } = holding(into)
+
+      expect(editor.fire('connectionpick', out(b))).toEqual([true])
+      expect(editor.fire('connectionpick', out(a))).toEqual([true])
+    })
+
+    it('picks any socket while a right socket is in the hand', () => {
+      const { editor, a, b } = holding(out)
+
+      expect(editor.fire('connectionpick', into(b))).toEqual([true])
+      expect(editor.fire('connectionpick', into(a))).toEqual([true])
+      expect(editor.fire('connectionpick', out(b))).toEqual([true])
+    })
+
+    // 떨어뜨린 소켓도 connectiondrop으로 알려진다 (떨어뜨리기 전에). 손이 비었는지는 선의 요소로 안다.
+    it('picks a left socket again once the hand is empty, whatever was in it before', () => {
+      const { editor, a, b } = holding(into)
+
+      editor.pickerLine.childElementCount = 0
+      expect(editor.fire('connectionpick', into(b))).toEqual([true])
+      expect(editor.fire('connectionpick', into(a))).toEqual([true])
+    })
+
+    it('picks nothing on the release of a press, with or without a socket in the hand', () => {
+      const { editor, b, dispatch } = holding(out)
+
+      dispatch('window', 'pointerup', {})
+      expect(editor.fire('connectionpick', into(b))).toEqual([false])
+    })
   })
 
   // 고리가 있으면 Rete의 엔진이 다이어그램 전체의 계산을 거부한다 (utils/link-loop.js). 그래서 고리를 닫는 연결은 받지 않는다.

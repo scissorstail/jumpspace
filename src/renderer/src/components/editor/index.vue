@@ -29,6 +29,9 @@ const LOOP_HINT_MS = 2500
 // 연 다이어그램에 고리가 있다는 알림이 떠 있는 시간 (ms). 읽을 글이 길어서 다른 알림(5초)보다 오래 둔다.
 const LOOP_NOTICE_MS = 10000
 
+// 소켓이 입력(왼쪽 소켓)인가: 그 노드의 입력들 가운데 있는지 본다.
+const isInput = io => [...io.node.inputs.values()].includes(io)
+
 export default {
   name: 'EditorIndex',
   props: {
@@ -100,6 +103,9 @@ export default {
 
     // Editor Plugins
     this.editor.use(ConnectionPlugin)
+    // 연결 플러그인이 손에 든 선(마우스를 따라오는 선)을 그리는 요소: 방금 캔버스에 붙인 것이다.
+    // 비어 있지 않으면 소켓 하나가 손에 들려 있다 (isInputOnInput이 본다).
+    this.heldLine = this.editor.view.area.el.lastElementChild
 
     this.editor.use(VueRenderPlugin)
 
@@ -249,7 +255,11 @@ export default {
       setTimeout(() => { this.isReleasing = false })
     }
     window.addEventListener('pointerup', this.onPointerRelease, true)
-    this.editor.on('connectionpick', () => !this.isReleasing)
+    // 왼쪽 소켓을 손에 든 채 누른 왼쪽 소켓도 고르지 않는다 (isInputOnInput). 플러그인은 버튼을 놓을 때마다 손에 든 소켓을
+    // connectiondrop으로 알린다. 떨어뜨리기 전에 알리므로, 지금도 들고 있는지는 heldLine으로 본다.
+    this.heldIo = null
+    this.editor.on('connectiondrop', io => { this.heldIo = io })
+    this.editor.on('connectionpick', io => !this.isReleasing && !this.isInputOnInput(io))
 
     // 고리를 닫는 연결은 받지 않는다 (refuseLoop). 연결 플러그인은 새 연결을 만들기 전에 도착 소켓에 있던 연결을 먼저 지우므로,
     // 방금(같은 차례에) 지워진 연결을 기억해 둔다: 새 연결을 거절하면 그것을 되돌린다. 불러오는 중에 지워지는 것은 기억하지 않는다.
@@ -309,6 +319,14 @@ export default {
         autoHideDelay: 2500,
         toaster: 'b-toaster-bottom-center'
       })
+    },
+    // 왼쪽 소켓(입력)을 손에 든 채 또 왼쪽 소켓을 눌렀는가. 연결 플러그인은 그때 눌린 소켓에 있던 연결을 지우고
+    // 아무것도 잇지 않는다 (pickInput): 왼쪽 소켓 하나를 들고 연결된 왼쪽 소켓들을 누르면 연결이 하나씩 사라졌다.
+    // 손에 든 것이 있는지는 플러그인이 그 선을 그리는 요소로, 무엇인지는 마지막 connectiondrop으로 안다.
+    isInputOnInput(io) {
+      const held = this.heldLine.childElementCount ? this.heldIo : null
+
+      return Boolean(held) && isInput(held) && isInput(io)
     },
     // 연결이 고리를 닫으면 받지 않는다 (false를 답하면 Rete가 그 연결을 만들지 않는다; utils/link-loop.js).
     // 고리가 있으면 Rete의 엔진이 다이어그램 전체의 계산을 거부해서, 어느 노드도 제 앞의 노드를 알지 못하게 된다.
