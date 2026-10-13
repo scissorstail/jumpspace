@@ -5,6 +5,9 @@
 //   - 만들 수 없는 노드(모르는 종류, 위치 없음)나 없는 노드로 가는 연결이 있으면 중간에 멈춰서 일부만 남는다.
 //   - 한 입력으로 들어오는 둘째 연결, 없는 소켓의 연결은 버려지는데 Rete의 fromJSON은 그래도 true를 답한다.
 //   - 번호(id)가 제 자리(키)와 다른 노드는 저장할 때 다른 키로 옮겨지고, 같은 번호의 노드 둘은 하나로 합쳐진다.
+// Rete는 통째로 읽지만 노드의 코드가 일하지 못하는 것도 받아들이지 않는다. 노드의 설정 안에서는 포워딩 목록이 그렇다:
+//   - 목록이 아닌 forwards는 노드가 읽다가 던진다 (component.vue의 update). 그 노드는 빈 채로 그려지고, 경로 계산이 거기서
+//     멈춰서 그 뒤의 노드들은 앞 노드를 모른 채 바로 접속한다. 대상 host가 글자가 아닌 포워딩은 요약을 만들 때 던진다.
 // 그래서 열기 전에 본다 (main-navigator.vue의 openItem). 여기의 규칙은 Rete가 실제로 하는 일과 맞아야 한다:
 // diagram-data.test.js가 진짜 Rete에 같은 데이터를 읽혀서, 통째로 읽는 것과 여기서 받아들이는 것이 같은지 본다.
 
@@ -33,6 +36,10 @@ export function diagramProblem(data) {
     if (!NODE_KINDS.includes(node.name)) return `Node ${name} is of a kind this version does not know.`
     if (!Array.isArray(node.position)) return `Node ${name} has no position.`
     if (!isRecord(node.data)) return `Node ${name} has no settings.`
+    // 값이 없는 것(null, 빈 것)은 포워딩이 없는 것으로 읽힌다. 목록 안의 포워딩 아닌 것은 빈 줄로 읽힌다.
+    const forwards = node.data.connection?.forwards
+    if (forwards && !Array.isArray(forwards)) return `The forwards of node ${name} cannot be read.`
+    if (forwards && forwards.some(x => x?.host && typeof x.host !== 'string')) return `The forwards of node ${name} cannot be read.`
     if (!isRecord(node.outputs)) return `The links of node ${name} cannot be read.`
 
     for (const [socket, output] of Object.entries(node.outputs)) {

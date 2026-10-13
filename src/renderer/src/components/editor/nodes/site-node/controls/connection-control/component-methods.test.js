@@ -541,3 +541,27 @@ describe('copying the SSH config of a node', () => {
     expect(vm.isCopied).toBe(false)
   })
 })
+
+// 손으로 고친 파일에만 있는 값. 노드가 이렇게 던지는 다이어그램은 열리지 않는다 (utils/diagram-data.js의 diagramProblem, #205):
+// 노드가 달라져서 여기가 실패하면 그 규칙도 다시 본다.
+describe('forwards the app never writes', () => {
+  it.each([['an object', { 0: { checked: true, from: '8080', to: '80' } }], ['a word', 'none'], ['a number', 5]])('cannot be read by the node when they are %s', (name, forwards) => {
+    expect(() => nodeOf({ connection: { name: 'app', forwards } })).toThrow(TypeError)
+  })
+
+  it('cannot be summed up or started when the target host of one is no text', () => {
+    const { vm } = nodeOf({ connection: { ...bastion(), forwards: [{ checked: true, from: '8080', host: 5, to: '80' }] } })
+
+    expect(() => vm.forwardSummaryText).toThrow(TypeError)
+    expect(() => vm.openForward()).toThrow(TypeError)
+  })
+
+  // 이런 것은 던지지 않는다: 그런 다이어그램은 열린다
+  it('are read as empty rows where an entry is no forward, and as no forwards where the value is empty', () => {
+    const row = { checked: false, from: null, host: null, to: null }
+
+    expect(nodeOf({ connection: { forwards: [5, 'x', null] } }).vm.forwards).toEqual([row, row, row])
+    expect(nodeOf({ connection: { forwards: 0 } }).vm.forwards).toEqual([])
+    expect(nodeOf({ connection: { forwards: [{ checked: 1, from: 8080, host: '', to: 80 }] } }).vm.forwardSummaryText.first).toBe(':8080 → localhost:80')
+  })
+})

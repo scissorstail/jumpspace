@@ -20,6 +20,8 @@ const node = (id, more = {}) => ({
   ...more
 })
 const linkTo = (...ids) => ({ output1: { connections: ids.map(id => ({ node: id, input: 'input1', data: {} })) } })
+// 포워딩 목록이 그런 노드의 설정
+const settings = forwards => ({ connection: { name: 'app', user: 'ops', host: '10.0.0.5', port: '22', forwards } })
 const diagram = (...nodes) => ({ id: EDITOR_ID, nodes: Object.fromEntries(nodes.map(x => [x.id, x])) })
 const without = (object, key) => Object.fromEntries(Object.entries(object).filter(([name]) => name !== key))
 
@@ -40,6 +42,8 @@ const cases = [
   { name: 'an output the node does not have, with no link', data: diagram(node(7, { outputs: { ...linkTo(8), output9: { connections: [] } } }), node(8)), problem: null },
   { name: 'a link without data, to a node named in quotes', data: diagram(node(7, { outputs: { output1: { connections: [{ node: '8', input: 'input1' }] } } }), node(8)), problem: null },
   { name: 'more than the editor reads (a time stamp, a comment)', data: { ...diagram(node(7)), timestamp: 1, comments: [] }, problem: null },
+  { name: 'forwards as the app writes them, as an older version wrote them (no target host), and none', data: diagram(node(7, { data: settings([{ checked: true, from: '8080', host: 'localhost', to: '80' }, { checked: false, from: '9000', host: null, to: '9001' }]) }), node(8, { data: settings([{ checked: true, from: '5432', to: '5432' }]) }), node(9, { data: settings(null) })), problem: null },
+  { name: 'forwards with entries that are no forwards, and with ports as numbers', data: diagram(node(7, { data: settings([5, 'x', null, [], { checked: 1, from: 8080, host: '', to: 80 }]) }), node(8, { data: settings(0) })), problem: null },
 
   // Rete가 거절하고 캔버스를 그대로 둔다
   { name: 'no data at all', data: null, problem: NOT_A_DIAGRAM },
@@ -81,7 +85,11 @@ const cases = [
   { name: 'a node with a word as its number', data: { id: EDITOR_ID, nodes: { seven: node('seven') } }, problem: 'Node seven is filed under a number that is not its own.', strict: 'Rete loses count of the numbers, and the next new node may get one that is taken' },
   { name: 'a node with its number in quotes', data: { id: EDITOR_ID, nodes: { 7: node('7', { outputs: linkTo(8) }), 8: node(8) } }, problem: 'Node 7 is filed under a number that is not its own.', strict: 'the app writes whole numbers, and Rete counts on from the highest one' },
   { name: 'a node without data', data: diagram(without(node(7, { outputs: linkTo(8) }), 'data'), node(8)), problem: 'Node 7 has no settings.', strict: 'the node cannot read or save its settings (its control throws)' },
-  { name: 'a node with a list as data', data: diagram(node(7, { data: [] }), node(8)), problem: 'Node 7 has no settings.', strict: 'the settings of a node are saved under a name' }
+  { name: 'a node with a list as data', data: diagram(node(7, { data: [] }), node(8)), problem: 'Node 7 has no settings.', strict: 'the settings of a node are saved under a name' },
+  { name: 'forwards that are no list', data: diagram(node(7, { outputs: linkTo(8), data: settings({ 0: { checked: true, from: '8080', host: 'localhost', to: '80' } }) }), node(8)), problem: 'The forwards of node 7 cannot be read.', strict: 'the node reads its forwards as a list: its control throws, the node is drawn empty and the calculation of the paths stops there' },
+  { name: 'forwards that are a word', data: diagram(node(7), node(8, { data: settings('none') })), problem: 'The forwards of node 8 cannot be read.', strict: 'the same' },
+  { name: 'a forward with a number as its target host', data: diagram(node(7, { data: settings([{ checked: true, from: '8080', host: 'localhost', to: '80' }, { checked: false, from: '8081', host: 5, to: '81' }]) }), node(8)), problem: 'The forwards of node 7 cannot be read.', strict: 'the node works with the target host as text: it is drawn empty when that forward is checked, and its forwards cannot be started' },
+  { name: 'a forward with a list as its target host', data: diagram(node(7, { data: settings([{ checked: true, from: '8080', host: ['localhost'], to: '80' }]) })), problem: 'The forwards of node 7 cannot be read.', strict: 'the same' }
 ]
 
 describe('whether the editor can read the data of a diagram', () => {
@@ -91,7 +99,7 @@ describe('whether the editor can read the data of a diagram', () => {
 
   it('has a case for each kind of answer', () => {
     expect(cases.filter(x => x.problem === null).length).toBeGreaterThan(8)
-    expect(new Set(cases.filter(x => x.problem !== null).map(x => x.problem.replace(/\d+|seven/g, 'N'))).size).toBe(10)
+    expect(new Set(cases.filter(x => x.problem !== null).map(x => x.problem.replace(/\d+|seven/g, 'N'))).size).toBe(11)
   })
 
   it('does not repeat a long word of the file in its answer', () => {
