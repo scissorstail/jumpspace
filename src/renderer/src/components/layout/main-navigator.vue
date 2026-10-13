@@ -187,6 +187,7 @@ import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNIN
 import { countByOwner } from '@/utils/terminal-sessions'
 import { terminalCountText } from '@/utils/terminal-view'
 import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from '@/utils/navigator-items'
+import { diagramProblem } from '@/utils/diagram-data'
 import { toastError } from '@/utils/notify'
 import { UNSAVED_TEXT, UNSAVED_TITLE } from '../../../../shared/unsaved.js'
 import NavigatorItemMenu from './navigator-item-menu'
@@ -279,6 +280,15 @@ export default {
       this.items.forEach(x => { x.isSelected = false })
 
       if (this.openedItem !== item) {
+        // 에디터가 통째로 읽지 못할 데이터(손으로 만들거나 고친 파일)는 열지 않는다 (utils/diagram-data.js). 열면 앞서 연
+        // 다이어그램의 노드나 이 다이어그램의 일부만 캔버스에 남고, 잠글 때 그것이 이 항목에 저장된다. 아무것도 바꾸기 전에,
+        // 저장하지 않은 변경을 버릴지 묻기도 전에 본다: 열려 있던 다이어그램과 그 터미널은 그대로다.
+        const problem = diagramProblem(item.data)
+        if (problem) {
+          this.notifyError(`Cannot open "${item.name || '(untitled)'}"`, `${problem}\nNothing was changed.`)
+          return
+        }
+
         if (!this.isLocked && !isEmpty(event)) {
           if (!(await this.confirmUnlockedChangeWillBeLost())) {
             return

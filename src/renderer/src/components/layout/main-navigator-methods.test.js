@@ -8,6 +8,7 @@ import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNIN
 import { countByOwner } from '../../utils/terminal-sessions'
 import { terminalCountText } from '../../utils/terminal-view'
 import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from '../../utils/navigator-items'
+import { diagramProblem } from '../../utils/diagram-data'
 import { UNSAVED_TEXT, UNSAVED_TITLE } from '../../../../shared/unsaved.js'
 
 // 다이어그램 목록(main-navigator.vue)이 하는 일. DOM 없이 도는 테스트라서 .vue를 불러올 수 없다: <script>의 내용을 꺼내
@@ -31,6 +32,7 @@ const given = {
   removeNavigatorItems,
   toProjectItems,
   SWITCHER_MENU_POPPER,
+  diagramProblem,
   UNSAVED_TEXT,
   UNSAVED_TITLE,
   toastError: (vm, title, error) => toasts.push([title, String(error?.message ?? error)])
@@ -109,6 +111,47 @@ describe('opening a diagram', () => {
     await vm.openItem(vm.items[1], click)
     expect(vm.openedItem).toBe(vm.items[1])
     expect(emitted).toHaveLength(1)
+  })
+
+  // 손으로 만든 파일의 다이어그램: 에디터의 id가 없다. Rete는 이런 데이터를 거절하고 캔버스를 그대로 둔다 (utils/diagram-data.js)
+  it('does not open a diagram whose data the editor cannot read, and says why', async () => {
+    const { vm, emitted, asked } = navigator([diagram('alpha'), diagram('broken', { data: { nodes: {} } }), diagram('', { data: { id: 'test@0.1.0', nodes: { 7: null } } })])
+    await vm.openItem(vm.items[0], click)
+
+    await vm.openItem(vm.items[1], click)
+    expect(vm.openedItem).toBe(vm.items[0])
+    expect(vm.openedItemIndex).toBe(0)
+    expect(emitted).toEqual([['selected', { item: vm.items[0], index: 0, isLocked: true }]])
+    expect(toasts).toEqual([['Cannot open "broken"', 'Its data is not a diagram of this app.\nNothing was changed.']])
+    expect(asked).toEqual([])
+    // 데이터는 그대로다
+    expect(vm.items[1].data).toEqual({ nodes: {} })
+
+    await vm.openItem(vm.items[2], click)
+    expect(vm.openedItem).toBe(vm.items[0])
+    expect(toasts[1]).toEqual(['Cannot open "(untitled)"', 'Node 7 cannot be read.\nNothing was changed.'])
+    expect(emitted).toHaveLength(1)
+  })
+
+  it('does not ask about unsaved changes for a diagram it will not open', async () => {
+    const { vm, emitted, asked } = navigator([diagram('alpha'), diagram('broken', { data: { nodes: {} } })], { isLocked: false, answers: [true] })
+    vm.openedItem = vm.items[0]
+
+    await vm.openItem(vm.items[1], click)
+    expect(asked).toEqual([])
+    expect(vm.openedItem).toBe(vm.items[0])
+    expect(emitted).toEqual([])
+    expect(toasts).toHaveLength(1)
+  })
+
+  it('opens nothing when no diagram was open and the clicked one cannot be read', async () => {
+    const { vm, emitted } = navigator([diagram('broken', { data: { id: 'other@1.0.0', nodes: {} } })])
+
+    await vm.openItem(vm.items[0], click)
+    expect(vm.openedItem).toBe(null)
+    expect(vm.openedItemIndex).toBe(null)
+    expect(emitted).toEqual([])
+    expect(toasts).toHaveLength(1)
   })
 
   it('does not ask when the app itself opens one (a new diagram)', async () => {

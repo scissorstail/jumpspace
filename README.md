@@ -113,7 +113,7 @@ Not taken over, and named in the dialog: other keywords (`ForwardAgent`, `Includ
 
 ### your data
 
-Projects are stored in `projects.json` in the app data folder (`%APPDATA%\jumpspace` on Windows). Each diagram keeps its name, its nodes and the last canvas view. The previous version of the file is kept as `projects.json.bak` and opens when the file itself cannot be read; if neither can, the app says so, starts empty and saves nothing until the file is repaired or removed, so what is left of it is not written over. Settings are stored next to it, in `config.json`; if that file is damaged, the app starts with the default settings. Data saved by v0.2.x in the browser storage is migrated automatically on first launch.
+Projects are stored in `projects.json` in the app data folder (`%APPDATA%\jumpspace` on Windows). Each diagram keeps its name, its nodes and the last canvas view. The previous version of the file is kept as `projects.json.bak` and opens when the file itself cannot be read; if neither can, the app says so, starts empty and saves nothing until the file is repaired or removed, so what is left of it is not written over. A single diagram whose data the editor cannot read (possible only in a file made or changed by hand, also an imported one) stays in the list and is not opened: a message says what is wrong with it, and its data is left as it is. Settings are stored next to it, in `config.json`; if that file is damaged, the app starts with the default settings. Data saved by v0.2.x in the browser storage is migrated automatically on first launch.
 
 ## development
 
