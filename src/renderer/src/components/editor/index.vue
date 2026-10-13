@@ -21,10 +21,13 @@ import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, sh
 import { arrangeLayout, boxOf } from '@/utils/arrange'
 import { activeTerminalNode, hopKey, routeStates } from '@/utils/terminal-sessions'
 import { isCanvasDoubleClick, lockedPress } from '@/utils/locked-press'
-import { closesLoop } from '@/utils/link-loop'
+import { closesLoop, loopIn, loopText } from '@/utils/link-loop'
+import { toastError } from '@/utils/notify'
 
 // 캔버스 아래의 안내가 떠 있는 시간 (ms). 그동안에는 같은 안내를 겹쳐 띄우지 않는다.
 const LOOP_HINT_MS = 2500
+// 연 다이어그램에 고리가 있다는 알림이 떠 있는 시간 (ms). 읽을 글이 길어서 다른 알림(5초)보다 오래 둔다.
+const LOOP_NOTICE_MS = 10000
 
 export default {
   name: 'EditorIndex',
@@ -406,6 +409,18 @@ export default {
       await this.compile()
 
       this.editor.view.resize()
+      this.noteLoop()
+    },
+    // 연 다이어그램의 연결에 고리가 있으면 알린다: 예전 버전에서 그렸거나 파일에서 온 것이다 (지금은 그릴 수 없다, refuseLoop).
+    // 고리가 있는 동안에는 Rete의 엔진이 계산을 거부해서 어느 노드도 제 앞의 노드를 모르고, 모두 바로 접속한다.
+    // 고리를 이루는 노드의 이름을 연결 순서대로 적는다. 이름만 적는다: 주소는 눈 단추로 가려 둘 수 있는 값이다.
+    noteLoop() {
+      const links = [...this.editor.view.connections.keys()].map(c => [c.output.node.id, c.input.node.id])
+      const loop = loopIn(links)
+      if (!loop) return
+
+      const nameOf = id => this.editor.nodes.find(node => node.id === id)?.data.connection?.name || '(untitled)'
+      toastError(this, 'Loop in the links', loopText(loop.map(nameOf)), { autoHideDelay: LOOP_NOTICE_MS })
     },
     // 보기(확대와 위치)를 바꾼다. 바뀐 값은 translated/zoomed로 Layout에 알려진다.
     setView({ k, x, y }) {

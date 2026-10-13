@@ -1,6 +1,6 @@
 import Rete from 'rete'
 import { describe, expect, it } from 'vitest'
-import { closesLoop } from './link-loop'
+import { LOOP_NAMES, closesLoop, loopIn, loopText } from './link-loop'
 
 describe('whether a new link would close a loop', () => {
   // a -> b -> c, d apart
@@ -132,4 +132,73 @@ describe('what the real engine of Rete says about the same links', () => {
     expect(closing).toBeGreaterThan(1000)
     expect(compared - closing).toBeGreaterThan(1000)
   }, 30000)
+
+  // loopIn이 고리를 찾는 다이어그램은 엔진이 거부하는 다이어그램이고, 찾은 고리는 정말 그 연결들로 이어진 고리다
+  it('agrees with loopIn about every small diagram, and the loop it names is one of those links', async () => {
+    const withSelf = [...diagrams, [[1, 1]], [[1, 2], [3, 3]], [[1, 2], [2, 3], [3, 4], [4, 2]], [[1, 2], [1, 3], [3, 4], [4, 1]], [[2, 1], [3, 2], [4, 3], [1, 4]]]
+    let loops = 0
+
+    for (const links of withSelf) {
+      const loop = loopIn(links)
+      expect({ links, hasLoop: loop !== null }).toEqual({ links, hasLoop: await engineRefuses(links) })
+      if (!loop) continue
+
+      loops++
+      expect(new Set(loop).size).toBe(loop.length)
+      loop.forEach((node, index) => {
+        const after = loop[(index + 1) % loop.length]
+        expect({ links, link: [node, after], isThere: links.some(([a, b]) => a === node && b === after) }).toEqual({ links, link: [node, after], isThere: true })
+      })
+    }
+
+    expect(loops).toBeGreaterThan(50)
+    expect(withSelf.length - loops).toBeGreaterThan(200)
+  }, 30000)
+})
+
+describe('the loop in the links of a diagram', () => {
+  it.each([
+    { name: 'no links', links: [], loop: null },
+    { name: 'a path', links: [['a', 'b'], ['b', 'c']], loop: null },
+    { name: 'branches that meet again (no way back)', links: [['a', 'b'], ['a', 'c'], ['b', 'd'], ['c', 'd']], loop: null },
+    { name: 'two nodes linked both ways', links: [['a', 'b'], ['b', 'a']], loop: ['a', 'b'] },
+    { name: 'a node linked to itself', links: [['a', 'b'], ['b', 'b']], loop: ['b'] },
+    { name: 'a circle of three', links: [['a', 'b'], ['b', 'c'], ['c', 'a']], loop: ['a', 'b', 'c'] },
+    { name: 'a path that leads into a circle (the path is not part of it)', links: [['x', 'a'], ['a', 'b'], ['b', 'c'], ['c', 'a']], loop: ['a', 'b', 'c'] },
+    { name: 'a circle behind a dead end', links: [['a', 'x'], ['a', 'b'], ['b', 'c'], ['c', 'b']], loop: ['b', 'c'] },
+    { name: 'a circle in a second group of nodes', links: [['a', 'b'], ['c', 'd'], ['d', 'e'], ['e', 'c']], loop: ['c', 'd', 'e'] },
+    { name: 'a circle reached through a node that was looked at before', links: [['a', 'b'], ['c', 'b'], ['c', 'd'], ['d', 'c']], loop: ['c', 'd'] }
+  ])('$name', ({ links, loop }) => {
+    expect(loopIn(links)).toEqual(loop)
+  })
+
+  it('tells the numbers of nodes apart as they are, and leaves the list of links as it was', () => {
+    const links = [[1, 2], [2, 11], [11, 1]]
+
+    expect(loopIn(links)).toEqual([1, 2, 11])
+    expect(links).toEqual([[1, 2], [2, 11], [11, 1]])
+  })
+
+  it('ends on a long path and on a long circle', () => {
+    const path = Array.from({ length: 2000 }, (_, i) => [i, i + 1])
+
+    expect(loopIn(path)).toBe(null)
+    expect(loopIn([...path, [2000, 0]])).toHaveLength(2001)
+  })
+})
+
+describe('the words about a loop in an opened diagram', () => {
+  const REST = '\nThese links make a loop. While it is there no path can be worked out: every node of this diagram connects directly. Unlock the editor and take one of those links away.'
+
+  it('name the nodes in the order of the links and end where they began', () => {
+    expect(loopText(['bastion', 'app'])).toBe(`bastion → app → bastion${REST}`)
+    expect(loopText(['app'])).toBe(`app → app${REST}`)
+  })
+
+  it('name no more than six nodes of a long loop', () => {
+    expect(LOOP_NAMES).toBe(6)
+    expect(loopText(['a', 'b', 'c', 'd', 'e', 'f'])).toBe(`a → b → c → d → e → f → a${REST}`)
+    expect(loopText(['a', 'b', 'c', 'd', 'e', 'f', 'g'])).toBe(`a → b → c → d → e → f → ... → a${REST}`)
+    expect(loopText(Array.from({ length: 500 }, (_, i) => `n${i}`))).toBe(`n0 → n1 → n2 → n3 → n4 → n5 → ... → n0${REST}`)
+  })
 })

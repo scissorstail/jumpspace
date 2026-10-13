@@ -8,7 +8,8 @@ import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, sh
 import { ARRANGE_GAP, arrangeLayout, boxOf } from '../../utils/arrange'
 import { activeTerminalNode, hopKey, routeStates } from '../../utils/terminal-sessions'
 import { isCanvasDoubleClick, lockedPress } from '../../utils/locked-press'
-import { closesLoop } from '../../utils/link-loop'
+import { closesLoop, loopIn, loopText } from '../../utils/link-loop'
+import { toastError } from '../../utils/notify'
 
 // 캔버스(components/editor/index.vue)가 하는 일. DOM 없이 도는 테스트라서 .vue도 Rete도 불러올 수 없다: <script>의 내용을 꺼내
 // import만 바꿔서 돌리고, mounted와 methods, computed, watch를 가짜 this로 부른다 (Layout-methods.test.js와 같은 방법).
@@ -129,7 +130,10 @@ const given = {
   routeStates,
   isCanvasDoubleClick,
   lockedPress,
-  closesLoop
+  closesLoop,
+  loopIn,
+  loopText,
+  toastError
 }
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 const component = runInThisContext(`(function (${imported.join(', ')}) {\n${body}\n})`)(...imported.map(name => given[name]))
@@ -927,6 +931,36 @@ describe('loading a diagram and working its values out', () => {
     expect(log.map(entry => entry[0])).toEqual(['fromJSON', 'emit', 'abort', 'process', 'abort', 'resize'])
     expect(logged('fromJSON')).toEqual([[data]])
     expect(emitted('node-count')).toEqual([[0]])
+  })
+
+  // 예전 버전에서 그렸거나 파일에서 온 고리: 지금은 그릴 수 없지만 그런 다이어그램은 있는 그대로 열린다
+  it('says so when the opened diagram has a loop in its links, and names its nodes in the order of the links', async () => {
+    const { vm, editor } = setup()
+    const [first, bastion, app, db] = put(editor, makeNode({ name: 'first' }), makeNode({ name: 'bastion', host: '10.0.0.1' }), makeNode({ host: '10.0.0.2' }), makeNode({ name: 'db' }))
+    // first -> bastion -> (이름 없는 노드) -> db -> bastion: first는 고리로 들어가는 길일 뿐이다
+    link(editor, first, bastion)
+    link(editor, bastion, app)
+    link(editor, app, db)
+    link(editor, db, bastion)
+
+    await vm.load(EMPTY)
+
+    // 이름만 적는다 (주소는 가려 둘 수 있는 값이다). 이름이 없는 노드는 (untitled)
+    expect(logged('toast')).toEqual([[loopText(['bastion', '(untitled)', 'db']), { title: 'Loop in the links', variant: 'danger', solid: true, bodyClass: 'msg-pre-line', autoHideDelay: 10000 }]])
+    expect(loopText(['bastion', '(untitled)', 'db'])).toContain('bastion → (untitled) → db → bastion')
+    // 다 불러온 다음에 알린다
+    expect(log.map(entry => entry[0])).toEqual(['fromJSON', 'emit', 'abort', 'process', 'abort', 'resize', 'toast'])
+  })
+
+  it('says nothing when the opened diagram has links but no loop', async () => {
+    const { vm, editor } = setup()
+    const [a, b, c] = put(editor, makeNode({ name: 'a' }), makeNode({ name: 'b' }), makeNode({ name: 'c' }))
+    link(editor, a, b)
+    link(editor, a, c)
+
+    await vm.load(EMPTY)
+
+    expect(logged('toast')).toEqual([])
   })
 
   it.each(['connectioncreate', 'connectionremove', 'nodecreate', 'noderemove', 'process'])('works the values out again after %s', async name => {
