@@ -28,6 +28,7 @@ import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
 import { createBoundsSaver, createWindowStore, restoreBounds } from './window-bounds.js'
 import { mayUnload } from './unload-question.js'
+import { createQuitHold } from './quit-hold.js'
 
 // 터미널에서 복사/붙여넣기로 오가는 글자 수의 상한
 const MAX_CLIPBOARD = 1024 * 1024
@@ -174,6 +175,8 @@ function main() {
   })
   // (before-quit가 아니다: 그것은 창이 닫히기 전에 온다. 잠금을 푼 채로 끝내려다 취소하면 터미널은 살아 있어야 한다)
   app.on('will-quit', () => terminals.closeAll())
+  // 저장이 끝나기 전에는 끝내지 않는다 (quit-hold.js): 창을 닫자마자 프로세스가 끝나면 쓰던 저장이 임시 파일로만 남는다.
+  app.on('will-quit', createQuitHold({ isBusy: projects.isSaving, settled: projects.settled, quit: () => app.quit() }))
 
   // 앱 안의 터미널의 복사/붙여넣기. (샌드박스 렌더러는 클립보드에 직접 접근하지 않는다)
   // (Electron 44의 clipboard.readText()는 Promise를 돌려준다)

@@ -202,6 +202,80 @@ describe('storage', () => {
     })
   })
 
+  // 앱을 끝내기 전에 main이 묻는 것 (quit-hold.js): 저장이 남았는가, 언제 끝나는가
+  describe('saves that have not ended', () => {
+    it('is saving from the moment a save is asked for until the last one has ended', async () => {
+      expect(storage.isSaving()).toBe(false)
+
+      const first = storage.save(JSON.stringify(items))
+      const second = storage.save(JSON.stringify(items))
+      expect(storage.isSaving()).toBe(true)
+
+      await first
+      expect(storage.isSaving()).toBe(true)
+      await second
+      expect(storage.isSaving()).toBe(false)
+    })
+
+    it('settled() waits for every save asked for so far', async () => {
+      const done = []
+      const saves = ['a', 'b', 'c'].map(name => storage.save(JSON.stringify([{ name, data: { nodes: {} } }])).then(() => done.push(name)))
+
+      await storage.settled()
+
+      expect(storage.isSaving()).toBe(false)
+      expect(JSON.parse(await readFile(storage.file, 'utf-8')).items[0].name).toBe('c')
+      await Promise.all(saves)
+      expect(done).toEqual(['a', 'b', 'c'])
+    })
+
+    it('settled() is over at once when nothing is being saved', async () => {
+      await expect(storage.settled()).resolves.toBeUndefined()
+    })
+
+    it('a save that failed has ended too: settled() does not reject and nothing is being saved after it', async () => {
+      const failing = createProjectStorage(dir, { renameFile: async () => { throw Object.assign(new Error('no space'), { code: 'ENOSPC' }) } })
+      const save = failing.save(JSON.stringify(items))
+      const failed = expect(save).rejects.toMatchObject({ code: 'ENOSPC' })
+
+      expect(failing.isSaving()).toBe(true)
+      await expect(failing.settled()).resolves.toBeUndefined()
+      expect(failing.isSaving()).toBe(false)
+      await failed
+    })
+
+    it('does not count data that was refused before it was queued', async () => {
+      await expect(storage.save('{"no":"items"}')).rejects.toThrow('Invalid project data.')
+
+      expect(storage.isSaving()).toBe(false)
+    })
+
+    // 다른 프로그램이 파일을 잡고 있는 동안: rename이 거절되고, 다시 하려고 기다린다. 그 동안에도 저장하는 중이다.
+    it('is still saving while it waits to try the rename again', async () => {
+      let release
+      const waiting = new Promise(resolve => { release = resolve })
+      let attempts = 0
+      const held = createProjectStorage(dir, {
+        renameFile: async (from, to) => {
+          attempts += 1
+          if (attempts === 1) throw Object.assign(new Error('EPERM: operation not permitted, rename'), { code: 'EPERM' })
+          return rename(from, to)
+        },
+        wait: () => waiting
+      })
+
+      const save = held.save(JSON.stringify(items))
+      await vi.waitFor(() => expect(attempts).toBe(1))
+      expect(held.isSaving()).toBe(true)
+
+      release()
+      await held.settled()
+      expect(held.isSaving()).toBe(false)
+      await save
+      expect(JSON.parse(await held.load())).toEqual(items)
+    })
+  })
+
   it('rejects invalid data in a row of saves without holding up the others', async () => {
     const results = await Promise.allSettled([storage.save(JSON.stringify(items)), storage.save('{"a":1}'), storage.save(JSON.stringify([...items, ...items]))])
 

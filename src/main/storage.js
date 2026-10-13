@@ -98,6 +98,8 @@ export function createProjectStorage(dir, { renameFile = rename, wait = ms => ne
 
   // 앞선 저장이 끝난 뒤에 다음 저장을 시작하게 하는 줄. 실패한 저장도 줄에서는 끝난 것으로 친다.
   let queue = Promise.resolve()
+  // 아직 끝나지 않은 저장의 수 (줄에 선 것과 쓰고 있는 것)
+  let pending = 0
 
   return {
     file,
@@ -132,10 +134,16 @@ export function createProjectStorage(dir, { renameFile = rename, wait = ms => ne
     async save(json) {
       // 쓸 수 없는 내용은 줄을 서기 전에 거절한다
       const items = normalizeItems(JSON.parse(json))
-      const result = queue.then(() => writeItems(items))
+      pending += 1
+      const result = queue.then(() => writeItems(items)).finally(() => { pending -= 1 })
 
       queue = result.catch(() => {})
       return result
-    }
+    },
+    // 끝나지 않은 저장이 있는가. 앱을 끝내기 전에 main이 본다 (quit-hold.js): 쓰는 도중에 프로세스가 끝나면 그 저장은
+    // 임시 파일로만 남는다.
+    isSaving: () => pending > 0,
+    // 지금까지 부른 저장이 모두 끝나면 풀린다. 실패한 저장도 끝난 것이라서 거절되지 않는다.
+    settled: () => queue
   }
 }
