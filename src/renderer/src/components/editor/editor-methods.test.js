@@ -71,7 +71,14 @@ class FakeEditor {
   trigger(name) { return name === 'isreadonly' ? this.isReadonly : undefined }
   // 테스트가 부른다: 그 이벤트에 걸린 것들을 차례로 부르고 답을 모은다
   fire(name, ...args) { return (this.handlers.get(name) || []).map(handler => handler(...args)) }
-  toJSON() { return { id: this.id, nodes: Object.fromEntries(this.nodes.map(node => [node.id, { id: node.id }])) } }
+  toJSON() {
+    return {
+      id: this.id,
+      nodes: Object.fromEntries(this.nodes.map(node => [node.id, { id: node.id }])),
+      links: [...this.view.connections.keys()].map(connection => [connection.output.node.id, connection.input.node.id])
+    }
+  }
+
   async fromJSON(json) { log.push(['fromJSON', json]) }
   addNode(node) {
     this.nodes.push(node)
@@ -1081,6 +1088,90 @@ describe('loading a diagram and working its values out', () => {
     await component.watch.editorData.call(vm)
 
     expect(log).toEqual([['abort'], ['load', EMPTY]])
+  })
+})
+
+// Rete의 엔진은 도는 중에 또 시작하면 새것을 받지 않고, 그 앞뒤의 abort가 돌던 것을 멈춘다: 겹친 계산은 하나도 끝까지 가지 못한다.
+// 연결을 바꿔 끼우는 클릭 한 번이 그랬다 (같은 차례에 옛 연결을 지우고 새 연결을 만든다): 노드가 예전의 앞 노드들을 알고 있었다.
+describe('working the values out, one calculation at a time', () => {
+  // 붙잡아 둔 계산: 테스트가 끝내 줄 때까지 돌고 있다
+  function hold(engine) {
+    const runs = []
+    engine.process = json => { log.push(['process', json]); return new Promise((resolve, reject) => { runs.push({ resolve, reject }) }) }
+    return runs
+  }
+
+  it('works the changes of one task out together, once, as the canvas is after them', async () => {
+    const { editor } = setup()
+    const [first, middle, apart] = put(editor, makeNode(), makeNode(), makeNode())
+    link(editor, middle, apart)
+    const [old] = [...editor.view.connections.keys()]
+
+    // 연결 플러그인이 연결을 바꿔 끼울 때처럼: 옛 연결을 지우고 곧바로 새 연결을 만든다
+    editor.removeConnection(old)
+    editor.connect(first.outputs.get('output1'), apart.inputs.get('input1'))
+    await flush()
+
+    expect(logged('process')).toEqual([[{ ...editor.toJSON(), links: [[first.id, apart.id]] }]])
+  })
+
+  it('starts a calculation that is asked for during another one after that one, and only one for all who ask meanwhile', async () => {
+    const { vm, editor, engine } = setup()
+    const [from, to] = put(editor, makeNode(), makeNode())
+    const runs = hold(engine)
+
+    const one = vm.compile()
+    await flush()
+    expect(logged('process')).toEqual([[{ ...editor.toJSON(), links: [] }]])
+
+    // 계산이 도는 동안 캔버스가 바뀌고, 두 곳에서 계산을 맡긴다
+    link(editor, from, to)
+    const two = vm.compile()
+    const three = vm.compile()
+    await flush()
+    expect(three).toBe(two)
+    expect(two).not.toBe(one)
+    // 도는 것이 끝날 때까지 기다린다 (겹치지 않는다)
+    expect(logged('process')).toHaveLength(1)
+
+    runs[0].resolve()
+    await flush()
+    expect(logged('process')).toHaveLength(2)
+    expect(logged('process')[1]).toEqual([{ ...editor.toJSON(), links: [[from.id, to.id]] }])
+    runs[1].resolve()
+
+    expect(await two).toEqual(editor.toJSON())
+    expect(await one).toEqual(editor.toJSON())
+    // 계산 하나가 다 끝난 다음에(그 뒤의 abort까지) 다음 것이 시작한다
+    expect(log.map(entry => entry[0])).toEqual(['abort', 'process', 'abort', 'abort', 'process', 'abort'])
+  })
+
+  it('works the values out again for a change that comes after a calculation has ended', async () => {
+    const { vm } = setup()
+
+    const one = vm.compile()
+    await one
+    const two = vm.compile()
+    await two
+
+    expect(two).not.toBe(one)
+    expect(logged('process')).toHaveLength(2)
+  })
+
+  it('still starts the next calculation when the one before it failed', async () => {
+    const { vm, engine } = setup()
+    const runs = hold(engine)
+
+    const one = vm.compile()
+    await flush()
+    const two = vm.compile()
+    runs[0].reject(new Error('a worker failed'))
+    await expect(one).rejects.toThrow('a worker failed')
+    await flush()
+    expect(logged('process')).toHaveLength(2)
+    runs[1].resolve()
+
+    await expect(two).resolves.toEqual(vm.editor.toJSON())
   })
 })
 

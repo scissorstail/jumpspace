@@ -86,6 +86,9 @@ export default {
     this.lastLoopHintAt = 0
     this.justRemovedLink = null
     this.isRestoringLink = false
+    // 아직 시작하지 않은 계산과 마지막으로 맡긴 계산 (compile)
+    this.pendingCompile = null
+    this.lastCompile = null
   },
   mounted() {
     // Node
@@ -591,7 +594,28 @@ export default {
     emitNodeCount() {
       this.$emit('node-count', this.editor.nodes.length)
     },
-    async compile() {
+    // 캔버스의 값을 계산한다 (각 노드에 그 앞의 노드들을 알려 준다). 답은 계산이 끝난 뒤의 캔버스다.
+    // 계산은 겹치지 않게 한다. Rete의 엔진은 도는 중에 또 시작하면 새것을 받지 않고(busy 경고), 그 앞뒤의 abort가 돌던 것을 멈춘다:
+    // 어느 계산도 끝까지 가지 못한다. 연결을 바꿔 끼우는 클릭 한 번이 그랬다 (플러그인이 같은 차례에 옛 연결을 지우고 새 연결을
+    // 만든다). 그 노드는 다음에 잠글 때까지 예전의 앞 노드들을 알고 있었고, 접속 경로와 SSH config가 그것으로 만들어졌다.
+    // 그래서 아직 시작하지 않은 계산이 있으면 그것을 같이 쓰고 (같은 차례의 변경들은 그 뒤에 한 번 계산된다),
+    // 도는 계산이 있으면 그것이 끝난 다음에 시작한다 (앞의 것이 실패해도 시작한다).
+    compile() {
+      if (!this.pendingCompile) {
+        const run = () => {
+          this.pendingCompile = null
+
+          return this.calculate()
+        }
+
+        this.pendingCompile = Promise.resolve(this.lastCompile).then(run, run)
+        this.lastCompile = this.pendingCompile
+      }
+
+      return this.pendingCompile
+    },
+    // 계산 한 번. compile()만 부른다: 바로 부르면 다른 계산과 겹친다.
+    async calculate() {
       await this.engine.abort()
       await this.engine.process(this.editor.toJSON())
       await this.engine.abort()
