@@ -72,13 +72,13 @@ Both lists of 2026-10-11 are done (1 to 5 in #103 to #108, 6 to 10 in #111 to #1
 
 ### Wind-down list (owner, 2026-10-13: "now only raise the tests and the completeness, go as far as you can, then end the scheduler")
 Top first, one per run; take the item out when it is done. When the list is empty a run looks at one failure case of its own choice (a broken file, a race, wrong input, a limit). How it ends is under Routine.
-3. **Locking and closing the window at once.** Main does not wait for its queue of saves before it quits. Is the save of the lock on disk when the app has ended? Measure in the real window with 2 nodes and with about 150 before changing anything.
 4. A test that runs the script of `components/editor/index.vue` (22 methods, none run by a test), with a mutation list.
 5. The same for `connection-control/component.vue` (22 methods).
 6. The same for `components/terminal/terminal-tabs.vue` (8 methods).
 7. In the real window: every IPC channel called with wrong arguments (main must stay up and go on answering), and more tabs than a browser has WebGL contexts (17) together with the message at the limit of 16 sessions.
 
 ### UX candidates
+- Locking a diagram of 150 nodes keeps the page busy for about a second: from the press on the lock to main being asked to save it took 1050 ms (26 ms with 2 nodes), measured in the real window in #196. The write itself is 5 to 10 ms. Not looked into (the Rete engine run of `compile()` and the update of every node are the likely part).
 - The split terminal panel (#135): no key moves between the two halves (only a click into a half or on its tab), and the tab row does not say which tab is left and which is right. Not asked for by the owner; build only on their word.
 - The right-click menu does not open with its corner at the pointer, although the comment in `components/editor/context-menu.scss` says it does: the plugin's own margins (-60px, -20px, a scoped selector) win over our `margin`, so the menu opens around the pointer with its first item under it (measured in #116). Left alone: nobody asked, and it lets a second click add a node at once. If the owner wants the usual place, the margin belongs into the `#rete &` block that already sets the width.
 
@@ -1195,6 +1195,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: a `projects.json` that could not be read, with no backup that could, was taken for "nothing saved": the app started empty without a word, and the two saves of the first new diagram wrote over the file and then its backup. `load()` in `storage.js` now returns null only when both files are missing and throws otherwise (one line per file, that nothing was changed, the folder; never the words of `JSON.parse`, which quote the file, not in the console either). The screen shows it in a message that stays until it is closed (`toastError` takes options) and saves nothing; the files are not touched. A long path in an error message is wrapped (`.msg-pre-line`), it was cut off at the side. README, CHANGELOG and CLAUDE.md say it.
 - Result: tests 855 passed, lint ok, build ok, 17 of 17 mutations caught; headless checks every run passed; in the real window `real-window-check.cjs` 39 of 39 and `real-window-check-2.cjs` 109 of 109 with its new `unreadable` part (34 checks; on the build before the fix 12 of the 22 it had then failed, as they should, and 3 before the wrapping); no Electron or ssh left. Commit 238e4fd.
 - Found / next: what was decided is under Questions for the owner. Seen and left: in the default window an error message lies over most of the *More actions* button of the open diagram list (measured: the message starts at 652 px, the button is 643 to 685), and this one stays until it is closed. Next: item 3 of the Wind-down list.
+
+### #196 2026-10-14 · completeness (wind-down item 3, run in the owner's session)
+- Did: measured first, in the real window: a window closed 0 to 1100 ms after the press on the lock kept the save every time (42 of 42; 2 nodes and 150), because the page is busy until it has asked main and the write takes 5 to 10 ms. Lost 4 of 4 when the save was slow: with `projects.json` held open by another program for 0.6 s (main then tries the rename again for up to 1.5 s) the app ended after 0.3 to 0.5 s, the change of the lock was gone and `projects.json.tmp` was left. Main now ends only when its saves have: `createQuitHold` (new `src/main/quit-hold.js`) on `will-quit`, with `isSaving()` and `settled()` of the storage, 5 s at most. README, CHANGELOG and CLAUDE.md say it.
+- Result: tests 871 passed, lint ok, build ok, 17 of 17 mutations caught; in the real window `real-window-check.cjs` 39 of 39 and `real-window-check-2.cjs` 120 of 120 with its new `held` part (11 checks; 4 of them failed on the build before the fix, as they should); no Electron or ssh left. (A first full run failed three checks that count every `bash.exe` on the PC: a waiting loop of the run itself was counted. Run again with nothing beside it.) The renderer was not touched. Commit 2e76291.
+- Found / next: a file held for longer than main tries (3.2 s) still loses the save, as before; the app ends after 1.8 s and the old file is whole. Locking 150 nodes keeps the page busy for about a second (under UX candidates). Next: item 4 of the Wind-down list.
 
 ## Routine
 
