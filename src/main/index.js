@@ -23,7 +23,7 @@ import { launch, sweepTempDir } from './launcher.js'
 import { createTerminalManager, terminalBash } from './terminal.js'
 import { APP_URL, appFilePath, isAppUrl } from './trust.js'
 import { toResult } from './ipc-result.js'
-import { createSettingStore } from './setting-store.js'
+import { createSettingStore, STORE_OPTIONS } from './setting-store.js'
 import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
 import { createBoundsSaver, createWindowStore, restoreBounds } from './window-bounds.js'
@@ -53,7 +53,8 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 function main() {
-  const store = new Store()
+  // 깨진 config.json은 빈 것으로 읽는다 (STORE_OPTIONS). 여기서 던지면 창도 없고 아래의 catch에도 닿지 않아 앱이 뜨지 못한다.
+  const store = new Store(STORE_OPTIONS)
   const settings = createSettingStore(store)
   const windows = createWindowStore(store)
   const getSetting = settings.get
