@@ -231,6 +231,10 @@ export default {
   },
   created() {
     this.diagramFilenames = this.$store.getters.diagram
+    // 노드의 값은 그려질 때 읽는다. 계산(SiteNode의 worker)만 update()를 부르던 때에는 계산이 돌지 않으면 칸이 빈 채로 남았고,
+    // 잠글 때 그 빈 값이 노드에 저장됐다 (Layout의 compileEditor가 모든 노드의 save()를 부른다). 연결이 고리를 이룬 다이어그램이
+    // 그랬다: Rete의 엔진은 고리가 있으면 계산을 거부한다 (Recursion detected). 계산이 돌면 앞 노드들의 정보와 함께 다시 읽는다.
+    this.update()
   },
   methods: {
     applyConnectionFields(fields) {

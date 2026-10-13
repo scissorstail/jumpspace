@@ -44,7 +44,7 @@ There is no release yet, but the CI can build a Windows installer on request: un
 ### nodes and paths
 
 1. Click the title in the header (it shows `jumpspace` until a diagram is open) to open the list of diagrams, add a diagram with `+` and give it a name.
-2. Unlock the editor (lock icon), right-click the canvas and choose *Add node* (or *From SSH config* to make nodes out of pasted `~/.ssh/config` text, see below), and chain nodes (jump hosts) with two clicks: click a node's right socket (the line follows the mouse), then click another node's left socket. A click on empty canvas cancels. Clicking a connected left socket picks its line up again.
+2. Unlock the editor (lock icon), right-click the canvas and choose *Add node* (or *From SSH config* to make nodes out of pasted `~/.ssh/config` text, see below), and chain nodes (jump hosts) with two clicks: click a node's right socket (the line follows the mouse), then click another node's left socket. A click on empty canvas cancels. Clicking a connected left socket picks its line up again. Do not link nodes in a circle: the app does not stop you, but it cannot work out the paths of a diagram with a loop until one of those links is taken away.
 3. Hover a node to open its menu:
    - terminal: **Connect** runs `ssh` to the node in a terminal tab of the app (or in a Git Bash window, see *Settings > Open SSH in*). When the node has previous nodes and every one of them has a user, host and port, it is **ProxyJump** instead, which connects through the whole chain.
    - link: **Port forwarding**, see below. The button with a counter next to it starts the enabled forwards.

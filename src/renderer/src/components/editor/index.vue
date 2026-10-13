@@ -465,7 +465,7 @@ export default {
         this.isAdding = false
       }
 
-      // 노드 아래의 글자는 계산(worker)이 끝나고 다시 그려져야 채워진다. 그 크기로 재서 놓는다.
+      // 노드 아래의 글자는 계산(worker)이 끝나고 다시 그려져야 다 정해진다 (포워딩 요약은 앞 노드들에 달려 있다). 그 크기로 재서 놓는다.
       await this.compile()
       await this.$nextTick()
       this.placeGroup(added, origin)
