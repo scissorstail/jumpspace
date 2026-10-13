@@ -19,6 +19,24 @@ describe('header and diagram list buttons', () => {
   })
 })
 
+const palettes = [...theme.matchAll(/:root\[data-theme='([a-z-]+)'\] \{\n([^}]+)\}/g)].map(([, name, body]) => ({
+  name,
+  colors: Object.fromEntries([...body.matchAll(/(--js-[a-z0-9-]+): (#[0-9a-f]{6});/g)].map(([, key, value]) => [key, value]))
+}))
+
+// WCAG의 상대 휘도와 대비
+const luminance = hex => {
+  const [r, g, b] = [1, 3, 5].map(i => {
+    const v = parseInt(hex.slice(i, i + 2), 16) / 255
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+const contrast = (a, b) => {
+  const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (high + 0.05) / (low + 0.05)
+}
+
 // 오류 토스트가 창의 맨 위에 뜨면 사라질 때까지 머리글의 잠금, 설정 단추를 가린다.
 describe('error toasts', () => {
   it('open under the header, not over its buttons', () => {
@@ -26,28 +44,21 @@ describe('error toasts', () => {
     // 머리글 44px과 그 아래의 색 줄 4px (header-check가 실제 높이를 잰다)
     expect(Number(top) * 16).toBeGreaterThanOrEqual(48)
   })
+
+  // 붉은 머리에 밝은 글자색의 x는 흐렸다 (대비 3 안팎, 거기에 opacity 0.8)
+  it.each(['neon-night', 'sunset-drive', 'vapor-blue'])('have a title and a close button that can be read on the red header in %s', name => {
+    const { colors } = palettes.find(p => p.name === name)
+    const start = theme.indexOf('\n.b-toast.b-toast-danger .toast .toast-header {')
+    const block = theme.slice(start, theme.indexOf('\n}\n', start))
+    expect(block).toMatch(/background: var\(--js-danger\);\n {2}color: var\(--js-on-primary\);/)
+    expect(block).toMatch(/\.close \{\n {4}color: var\(--js-on-primary\);\n {4}opacity: 1;\n {2}\}/)
+    expect(contrast(colors['--js-on-primary'], colors['--js-danger'])).toBeGreaterThan(4.5)
+    expect(contrast(colors['--js-text'], colors['--js-danger'])).toBeLessThan(4.5)
+  })
 })
 
 // 그림자는 흐리지 않은 단색 판이다. 검정이던 때에는 어두운 바탕과 구별되지 않아서 그림자도, 그 위 패널의 모서리도 보이지 않았다.
 describe('the color of the hard shadows', () => {
-  const palettes = [...theme.matchAll(/:root\[data-theme='([a-z-]+)'\] \{\n([^}]+)\}/g)].map(([, name, body]) => ({
-    name,
-    colors: Object.fromEntries([...body.matchAll(/(--js-[a-z0-9-]+): (#[0-9a-f]{6});/g)].map(([, key, value]) => [key, value]))
-  }))
-
-  // WCAG의 상대 휘도와 대비
-  const luminance = hex => {
-    const [r, g, b] = [1, 3, 5].map(i => {
-      const v = parseInt(hex.slice(i, i + 2), 16) / 255
-      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
-    })
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b
-  }
-  const contrast = (a, b) => {
-    const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x)
-    return (high + 0.05) / (low + 0.05)
-  }
-
   it('is set by every palette', () => {
     expect(palettes.map(p => p.name)).toEqual(['neon-night', 'sunset-drive', 'vapor-blue'])
     for (const { name, colors } of palettes) expect(colors['--js-shadow'], name).toMatch(/^#[0-9a-f]{6}$/)

@@ -578,6 +578,12 @@ $dialog-margin: 16px;
 .b-toast.b-toast-danger .toast .toast-header {
   background: var(--js-danger);
   color: var(--js-on-primary);
+
+  // 닫는 x도 제목의 색으로: 밝은 글자색(.close)은 이 붉은 바탕에서 흐리다
+  .close {
+    color: var(--js-on-primary);
+    opacity: 1;
+  }
 }
 
 // 오류 토스트는 머리글 아래에 뜬다. 창의 맨 위에 뜨면 사라질 때까지(5초) 잠금, 설정 단추를 가린다.
