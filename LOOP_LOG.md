@@ -1162,6 +1162,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 832 passed, lint ok, build ok, every headless run passed, both mutations caught, looked at the picture. Commit c69d2fc.
 - Found / next: too small for the changelog (part of the message fix of #189). Rotation next: health.
 
+### #191 2026-10-13 · health (run in the owner's session)
+- Did: `npm outdated` has nothing inside the current version ranges, `npm audit --omit=dev` 0, CI green on the last push, the working tree clean. CLAUDE.md lacked the place of the error messages (#189, #190), which hangs on the height of the header; added to its gotchas.
+- Result: docs only, no code.
+- Found / next: nothing to fix. Rotation next: tests (`components/editor/index.vue` or `connection-control/component.vue` have no test that runs their script).
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
