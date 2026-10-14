@@ -150,6 +150,7 @@ src/main/       Electron main process
   quit-question.js  asks before Quit in the tray while terminals are running
   quit-hold.js    lets the app end only after a save that is being written has ended
   storage.js      projects.json (atomic write, .bak), import parsing
+  json-text.js    reads the JSON of a file, also one that starts with a byte order mark
   legacy-forwards.js  moves forwards saved by older versions to their current place
 src/shared/     pure modules used by both main and renderer
   setting.js      the app settings and their defaults (Git Bash path, tray,

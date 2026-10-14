@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createProjectStorage, itemsFromJson, normalizeItems, parseItems } from './storage.js'
 
 const items = [{ name: 'a', data: { id: 'test@0.1.0', nodes: {} } }]
+// 파일 맨 앞의 byte order mark (U+FEFF)
+const BOM = String.fromCharCode(0xfeff)
 
 describe('storage', () => {
   let dir
@@ -39,6 +41,17 @@ describe('storage', () => {
     await writeFile(storage.file, '{broken')
 
     expect(JSON.parse(await storage.load())).toEqual(items)
+  })
+
+  // 손으로 고친 파일 (PowerShell 5.1, 메모장의 "UTF-8 (BOM)"). 앱은 BOM 없이 쓴다.
+  it('reads a file and a backup that start with a byte order mark', async () => {
+    const other = [{ name: 'b', data: { id: 'test@0.1.0', nodes: {} } }]
+    await writeFile(storage.file, BOM + JSON.stringify({ version: 1, items }))
+    expect(JSON.parse(await storage.load())).toEqual(items)
+
+    await writeFile(storage.file, '{broken')
+    await writeFile(storage.backup, BOM + JSON.stringify({ version: 1, items: other }))
+    expect(JSON.parse(await storage.load())).toEqual(other)
   })
 
   // 화면은 여러 곳에서 저장을 부른다 (잠글 때, 목록을 고칠 때, 캔버스를 옮긴 뒤). 둘이 겹치면 같은 임시 파일을 쓰고,
@@ -380,6 +393,15 @@ describe('parseItems', () => {
 
     expect(parseItems(JSON.stringify(items))).toEqual(items)
     expect(parseItems(JSON.stringify({ version: 1, items }))).toEqual(items)
+  })
+
+  // PowerShell 5.1과 메모장의 "UTF-8 (BOM)"이 쓰는 파일 (json-text.js)
+  it('reads an export file that starts with a byte order mark', () => {
+    const items = [{ name: 'a', data: { id: 'x', nodes: {} } }]
+
+    expect(parseItems(BOM + JSON.stringify(items))).toEqual(items)
+    expect(() => parseItems(BOM)).toThrow('The file is not valid JSON.')
+    expect(() => parseItems(BOM + BOM + '[]')).toThrow('The file is not valid JSON.')
   })
 
   it('explains what is wrong with a file that cannot be imported', () => {

@@ -8,6 +8,9 @@ import { normalizeSetting } from '../shared/setting.js'
 import { createSettingStore, openStore, STORE_OPTIONS } from './setting-store.js'
 import { createWindowStore } from './window-bounds.js'
 
+// 파일 맨 앞의 byte order mark (U+FEFF)
+const BOM = String.fromCharCode(0xfeff)
+
 function fakeStore(initial) {
   const data = new Map(initial === undefined ? [] : [['setting', initial]])
   return { get: key => data.get(key), set: (key, value) => data.set(key, value), data }
@@ -84,6 +87,23 @@ describe('a damaged config.json', () => {
 
     expect(createSettingStore(store).get().theme).toBe('sunset-drive')
     expect(store.get('window')).toEqual(stored.window)
+  })
+
+  // 손으로 고친 파일 (PowerShell 5.1, 메모장의 "UTF-8 (BOM)"). clearInvalidConfig만으로는 빈 것으로 읽혀서 설정과 창의 자리가
+  // 말없이 기본값이 되었고, 다음 저장이 그 파일을 덮어썼다.
+  it('a file that starts with a byte order mark is read as it is, and stays so after a write', () => {
+    const stored = { setting: JSON.stringify({ theme: 'sunset-drive' }), window: { x: 1, y: 2, width: 800, height: 600, isMaximized: false } }
+    const cwd = folderWith(BOM + JSON.stringify(stored))
+    const store = open(cwd, STORE_OPTIONS)
+
+    expect(createSettingStore(store).get().theme).toBe('sunset-drive')
+    expect(store.get('window')).toEqual(stored.window)
+    createSettingStore(store).set({ ...normalizeSetting(), theme: 'sunset-drive', terminalFontSize: 15 })
+    const again = open(cwd, STORE_OPTIONS)
+    expect(createSettingStore(again).get()).toMatchObject({ theme: 'sunset-drive', terminalFontSize: 15 })
+    expect(again.get('window')).toEqual(stored.window)
+    // conf가 BOM을 스스로 건너뛰게 되면 이 줄이 알려 준다 (그러면 deserialize는 없어도 된다)
+    expect(createSettingStore(open(folderWith(BOM + JSON.stringify(stored)), { clearInvalidConfig: true })).get()).toEqual(normalizeSetting())
   })
 
   it('main opens its one store with these options, through openStore', () => {

@@ -1,9 +1,11 @@
 import { normalizeSetting } from '../shared/setting.js'
+import { parseJson } from './json-text.js'
 
 // electron-store를 여는 옵션. clearInvalidConfig: 읽을 수 없는 config.json(비었거나, 잘렸거나, NUL로 찬 파일: 정전 뒤에 남을 수 있다)을
 // 빈 것으로 읽는다. 기본값(false)으로는 new Store()가 SyntaxError를 던지는데, main은 창을 띄우기 전에 store를 만들기 때문에
 // 그 파일을 손으로 지울 때까지 앱이 뜨지 못했다. 그 파일에는 설정과 창의 자리만 있다 (다이어그램은 projects.json).
-export const STORE_OPTIONS = { clearInvalidConfig: true }
+// deserialize: 맨 앞에 BOM이 있는 파일(손으로 고친 것)도 읽는다 (json-text.js). 그렇지 않으면 위의 옵션이 그것을 빈 것으로 읽었다.
+export const STORE_OPTIONS = { clearInvalidConfig: true, deserialize: parseJson }
 
 // config.json을 연다 (open: () => new Store(STORE_OPTIONS)). 깨진 내용은 STORE_OPTIONS가 빈 것으로 읽지만, 파일을 열 수조차
 // 없으면(그 이름의 폴더가 있다, 권한이 없다, 다른 프로그램이 막고 있다) new Store()가 던졌다: 그때도 Electron의 오류 상자만

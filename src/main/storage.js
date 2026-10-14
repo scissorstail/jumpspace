@@ -1,5 +1,6 @@
 import { copyFile, readFile, rename, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
+import { parseJson } from './json-text.js'
 import { migrateLegacyForwards } from './legacy-forwards.js'
 import { sanitizeView } from '../shared/view.js'
 
@@ -49,7 +50,7 @@ export function itemsFromJson(json) {
 export function parseItems(text) {
   let value
   try {
-    value = JSON.parse(text)
+    value = parseJson(text)
   } catch {
     throw new Error('The file is not valid JSON.')
   }
@@ -81,7 +82,7 @@ export function createProjectStorage(dir, { renameFile = rename, wait = ms => ne
   const backup = join(dir, 'projects.json.bak')
 
   async function readItems(path) {
-    return normalizeItems(JSON.parse(await readFile(path, 'utf-8')))
+    return normalizeItems(parseJson(await readFile(path, 'utf-8')))
   }
 
   // 저장 도중 문제가 생겨도 이전 내용이 남도록 임시 파일에 쓴 뒤 교체하고, 직전 내용은 .bak로 남긴다.
