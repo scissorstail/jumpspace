@@ -32,6 +32,9 @@ const LOOP_NOTICE_MS = 10000
 // 소켓이 입력(왼쪽 소켓)인가: 그 노드의 입력들 가운데 있는지 본다.
 const isInput = io => [...io.node.inputs.values()].includes(io)
 
+// 캔버스의 연결들: [앞 노드의 id, 뒤 노드의 id]의 목록 (utils/link-loop.js와 utils/arrange.js가 받는 꼴)
+const linksOf = editor => [...editor.view.connections.keys()].map(c => [c.output.node.id, c.input.node.id])
+
 export default {
   name: 'EditorIndex',
   props: {
@@ -315,13 +318,11 @@ export default {
       }
 
       this.lastLockedHintAt = now
-      this.$bvToast.toast('Unlock the editor (lock icon) to add or delete nodes.', {
-        variant: 'secondary',
-        solid: true,
-        noCloseButton: true,
-        autoHideDelay: 2500,
-        toaster: 'b-toaster-bottom-center'
-      })
+      this.showHint('Unlock the editor (lock icon) to add or delete nodes.', 2500)
+    },
+    // 캔버스 아래 가운데의 짧은 안내 (잠긴 캔버스, 받지 않은 연결): 같은 자리, 같은 모양
+    showHint(text, autoHideDelay) {
+      this.$bvToast.toast(text, { variant: 'secondary', solid: true, noCloseButton: true, autoHideDelay, toaster: 'b-toaster-bottom-center' })
     },
     // 왼쪽 소켓(입력)을 손에 든 채 또 왼쪽 소켓을 눌렀는가. 연결 플러그인은 그때 눌린 소켓에 있던 연결을 지우고
     // 아무것도 잇지 않는다 (pickInput): 왼쪽 소켓 하나를 들고 연결된 왼쪽 소켓들을 누르면 연결이 하나씩 사라졌다.
@@ -337,8 +338,7 @@ export default {
     refuseLoop({ output, input }) {
       if (this.editor.silent || this.isRestoringLink) return true
 
-      const links = [...this.editor.view.connections.keys()].map(c => [c.output.node.id, c.input.node.id])
-      if (!closesLoop(links, output.node.id, input.node.id)) return true
+      if (!closesLoop(linksOf(this.editor), output.node.id, input.node.id)) return true
 
       // 플러그인이 이 연결을 만들려고 도착 소켓의 연결을 방금 지웠으면 되돌린다: 거절은 아무것도 바꾸지 않는다.
       // Rete가 이 연결의 이벤트를 돌리는 중이므로 그것이 끝난 바로 다음에 (화면이 다시 그려지기 전에) 잇는다.
@@ -359,7 +359,7 @@ export default {
       this.showLoopHint()
       return false
     },
-    // 고리를 닫는 연결을 받지 않았다고 알린다 (잠긴 캔버스의 안내와 같은 자리, 같은 모양). 안내가 떠 있는 동안에는 겹쳐 띄우지 않는다.
+    // 고리를 닫는 연결을 받지 않았다고 알린다 (잠긴 캔버스의 안내처럼, showHint). 안내가 떠 있는 동안에는 겹쳐 띄우지 않는다.
     showLoopHint() {
       const now = Date.now()
       if (now - this.lastLoopHintAt < LOOP_HINT_MS) {
@@ -367,13 +367,7 @@ export default {
       }
 
       this.lastLoopHintAt = now
-      this.$bvToast.toast('Not linked: that link would make a loop.', {
-        variant: 'secondary',
-        solid: true,
-        noCloseButton: true,
-        autoHideDelay: LOOP_HINT_MS,
-        toaster: 'b-toaster-bottom-center'
-      })
+      this.showHint('Not linked: that link would make a loop.', LOOP_HINT_MS)
     },
     // 선택한 노드를 모두 푼다. Rete의 화면(vue-render-plugin)은 노드를 고를 때에만 선택 표시를 다시 그리므로,
     // 풀린 노드를 직접 다시 그리게 한다. (지운 노드가 선택 목록에 남아 있을 수 있어서 지금 있는 노드만 그린다)
@@ -436,8 +430,7 @@ export default {
     // 고리가 있는 동안에는 Rete의 엔진이 계산을 거부해서 어느 노드도 제 앞의 노드를 모르고, 모두 바로 접속한다.
     // 고리를 이루는 노드의 이름을 연결 순서대로 적는다. 이름만 적는다: 주소는 눈 단추로 가려 둘 수 있는 값이다.
     noteLoop() {
-      const links = [...this.editor.view.connections.keys()].map(c => [c.output.node.id, c.input.node.id])
-      const loop = loopIn(links)
+      const loop = loopIn(linksOf(this.editor))
       if (!loop) return
 
       const nameOf = id => this.editor.nodes.find(node => node.id === id)?.data.connection?.name || '(untitled)'
@@ -515,13 +508,12 @@ export default {
     // 모든 노드를 연결 순서대로 정렬해서 보이는 캔버스의 가운데에 모은다. 다 보이지 않으면 그만큼 축소한다.
     // 노드 위치는 끌어서 옮긴 것과 같아서 잠글 때 저장된다.
     arrangeNodes() {
-      const { area, container, nodes: views, connections } = this.editor.view
+      const { area, container, nodes: views } = this.editor.view
       if (!this.editor.nodes.length) return
 
       const extents = new Map(this.editor.nodes.map(node => [node, this.extentOf(node)]))
       const items = this.editor.nodes.map(node => ({ id: node.id, x: node.position[0], y: node.position[1], ...extents.get(node) }))
-      const links = [...connections.keys()].map(c => [c.output.node.id, c.input.node.id])
-      const positions = arrangeLayout(items, links)
+      const positions = arrangeLayout(items, linksOf(this.editor))
 
       // 맞출 자리. 터미널 패널이 열려 있으면 영역의 가운데 부분이다 (utils/view.js의 fullCanvasIn):
       // 낮고 넓은 영역의 너비에 맞추면 패널을 닫아 다이어그램이 다시 커질 때 양옆이 잘린다.
@@ -574,12 +566,11 @@ export default {
     placeGroup(nodes, [ox, oy]) {
       if (!nodes.length) return
 
-      const { nodes: views, connections } = this.editor.view
+      const { nodes: views } = this.editor.view
       const extents = new Map(nodes.map(node => [node, this.extentOf(node)]))
       // 첫 열은 글에 나온 순서대로 위에서 아래로 놓인다
       const items = nodes.map((node, index) => ({ id: node.id, x: 0, y: index, ...extents.get(node) }))
-      const links = [...connections.keys()].map(c => [c.output.node.id, c.input.node.id])
-      const positions = arrangeLayout(items, links)
+      const positions = arrangeLayout(items, linksOf(this.editor))
       const left = Math.min(...nodes.map(node => positions.get(node.id)[0]))
       const top = Math.min(...nodes.map(node => positions.get(node.id)[1]))
       const first = nodes.find(node => positions.get(node.id)[0] === left && positions.get(node.id)[1] === top) || nodes[0]
