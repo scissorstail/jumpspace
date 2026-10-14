@@ -119,8 +119,8 @@ describe('buildForward', () => {
   })
 
   it('needs a node to connect through and something to forward', () => {
-    expect(() => buildForward({ via: [], forwards }, paths)).toThrow()
-    expect(() => buildForward({ forwards }, paths)).toThrow()
+    expect(() => buildForward({ via: [], forwards }, paths)).toThrow('Forward needs at least one node to connect through.')
+    expect(() => buildForward({ forwards }, paths)).toThrow('Forward needs at least one node to connect through.')
     expect(() => buildForward({ via: [node], forwards: [] }, paths)).toThrow()
     expect(() => buildForward({ via: [node], forwards: [{ checked: true, from: '1', to: '' }] }, paths)).toThrow()
   })

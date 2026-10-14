@@ -17,6 +17,8 @@ describe('the question before the window closes with the editor unlocked', () =>
     expect(UNLOAD_QUESTION.buttons).toEqual(['Discard changes', 'Cancel'])
     expect(UNLOAD_QUESTION.defaultId).toBe(1)
     expect(UNLOAD_QUESTION.cancelId).toBe(1)
+    // Windows는 단추 이름이 정해져 있지 않으면 그것을 큰 명령 링크로 바꾼다: 두 단추로 둔다
+    expect(UNLOAD_QUESTION.noLink).toBe(true)
   })
 })
 

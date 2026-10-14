@@ -875,6 +875,51 @@ describe.skipIf(!BASH || !existsSync(BASH))('a real pty', () => {
     expect(exit).toBe(0)
   }, 30000)
 
+  // 비밀번호가 있는 노드는 ssh가 모든 질문을 스크립트(SSH_ASKPASS, 그 자신)에게 한다 (SSH_ASKPASS_REQUIRE=force).
+  // 저장된 비밀번호의 질문이 아니면(처음 보는 서버의 키, 키의 passphrase, OTP) 스크립트가 터미널에 묻고, 친 것을 보이지 않고
+  // 받아서 ssh에게 넘긴다. 가짜 ssh는 진짜처럼 $SSH_ASKPASS를 질문을 인자로 해서 실행하고 그 출력을 답으로 읽는다.
+  it('asks in the terminal what the script has no stored answer for, and does not show what is typed', async () => {
+    const { spawn } = await import('node-pty')
+    const bashEnv = join(root, 'bashenv-ask.sh')
+    writeFileSync(bashEnv, 'ssh() { answer=$("$SSH_ASKPASS" "Verification code: "); printf "ANSWER[%s]\\n" "$answer"; }\n')
+
+    const output = []
+    let exit = null
+    const tempDir = mkdtempSync(join(root, 'ask-'))
+    const manager = createTerminalManager({
+      tempDir,
+      getBash: () => BASH,
+      spawnPty: (file, args, options) => spawn(file, args, { ...options, env: { ...options.env, BASH_ENV: toUnixPath(bashEnv) } }),
+      send: (owner, channel, id, value) => {
+        if (channel === 'terminal:exit') exit = value
+        else output.push(value)
+        // 새 ConPTY는 시작할 때 터미널에게 묻고(DA1) 답을 3초까지 기다린다. 화면(xterm.js)이 하듯 답한다.
+        if (channel === 'terminal:data' && value.includes('\x1b[c')) manager.write(id, owner, '\x1b[?1;2c')
+      }
+    })
+    const text = () => output.join('')
+    const waitFor = async (check, ms = 15000) => {
+      const end = Date.now() + ms
+      while (!check()) {
+        if (Date.now() > end) throw new Error(`timed out; output so far: ${JSON.stringify(text())}`)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+    }
+
+    const id = await manager.open('connect', { ...node, password: 'stored-pw' }, { owner: 1 })
+    await waitFor(() => text().includes('Verification code: '))
+    manager.write(id, 1, '482913\r')
+    await waitFor(() => text().includes('ANSWER['))
+    await waitFor(() => exit !== null)
+
+    expect(text()).toContain('ANSWER[482913]')
+    expect(text()).not.toContain('stored-pw')
+    // 친 것은 답으로만 나온다: 질문 뒤에 화면에 보이지 않았다. Enter 대신 줄은 바뀐다 (다음 출력이 질문의 줄에 붙지 않는다)
+    expect(text().split('482913')).toHaveLength(2)
+    expect(text().slice(text().indexOf('Verification code: '), text().indexOf('ANSWER['))).toContain('\n')
+    expect(exit).toBe(0)
+  }, 30000)
+
   // Windows에서는 pty(ConPTY)가 닫히면 그 안의 프로그램이 신호 없이 하나씩 끝난다. 그래서 bash는 trap을 실행하지 못하고,
   // 먼저 끝난 프로그램을 기다리던 bash는 자기 차례가 올 때까지(20~30ms) 다음 명령을 실행한다: 끝난 프로그램은 잘 끝난 것으로 보인다.
   it('closing a session also ends the program that runs in it, and its files are gone', async () => {

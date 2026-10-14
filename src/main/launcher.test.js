@@ -242,4 +242,15 @@ describe('sweepTempDir', () => {
     await sweepTempDir(dir, Date.now() + 2 * DAY)
     expect(files(dir)).toEqual([])
   })
+
+  // 하루보다 오래된 것만: 꼭 하루 된 파일은 남는다
+  it('keeps a file of exactly one day', async () => {
+    const dir = mkdtempSync(join(root, 'sweep-'))
+    writeFileSync(join(dir, 'a.sh'), 'x')
+    const written = statSync(join(dir, 'a.sh')).mtimeMs
+    await sweepTempDir(dir, written + DAY)
+    expect(files(dir)).toEqual(['a.sh'])
+    await sweepTempDir(dir, written + DAY + 1)
+    expect(files(dir)).toEqual([])
+  })
 })

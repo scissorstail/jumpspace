@@ -17,6 +17,8 @@ describe('the question before Quit in the tray', () => {
     expect(question.buttons).toEqual(['Quit', 'Cancel'])
     expect(question.defaultId).toBe(1)
     expect(question.cancelId).toBe(1)
+    // Windows는 단추 이름이 정해져 있지 않으면 그것을 큰 명령 링크로 바꾼다: 두 단추로 둔다
+    expect(question.noLink).toBe(true)
   })
 })
 

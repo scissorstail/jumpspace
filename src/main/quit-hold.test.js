@@ -87,6 +87,11 @@ describe('holding the end of the app while a save has not ended', () => {
     await vi.advanceTimersByTimeAsync(0)
 
     expect(quit).toHaveBeenCalledTimes(1)
+    // 실패한 저장은 기다림을 포기한 것이 아니다: 한도를 넘었다고 적지 않고, 다음 저장이 남았으면 또 기다린다
+    expect(console.error).not.toHaveBeenCalled()
+    const next = { preventDefault: vi.fn() }
+    hold(next)
+    expect(next.preventDefault).toHaveBeenCalledTimes(1)
   })
 
   // 멈춘 디스크: 창 없는 앱이 남으면 안 된다
