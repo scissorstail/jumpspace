@@ -166,6 +166,16 @@ describe('closePopoverOnEscape: focus when opened by keyboard', () => {
 
     expect(inner.focus).not.toHaveBeenCalled()
   })
+
+  // 단추를 누르지 않고 열린 팝오버(처음 열릴 때도)는 포커스를 가져가지 않는다
+  it('leaves the focus alone when it opens without a click of its button', () => {
+    const { inner, show, created } = create()
+    created()
+
+    show()
+
+    expect(inner.focus).not.toHaveBeenCalled()
+  })
 })
 
 describe('focusWhenShown', () => {
@@ -301,6 +311,21 @@ describe('dismissOnEscape: focus like a dialog', () => {
     expect(focused.name).toBe('first')
 
     expect(tab().preventDefault).not.toHaveBeenCalled() // first -> middle는 브라우저가 한다
+  })
+
+  // 꺼진 단추와 보이지 않는 칸은 포커스를 받지 않는다: 처음 포커스도, Tab이 도는 끝도 아니다
+  it('skips controls that are disabled or not shown', () => {
+    const disabled = { ...element({ name: 'disabled' }), disabled: true }
+    const hidden = element({ name: 'hidden', visible: false })
+    for (const x of [disabled, hidden]) x.focus.mockImplementation(function () { focused = this })
+    const vm = { $emit: vi.fn(), $refs: {}, $nextTick: callback => { vm.$refs.dialog = { $el: { querySelectorAll: () => [disabled, ...controls, hidden] } }; callback() } }
+    const show = shown => dismissOnEscape.watch.show.call(vm, shown)
+    show(true)
+
+    expect(focused.name).toBe('first')
+    tab(true)
+    expect(focused.name).toBe('last')
+    show(false)
   })
 
   it('gives the focus back when it closes, and stops trapping', () => {

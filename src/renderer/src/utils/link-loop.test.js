@@ -179,6 +179,11 @@ describe('the loop in the links of a diagram', () => {
     expect(links).toEqual([[1, 2], [2, 11], [11, 1]])
   })
 
+  // 앞의 길을 다 보고 난 노드가 연결 목록에서 고리보다 먼저 와도, 그 뒤의 고리까지 찾는다
+  it('goes on past a node it has already looked at to a loop after it', () => {
+    expect(loopIn([[1, 2], [2, 5], [3, 4], [4, 3]])).toEqual([3, 4])
+  })
+
   it('ends on a long path and on a long circle', () => {
     const path = Array.from({ length: 2000 }, (_, i) => [i, i + 1])
 
