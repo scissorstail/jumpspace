@@ -1348,6 +1348,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 1294 passed (with Git's bash; 7 new, 6 sharpened), lint ok, build ok; the same sweeps again: only the 5 that change nothing survive. Tests only: no headless checks, no real window.
 - Found / next: no bug in the app. The sweep left the vitest of a mutant that never ends (the rename retry of `storage.js` made endless) running after its time limit: on Windows it started `npx.cmd` through a shell, and the limit ended only the shell (the owner ended those processes). It now starts vitest with node directly; tried on that mutant, nothing is left. Tests were added, so this run does not count toward the two runs with nothing to add or fix. Next: refactor (#223).
 
+### #226 2026-10-14 · refactor (the eighth run of the cycle of #218)
+- Did: since the refactor of #223 the sources changed only in tests and docs (#224, #225), and `clones.cjs` finds the same repeats #223 looked at and left, with its reasons (the question before losing unlocked changes, the two exports, the start and the reconnect of a terminal, the closing of a popover, CSS). The sizes of the Code hot spots are unchanged. Nothing to move.
+- Result: no commit of code. CI of HEAD (c3f33a5, run 38583228439) green.
+- Found / next: nothing to add or fix: the first such run in a row. Next: a completeness review (#224).
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
