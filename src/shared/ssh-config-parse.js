@@ -88,7 +88,8 @@ export function parseSshConfig(text) {
 
     switch (keyword) {
       case 'hostname':
-        once('host', unquote(value))
+        // HostName도 %를 토큰으로 읽는다 (fe80::1%eth0은 %%로 쓴다)
+        once('host', unquote(value).replaceAll('%%', '%'))
         break
       case 'user':
         once('user', unquote(value))
@@ -100,9 +101,12 @@ export function parseSshConfig(text) {
         // config에서 %는 %%로 쓴다
         once('keyPath', unquote(value).replaceAll('%%', '%'))
         break
-      case 'remotecommand':
-        once('exec', value.endsWith(EXEC_TAIL) ? value.slice(0, -EXEC_TAIL.length).trim() : value)
+      case 'remotecommand': {
+        // RemoteCommand도 %를 토큰으로 읽는다 (date +%Y는 %%로 쓴다)
+        const command = value.replaceAll('%%', '%')
+        once('exec', command.endsWith(EXEC_TAIL) ? command.slice(0, -EXEC_TAIL.length).trim() : command)
         break
+      }
       case 'proxyjump':
         if (current.jumps === undefined && value) {
           current.jumps = value.toLowerCase() === 'none' ? [] : value.split(',').map(x => x.trim()).filter(Boolean)

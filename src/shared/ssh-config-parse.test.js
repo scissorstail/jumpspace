@@ -48,6 +48,13 @@ describe('parseSshConfig', () => {
       expect(hostsOf(buildSshConfig([node]))[0].keyPath).toBe('/c/Users/me/my keys/100%/id')
     })
 
+    // HostName과 RemoteCommand도 %를 %%로 쓴다 (ssh가 토큰으로 읽는다)
+    it('a host with a zone and a remote command with a percent sign', () => {
+      const node = { ...bastion, host: 'fe80::1%eth0', exec: "date +%Y; printf '%s'" }
+
+      expect(hostsOf(buildSshConfig([node]))[0]).toMatchObject({ host: 'fe80::1%eth0', exec: "date +%Y; printf '%s'" })
+    })
+
     it('never a password', () => {
       const result = parseSshConfig(buildSshConfig([{ ...bastion, password: 'hunter2' }]))
 

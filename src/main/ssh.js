@@ -158,7 +158,8 @@ function hostAliases(nodes) {
 function hostConfig(nodes, aliases) {
   return nodes.map((node, index) => [
     `Host ${aliases[index]}`,
-    `HostName ${node.host}`,
+    // ssh는 HostName의 %를 토큰으로 읽는다: fe80::1%eth0을 "unknown key %e"로 거절했다 (#236). 글자 %는 %%로 쓴다.
+    `HostName ${node.host.replaceAll('%', '%%')}`,
     `HostKeyAlias ${aliases[index]}`,
     'StrictHostKeyChecking accept-new',
     `User ${node.user}`,
