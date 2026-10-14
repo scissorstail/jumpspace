@@ -1363,6 +1363,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 1300 passed (with Git's bash; 5 new), lint ok, build ok; the same sweeps again: forward, arrange and diagram-data 0 survived, terminal-sessions only the 2 that change nothing. Tests only: no headless checks, no real window.
 - Found / next: no bug in the app. Tests were added, so this run does not count toward the two runs with nothing to add or fix. Next: refactor (#223).
 
+### #229 2026-10-15 · refactor (the eleventh run of the cycle of #218)
+- Did: the code changed since the last refactor run (#223) was read (`isFile()` of #227 and two comments; nothing to move), `clones.cjs` found repeats of CSS and template boilerplate only, `stale-refs.cjs` nothing stale. Then the main modules no refactor run of this cycle had read. `closeAll()` of `src/main/terminal.js` wrote the same condition three times (the sessions being opened, the ended ones kept for reconnecting, the running ones: of one window, or of all when the app ends): now one local predicate, `isOwned`. Left in `index.js`: the filter of the JSON file of export and import and the size `{ cols, rows }` of open and reopen, two one-line repeats, while tests read that file. Commit 08a5c67.
+- Result: tests 1300 passed (with Git's bash; none changed), lint ok, build ok, the old tests caught 3 of 3 mutations of the predicate; `real-window-check.cjs` 39 passed, `real-window-check-2.cjs` with `term,many,login` 63 passed (the parts that end sessions on a reload, a crash and the end of the app); no `electron.exe` or `ssh.exe` left. Main only, the page is unchanged: no headless run.
+- Found / next: no bug. Code changed, so this run does not count toward the two runs with nothing to add or fix. Next: a completeness review (#227).
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
