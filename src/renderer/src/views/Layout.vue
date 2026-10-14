@@ -256,6 +256,7 @@ export default {
   },
   mounted() {
     this.loadProject()
+    this.noteSettingProblem()
     window.addEventListener('beforeunload', this.holdUnload)
   },
   beforeDestroy() {
@@ -386,6 +387,16 @@ export default {
       this.projectData = items
       // 처음에는 열린 다이어그램이 없다. 고를 수 있게 목록부터 보여준다.
       this.openSwitcher()
+    },
+    // main이 config.json을 열지 못해서 기본 설정으로 시작했으면 알린다 (main의 openStore). 이것도 닫을 때까지 남는다:
+    // 바꾼 설정이 끝나면 사라진다는 것을 놓치면 안 된다.
+    async noteSettingProblem() {
+      try {
+        const problem = await window.preload.getSettingProblem()
+        if (problem) this.notifyError('Failed to load the settings. Changes will not be saved.', problem, { noAutoHide: true })
+      } catch (e) {
+        console.error(e)
+      }
     },
     async saveProject() {
       if (this.isProjectLoadFailed) {

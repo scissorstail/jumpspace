@@ -156,6 +156,39 @@ describe('what is saved, and when', () => {
     expect(vm.savingCount).toBe(0)
   })
 
+  // main이 config.json을 열지 못하고 기본 설정으로 시작했다 (main의 openStore)
+  it('says that the settings could not be read, in a message that stays', async () => {
+    const api = preload()
+    api.getSettingProblem = async () => 'config.json could not be opened (EISDIR).\nThe folder:\nD:\\data'
+    const vm = layout({ api })
+    await vm.noteSettingProblem()
+
+    expect(toasts).toEqual([['Failed to load the settings. Changes will not be saved.', 'config.json could not be opened (EISDIR).\nThe folder:\nD:\\data', { noAutoHide: true }]])
+    // 다이어그램의 저장은 막지 않는다: 다른 파일이다
+    expect(vm.isProjectLoadFailed).toBe(false)
+  })
+
+  it('says nothing when main opened the settings, or cannot tell', async () => {
+    const api = preload()
+    api.getSettingProblem = async () => null
+    await layout({ api }).noteSettingProblem()
+    api.getSettingProblem = async () => { throw new Error('no answer') }
+    await layout({ api }).noteSettingProblem()
+
+    expect(toasts).toEqual([])
+  })
+
+  it('asks for it when the page is there, with the diagrams', async () => {
+    const api = preload({ stored: JSON.stringify([diagram('kept')]) })
+    api.getSettingProblem = async () => 'config.json could not be opened (EPERM).'
+    const vm = layout({ projectData: null, api })
+    component.mounted.call(vm)
+    await flush()
+
+    expect(toasts.map(toast => toast[0])).toEqual(['Failed to load the settings. Changes will not be saved.'])
+    expect(vm.projectData.map(item => item.name)).toEqual(['kept'])
+  })
+
   it('a load shows the stored diagrams and opens the list with the keyboard in its search', async () => {
     const stored = JSON.stringify([diagram('kept')])
     const vm = layout({ projectData: null, api: preload({ stored }) })

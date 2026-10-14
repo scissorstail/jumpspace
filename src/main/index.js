@@ -24,7 +24,7 @@ import { mousePoint } from './mouse-point.js'
 import { createTerminalManager, terminalBash } from './terminal.js'
 import { APP_URL, appFilePath, isAppUrl } from './trust.js'
 import { toResult } from './ipc-result.js'
-import { createSettingStore, STORE_OPTIONS } from './setting-store.js'
+import { createSettingStore, openStore, STORE_OPTIONS } from './setting-store.js'
 import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, itemsFromJson, parseItems } from './storage.js'
 import { createBoundsSaver, createWindowStore, restoreBounds } from './window-bounds.js'
@@ -55,8 +55,9 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 function main() {
-  // 깨진 config.json은 빈 것으로 읽는다 (STORE_OPTIONS). 여기서 던지면 창도 없고 아래의 catch에도 닿지 않아 앱이 뜨지 못한다.
-  const store = new Store(STORE_OPTIONS)
+  // 깨진 config.json은 빈 것으로 읽고(STORE_OPTIONS), 열 수 없으면 기본 설정으로 시작해서 화면이 알린다 (openStore).
+  // 여기서 던지면 창도 없고 아래의 catch에도 닿지 않아 앱이 뜨지 못한다.
+  const { store, problem: settingProblem } = openStore(() => new Store(STORE_OPTIONS), app.getPath('userData'))
   const settings = createSettingStore(store)
   const windows = createWindowStore(store)
   const getSetting = settings.get
@@ -98,6 +99,9 @@ function main() {
   handle('setting:get', () => getSetting())
 
   handle('setting:set', (event, data) => settings.set(data))
+
+  // config.json을 열 수 없어서 기본 설정으로 시작했으면 그 까닭 (아니면 null)
+  handle('setting:problem', () => settingProblem)
 
   handle('projects:load', () => projects.load())
 

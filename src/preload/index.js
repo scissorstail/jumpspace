@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('preload', {
 
   getSetting: () => ipcRenderer.invoke('setting:get'),
   setSetting: data => ipcRenderer.invoke('setting:set', data),
+  getSettingProblem: () => ipcRenderer.invoke('setting:problem'),
 
   loadProjects: () => ipcRenderer.invoke('projects:load'),
   saveProjects: json => ipcRenderer.invoke('projects:save', json),
