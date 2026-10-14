@@ -1,8 +1,9 @@
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { extname, join } from 'node:path'
+import { dirname, extname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
-import { createTerminalManager, exitStatus, killPty, MAX_PENDING_OUTPUT, MAX_SESSIONS, OUTPUT_DELAY_MS, REFLOW_BUILD, terminalBash, windowsPtyInfo } from './terminal.js'
+import { createTerminalManager, exitStatus, KILL_WAIT_MS, killPty, MAX_PENDING_OUTPUT, MAX_SESSIONS, OUTPUT_DELAY_MS, REFLOW_BUILD, terminalBash, windowsPtyInfo } from './terminal.js'
 import { sq, toUnixPath } from './ssh.js'
 
 const root = mkdtempSync(join(tmpdir(), 'jumpspace-terminal-'))
@@ -180,6 +181,123 @@ describe('createTerminalManager: the pty on Windows', () => {
     // 함께 온 ConPTY 탓이 아닐 수 있으므로 다음에는 다시 그것부터 해 본다.
     await expect(manager.open('connect', node, { owner: 1 })).rejects.toThrow('no pty at all')
     expect(spawnPty.mock.calls.map(call => !!call[2].useConptyDll)).toEqual([true, false, true, false])
+  })
+})
+
+// node-pty의 ConPTY는 세션 목록을 잠그지 않아서, 여러 세션이 함께 끝나면 앱이 죽었다 (KILL_WAIT_MS의 설명)
+describe('createTerminalManager: sessions are ended one after another on Windows', () => {
+  const windows = { platform: 'win32', release: '10.0.19045' }
+  afterEach(() => vi.useRealTimers())
+
+  // node-pty의 Windows pty처럼: 스레드가 세션을 목록에서 지운 뒤 main에서 _agent._$onProcessExit를 부른다 (released)
+  function setupWindows() {
+    const { spawnPty: plain, ptys } = fakePtyFactory()
+    const spawnPty = vi.fn((file, args, options) => {
+      const pty = plain(file, args, options)
+      pty.told = vi.fn()
+      pty._agent = { _$onProcessExit: pty.told }
+      pty.released = code => pty._agent._$onProcessExit(code)
+      return pty
+    })
+    const tempDir = mkdtempSync(join(root, 'kill-'))
+    const manager = createTerminalManager({ tempDir, getBash: () => '/bin/bash', spawnPty, send: vi.fn(), ...windows })
+    return { manager, spawnPty, ptys, tempDir }
+  }
+  const settle = () => new Promise(resolve => setTimeout(resolve, 0))
+  const kills = ptys => ptys.map(pty => pty.kill.mock.calls.length)
+
+  it('ends the next session only when node-pty is done with the one before', async () => {
+    const { manager, ptys, tempDir } = setupWindows()
+    for (let i = 0; i < 3; i++) await manager.open('connect', node, { owner: 1 })
+    const other = await manager.open('connect', node, { owner: 2 })
+
+    manager.closeAll(1)
+    // 화면에는 셋 다 끝났다: 세션도 파일도 없다. pty는 첫 것만 끝냈다.
+    expect(manager.size).toBe(1)
+    expect(readdirSync(tempDir)).toHaveLength(1)
+    expect(kills(ptys)).toEqual([1, 0, 0, 0])
+
+    ptys[0].released(1)
+    await settle()
+    expect(kills(ptys)).toEqual([1, 1, 0, 0])
+    // node-pty 자신의 일은 그대로 한다
+    expect(ptys[0].told).toHaveBeenCalledWith(1)
+    ptys[1].released(1)
+    await settle()
+    expect(kills(ptys)).toEqual([1, 1, 1, 0])
+    ptys[2].released(1)
+    await settle()
+
+    // 다른 창의 세션은 그대로였고, 기다릴 것이 없으면 바로 끝낸다
+    expect(kills(ptys)).toEqual([1, 1, 1, 0])
+    manager.close(other, 2)
+    expect(kills(ptys)).toEqual([1, 1, 1, 1])
+    ptys[3].released(1)
+  })
+
+  it('goes on after KILL_WAIT_MS when node-pty says nothing', async () => {
+    const { manager, ptys } = setupWindows()
+    await manager.open('connect', node, { owner: 1 })
+    await manager.open('connect', node, { owner: 1 })
+    vi.useFakeTimers()
+
+    manager.closeAll(1)
+    await vi.advanceTimersByTimeAsync(KILL_WAIT_MS - 1)
+    expect(kills(ptys)).toEqual([1, 0])
+    await vi.advanceTimersByTimeAsync(1)
+    expect(kills(ptys)).toEqual([1, 1])
+  })
+
+  it('does not wait for a session whose program had already ended', async () => {
+    const { manager, ptys } = setupWindows()
+    await manager.open('connect', node, { owner: 1 })
+    await manager.open('connect', node, { owner: 1 })
+    // node-pty는 알렸지만 화면에는 아직 끝나지 않았다
+    ptys[0].released(0)
+
+    manager.closeAll(1)
+    await settle()
+    expect(kills(ptys)).toEqual([1, 1])
+    ptys[1].released(1)
+  })
+
+  // 시작도 node-pty의 그 목록을 고친다
+  it('starts a session only when the sessions being ended are done, and not when its window went away meanwhile', async () => {
+    const { manager, spawnPty, ptys } = setupWindows()
+    const first = await manager.open('connect', node, { owner: 1 })
+    manager.close(first, 1)
+
+    const next = manager.open('connect', node, { owner: 1 })
+    const gone = manager.open('connect', node, { owner: 2 })
+    // 파일을 다 쓸 때까지 (기다리지 않는다면 여기서 둘 다 시작했을 것이다)
+    await new Promise(resolve => setTimeout(resolve, 100))
+    expect(spawnPty).toHaveBeenCalledTimes(1)
+
+    manager.closeAll(2)
+    ptys[0].released(1)
+    expect(await next).toBeGreaterThan(first)
+    await expect(gone).rejects.toThrow(/closed or reloaded/)
+    expect(spawnPty).toHaveBeenCalledTimes(2)
+    expect(manager.size).toBe(1)
+  })
+
+  it('ends sessions at once outside Windows', async () => {
+    const { manager, ptys } = setup()
+    for (let i = 0; i < 3; i++) await manager.open('connect', node, { owner: 1 })
+    manager.closeAll(1)
+    expect(kills(ptys)).toEqual([1, 1, 1])
+  })
+
+  // 기다림은 설치된 node-pty 안의 것에 기댄다. 판이 바뀌어 그것이 없어지거나 목록을 잠그게 되면 여기서 알게 된다.
+  it('relies on what the installed node-pty does on Windows', () => {
+    const pty = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'node_modules', 'node-pty')
+    const read = file => readFileSync(join(pty, file), 'utf8')
+    expect(read('lib/windowsPtyAgent.js')).toMatch(/this\._useConptyDll, function \(c\) \{ return _this\._\$onProcessExit\(c\); \}\);/)
+    expect(read('lib/windowsTerminal.js')).toMatch(/_this\._agent = new windowsPtyAgent_1\.WindowsPtyAgent\(/)
+    const conpty = read('src/win/conpty.cc')
+    expect(conpty).toMatch(/static std::vector<std::unique_ptr<pty_baton>> ptyHandles;/)
+    expect(conpty).toMatch(/CloseHandle\(baton->hShell\);\s+assert\(remove_pty_baton\(baton->id\)\);\s+auto status = tsfn\.BlockingCall/)
+    expect(conpty).not.toMatch(/mutex|CRITICAL_SECTION|SRWLOCK/)
   })
 })
 
