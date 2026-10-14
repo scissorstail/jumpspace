@@ -73,7 +73,6 @@ Both lists of 2026-10-11 are done (1 to 5 in #103 to #108, 6 to 10 in #111 to #1
 
 ### Wind-down list (owner, 2026-10-13: "now only raise the tests and the completeness, go as far as you can, then end the scheduler")
 Top first, one per run; take the item out when it is done. When the list is empty a run looks at one failure case of its own choice (a broken file, a race, wrong input, a limit). How it ends is under Routine.
-6. The same for `components/terminal/terminal-tabs.vue` (8 methods).
 7. In the real window: every IPC channel called with wrong arguments (main must stay up and go on answering), and more tabs than a browser has WebGL contexts (17) together with the message at the limit of 16 sessions.
 
 ### UX candidates
@@ -1264,6 +1263,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: on Windows every closed terminal left its script, and for ProxyJump and forwards its ssh config (hosts, ports, user names, key paths; no passwords), in the temp folder until the sweep of files older than a day: bash is ended there without running its trap. `terminal.js` now removes the files itself when it ends a session and when the pty reports its exit; `cleanup()` of `prepareSession()` is synchronous for that and never throws. The real-pty test "closing a session also ends the program that runs in it" runs on Windows too. CHANGELOG, CLAUDE.md and README say it.
 - Result: tests 1193 passed without a bash, 1213 with Git's bash (7 new; the real-pty test 12 of 12 times), lint ok, build ok, 13 of 13 mutations caught (two of them by the real-pty test). Real window: `real-window-check.cjs` all passed, `real-window-check-2.cjs` all passed (127, seven new in `term`: the app gets a temp folder of the check and its scripts are counted); on a build without the fix four of the new ones fail (middle click, Ctrl+C while connecting, reload, quit). No renderer change, so no headless run. Commit 30e3fc7.
 - Found / next: the un-skipped test first failed 3 times in 9, and not because something lived on: `lists/close-probe.cjs` shows that the programs of a closed pty end one by one with no signal, the child first, and its parent runs on for 20 to 30 ms and sees it as ended well (nothing is alive 0.3 s later). The fake ssh of the test measures its sleep now. For the owner's tmux question this adds nothing new: ssh itself is ended at once. Next: item 6 of the Wind-down list.
+
+### #210 2026-10-14 · tests (wind-down item 6; by hand, the owner's request of #207)
+- Did: `terminal-tabs.vue` was only read as text by its test. `terminal-tabs-methods.test.js` runs its script with a made-up `this`, the way the panel's test does: the state and the words of the split button, the numbers of tabs with the same name, the wheel over a row with more tabs than fit, bringing the selected tab into sight (after the row was drawn again, and when the row changes its size) and the observer that is let go with the row. Tests only.
+- Result: tests 1214 passed (21 new), lint ok, build ok, 35 of 35 mutations of the component caught. No source change, so no headless run and no real window. Commit 9168dd3.
+- Found / next: nothing wrong in the component. What the template does (the classes of a tab, the events it sends) is still only read as text, and the headless checks click through it. Next: item 7 of the Wind-down list.
 
 ## Routine
 
