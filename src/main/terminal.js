@@ -331,15 +331,17 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
     },
 
     // 창이 닫히거나 새로고침될 때 그 화면의 세션을 모두 끝낸다. 열리는 중인 것은 열지 않게 한다.
+    // owner가 없으면 모든 창의 것이다 (앱이 끝날 때).
     closeAll(owner) {
+      const isOwned = x => owner === undefined || x.owner === owner
       for (const pending of opening) {
-        if (owner === undefined || pending.owner === owner) pending.cancelled = true
+        if (isOwned(pending)) pending.cancelled = true
       }
       for (const [id, entry] of ended) {
-        if (owner === undefined || entry.owner === owner) ended.delete(id)
+        if (isOwned(entry)) ended.delete(id)
       }
       for (const [id, session] of sessions) {
-        if (owner === undefined || session.owner === owner) end(id, session)
+        if (isOwned(session)) end(id, session)
       }
     }
   }
