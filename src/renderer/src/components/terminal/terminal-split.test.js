@@ -22,6 +22,10 @@ describe('shownPanes', () => {
     expect(shownPanes({ activeKey: 3, sideKey: 5, activeSide: 'left' })).toEqual({ left: 3, right: 5 })
     expect(shownPanes({ activeKey: 3, sideKey: 5, activeSide: 'right' })).toEqual({ left: 5, right: 3 })
   })
+
+  it('shows no half without a selected tab, also when a tab of the other half is left', () => {
+    expect(shownPanes({ activeKey: null, sideKey: 5, activeSide: 'left' })).toEqual({ left: null, right: null })
+  })
 })
 
 describe('activatePane', () => {

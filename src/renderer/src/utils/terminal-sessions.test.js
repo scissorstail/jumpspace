@@ -172,6 +172,15 @@ describe('routeStates', () => {
     expect(routeStates(undefined).links.size).toBe(0)
   })
 
+  it('goes on past a session that ended normally to the sessions after it', () => {
+    const { nodes } = routeStates([
+      { status: 'exited', exitCode: 0, hops: [a] },
+      { status: 'running', connected: true, hops: [b] }
+    ])
+
+    expect(Object.fromEntries(nodes)).toEqual({ [b]: 'connected' })
+  })
+
   it('keeps the direction of a link', () => {
     const { links } = routeStates([{ status: 'running', connected: true, hops: [a, b] }])
 

@@ -33,6 +33,12 @@ describe('arrangeLayout', () => {
     expect(p.get('a1')[1] - p.get('b1')[1]).toBe(60 + ARRANGE_GAP.y)
   })
 
+  it('puts the left one of two nodes at the same height on the upper row, whatever their ids', () => {
+    const nodes = [node('a', 300, 0), node('b', 0, 0)]
+    const p = arrangeLayout(nodes, [])
+    expect(p.get('b')[1]).toBeLessThan(p.get('a')[1])
+  })
+
   it('gives a node after several jump hosts its own column and no overlaps', () => {
     const nodes = [node(1), node(2, 0, 100), node(3, 300, 0), node(4, 300, 100), node(5, 600, 0, 180, 120), node(6, 0, 500)]
     const links = [[1, 3], [2, 3], [1, 4], [3, 5], [4, 5]]

@@ -161,6 +161,11 @@ describe('forwardSummary', () => {
     const summary = forwardSummary([{ checked: true, from: '', host: '', to: '' }], forwardPlan(target, [server]))
     expect(summary.text).toBe(':? → db.internal:?')
   })
+
+  // forwardEntries와 같은 규칙: 빈칸만 있는 대상 host는 비운 것이다 (ssh는 기본값으로 열린다).
+  it('takes a target host of only spaces for the default host', () => {
+    expect(forwardSummary([{ checked: true, from: '8080', host: '  ', to: '80' }], forwardPlan(server, [])).text).toBe(':8080 → localhost:80')
+  })
 })
 
 describe('activeForwards', () => {

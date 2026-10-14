@@ -109,6 +109,12 @@ describe('whether the editor can read the data of a diagram', () => {
     expect(diagramProblem({ id: EDITOR_ID, nodes: { 7: node(7, { outputs: linkTo(word) }), [word]: node(8) } }).length).toBeLessThan(100)
   })
 
+  it('cuts only a word longer than 20 characters', () => {
+    const word = 'x'.repeat(20)
+
+    expect(diagramProblem({ id: EDITOR_ID, nodes: { [word]: null } })).toBe(`Node ${word} cannot be read.`)
+  })
+
   it('knows the id of the editor, the kind of its nodes and their sockets', () => {
     const editor = read('../components/editor/index.vue')
     const site = read('../components/editor/nodes/site-node/index.js')
