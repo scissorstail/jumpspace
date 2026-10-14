@@ -6,6 +6,9 @@ import { expandEnv, prepareSession } from './launcher.js'
 export const MAX_SESSIONS = 16
 const MAX_WRITE = 64 * 1024
 
+// 세션이 열리는 동안 그것을 부탁한 창이 닫히거나 새로 고쳐졌다 (closeAll)
+class WindowGone extends Error {}
+
 // 앱 안의 터미널에서 쓸 bash. Windows에서는 설정의 git-bash.exe(mintty를 띄우는 실행기) 옆에 있는 bin\bash.exe를 쓴다.
 export function terminalBash(gitBashPath, { platform = process.platform, exists = existsSync, env = process.env } = {}) {
   if (platform !== 'win32') {
@@ -119,14 +122,30 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
     if (entry && entry.owner === owner) ended.delete(id)
   }
 
+  // 열리는 중인 세션 (파일을 쓰는 동안이다: open에서 기다리는 곳은 거기뿐이다). 빈 자리를 셀 때 함께 센다: 한꺼번에 온
+  // 요청이 모두 같은 빈 자리를 보고 한도를 넘었다. 그 사이에 그 창이 닫히거나 새로 고쳐지면(closeAll) 열지 않는다: 그 세션은
+  // 탭 없이 main에서 돌았을 것이다 (새로 고친 화면은 그 번호를 모른다).
+  const opening = new Set()
+
   async function open(kind, payload, { owner, cols = 80, rows = 24 }) {
-    if (sessions.size >= maxSessions) {
+    if (sessions.size + opening.size >= maxSessions) {
       throw new Error(`Too many terminals are open (at most ${maxSessions}). Close one first.`)
     }
 
     const prepared = prepareSession(kind, payload, { tempDir })
     const bash = getBash()
-    await prepared.write()
+    const pending = { owner, cancelled: false }
+    opening.add(pending)
+    try {
+      await prepared.write()
+      if (pending.cancelled) throw new WindowGone('The window of this terminal was closed or reloaded before it started.')
+    } catch (e) {
+      // 쓰다 만 파일도 지운다
+      prepared.cleanup()
+      throw e
+    } finally {
+      opening.delete(pending)
+    }
 
     let spawned
     try {
@@ -213,7 +232,9 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
       try {
         return await open(entry.kind, entry.payload, { owner, cols, rows })
       } catch (e) {
-        remember(id, entry) // 다시 시도할 수 있게 남겨 둔다 (예: 터미널이 너무 많을 때)
+        // 다시 시도할 수 있게 남겨 둔다 (예: 터미널이 너무 많을 때). 창이 닫히거나 새로 고쳐졌으면 다시 열 탭이 없다:
+        // 요청(비밀번호 포함)을 들고 있을 까닭도 없다.
+        if (!(e instanceof WindowGone)) remember(id, entry)
         throw e
       }
     },
@@ -246,8 +267,11 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
       if (session) end(id, session)
     },
 
-    // 창이 닫히거나 새로고침될 때 그 화면의 세션을 모두 끝낸다.
+    // 창이 닫히거나 새로고침될 때 그 화면의 세션을 모두 끝낸다. 열리는 중인 것은 열지 않게 한다.
     closeAll(owner) {
+      for (const pending of opening) {
+        if (owner === undefined || pending.owner === owner) pending.cancelled = true
+      }
       for (const [id, entry] of ended) {
         if (owner === undefined || entry.owner === owner) ended.delete(id)
       }

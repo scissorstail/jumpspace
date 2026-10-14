@@ -346,6 +346,80 @@ describe('createTerminalManager', () => {
     expect(manager.size).toBe(1)
     expect(MAX_SESSIONS).toBeGreaterThan(2)
   })
+
+  // 빈 자리를 본 뒤 세션이 생기기까지 파일을 쓰는 동안 기다린다: 그 사이에 온 요청도 그 자리를 보면 안 된다
+  it('keeps the limit when many sessions are asked for at once', async () => {
+    const { manager, ptys, tempDir } = setup({ maxSessions: 2 })
+    const results = await Promise.allSettled([1, 2, 3, 4].map(() => manager.open('connect', node, { owner: 1 })))
+
+    expect(results.map(x => x.status)).toEqual(['fulfilled', 'fulfilled', 'rejected', 'rejected'])
+    expect(String(results[3].reason)).toMatch(/Too many terminals/)
+    expect(ptys).toHaveLength(2)
+    expect(manager.size).toBe(2)
+    expect(readdirSync(tempDir)).toHaveLength(2)
+
+    // 닫으면 자리가 난다. 열리다 만 것들은 자리를 잡고 있지 않다.
+    manager.close(results[0].value, 1)
+    expect(await manager.open('connect', node, { owner: 1 })).toBeGreaterThan(results[1].value)
+    await expect(manager.open('connect', node, { owner: 1 })).rejects.toThrow(/Too many terminals/)
+  })
+
+  it('counts a session that is being opened, also for reopen', async () => {
+    const { manager, ptys } = setup({ maxSessions: 2 })
+    const first = await manager.open('connect', node, { owner: 1 })
+    ptys[0].emitExit(255)
+
+    const results = await Promise.allSettled([manager.open('connect', node, { owner: 1 }), manager.reopen(first, 1), manager.open('connect', node, { owner: 1 })])
+    expect(results.map(x => x.status)).toEqual(['fulfilled', 'fulfilled', 'rejected'])
+    expect(manager.size).toBe(2)
+  })
+
+  // 파일을 쓰는 사이에 그 창이 새로 고쳐지거나 닫혔다: 세션은 탭 없이 돌았을 것이다
+  it('does not start a session whose window went away while its files were written', async () => {
+    const { manager, ptys, tempDir } = setup()
+    const gone = manager.open('connect', node, { owner: 1 })
+    const other = manager.open('connect', node, { owner: 2 })
+    manager.closeAll(1)
+
+    await expect(gone).rejects.toThrow(/closed or reloaded/)
+    expect(await other).toBeGreaterThan(0)
+    expect(ptys).toHaveLength(1)
+    expect(manager.size).toBe(1)
+    // 그 세션의 파일도 남지 않는다 (다른 창의 세션의 것만 있다)
+    expect(readdirSync(tempDir)).toHaveLength(1)
+
+    // 다음 요청은 열린다: 창은 새로 고쳐진 뒤에도 같은 번호다
+    expect(await manager.open('connect', node, { owner: 1 })).toBeGreaterThan(0)
+    expect(manager.size).toBe(2)
+  })
+
+  it('forgets the request of a reconnect whose window went away meanwhile', async () => {
+    const { manager, ptys } = setup()
+    const id = await manager.open('connect', node, { owner: 1 })
+    ptys[0].emitExit(255)
+
+    const again = manager.reopen(id, 1)
+    manager.closeAll(1)
+    await expect(again).rejects.toThrow(/closed or reloaded/)
+    expect(ptys).toHaveLength(1)
+    // 다시 열 탭이 없다: 요청을 들고 있지 않는다
+    await expect(manager.reopen(id, 1)).rejects.toThrow(/can no longer/)
+  })
+
+  it('starts nothing that was being opened when the app ends', async () => {
+    const { manager, ptys, tempDir } = setup()
+    const opened = await manager.open('connect', node, { owner: 1 })
+    // ProxyJump: 스크립트에 ssh config까지, 파일이 둘이다
+    const late = [manager.open('connect', node, { owner: 1 }), manager.open('proxyJump', [node, { ...node, name: 'db', host: 'db.internal' }], { owner: 2 })]
+    manager.closeAll()
+
+    for (const result of await Promise.allSettled(late)) expect(String(result.reason)).toMatch(/closed or reloaded/)
+    expect(opened).toBeGreaterThan(0)
+    expect(ptys).toHaveLength(1)
+    expect(ptys[0].kill).toHaveBeenCalled()
+    expect(manager.size).toBe(0)
+    expect(readdirSync(tempDir)).toEqual([])
+  })
 })
 
 describe('createTerminalManager: output goes to the screen in batches', () => {
