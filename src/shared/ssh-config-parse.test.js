@@ -86,6 +86,9 @@ describe('parseSshConfig', () => {
       user: 'alice',
       keyPath: 'C:/Users/me/my keys/id'
     })
+    // 빈 따옴표는 빈 값이고, 한쪽에만 있는 따옴표는 값의 일부다
+    expect(hostsOf('Host one\n  User ""')[0]).not.toHaveProperty('user')
+    expect(hostsOf('Host one\n  User alice"\n  Port "22')[0]).toMatchObject({ user: 'alice"', port: '"22' })
   })
 
   // ssh는 같은 설정이 여러 번 나오면 처음 것을 쓴다.
@@ -134,6 +137,8 @@ describe('parseSshConfig', () => {
     it('is the exec of the node, without the shell the app adds after it', () => {
       expect(hostsOf('Host a\n  RemoteCommand htop; exec $SHELL')[0].exec).toBe('htop')
       expect(hostsOf('Host a\n  RemoteCommand cd /srv && ls -la')[0].exec).toBe('cd /srv && ls -la')
+      // 손으로 쓴 config에는 ; 앞에 공백이 있기도 하다
+      expect(hostsOf('Host a\n  RemoteCommand tail -f log ; exec $SHELL')[0].exec).toBe('tail -f log')
     })
 
     it('keeps quotes and equals signs inside the command', () => {
@@ -154,7 +159,7 @@ describe('parseSshConfig', () => {
     })
 
     it('reports a forward it cannot hold (a socket, a missing target) and makes no forward of it', () => {
-      const result = parseSshConfig('Host a\n  LocalForward /tmp/a.sock /var/run/b.sock\n  LocalForward 8080\n  LocalForward 1 a:2 extra')
+      const result = parseSshConfig('Host a\n  LocalForward /tmp/a.sock /var/run/b.sock\n  LocalForward 8080\n  LocalForward 1 a:2 extra\n  LocalForward 8081 /var/run/b.sock\n  LocalForward /tmp/c.sock db.internal:5432')
 
       expect(result.hosts[0]).not.toHaveProperty('forwards')
       expect(result.ignored).toEqual(['LocalForward'])

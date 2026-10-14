@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, sanitizeView, scaleView, shownView, viewOf } from './view'
+import { MAX_AREA } from '../../../shared/view.js'
 
 describe('sanitizeView', () => {
   it('keeps a valid view and drops extra keys', () => {
@@ -26,6 +27,11 @@ describe('sanitizeView', () => {
 describe('sanitizeView: the size of the canvas area the view was seen in', () => {
   it('keeps w and h when both are usable', () => {
     expect(sanitizeView({ k: 1, x: 5, y: 6, w: 1010, h: 505.5 })).toEqual({ k: 1, x: 5, y: 6, w: 1010, h: 505.5 })
+  })
+
+  it('takes a side up to MAX_AREA, not one px more', () => {
+    expect(sanitizeView({ k: 1, x: 0, y: 0, w: MAX_AREA, h: MAX_AREA })).toEqual({ k: 1, x: 0, y: 0, w: MAX_AREA, h: MAX_AREA })
+    expect(sanitizeView({ k: 1, x: 0, y: 0, w: MAX_AREA + 1, h: 600 })).toEqual({ k: 1, x: 0, y: 0 })
   })
 
   it('drops both when one is missing or unusable, and keeps the view', () => {

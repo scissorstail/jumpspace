@@ -44,6 +44,32 @@ describe('migrateLegacyForwards', () => {
     expect(forwardsOf(result, 1)).toEqual([])
   })
 
+  // user, host, port 중 하나라도 없는 노드로는 접속하지 않는다: 그 항목은 옛 뜻 그대로 이 노드에 남는다.
+  it.each([
+    ['no port', { port: '' }],
+    ['no user', { user: '' }],
+    ['no host', { host: '' }]
+  ])('leaves the entries of a node with %s where they are', (label, missing) => {
+    const result = migrateLegacyForwards(data(
+      node(1, conn('bastion')),
+      node(2, conn('partial', { ...missing, forwards: [{ checked: true, from: '1', to: '2' }] }), 1)
+    ))
+
+    expect(forwardsOf(result, 2)).toEqual([{ checked: true, from: '1', to: '2', host: null }])
+    expect(forwardsOf(result, 1)).toEqual([])
+  })
+
+  // 예전 파일의 노드에는 포워딩 목록이 없기도 하다. 그런 노드가 앞에 있어도 뒤의 노드는 옮긴다.
+  it('goes on past a node without a list of forwards', () => {
+    const result = migrateLegacyForwards(data(
+      node(1, { name: 'bastion', user: 'u', host: 'bastion.example', port: '22' }),
+      node(2, conn('app', { forwards: [{ checked: true, from: '8080', to: '80' }] }), 1)
+    ))
+
+    expect(forwardsOf(result, 2)).toEqual([])
+    expect(forwardsOf(result, 1)).toEqual([{ checked: true, from: '8080', to: '80', host: 'app.example' }])
+  })
+
   it('has nowhere to move the entries of a first node: they stay', () => {
     const result = migrateLegacyForwards(data(node(1, conn('solo', { forwards: [{ checked: true, from: '1', to: '2' }] }))))
 

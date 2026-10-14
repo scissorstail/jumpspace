@@ -358,6 +358,15 @@ describe('normalizeItems', () => {
   it('keeps items that have no nodes or odd node shapes', () => {
     expect(normalizeItems([{ name: 'x', data: { id: 'a' } }])[0].data).toEqual({ id: 'a', nodes: {} })
     expect(normalizeItems([{ name: 'x', data: { nodes: { 1: null, 2: { id: 2 } } } }])[0].data.nodes).toEqual({ 1: null, 2: { id: 2 } })
+    // data가 객체가 아닌 노드도 그대로 둔다 (풀어 헤치면 null에서는 예외가 나고, 글자는 글자마다 키가 있는 객체가 된다)
+    const odd = { 1: 'node', 2: { id: 2, data: null }, 3: { id: 3, data: 'x' } }
+    expect(normalizeItems([{ name: 'x', data: { nodes: odd } }])[0].data.nodes).toEqual(odd)
+  })
+
+  it('names what is wrong with an item that is no diagram', () => {
+    for (const wrong of [null, 5, 'x', [], { name: 'x' }, { name: 'x', data: null }]) {
+      expect(() => normalizeItems([wrong]), JSON.stringify(wrong)).toThrow('Invalid project item.')
+    }
   })
 
   it('drops unknown fields', () => {

@@ -78,6 +78,12 @@ describe('the bounds on a scaled screen', () => {
     expect(pixelStep(1.2345)).toBe(1)
   })
 
+  // 걸음은 20 px까지 찾는다: 사용자 지정 배율 105 %는 20 (20 px이 물리 픽셀 21개), 더 긴 걸음이 드는 배율은 그대로 둔다
+  it('looks for a step of up to 20 px', () => {
+    expect(pixelStep(1.05)).toBe(20)
+    expect(pixelStep(22 / 21)).toBe(1)
+  })
+
   it('moves a stored window to the nearest values that are whole pixels', () => {
     expect(restoreBounds({ x: 90, y: 70, width: 902, height: 642 }, [scaled(1.25)])).toEqual({ x: 92, y: 72, width: 904, height: 644, isMaximized: false })
     expect(restoreBounds({ x: 89, y: 69, width: 901, height: 641 }, [scaled(1.25)])).toEqual({ x: 88, y: 68, width: 900, height: 640, isMaximized: false })

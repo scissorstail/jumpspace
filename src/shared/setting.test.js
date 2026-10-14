@@ -85,6 +85,9 @@ describe('normalizeSetting: terminalFontSize', () => {
     expect(normalizeSetting({ terminalFontSize: 'big' }).terminalFontSize).toBe(13)
     expect(normalizeSetting({ terminalFontSize: null }).terminalFontSize).toBe(13)
     expect(normalizeSetting({ terminalFontSize: NaN }).terminalFontSize).toBe(13)
+    // Number('')와 Number(' ')는 0이다: 비었거나 공백뿐인 글자는 숫자가 아니라서 가장 작은 크기가 되지 않는다
+    expect(normalizeSetting({ terminalFontSize: '' }).terminalFontSize).toBe(13)
+    expect(normalizeSetting({ terminalFontSize: ' \t' }).terminalFontSize).toBe(13)
   })
 
   it('keeps whole sizes inside its range', () => {
