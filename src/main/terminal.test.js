@@ -120,6 +120,16 @@ describe('killPty', () => {
     expect(kill).not.toHaveBeenCalled()
     expect(() => killPty(pty, { platform: 'linux', kill })).not.toThrow()
   })
+
+  it('sends no signal for a pid of 0, which would hang up the group of the app itself', () => {
+    const kill = vi.fn()
+    const pty = { pid: 0, kill: vi.fn() }
+
+    killPty(pty, { platform: 'linux', kill })
+
+    expect(kill).not.toHaveBeenCalled()
+    expect(pty.kill).toHaveBeenCalled()
+  })
 })
 
 describe('windowsPtyInfo', () => {
@@ -133,6 +143,9 @@ describe('windowsPtyInfo', () => {
     expect(windowsPtyInfo({ platform: 'win32', release: '10.0.26100' })).toEqual({ backend: 'conpty', buildNumber: 26100 })
     // 번호를 모르면 주지 않는다 (xterm.js는 그때 새 ConPTY로 본다)
     expect(windowsPtyInfo({ platform: 'win32', release: 'unknown' })).toEqual({ backend: 'conpty', buildNumber: undefined })
+    // 0이나 음수는 번호가 아니다
+    expect(windowsPtyInfo({ platform: 'win32', release: '10.0.0' })).toEqual({ backend: 'conpty', buildNumber: undefined })
+    expect(windowsPtyInfo({ platform: 'win32', release: '10.0.-5' })).toEqual({ backend: 'conpty', buildNumber: undefined })
   })
 
   it('counts the bundled ConPTY as a new one on an old Windows, so the screen reflows long lines itself', () => {
@@ -337,6 +350,21 @@ describe('createTerminalManager', () => {
     ptys[0].emitExit(0)
     expect(send.mock.calls).toEqual([[7, 'terminal:data', id, 'hello'], [7, 'terminal:exit', id, 0]])
     expect(manager.size).toBe(0)
+  })
+
+  it('takes a size of 2 to 1000 columns and rows, and nothing outside', async () => {
+    const { manager, ptys } = setup()
+    const id = await manager.open('connect', node, { owner: 1 })
+
+    manager.resize(id, 1, 1, 40)
+    manager.resize(id, 1, 80, 1)
+    manager.resize(id, 1, 1001, 40)
+    manager.resize(id, 1, 80, 1001)
+    expect(ptys[0].resize).not.toHaveBeenCalled()
+
+    manager.resize(id, 1, 2, 2)
+    manager.resize(id, 1, 1000, 1000)
+    expect(ptys[0].resize.mock.calls).toEqual([[2, 2], [1000, 1000]])
   })
 
   it('lets only the owner write, resize and close, and checks the values', async () => {
@@ -755,6 +783,8 @@ describe('createTerminalManager: reconnect', () => {
     }
     // maxSessions 1이면 2개까지 기억한다: 가장 오래된 것이 잊힌다.
     await expect(manager.reopen(ids[0], 1)).rejects.toThrow(/can no longer/)
+    const again = await manager.reopen(ids[1], 1)
+    manager.close(again, 1)
     expect(await manager.reopen(ids[2], 1)).toBeGreaterThan(ids[2])
   })
 })
