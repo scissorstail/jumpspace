@@ -113,6 +113,12 @@ function wrap({ prelude = [], lines, cleanupPaths, env = {} }) {
   return { script, config: null, env }
 }
 
+// 원격에서 실행할 명령(exec) 뒤에 셸을 연다. 줄바꿈으로 잇는다: "; "로 이으면 ;나 &로 끝나는 명령(cd /srv;)은 문법 오류로
+// 바로 끝났고, 주석(# ...)이 붙은 명령은 뒤의 exec $SHELL까지 주석이 되어 셸이 열리지 않았다 (#233).
+function withShell(exec) {
+  return sq(`${exec}\nexec $SHELL`)
+}
+
 function banner(...lines) {
   return `printf '%s\\n' ${lines.map(sq).join(' ')}`
 }
@@ -128,7 +134,7 @@ export function buildConnect(rawNode, { scriptPath }) {
     node.exec && '-tt',
     '--',
     sq(dest),
-    node.exec && sq(`${node.exec}; exec $SHELL`)
+    node.exec && withShell(node.exec)
   ].filter(Boolean).join(' ')
 
   return wrap({
@@ -228,7 +234,7 @@ export function buildProxyJump(rawNodes, { scriptPath, configPath }) {
     last.exec && '-tt',
     '--',
     sq(aliases[aliases.length - 1]),
-    last.exec && sq(`${last.exec}; exec $SHELL`)
+    last.exec && withShell(last.exec)
   ].filter(Boolean).join(' ')
 
   return {

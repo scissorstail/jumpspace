@@ -106,7 +106,7 @@ Open the link icon of a node and add rows of `local port -> target host : target
 
 ### copy SSH config
 
-*Copy SSH config* in the settings copies the node in `~/.ssh/config` format. Previous nodes become `ProxyJump`, enabled forwards become `LocalForward`, `Exec` becomes `RemoteCommand`. Passwords are never included.
+*Copy SSH config* in the settings copies the node in `~/.ssh/config` format. Previous nodes become `ProxyJump`, enabled forwards become `LocalForward`, `Exec` becomes `RemoteCommand` (one line ending in `; exec $SHELL`, so an exec of several lines or one that ends in `&` is left out). Passwords are never included.
 
 ### from SSH config
 

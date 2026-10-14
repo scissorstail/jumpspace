@@ -223,9 +223,31 @@ describe.skipIf(!canRun)('generated scripts run under bash', () => {
 
       expect(result.stdout).toContain(`(${name})`)
       // 원격 명령은 인자 하나로 그대로 전달된다. (로컬에서는 실행되지 않는다)
-      expect(result.args.slice(-4)).toEqual(['-tt', '--', 'deploy@example.com', `${exec}; exec $SHELL`])
+      expect(result.args.slice(-4)).toEqual(['-tt', '--', 'deploy@example.com', `${exec}\nexec $SHELL`])
       expect(existsSync(join(root, 'PWNED'))).toBe(false)
       expect(existsSync(join(root, 'PWNED2'))).toBe(false)
+    })
+
+    // sshd는 원격 명령을 로그인 셸에게 준다 ($SHELL -c "<명령>"). 가짜 ssh가 그렇게 하고, 열린 셸은 표시를 남긴다.
+    // "; exec $SHELL"로 이었을 때는 ;나 &로 끝나는 명령이 문법 오류로 끝났고, 주석이 붙은 명령 뒤에는 셸이 열리지 않았다.
+    it.each([
+      ['a plain command', 'echo ran'],
+      ['a command that ends with ;', 'echo ran;'],
+      ['a command that ends with &', 'echo ran &'],
+      ['a command with a comment', 'echo ran # a note'],
+      ['several lines', 'echo first\necho ran']
+    ])('opens the shell after the remote command: %s', (name, exec) => {
+      const shellEnv = join(root, 'bashenv-shell.sh')
+      const shell = join(root, 'login-shell.sh')
+      writeFileSync(shell, '#!/bin/bash\necho SHELL-STARTED\n', { mode: 0o755 })
+      writeFileSync(shellEnv, `ssh() { SHELL=${sq(toUnixPath(shell))} bash -c "\${@: -1}"; }\n`)
+      const r = newRun()
+      const result = run(buildConnect({ ...node, exec }, r.paths), r, { env: { BASH_ENV: toUnixPath(shellEnv) } })
+
+      expect(result.stderr).toBe('')
+      expect(result.stdout).toContain('ran')
+      expect(result.stdout).toMatch(/SHELL-STARTED\s*$/)
+      expect(result.status).toBe(0)
     })
 
     it('exits with the status of ssh, and waits for Enter when ssh itself failed (255)', () => {
@@ -292,7 +314,7 @@ describe.skipIf(!canRun)('generated scripts run under bash', () => {
       expect(result.args).toEqual([
         '-o', 'StrictHostKeyChecking=accept-new',
         '-F', r.paths.configPath, '-J', a1,
-        '-tt', '--', a2, 'uptime; exec $SHELL'
+        '-tt', '--', a2, 'uptime\nexec $SHELL'
       ])
       expect(result.answers).toBe('pw-one\npw-two\n')
       // ssh가 실행되는 동안 config가 있었고, 끝나면 스크립트와 config 모두 지워진다

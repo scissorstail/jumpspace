@@ -35,7 +35,7 @@ describe('buildConnect', () => {
 
   it('appends exec with a tty', () => {
     const script = buildConnect({ ...node, exec: "cd /var/log; echo 'hi'" }, paths).script
-    expect(script).toContain(`-tt -- 'deploy@example.com' ${sq("cd /var/log; echo 'hi'; exec $SHELL")}`)
+    expect(script).toContain(`-tt -- 'deploy@example.com' ${sq("cd /var/log; echo 'hi'\nexec $SHELL")}`)
   })
 
   it('omits -i when there is no key', () => {

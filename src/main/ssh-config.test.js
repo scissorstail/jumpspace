@@ -23,6 +23,20 @@ describe('buildSshConfig', () => {
     expect(config).toContain('    RemoteCommand cd /tmp; exec $SHELL\n    RequestTTY yes')
   })
 
+  // RemoteCommand는 한 줄이고 "; exec $SHELL"로 끝난다: 그 앞의 ;는 빼고(;;는 문법 오류다), ;를 붙일 수 없는 명령은 넣지 않는다
+  it('writes a remote command that ends with ; without it, and leaves out one that ends with & or has several lines', () => {
+    const remote = exec => buildSshConfig([{ ...inner, exec }]).match(/^ {4}RemoteCommand (.*)$/m)?.[1] ?? null
+
+    expect(remote('cd /tmp;')).toBe('cd /tmp; exec $SHELL')
+    expect(remote('cd /tmp ; ;')).toBe('cd /tmp; exec $SHELL')
+    expect(remote('make && make install')).toBe('make && make install; exec $SHELL')
+    expect(remote('sleep 9 &')).toBeNull()
+    expect(remote('&')).toBeNull()
+    expect(remote('echo a\necho b')).toBeNull()
+    expect(remote(';')).toBeNull()
+    expect(buildSshConfig([{ ...inner, exec: 'sleep 9 &' }])).not.toContain('RequestTTY')
+  })
+
   it('makes aliases unique and falls back to the host', () => {
     const config = buildSshConfig([{ ...jump, name: 'x' }, { ...inner, name: 'x' }, { ...inner, name: '' }])
     expect(config).toMatch(/^Host x$/m)
