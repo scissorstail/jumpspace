@@ -8,6 +8,11 @@ export const MAX_CONFIG_HOSTS = 50
 // buildSshConfig는 exec를 "RemoteCommand <exec>; exec $SHELL"로 쓴다 (이 값으로). 읽을 때는 그 꼬리를 뗀다.
 export const EXEC_TAIL = '; exec $SHELL'
 
+// HostName, IdentityFile과 RemoteCommand는 %를 토큰(%h, %u, ...)으로 읽는다: 글자 %는 %%로 쓴다. 그러지 않으면
+// fe80::1%eth0이나 date +%Y를 ssh가 "unknown key"로 거절한다 (#236). 앱이 쓰는 두 config와 이 글 읽기가 함께 쓴다.
+export const escapeTokens = value => value.replaceAll('%', '%%')
+export const unescapeTokens = value => value.replaceAll('%%', '%')
+
 // 큰따옴표로 감싼 값의 따옴표를 벗긴다
 const unquote = value => (value.length >= 2 && value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1) : value)
 
@@ -88,8 +93,7 @@ export function parseSshConfig(text) {
 
     switch (keyword) {
       case 'hostname':
-        // HostName도 %를 토큰으로 읽는다 (fe80::1%eth0은 %%로 쓴다)
-        once('host', unquote(value).replaceAll('%%', '%'))
+        once('host', unescapeTokens(unquote(value)))
         break
       case 'user':
         once('user', unquote(value))
@@ -98,12 +102,10 @@ export function parseSshConfig(text) {
         once('port', unquote(value))
         break
       case 'identityfile':
-        // config에서 %는 %%로 쓴다
-        once('keyPath', unquote(value).replaceAll('%%', '%'))
+        once('keyPath', unescapeTokens(unquote(value)))
         break
       case 'remotecommand': {
-        // RemoteCommand도 %를 토큰으로 읽는다 (date +%Y는 %%로 쓴다)
-        const command = value.replaceAll('%%', '%')
+        const command = unescapeTokens(value)
         once('exec', command.endsWith(EXEC_TAIL) ? command.slice(0, -EXEC_TAIL.length).trim() : command)
         break
       }

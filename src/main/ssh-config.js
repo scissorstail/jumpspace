@@ -1,5 +1,5 @@
 import { bracketHost, toUnixPath } from './ssh.js'
-import { EXEC_TAIL } from '../shared/ssh-config-parse.js'
+import { EXEC_TAIL, escapeTokens } from '../shared/ssh-config-parse.js'
 import { validateForwards, validateNode } from '../shared/validate.js'
 
 function toAlias(node, used) {
@@ -35,15 +35,13 @@ export function buildSshConfig(rawNodes, { forwards = [] } = {}) {
 
     return [
       `Host ${aliases[index]}`,
-      // HostName, IdentityFile과 RemoteCommand는 %를 토큰(%h, %u, ...)으로 읽는다: 글자 %는 %%로 쓴다. 그러지 않으면
-      // fe80::1%eth0이나 date +%Y를 ssh가 "unknown key"로 거절한다 (#236)
-      `    HostName ${node.host.replaceAll('%', '%%')}`,
+      `    HostName ${escapeTokens(node.host)}`,
       node.user && `    User ${node.user}`,
       node.port && `    Port ${node.port}`,
-      node.keyPath && `    IdentityFile "${toUnixPath(node.keyPath).replaceAll('%', '%%')}"`,
+      node.keyPath && `    IdentityFile "${escapeTokens(toUnixPath(node.keyPath))}"`,
       node.keyPath && '    IdentitiesOnly yes',
       index > 0 && `    ProxyJump ${aliases.slice(0, index).join(',')}`,
-      canExec && `    RemoteCommand ${exec.replaceAll('%', '%%')}${EXEC_TAIL}`,
+      canExec && `    RemoteCommand ${escapeTokens(exec)}${EXEC_TAIL}`,
       canExec && '    RequestTTY yes',
       ...(isLast ? localForwards.map(x => `    LocalForward ${x.from} ${bracketHost(x.host)}:${x.to}`) : []),
       node.password && '    # password is not exported'

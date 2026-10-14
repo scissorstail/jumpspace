@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { validateNode, validateForwards } from '../shared/validate.js'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../shared/terminal-marker.js'
+import { escapeTokens } from '../shared/ssh-config-parse.js'
 
 // Git Bash에서 실행할 스크립트를 만든다.
 // 사용자 입력값은 전부 POSIX single-quote로 감싸서 스크립트 파일에 넣고, 명령어 문자열 인자로는 넘기지 않는다.
@@ -158,13 +159,12 @@ function hostAliases(nodes) {
 function hostConfig(nodes, aliases) {
   return nodes.map((node, index) => [
     `Host ${aliases[index]}`,
-    // ssh는 HostName의 %를 토큰으로 읽는다: fe80::1%eth0을 "unknown key %e"로 거절했다 (#236). 글자 %는 %%로 쓴다.
-    `HostName ${node.host.replaceAll('%', '%%')}`,
+    `HostName ${escapeTokens(node.host)}`,
     `HostKeyAlias ${aliases[index]}`,
     'StrictHostKeyChecking accept-new',
     `User ${node.user}`,
     `Port ${node.port}`,
-    ...(node.keyPath ? [`IdentityFile "${toUnixPath(node.keyPath).replaceAll('%', '%%')}"`, 'IdentitiesOnly yes'] : []),
+    ...(node.keyPath ? [`IdentityFile "${escapeTokens(toUnixPath(node.keyPath))}"`, 'IdentitiesOnly yes'] : []),
     ...(node.password ? ['NumberOfPasswordPrompts 1'] : []),
     ...(node.password && !node.keyPath ? ['PubkeyAuthentication no'] : [])
   ].join('\n') + '\n').join('\n') + '\n'
