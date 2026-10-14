@@ -1393,6 +1393,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 1314 passed (with Git's bash; 3 new), lint ok, build ok, the tests caught 4 of 4 mutations. Tests only: no headless checks, no real window.
 - Found / next: no bug in the app. Tests were added, so this run does not count toward the two runs with nothing to add or fix. Every module of `src/main`, `src/shared` and `src/renderer/src/utils` has had a sweep now, but `terminal.js` (its tests take long). Next: refactor (#232).
 
+### #235 2026-10-15 · refactor (the seventeenth run of the cycle of #218)
+- Did: since the refactor of #232 the sources changed in `ssh.js` and `ssh-config.js` (#233; `withShell()` already took the remote command of Connect and ProxyJump into one place) and in tests (#234). `clones.cjs` finds no repeated script code, `stale-refs.cjs` nothing stale. One seam: *Copy SSH config* wrote the tail of `RemoteCommand` (`; exec $SHELL`) as text in `ssh-config.js`, and *From SSH config* took off its own `EXEC_TAIL` of `src/shared/ssh-config-parse.js` when reading it back: the same form in two places. `buildSshConfig` takes the exported `EXEC_TAIL` now. Commit 19a4186.
+- Result: tests 1314 passed (with Git's bash; none changed), lint ok, build ok, the old tests caught 3 of 3 mutations of the shared value; headless checks 26 runs passed (858 checks; the parser is part of the page), `real-window-check.cjs` 39 passed, `real-window-check-2.cjs` with `ipc` 31 passed (it calls *Copy SSH config* with a stand-in clipboard); no `electron.exe` or `ssh.exe` left.
+- Found / next: no bug. Code changed, so this run does not count toward the two runs with nothing to add or fix. Next: a completeness review (#233).
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
