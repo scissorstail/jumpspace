@@ -5,8 +5,8 @@
 // 한 번에 만드는 노드의 수. 긴 config를 통째로 붙여도 캔버스가 노드로 덮이지 않게 한다.
 export const MAX_CONFIG_HOSTS = 50
 
-// buildSshConfig는 exec를 "RemoteCommand <exec>; exec $SHELL"로 쓴다.
-const EXEC_TAIL = '; exec $SHELL'
+// buildSshConfig는 exec를 "RemoteCommand <exec>; exec $SHELL"로 쓴다 (이 값으로). 읽을 때는 그 꼬리를 뗀다.
+export const EXEC_TAIL = '; exec $SHELL'
 
 // 큰따옴표로 감싼 값의 따옴표를 벗긴다
 const unquote = value => (value.length >= 2 && value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1) : value)

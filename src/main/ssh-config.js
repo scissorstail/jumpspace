@@ -1,4 +1,5 @@
 import { bracketHost, toUnixPath } from './ssh.js'
+import { EXEC_TAIL } from '../shared/ssh-config-parse.js'
 import { validateForwards, validateNode } from '../shared/validate.js'
 
 function toAlias(node, used) {
@@ -25,7 +26,8 @@ export function buildSshConfig(rawNodes, { forwards = [] } = {}) {
 
   return nodes.map((node, index) => {
     const isLast = index === nodes.length - 1
-    // exec는 config의 RemoteCommand에 한 줄로만 표현할 수 있고, 뒤에 "; exec $SHELL"이 붙는다 (줄바꿈으로 이을 수 없다).
+    // exec는 config의 RemoteCommand에 한 줄로만 표현할 수 있고, 뒤에 "; exec $SHELL"(EXEC_TAIL: "From SSH config"가 그것을
+    // 떼고 읽는다)이 붙는다 (줄바꿈으로 이을 수 없다).
     // ;로 끝나는 명령은 그 ;를 뺀다 (;;는 문법 오류다). &로 끝나는 명령은 ;를 붙일 수 없으므로 여러 줄의 명령처럼 넣지 않는다.
     // (주석이 붙은 명령은 가려내지 못한다: #는 따옴표 안에도 올 수 있다. 그 셸은 열리지 않는다)
     const exec = node.exec.replace(/[\s;]+$/, '')
@@ -39,7 +41,7 @@ export function buildSshConfig(rawNodes, { forwards = [] } = {}) {
       node.keyPath && `    IdentityFile "${toUnixPath(node.keyPath).replaceAll('%', '%%')}"`,
       node.keyPath && '    IdentitiesOnly yes',
       index > 0 && `    ProxyJump ${aliases.slice(0, index).join(',')}`,
-      canExec && `    RemoteCommand ${exec}; exec $SHELL`,
+      canExec && `    RemoteCommand ${exec}${EXEC_TAIL}`,
       canExec && '    RequestTTY yes',
       ...(isLast ? localForwards.map(x => `    LocalForward ${x.from} ${bracketHost(x.host)}:${x.to}`) : []),
       node.password && '    # password is not exported'
