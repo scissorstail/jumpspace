@@ -1403,6 +1403,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 1318 passed (with Git's bash; 4 new, among them two that have ssh itself read the copied config and the config of a ProxyJump session with `ssh -G`: Git's ssh on Windows, `ssh` on Linux), lint ok, build ok, the tests caught 5 of 5 mutations; headless checks 26 runs passed (858 checks; the parser is part of the page), `real-window-check.cjs` 39 passed, `real-window-check-2.cjs` with `term,ipc,login` 76 passed; no `electron.exe` or `ssh.exe` left.
 - Found / next: a fix, so this run does not count toward the two runs with nothing to add or fix. Next: tests (#234).
 
+### #237 2026-10-15 · tests (the nineteenth run of the cycle of #218)
+- Did: a sweep of mutations over `src/main/terminal.js` with its tests (8 of 67 alive). Two are equivalent: `exitStatus` takes an exit code above `0xff` up to `0xffff` with a low byte of 0, and moving either bound by one changes nothing, because the low byte already excludes both edges. Six were behaviors no test held, now pinned in `terminal.test.js`: `killPty` sends no signal for a pid of 0 (`kill(-0)` would hang up the process group of the app itself) and still closes the pty; `windowsPtyInfo` gives no build number for a build of 0 or a negative one; a resize takes 2 and 1000 columns and rows and refuses 1 and 1001; with one session allowed, the two most recent ended sessions both stay reopenable. Commit 64dd179.
+- Result: tests 1320 passed (with Git's bash; 2 new, 2 extended), lint ok, build ok, the tests caught 6 of 6 mutations. Tests only, so no headless or real-window run.
+- Found / next: no bug; tests were added, so this run does not count toward the two runs with nothing to add or fix. Every module of main, shared and the renderer's utils has now had a sweep. Next: refactor (#235).
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
