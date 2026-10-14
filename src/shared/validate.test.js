@@ -53,6 +53,8 @@ describe('validate', () => {
   it('keeps passwords as they are', () => {
     expect(validatePassword(' a b ')).toBe(' a b ')
     expect(validatePassword(undefined)).toBe('')
+    // 저장하거나 가져온 파일의 null도 비밀번호가 없는 것이다
+    expect(validatePassword(null)).toBe('')
     expect(() => validatePassword('a\nb')).toThrow()
     expect(() => validatePassword('a\u0000b')).toThrow()
     expect(() => validatePassword(123)).toThrow()
@@ -62,6 +64,24 @@ describe('validate', () => {
     expect(validateExec(' cd /var/log; ls ')).toBe('cd /var/log; ls')
     expect(validateExec(undefined)).toBe('')
     expect(() => validateExec('a\u0000b')).toThrow()
+  })
+
+  // 한계값: 그 길이까지는 받고, 하나 더 길면 거부한다.
+  it('takes values up to each limit and refuses one more', () => {
+    expect(validatePort('65535')).toBe('65535')
+    expect(() => validatePort('65536')).toThrow('Port must be a number between 1 and 65535.')
+
+    const keyPath = 'k'.repeat(1024)
+    expect(validateKeyPath(keyPath)).toBe(keyPath)
+    expect(() => validateKeyPath(`${keyPath}k`)).toThrow('Invalid key path.')
+
+    const exec = 'e'.repeat(4096)
+    expect(validateExec(exec)).toBe(exec)
+    expect(() => validateExec(`${exec}e`)).toThrow('Invalid exec command.')
+
+    const password = 'p'.repeat(1024)
+    expect(validatePassword(password)).toBe(password)
+    expect(() => validatePassword(`${password}p`)).toThrow('Invalid password.')
   })
 
   describe('forwards', () => {
@@ -83,6 +103,13 @@ describe('validate', () => {
       }
     })
 
+    // 목록이 아니면 그 이유로 거부한다 (null.forEach의 TypeError가 아니라)
+    it('refuses a forward list that is not a list', () => {
+      for (const value of [null, undefined, {}, '8080']) {
+        expect(() => validateForwards(value), String(value)).toThrow('Invalid forward list.')
+      }
+    })
+
     it('rejects the same local port twice', () => {
       expect(() => validateForwards([
         { checked: true, from: '8080', to: '80' },
@@ -98,7 +125,10 @@ describe('validate', () => {
 
   it('validates node and forwards', () => {
     expect(validateNode({ name: 'a\nb', user: 'u', host: 'h', port: '22' }).name).toBe('a b')
-    expect(() => validateNode(null)).toThrow()
+    // 객체가 아니면 그 이유로 거부한다 (null.name의 TypeError나 user 오류가 아니라)
+    for (const value of [null, undefined, 'host', 5]) {
+      expect(() => validateNode(value), String(value)).toThrow('Invalid connection data.')
+    }
     // 인증 정보(키/비밀번호)는 필수가 아니다. (ssh-agent, 기본 키, 터미널 입력)
     expect(validateNode({ user: 'u', host: 'h', port: '22' })).toMatchObject({ keyPath: '', password: '' })
     expect(validateNode({ user: 'u', host: 'h', port: '22', password: 'p w' }).password).toBe('p w')
