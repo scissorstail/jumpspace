@@ -82,10 +82,12 @@ Top first, one per run; take the item out when it is done. When the list is empt
 - The right-click menu does not open with its corner at the pointer, although the comment in `components/editor/context-menu.scss` says it does: the plugin's own margins (-60px, -20px, a scoped selector) win over our `margin`, so the menu opens around the pointer with its first item under it (measured in #116). Left alone: nobody asked, and it lets a second click add a node at once. If the owner wants the usual place, the margin belongs into the `#rete &` block that already sets the width.
 
 ### Code hot spots
-- `src/renderer/src/components/layout/main-navigator.vue` (about 650 lines, the item menu moved out in #46): list, drag, select, rename, import/export. Most of the rest is its scoped CSS; the next seam would be the header toolbar (new, more actions).
-- `src/renderer/src/views/Layout.vue` (about 550 lines; the scene moved out, the diagram list came in; the terminal button of the header left in #134)
-- `src/renderer/src/components/terminal/terminal-panel.vue` (about 350 lines; texts and colors moved to `utils/terminal-view.js` in #57, the tab row to `terminal-tabs.vue` in #75): session start, reconnect, clipboard, resize and maximize.
-- `src/main/index.js` (about 310 lines): mostly window, tray and IPC wiring now; the app:// path check, the `{ ok, error }` wrapper and the setting store moved out in #67.
+Sizes of 2026-10-14 (#219). Tests read the sources of these files (and run their scripts with a fake `this`), so a split that moves code from one file to another has to change those tests first.
+- `src/renderer/src/components/layout/main-navigator.vue` (about 680 lines, the item menu moved out in #46): list, drag, select, rename, import/export. Most of the rest is its scoped CSS; the next seam would be the header toolbar (new, more actions).
+- `src/renderer/src/components/editor/index.vue` (about 620 lines, nearly all script): the Rete setup in `mounted()` is about 210 lines of commented wiring; the link list and the hint under the canvas are built once since #219.
+- `src/renderer/src/views/Layout.vue` (about 570 lines; the scene moved out, the diagram list came in; the terminal button of the header left in #134)
+- `src/renderer/src/components/terminal/terminal-panel.vue` (about 570 lines, about 415 of them script and most of that comments over the xterm.js wiring; texts and colors moved to `utils/terminal-view.js` in #57, the tab row to `terminal-tabs.vue` in #75): session start, reconnect, clipboard, resize and maximize.
+- `src/main/index.js` (about 380 lines): mostly window, tray and IPC wiring; the app:// path check, the `{ ok, error }` wrapper and the setting store moved out in #67, the quit hold (#196) and the two questions (#157, #218) are modules of their own.
 
 ### Missing or thin tests
 - No component is mounted in a test; logic lives in `utils/` on purpose. Since #141 a test can run the script of a component with a fake `this` (`forward-menu.test.js`); `connection-settings.vue` (#178) and `main-navigator.vue` (#179) have one too. Consider `@vue/test-utils` only if it stays cheap.
@@ -1309,6 +1311,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: the owner keeps the terminals of a window hidden to the tray and wants the question at *Quit* in the tray instead (first "3", to be asked when hiding, then in the same minute "ask when quitting from the tray" and "just keep them when it goes to the tray"). `quitFromTray()` in `index.js` asks `mayQuit(terminals.running, ...)` (new `src/main/quit-question.js`; `running` counts the sessions of every window, also those being opened) with the async message box, no parent, Cancel as the default and a guard against a second click; with no running terminal there is no question.
 - Result: tests 1276 passed (with Git's bash), lint ok, build ok, 14 of 14 mutations caught. Real window: `real-window-check.cjs` 39 passed; the `login` part 17 passed (new: hiding asks nothing; *Quit* of the tray menu, pressed through the menu found with the inspector's `queryObjects`, asks "1 terminal is still running.", Cancel keeps the app and the logged-in session, Quit ends both, and without a terminal there is no question). Commit 9d6b5d9.
 - Found / next: the owner started the 40-minute cycle again (tests, refactoring, a completeness review; at the end the installer, the timers off, waiting; see Routine). `real-window-check-2.cjs` has 207 checks now.
+
+### #219 2026-10-14 · refactor (the first run of the cycle of #218)
+- Did: refactor was the activity done least recently (#188), so the code added since then was read for repeats and for parts that do two things. `editor/index.vue` turned its links into id pairs the same way in four places (refusing a loop, the loop notice, Arrange nodes, nodes from an SSH config) and wrote out the five options of the hint under the canvas twice: now `linksOf()` and `showHint()`. `start()` and `reconnect()` of the terminal panel share a pattern but differ in what they mark; left. The Code hot spots of the Backlog had sizes from before #100; updated.
+- Result: tests 1276 passed (with Git's bash; none changed), lint ok, build ok, the old tests caught 4 of 4 mutations of the new code, headless checks 26 runs passed (858 checks). Renderer only, no real-window check. Commit 6d17720.
+- Found / next: nothing else worth moving: what is long in the big components is commented wiring, and tests read their sources. Next: tests or a completeness review.
 
 ## Routine
 
