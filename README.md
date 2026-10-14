@@ -54,6 +54,7 @@ There is no release yet, but the CI can build a Windows installer on request: un
 6. The lock is always the button right next to the gear menu; the other diagram buttons come and go to its left, so it stays under the pointer when you press it. **Reset view** (counterclockwise arrow), left of the lock and there whether the editor is locked or not, brings back the starting zoom and position. While the editor is unlocked, **Arrange nodes** (tree icon) shows left of it and lines all nodes up in the middle of the visible canvas, each path left to right on its own row, and zooms out if they do not fit (with the terminal panel open it keeps to the middle part of the canvas, so that nothing is cut off at the sides when the panel closes and the diagram grows again). Lock the editor to keep the new positions.
 7. What you change while the editor is unlocked (nodes, links, settings of a node) is saved when you lock it again. Closing the window, reloading or quitting while it is still unlocked asks first: *Discard changes* or *Cancel*. Closing to the tray does not ask, nothing is lost there.
 8. The window opens at the size and place it had, and maximized if it was. If that place is on no screen any more (a monitor that was unplugged), it starts at the default size in the middle.
+9. With *Settings > Close to tray* on, closing the window only hides it: jumpspace and its terminals go on running in the tray (still logged in, so a tmux there stays attached), and a double-click on the tray icon brings the window back with its tabs. *Quit* in the tray menu ends the app and every terminal; while terminals are running it asks first (*Quit* or *Cancel*, Cancel is the default). With the setting off, closing the window ends the app and its terminals.
 
 The node menu also shows when one of its buttons has keyboard focus. Enter opens a popover and moves the focus into it; Escape closes it and returns the focus to its button. Right-click a node for **Duplicate** or **Delete** (a node with content asks first). *Settings* and *Show Info* (gear menu in the header) open with the focus inside; Tab stays in them and Escape closes them. In *Settings*, Enter in the *Git Bash path* field saves like the Save button.
 
@@ -144,6 +145,7 @@ src/main/       Electron main process
   setting-store.js  reads and saves the settings (defaults for broken values, and for a file that cannot be opened)
   window-bounds.js  remembers the size and place of the window (and when not to use them)
   unload-question.js  asks before the window closes with the editor unlocked
+  quit-question.js  asks before Quit in the tray while terminals are running
   quit-hold.js    lets the app end only after a save that is being written has ended
   storage.js      projects.json (atomic write, .bak), import parsing
   legacy-forwards.js  moves forwards saved by older versions to their current place

@@ -274,6 +274,11 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
       return sessions.size
     },
 
+    // 돌고 있는 세션의 수, 모든 창의 것: 열리는 중인 것도 센다 (앱이 끝나면 그것도 열지 않는다). 트레이의 Quit이 묻는 수.
+    get running() {
+      return sessions.size + opening.size
+    },
+
     open,
 
     // 세션의 pty에 대해 화면이 알아야 할 것 (windowsPtyInfo). Windows가 아니거나 모르는 세션이면 null.

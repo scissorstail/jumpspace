@@ -492,6 +492,28 @@ describe('createTerminalManager', () => {
     expect(manager.size).toBe(2)
   })
 
+  // 트레이의 Quit이 묻는 수: 모든 창의, 돌고 있거나 열리는 중인 세션. 스스로 끝난 세션(다시 접속하려고 요청만 기억한다)과
+  // 닫은 세션은 돌지 않는다.
+  it('counts the sessions that run or are being opened, of every window', async () => {
+    const { manager, ptys } = setup()
+    expect(manager.running).toBe(0)
+    await manager.open('connect', node, { owner: 1 })
+    await manager.open('connect', node, { owner: 2 })
+    const third = await manager.open('connect', node, { owner: 1 })
+    const late = manager.open('connect', node, { owner: 2 })
+    // 넷째는 아직 파일을 쓴다
+    expect(manager.running).toBe(4)
+    expect(manager.size).toBe(3)
+    await late
+    expect(manager.running).toBe(4)
+
+    ptys[0].emitExit(255)
+    manager.close(third, 1)
+    expect(manager.running).toBe(2)
+    manager.closeAll()
+    expect(manager.running).toBe(0)
+  })
+
   // 파일을 쓰는 사이에 그 창이 새로 고쳐지거나 닫혔다: 세션은 탭 없이 돌았을 것이다
   it('does not start a session whose window went away while its files were written', async () => {
     const { manager, ptys, tempDir } = setup()

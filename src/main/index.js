@@ -29,6 +29,7 @@ import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, itemsFromJson, parseItems } from './storage.js'
 import { createBoundsSaver, createWindowStore, restoreBounds } from './window-bounds.js'
 import { mayUnload } from './unload-question.js'
+import { mayQuit } from './quit-question.js'
 import { createQuitHold } from './quit-hold.js'
 
 // 터미널에서 복사/붙여넣기로 오가는 글자 수의 상한
@@ -186,6 +187,20 @@ function main() {
   // 저장이 끝나기 전에는 끝내지 않는다 (quit-hold.js): 창을 닫자마자 프로세스가 끝나면 쓰던 저장이 임시 파일로만 남는다.
   app.on('will-quit', createQuitHold({ isBusy: projects.isSaving, settled: projects.settled, quit: () => app.quit() }))
 
+  // 트레이의 Quit. 돌고 있는 터미널이 있으면 먼저 묻는다 (quit-question.js): 창을 트레이로 숨겨도 그 터미널은 묻지 않고
+  // 그대로 돌아서, 끝내면 보이지 않던 접속과 그 안의 tmux 같은 것도 끝난다. 묻는 동안 다시 고르면 아무것도 하지 않는다.
+  // 기다리지 않는 묻는 창을 쓴다: showMessageBoxSync는 답할 때까지 main을 세워서 터미널의 입출력도 멈췄을 것이다.
+  let isAskingToQuit = false
+  async function quitFromTray() {
+    if (isAskingToQuit) return
+    isAskingToQuit = true
+    const quit = await mayQuit(terminals.running, async options => (await dialog.showMessageBox(options)).response)
+    isAskingToQuit = false
+    if (!quit) return
+    isQuitting = true
+    app.quit()
+  }
+
   // 앱 안의 터미널의 복사/붙여넣기. (샌드박스 렌더러는 클립보드에 직접 접근하지 않는다)
   // (Electron 44의 clipboard.readText()는 Promise를 돌려준다)
   handle('clipboard:writeText', async (event, text) => {
@@ -231,10 +246,7 @@ function main() {
       {
         label: 'Quit',
         type: 'normal',
-        click: () => {
-          isQuitting = true
-          app.quit()
-        }
+        click: () => quitFromTray()
       }
     ]))
     tray.setToolTip(info.name)
