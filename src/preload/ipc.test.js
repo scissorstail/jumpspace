@@ -82,6 +82,12 @@ describe('the clipboard of the terminal', () => {
     expect(main).toMatch(/handle\('clipboard:readText', async \(\) => String\(\(await clipboard\.readText\(\)\) \?\? ''\)\)\n/)
     expect(main).toMatch(/handle\('clipboard:writeText', async \(event, text\) => \{\n +if \(typeof text === 'string' && text\.length <= MAX_CLIPBOARD\) await clipboard\.writeText\(text\)\n/)
   })
+
+  // 화면은 그보다 긴 선택을 보내지 않고 알린다 (#221): 두 쪽이 같은 상한을 써야 한다
+  it('limits what the page writes with the limit the page knows', () => {
+    expect(main).toMatch(/^import \{ MAX_CLIPBOARD \} from '\.\.\/shared\/clipboard\.js'$/m)
+    expect(main).not.toMatch(/MAX_CLIPBOARD =/)
+  })
 })
 
 describe('what the page calls on window.preload', () => {

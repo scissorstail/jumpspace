@@ -84,6 +84,7 @@ import { canReconnect, createOutputRouter, endedByUser, rightClickAction, termin
 import { endedLine, errorLine, nextFontSize, panelDrag, panelHeight, RECONNECTING_LINE, searchSeed, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import { MAX_WRITE } from '../../../../shared/terminal-input.js'
+import { MAX_CLIPBOARD } from '../../../../shared/clipboard.js'
 import { toastError } from '@/utils/notify'
 import TerminalSearch from './terminal-search'
 import TerminalTabs from './terminal-tabs'
@@ -311,9 +312,16 @@ export default {
     // 프로그램이 마우스를 받는 동안의 오른쪽 클릭은 프로그램의 것이다 (rightClickAction).
     // 글꼴 크기: Ctrl +/-/0 (changeFontSize). 지나간 출력에서 찾기: Ctrl+Shift+F (openSearch).
     enableShortcuts(term, el) {
+      // 복사했으면 true. main은 MAX_CLIPBOARD보다 긴 것을 클립보드에 쓰지 않는다: 그런 선택은 보내지 않고 그렇다고 알리며,
+      // 선택은 그대로 둔다 (#221: 예전에는 말없이 복사되지 않았다).
       const copySelection = () => {
         if (!term.hasSelection()) return false
-        window.preload.clipboard.writeText(term.getSelection())
+        const text = term.getSelection()
+        if (text.length > MAX_CLIPBOARD) {
+          toastError(this, 'Not copied', `The selection is ${text.length.toLocaleString('en-US')} characters long, and at most ${MAX_CLIPBOARD.toLocaleString('en-US')} can be copied. Select less of it.`)
+          return false
+        }
+        window.preload.clipboard.writeText(text)
         return true
       }
       const paste = async () => {
@@ -342,8 +350,7 @@ export default {
         event.preventDefault()
         const action = rightClickAction({ mouseTracking: term.modes.mouseTrackingMode, shiftKey: event.shiftKey, hasSelection: term.hasSelection() })
         if (action === 'copy') {
-          copySelection()
-          term.clearSelection()
+          if (copySelection()) term.clearSelection()
         } else if (action === 'paste') {
           await paste()
           term.focus()

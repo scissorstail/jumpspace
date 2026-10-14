@@ -7,6 +7,7 @@ import { canReconnect, endedByUser, rightClickAction, terminalShortcut } from '.
 import { endedLine, errorLine, nextFontSize, RECONNECTING_LINE, searchSeed } from '../../utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import { MAX_WRITE } from '../../../../shared/terminal-input.js'
+import { MAX_CLIPBOARD } from '../../../../shared/clipboard.js'
 import { toastError } from '../../utils/notify'
 
 // 터미널 패널의 찾기와 글꼴 크기. DOM 없이 도는 테스트라서 .vue를 불러올 수 없다: <script>의 내용을 꺼내 import만 바꿔서
@@ -38,7 +39,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const source = readFileSync(join(here, 'terminal-panel.vue'), 'utf8').replace(/\r\n/g, '\n')
 const script = source.match(/<script>\n([\s\S]*?)<\/script>/)[1]
 const imported = [...script.matchAll(/^import (?:\{ ([^}]+) \}|(\w+)) from .*$/gm)].flatMap(match => (match[1] ?? match[2]).split(', '))
-const given = { nextFontSize, searchSeed, canReconnect, endedByUser, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, MAX_WRITE, toastError, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
+const given = { nextFontSize, searchSeed, canReconnect, endedByUser, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, MAX_WRITE, MAX_CLIPBOARD, toastError, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 const component = runInThisContext(`(function (${imported.join(', ')}) {\n${body}\n})`)(...imported.map(name => given[name]))
 
@@ -754,7 +755,7 @@ describe('the keys and the right click of a terminal', () => {
     vi.stubGlobal('window', {
       preload: { clipboard: { writeText: text => calls.push(['copy', text]), readText: async () => clipboard } }
     })
-    const { vm } = panel(null)
+    const { vm, toasts } = panel(null)
     vm.changeFontSize = shortcut => calls.push(['font', shortcut])
     vm.openSearch = () => calls.push('find')
     vm.enableShortcuts(term, el)
@@ -771,7 +772,7 @@ describe('the keys and the right click of a terminal', () => {
       await onMenu({ preventDefault: () => { prevented = true }, shiftKey: false, ...more })
       return prevented
     }
-    return { calls, press, rightClick }
+    return { calls, press, rightClick, toasts }
   }
 
   it('leaves a key that is no shortcut to the terminal', async () => {
@@ -793,6 +794,40 @@ describe('the keys and the right click of a terminal', () => {
     await press('KeyC', 'C', { shiftKey: true })
     await press('Insert', 'Insert')
     expect(calls).toEqual([['copy', 'picked'], ['copy', 'picked']])
+  })
+
+  // main은 MAX_CLIPBOARD보다 긴 것을 쓰지 않는다. 예전에는 그런 복사가 말없이 되지 않았다 (#221).
+  // (긴 글은 길이로 비교한다: 틀렸을 때 16 MB의 차이를 찍지 않게)
+  const brief = calls => calls.map(call => (Array.isArray(call) ? [call[0], call[1].length] : call))
+
+  it('does not copy a selection longer than main takes, says so and keeps the selection', async () => {
+    const { calls, press, rightClick, toasts } = wired({ selection: 'x'.repeat(MAX_CLIPBOARD + 1) })
+    const said = {
+      title: 'Not copied',
+      variant: 'danger',
+      body: 'The selection is 16,777,217 characters long, and at most 16,777,216 can be copied. Select less of it.'
+    }
+
+    // Ctrl+C는 프로그램에 가지 않는다: 복사하려던 것이다
+    expect(await press('KeyC', 'c')).toEqual({ passed: false, prevented: true })
+    expect(await rightClick()).toBe(true)
+    expect(brief(calls)).toEqual([])
+    expect(toasts).toEqual([said, said])
+  })
+
+  it('copies a selection as long as main takes', async () => {
+    const { calls, press, toasts } = wired({ selection: 'x'.repeat(MAX_CLIPBOARD) })
+    await press('KeyC', 'c')
+    expect(brief(calls)).toEqual([['copy', MAX_CLIPBOARD], 'clearSelection'])
+    expect(toasts).toEqual([])
+  })
+
+  // 터미널 하나가 담는 것은 다 복사할 수 있어야 한다: 지나간 출력과 화면의 줄들(넉넉히 500줄), 줄마다 1600칸과 줄바꿈.
+  // 예전의 1 MB는 꽉 찬 출력을 넓은 창에서 다 고르면 넘었다.
+  it('takes more than a terminal holds', () => {
+    const scrollback = Number(source.match(/scrollback: (\d+),/)[1])
+    expect(scrollback).toBeGreaterThan(0)
+    expect(MAX_CLIPBOARD).toBeGreaterThan((scrollback + 500) * 1601)
   })
 
   it('copies nothing with Ctrl+Shift+C when nothing is selected, and still keeps the key from the program', async () => {

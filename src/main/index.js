@@ -31,10 +31,7 @@ import { createBoundsSaver, createWindowStore, restoreBounds } from './window-bo
 import { mayUnload } from './unload-question.js'
 import { mayQuit } from './quit-question.js'
 import { createQuitHold } from './quit-hold.js'
-
-// 터미널에서 복사해 클립보드에 쓰는 글자 수의 상한 (화면이 보내는 값이다). 붙여넣기는 자르지 않는다 (#220): 화면은
-// 터미널이 한 번에 받는 것보다 긴 붙여넣기를 그 길이와 함께 거절한다. 잘라 주면 그 길이가 틀린다.
-const MAX_CLIPBOARD = 1024 * 1024
+import { MAX_CLIPBOARD } from '../shared/clipboard.js'
 
 const isMac = process.platform === 'darwin'
 
@@ -204,6 +201,8 @@ function main() {
 
   // 앱 안의 터미널의 복사/붙여넣기. (샌드박스 렌더러는 클립보드에 직접 접근하지 않는다)
   // (Electron 44의 clipboard.readText()는 Promise를 돌려준다)
+  // 붙여넣기는 자르지 않는다 (#220): 화면은 터미널이 한 번에 받는 것보다 긴 붙여넣기를 그 길이와 함께 거절하고,
+  // 잘라 주면 그 길이가 틀린다. 복사의 상한(MAX_CLIPBOARD)은 화면도 안다: 그보다 긴 선택은 보내지 않고 알린다.
   handle('clipboard:writeText', async (event, text) => {
     if (typeof text === 'string' && text.length <= MAX_CLIPBOARD) await clipboard.writeText(text)
   })
