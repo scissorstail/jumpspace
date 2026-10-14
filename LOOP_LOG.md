@@ -73,7 +73,7 @@ Both lists of 2026-10-11 are done (1 to 5 in #103 to #108, 6 to 10 in #111 to #1
 
 ### Wind-down list (owner, 2026-10-13: "now only raise the tests and the completeness, go as far as you can, then end the scheduler")
 Top first, one per run; take the item out when it is done. When the list is empty a run looks at one failure case of its own choice (a broken file, a race, wrong input, a limit). How it ends is under Routine.
-7. In the real window: every IPC channel called with wrong arguments (main must stay up and go on answering), and more tabs than a browser has WebGL contexts (17) together with the message at the limit of 16 sessions.
+7. In the real window: more tabs than a browser has WebGL contexts (17) together with the message at the limit of 16 sessions. (The first half, every IPC channel called with wrong arguments, is done: #211.)
 
 ### UX candidates
 - Locking a diagram of 150 nodes keeps the page busy for about a second: from the press on the lock to main being asked to save it took 1050 ms (26 ms with 2 nodes), measured in the real window in #196. The write itself is 5 to 10 ms. Not looked into (the Rete engine run of `compile()` and the update of every node are the likely part).
@@ -1268,6 +1268,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: `terminal-tabs.vue` was only read as text by its test. `terminal-tabs-methods.test.js` runs its script with a made-up `this`, the way the panel's test does: the state and the words of the split button, the numbers of tabs with the same name, the wheel over a row with more tabs than fit, bringing the selected tab into sight (after the row was drawn again, and when the row changes its size) and the observer that is let go with the row. Tests only.
 - Result: tests 1214 passed (21 new), lint ok, build ok, 35 of 35 mutations of the component caught. No source change, so no headless run and no real window. Commit 9168dd3.
 - Found / next: nothing wrong in the component. What the template does (the classes of a tab, the events it sends) is still only read as text, and the headless checks click through it. Next: item 7 of the Wind-down list.
+
+### #211 2026-10-14 · robustness (wind-down item 7, first half; by hand, the owner's request of #207)
+- Did: new part `ipc` of `real-window-check-2.cjs`: every channel of the preload called with some 900 wrong values while a session runs. Three things did harm, all needing a wrong caller (the page never sends such values): `['[]']` (also a `String` object) was saved as an empty list over `projects.json`; a fake mouse move to 3e38 or 1e308 left the page without mouse input; `terminal:open` threw on a kind that cannot become text instead of answering `{ ok: false }`. Fixed with `itemsFromJson` (text only, save and export), `mousePoint` (numbers up to a 32 bit integer; places outside the window stay allowed: measured with `lists/mouse-probe.cjs`, the move there takes the hover away after a drag let go outside) and the kind in the label only when it is a text.
+- Result: tests 1228 passed (1248 with Git's bash), lint ok, build ok, 23 of 23 mutations caught. Real window: `real-window-check.cjs` 39 passed, `real-window-check-2.cjs` all parts 158 passed; its `ipc` part on the build without the fix: 5 failed, stopped at the mouse. Commit 0e05e20.
+- Found / next: nothing else misbehaved (no error in main; nothing started, exported or copied; the clipboard got only the right texts). Next: the second half of item 7, more tabs than WebGL contexts and the limit of 16 sessions.
 
 ## Routine
 
