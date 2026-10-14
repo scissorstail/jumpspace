@@ -83,6 +83,8 @@ import { mapGetters } from 'vuex'
 import { canReconnect, createOutputRouter, endedByUser, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, panelDrag, panelHeight, RECONNECTING_LINE, searchSeed, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
+import { MAX_WRITE } from '../../../../shared/terminal-input.js'
+import { toastError } from '@/utils/notify'
 import TerminalSearch from './terminal-search'
 import TerminalTabs from './terminal-tabs'
 
@@ -264,6 +266,12 @@ export default {
     typed(key, entry, data) {
       if (entry.ended) {
         if (data === '\r') this.reconnect(this.allSessions.find(x => x.key === key))
+        return
+      }
+      // main은 한 번에 MAX_WRITE까지만 쓴다. 그보다 긴 붙여넣기는 보내지 않고 그렇다고 알린다 (#220: 말없이 버려졌다).
+      // 나눠 보내지도 않는다: Windows에서 Git의 ssh는 긴 붙여넣기를 읽는 몇 분 동안 아무것도 하지 않는다 (terminal-input.js).
+      if (data.length > MAX_WRITE) {
+        toastError(this, 'Paste not sent', `The text is ${data.length.toLocaleString('en-US')} characters long, and a terminal takes at most ${MAX_WRITE.toLocaleString('en-US')} at once. Paste it in parts, or copy a file with scp.`)
         return
       }
       // Ctrl+C를 누른 때를 기억한다: 포워딩(ssh -N)은 Ctrl+C로 끝내도 오류(255)로 끝난다.

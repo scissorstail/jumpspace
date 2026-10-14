@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 import { createTerminalManager, exitStatus, KILL_WAIT_MS, killPty, MAX_PENDING_OUTPUT, MAX_SESSIONS, OUTPUT_DELAY_MS, REFLOW_BUILD, terminalBash, windowsPtyInfo } from './terminal.js'
 import { sq, toUnixPath } from './ssh.js'
+import { MAX_WRITE } from '../shared/terminal-input.js'
 
 const root = mkdtempSync(join(tmpdir(), 'jumpspace-terminal-'))
 afterAll(() => rmSync(root, { recursive: true, force: true }))
@@ -337,15 +338,17 @@ describe('createTerminalManager', () => {
     expect(ptys[0].kill).not.toHaveBeenCalled()
 
     manager.write(id, 1, 42)
-    manager.write(id, 1, 'x'.repeat(70000))
+    manager.write(id, 1, 'x'.repeat(MAX_WRITE + 1))
     manager.resize(id, 1, 0, 40)
     manager.resize(id, 1, 80.5, 40)
     expect(ptys[0].write).not.toHaveBeenCalled()
     expect(ptys[0].resize).not.toHaveBeenCalled()
 
     manager.write(id, 1, 'ls\r')
+    // 화면이 보내는 가장 긴 것도 쓴다 (화면은 그보다 긴 붙여넣기를 보내지 않고 그렇다고 알린다)
+    manager.write(id, 1, 'x'.repeat(MAX_WRITE))
     manager.resize(id, 1, 100, 40)
-    expect(ptys[0].write).toHaveBeenCalledWith('ls\r')
+    expect(ptys[0].write.mock.calls).toEqual([['ls\r'], ['x'.repeat(MAX_WRITE)]])
     expect(ptys[0].resize).toHaveBeenCalledWith(100, 40)
 
     manager.close(id, 1)

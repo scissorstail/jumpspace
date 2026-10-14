@@ -6,6 +6,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { canReconnect, endedByUser, rightClickAction, terminalShortcut } from '../../utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, RECONNECTING_LINE, searchSeed } from '../../utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
+import { MAX_WRITE } from '../../../../shared/terminal-input.js'
+import { toastError } from '../../utils/notify'
 
 // 터미널 패널의 찾기와 글꼴 크기. DOM 없이 도는 테스트라서 .vue를 불러올 수 없다: <script>의 내용을 꺼내 import만 바꿔서
 // 돌리고, methods와 watch를 가짜 this로 부른다 (forward-menu.test.js와 같은 방법). xterm.js와 그 애드온은 쓰이지 않는다:
@@ -36,7 +38,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const source = readFileSync(join(here, 'terminal-panel.vue'), 'utf8').replace(/\r\n/g, '\n')
 const script = source.match(/<script>\n([\s\S]*?)<\/script>/)[1]
 const imported = [...script.matchAll(/^import (?:\{ ([^}]+) \}|(\w+)) from .*$/gm)].flatMap(match => (match[1] ?? match[2]).split(', '))
-const given = { nextFontSize, searchSeed, canReconnect, endedByUser, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
+const given = { nextFontSize, searchSeed, canReconnect, endedByUser, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, MAX_WRITE, toastError, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 const component = runInThisContext(`(function (${imported.join(', ')}) {\n${body}\n})`)(...imported.map(name => given[name]))
 
@@ -64,6 +66,7 @@ function terminal({ selection = '', found = true, shown = true, cols = 80, rows 
 function panel(entry, { text = '', fontSize = 13 } = {}) {
   const dispatched = []
   const focused = []
+  const toasts = []
   const vm = {
     activeKey: 1,
     panes: { left: 1, right: null },
@@ -72,10 +75,11 @@ function panel(entry, { text = '', fontSize = 13 } = {}) {
     search: { isOpen: false, text, isMissing: false },
     $refs: { search: { focus: () => focused.push('search') } },
     $nextTick: fn => fn(),
-    $store: { dispatch: (...args) => dispatched.push(args) }
+    $store: { dispatch: (...args) => dispatched.push(args) },
+    $bvToast: { toast: (body, options) => toasts.push({ body, title: options.title, variant: options.variant }) }
   }
   for (const [name, method] of Object.entries(component.methods)) vm[name] = method.bind(vm)
-  return { vm, dispatched, focused }
+  return { vm, dispatched, focused, toasts }
 }
 
 afterEach(() => vi.unstubAllGlobals())
@@ -96,11 +100,11 @@ describe('what is typed into a terminal', () => {
   }
   // 가짜 this에 세션 목록과 다시 접속한 것의 기록을 더한다
   const typing = entry => {
-    const { vm } = panel(entry)
+    const { vm, toasts } = panel(entry)
     const reconnected = []
     vm.allSessions = [{ key: 1, title: 'app' }, { key: 2, title: 'db' }]
     vm.reconnect = session => reconnected.push(session)
-    return { vm, reconnected }
+    return { vm, reconnected, toasts }
   }
 
   it('goes to the session of that terminal', () => {
@@ -125,6 +129,33 @@ describe('what is typed into a terminal', () => {
     vm.typed(1, entry, 'a\x03b')
     expect(entry.interruptedAt).toBe(123456)
     vi.useRealTimers()
+  })
+
+  // main은 한 번에 MAX_WRITE까지만 쓴다. 그보다 긴 붙여넣기는 말없이 버려졌다 (#220). 이제 보내지 않고 그렇다고 알린다.
+  it('is not sent when it is longer than main takes (a paste), and says so', () => {
+    const calls = written()
+    const entry = { ...terminal(), ended: false, interruptedAt: null }
+    const { vm, toasts } = typing(entry)
+
+    // 붙여 넣은 글 안의 Ctrl+C도 보내지 않았으니 누른 것이 아니다
+    vm.typed(1, entry, '\x1b[200~' + 'x'.repeat(MAX_WRITE - 12) + '\x03\x1b[201~')
+    expect(calls).toEqual([])
+    expect(entry.interruptedAt).toBe(null)
+    expect(toasts).toEqual([{
+      title: 'Paste not sent',
+      variant: 'danger',
+      body: 'The text is 65,537 characters long, and a terminal takes at most 65,536 at once. Paste it in parts, or copy a file with scp.'
+    }])
+  })
+
+  it('goes whole when it is as long as main takes', () => {
+    const calls = written()
+    const entry = { ...terminal(), ended: false, interruptedAt: null }
+    const { vm, toasts } = typing(entry)
+
+    vm.typed(1, entry, 'x'.repeat(MAX_WRITE))
+    expect(calls).toEqual([[7, 'x'.repeat(MAX_WRITE)]])
+    expect(toasts).toEqual([])
   })
 
   it('waits while the session is not open yet', () => {

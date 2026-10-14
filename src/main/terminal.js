@@ -1,10 +1,10 @@
 import { existsSync } from 'node:fs'
 import { release as osRelease } from 'node:os'
 import { win32 } from 'node:path'
+import { MAX_WRITE } from '../shared/terminal-input.js'
 import { expandEnv, prepareSession } from './launcher.js'
 
 export const MAX_SESSIONS = 16
-const MAX_WRITE = 64 * 1024
 
 // 세션이 열리는 동안 그것을 부탁한 창이 닫히거나 새로 고쳐졌다 (closeAll)
 class WindowGone extends Error {}
@@ -305,7 +305,7 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
 
     // 프로그램이 막 끝난 pty는 크기 변경에 예외를 던진다 (node-pty: "Cannot resize a pty that has already exited").
     // 끝났다는 알림(onExit)은 남은 출력을 다 읽은 뒤에야 오므로 그 사이의 요청은 버린다: 여기서 던지면 메인 프로세스의
-    // 잡히지 않은 오류가 된다. 쓰기도 같은 이유로 감싼다.
+    // 잡히지 않은 오류가 된다. 쓰기도 같은 이유로 감싼다. 화면은 MAX_WRITE보다 긴 것을 보내지 않고 그렇다고 알린다.
     write(id, owner, data) {
       const session = owned(id, owner)
       if (session && typeof data === 'string' && data.length <= MAX_WRITE) {

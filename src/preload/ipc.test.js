@@ -75,6 +75,15 @@ describe('what main does with the values of the page', () => {
   })
 })
 
+// 붙여넣기는 클립보드의 글을 통째로 받는다 (#220, 예전에는 1 MB에서 잘랐다): 화면은 터미널이 한 번에 받는 것보다 긴
+// 붙여넣기를 그 길이와 함께 거절하고, 잘린 글로는 그 길이가 틀린다. 상한은 화면이 클립보드에 쓰는 쪽(화면이 보내는 값)에만 있다.
+describe('the clipboard of the terminal', () => {
+  it('gives a paste the whole text and limits only what the page writes', () => {
+    expect(main).toMatch(/handle\('clipboard:readText', async \(\) => String\(\(await clipboard\.readText\(\)\) \?\? ''\)\)\n/)
+    expect(main).toMatch(/handle\('clipboard:writeText', async \(event, text\) => \{\n +if \(typeof text === 'string' && text\.length <= MAX_CLIPBOARD\) await clipboard\.writeText\(text\)\n/)
+  })
+})
+
 describe('what the page calls on window.preload', () => {
   // preload가 내놓는 이름들: 'setSetting', 'ssh.connect', 'terminal.onData', ...
   const body = preload.match(/exposeInMainWorld\('preload', \{\n([\s\S]*?)\n\}\)/)?.[1] ?? ''

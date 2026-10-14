@@ -32,7 +32,8 @@ import { mayUnload } from './unload-question.js'
 import { mayQuit } from './quit-question.js'
 import { createQuitHold } from './quit-hold.js'
 
-// 터미널에서 복사/붙여넣기로 오가는 글자 수의 상한
+// 터미널에서 복사해 클립보드에 쓰는 글자 수의 상한 (화면이 보내는 값이다). 붙여넣기는 자르지 않는다 (#220): 화면은
+// 터미널이 한 번에 받는 것보다 긴 붙여넣기를 그 길이와 함께 거절한다. 잘라 주면 그 길이가 틀린다.
 const MAX_CLIPBOARD = 1024 * 1024
 
 const isMac = process.platform === 'darwin'
@@ -206,7 +207,7 @@ function main() {
   handle('clipboard:writeText', async (event, text) => {
     if (typeof text === 'string' && text.length <= MAX_CLIPBOARD) await clipboard.writeText(text)
   })
-  handle('clipboard:readText', async () => String((await clipboard.readText()) ?? '').slice(0, MAX_CLIPBOARD))
+  handle('clipboard:readText', async () => String((await clipboard.readText()) ?? ''))
 
   // 접속 정보를 ~/.ssh/config 형식으로 클립보드에 복사한다.
   handle('ssh:copyConfig', (event, request) => toResult('ssh:copyConfig', async () => {
