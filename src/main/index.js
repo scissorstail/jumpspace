@@ -20,12 +20,13 @@ import info from '../../package.json'
 import icon from '../../resources/icon.png?asset'
 import { spawn as spawnPty } from 'node-pty'
 import { launch, sweepTempDir } from './launcher.js'
+import { mousePoint } from './mouse-point.js'
 import { createTerminalManager, terminalBash } from './terminal.js'
 import { APP_URL, appFilePath, isAppUrl } from './trust.js'
 import { toResult } from './ipc-result.js'
 import { createSettingStore, STORE_OPTIONS } from './setting-store.js'
 import { buildSshConfig } from './ssh-config.js'
-import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
+import { createProjectStorage, itemsFromJson, parseItems } from './storage.js'
 import { createBoundsSaver, createWindowStore, restoreBounds } from './window-bounds.js'
 import { mayUnload } from './unload-question.js'
 import { createQuitHold } from './quit-hold.js'
@@ -85,10 +86,9 @@ function main() {
   })
 
   on('window:mouseMove', (event, data) => {
-    // 드래그 종료 후 hover 상태를 갱신하기 위한 가짜 mouseMove 이벤트
-    if (win && Number.isFinite(data?.x) && Number.isFinite(data?.y)) {
-      win.webContents.sendInputEvent({ type: 'mouseMove', x: data.x, y: data.y })
-    }
+    // 드래그 종료 후 hover 상태를 갱신하기 위한 가짜 mouseMove 이벤트. 자리로 쓸 수 있는 값만 넘긴다 (mouse-point.js)
+    const point = mousePoint(data)
+    if (win && point) win.webContents.sendInputEvent({ type: 'mouseMove', ...point })
   })
 
   on('window:toggleDevTools', () => win?.webContents.toggleDevTools())
@@ -104,7 +104,7 @@ function main() {
   handle('projects:save', (event, json) => projects.save(json))
 
   handle('projects:export', async (event, json, defaultName = 'export.json') => {
-    const items = normalizeItems(JSON.parse(json))
+    const items = itemsFromJson(json)
     const filename = dialog.showSaveDialogSync(win, {
       defaultPath: join(app.getPath('documents'), defaultName),
       filters: [{ name: 'JSON file', extensions: ['json'] }]
@@ -154,7 +154,8 @@ function main() {
 
   // windowsPty: 화면(xterm.js)이 Windows의 ConPTY에 맞춰 동작하도록 알려 주는 값 (그 밖에서는 null)
   const opened = (id, owner) => ({ id, windowsPty: terminals.windowsPty(id, owner) })
-  handle('terminal:open', (event, kind, payload, size) => toResult(`terminal:${kind}`, async () => opened(
+  // (콘솔에 남길 이름에는 종류가 글자일 때만 넣는다: 글자로 바꿀 수 없는 것이 오면 여기서 던져서 { ok: false }로 답하지 못했다)
+  handle('terminal:open', (event, kind, payload, size) => toResult(typeof kind === 'string' ? `terminal:${kind}` : 'terminal:open', async () => opened(
     await terminals.open(kind, payload, { owner: event.sender.id, cols: size?.cols, rows: size?.rows }), event.sender.id
   )))
   // 끝난 탭을 같은 요청으로 다시 연다. 요청(비밀번호 포함)은 main만 갖고 있다.

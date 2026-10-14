@@ -51,6 +51,30 @@ describe('the channels between the page and main', () => {
   })
 })
 
+// 화면이 넘기는 값은 무엇이든 될 수 있다 (틀린 호출, 언젠가의 실수). index.js는 Electron 없이는 불러올 수 없어서 소스를 읽는다:
+// 값을 가리는 일은 테스트가 있는 함수가 하고, 여기서는 그 함수를 거치는지만 본다.
+describe('what main does with the values of the page', () => {
+  it('sends a fake mouse move only to a place mousePoint() takes', () => {
+    expect(main.match(/sendInputEvent\(/g)).toHaveLength(1)
+    expect(main).toMatch(/on\('window:mouseMove', \(event, data\) => \{\n(?: +\/\/.*\n)* +const point = mousePoint\(data\)\n +if \(win && point\) win\.webContents\.sendInputEvent\(\{ type: 'mouseMove', \.\.\.point \}\)\n {2}\}\)/)
+  })
+
+  it('reads the diagrams of the page with itemsFromJson() only', () => {
+    expect(main).not.toMatch(/JSON\.parse\(/)
+    expect(main).not.toMatch(/normalizeItems/)
+    expect(main).toMatch(/handle\('projects:save', \(event, json\) => projects\.save\(json\)\)/)
+    expect(main).toMatch(/handle\('projects:export', async \(event, json, defaultName = 'export\.json'\) => \{\n +const items = itemsFromJson\(json\)\n/)
+  })
+
+  // 템플릿 글자열은 값을 글자로 바꾼다: 바꿀 수 없는 값이면 toResult에 닿기 전에 던져서, 화면은 { ok: false } 대신 거부를 받는다
+  it('puts the kind of a terminal into a text only when it is a text', () => {
+    expect(main).toMatch(/handle\('terminal:open', \(event, kind, payload, size\) => toResult\(typeof kind === 'string' \? `terminal:\$\{kind\}` : 'terminal:open', async \(\) => opened\(/)
+    // 나머지 둘은 for의 목록에서 온 종류다 (sshKinds)
+    expect(main.match(/\$\{kind\}/g)).toHaveLength(3)
+    expect(main.match(/`ssh:\$\{kind\}`/g)).toHaveLength(2)
+  })
+})
+
 describe('what the page calls on window.preload', () => {
   // preload가 내놓는 이름들: 'setSetting', 'ssh.connect', 'terminal.onData', ...
   const body = preload.match(/exposeInMainWorld\('preload', \{\n([\s\S]*?)\n\}\)/)?.[1] ?? ''

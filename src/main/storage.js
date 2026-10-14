@@ -36,6 +36,15 @@ export function normalizeItems(value) {
   })
 }
 
+// 화면이 저장하거나 내보내라고 넘긴 것(JSON 문자열)을 [{ name, data }]로 바꾼다. 문자열만 받는다: JSON.parse는 받은 것을 글자로
+// 바꿔서 읽으므로, 글자 하나가 든 배열(['[]'])도 빈 목록으로 읽혀서 저장 파일이 빈 목록으로 바뀌었다.
+export function itemsFromJson(json) {
+  if (typeof json !== 'string') {
+    throw new Error('Invalid project data.')
+  }
+  return normalizeItems(JSON.parse(json))
+}
+
 // import 파일에서 읽은 문자열을 [{ name, data }]로 바꾼다. 형식이 맞지 않으면 화면에 그대로 보여줄 수 있는 메시지로 실패한다.
 export function parseItems(text) {
   let value
@@ -133,7 +142,7 @@ export function createProjectStorage(dir, { renameFile = rename, wait = ms => ne
     // "ENOENT ... projects.json.tmp -> projects.json"으로 실패했고, 끝난 순서에 따라 더 오래된 내용이 남을 수도 있었다.
     async save(json) {
       // 쓸 수 없는 내용은 줄을 서기 전에 거절한다
-      const items = normalizeItems(JSON.parse(json))
+      const items = itemsFromJson(json)
       pending += 1
       const result = queue.then(() => writeItems(items)).finally(() => { pending -= 1 })
 

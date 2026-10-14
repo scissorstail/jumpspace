@@ -140,6 +140,7 @@ src/main/       Electron main process
   trust.js        is a URL the app's own page? (IPC sender check, navigation guard),
                   and which page file an app:// request may read
   ipc-result.js   answers { ok, error } to the page instead of throwing
+  mouse-point.js  which place of a fake mouse move (asked for by the page after a drag) main hands on
   setting-store.js  reads and saves the settings (defaults for broken values)
   window-bounds.js  remembers the size and place of the window (and when not to use them)
   unload-question.js  asks before the window closes with the editor unlocked

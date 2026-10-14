@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:f
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createProjectStorage, normalizeItems, parseItems } from './storage.js'
+import { createProjectStorage, itemsFromJson, normalizeItems, parseItems } from './storage.js'
 
 const items = [{ name: 'a', data: { id: 'test@0.1.0', nodes: {} } }]
 
@@ -289,6 +289,46 @@ describe('storage', () => {
     await expect(storage.save('{"a":1}')).rejects.toThrow()
     await expect(storage.save(JSON.stringify([{ name: 'x' }]))).rejects.toThrow()
     expect(JSON.parse(await storage.load())).toEqual(items)
+  })
+
+  // JSON.parse는 받은 것을 글자로 바꿔서 읽는다: 글자 하나가 든 배열은 그 글자로 읽힌다. 빈 목록으로 읽혀서 파일을 비웠다.
+  it('takes only text: what merely turns into the text of a list is not saved', async () => {
+    await storage.save(JSON.stringify(items))
+    const before = await readFile(storage.file, 'utf-8')
+
+    // Object('[]'): 글자를 싼 객체 (new String). 글자처럼 보이지만 typeof는 object다
+    for (const wrong of [['[]'], ['{"items":[]}'], [JSON.stringify(items)], { toString: () => '[]' }, Object('[]'), undefined, null, 0, 5n, true, [], {}]) {
+      await expect(storage.save(wrong)).rejects.toThrow('Invalid project data.')
+    }
+    expect(await readFile(storage.file, 'utf-8')).toBe(before)
+    expect((await readdir(dir)).sort()).toEqual(['projects.json'])
+    expect(storage.isSaving()).toBe(false)
+
+    // 글자로 온 빈 목록은 옳은 저장이다 (다이어그램을 모두 지웠다)
+    await storage.save('[]')
+    expect(JSON.parse(await storage.load())).toEqual([])
+  })
+})
+
+describe('itemsFromJson', () => {
+  it('reads what the page saves and exports, in both forms', () => {
+    expect(itemsFromJson(JSON.stringify(items))).toEqual(items)
+    expect(itemsFromJson(JSON.stringify({ version: 1, items }))).toEqual(items)
+    expect(itemsFromJson('[]')).toEqual([])
+  })
+
+  it('refuses what is no text, also when it would turn into the text of a list', () => {
+    for (const wrong of [['[]'], [JSON.stringify(items)], Object('[]'), undefined, null, 0, true, [], {}]) {
+      expect(() => itemsFromJson(wrong)).toThrow('Invalid project data.')
+    }
+  })
+
+  it('refuses text that is no JSON or no list of diagrams', () => {
+    expect(() => itemsFromJson('')).toThrow(SyntaxError)
+    expect(() => itemsFromJson('{ not json')).toThrow(SyntaxError)
+    expect(() => itemsFromJson('{"a":1}')).toThrow('Invalid project data.')
+    expect(() => itemsFromJson('null')).toThrow('Invalid project data.')
+    expect(() => itemsFromJson('[{"name":"x"}]')).toThrow('Invalid project item.')
   })
 })
 
