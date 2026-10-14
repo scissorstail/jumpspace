@@ -6,14 +6,15 @@ export const OPEN_IN = ['app', 'window']
 // 화면의 색 묶음 (renderer의 assets/theme.scss에 있는 data-theme 값)
 export const THEMES = ['neon-night', 'sunset-drive', 'vapor-blue']
 
-// 배경 풍경의 효과 (renderer의 views/Layout.vue에 있는 .scene-* 클래스)
+// 배경 풍경의 효과 (renderer의 components/layout/scene-backdrop.vue에 있는 .scene-* 클래스)
 export const BACKDROPS = ['vivid', 'soft', 'depth', 'crt', 'off']
 
 // 앱 안의 터미널이 프로그램의 색(ANSI 여섯 색)을 얼마나 낮춰서 보여주는지 (renderer의 utils/terminal-view.js).
 // 'vivid' = 색 묶음의 네온 색 그대로, 'soft' = 조금 낮춤, 'muted' = 많이 낮춤
 export const TERMINAL_COLORS = ['vivid', 'soft', 'muted']
 
-// 노드 뒤 유리판의 흐림(px). 0이면 유리판이 없다. (renderer의 components/editor/index.vue)
+// 노드 아래 글 뒤 유리판의 흐림(px). 0이면 유리판이 없다. (renderer의 views/Layout.vue가 #editor-area에 두고
+// components/editor/canvas.scss가 쓴다)
 export const NODE_BLUR_MAX = 20
 
 // 앱 안의 터미널의 글꼴 크기(px). 터미널에서 Ctrl +/-로 바꾸고 Ctrl 0으로 기본값으로 돌린다 (renderer의 utils/terminal-view.js).

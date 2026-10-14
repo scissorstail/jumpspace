@@ -159,6 +159,8 @@ src/shared/     pure modules used by both main and renderer
   ssh-config-parse.js  reads `Host` blocks of an SSH config ("From SSH config"), the
                   reverse of ssh-config.js
   terminal-marker.js  the invisible "logged in" marker the app terminal shows as "connected"
+  terminal-input.js  the most text a terminal takes at once (a longer paste is refused)
+  clipboard.js    the most text a terminal may copy to the clipboard
   unsaved.js      the words of the question before unlocked changes are lost
   validate.js     validation of every value that ends up in a command (main checks
                   before running; the node settings show the same rules while typing)
