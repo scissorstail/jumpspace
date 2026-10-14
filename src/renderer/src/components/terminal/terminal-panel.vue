@@ -191,6 +191,8 @@ export default {
       if (entry.id !== null) window.preload.terminal.close(entry.id)
       entry.term.dispose()
     }
+    // 아직 열리는 중인 세션은 답이 왔을 때 start()와 reconnect()가 닫는다: 여기에 없는 탭의 세션을 닫는 것이 그들의 일이다.
+    this.terms.clear()
   },
   methods: {
     // 터미널 글꼴의 보통 굵기와 굵은 굵기를 미리 읽는다. 브라우저는 글꼴 파일을 처음 쓰일 때 읽는데, 굵은 것은 터미널의
@@ -244,6 +246,12 @@ export default {
       })
 
       const result = await window.preload.terminal.open(kind, payload, { cols: term.cols, rows: term.rows })
+      // 기다리는 동안 탭이 닫혔으면 방금 열린 세션도 닫는다. closeSession은 아직 번호가 없는 세션을 끝낼 수 없어서,
+      // 그 세션이 탭 없이 main에서 계속 돌았다: ssh는 로그인까지 가고, 서버에는 보는 화면 없이 접속한 채로 남는다.
+      if (this.terms.get(session.key) !== entry) {
+        if (result.ok) window.preload.terminal.close(result.id)
+        return
+      }
       if (!result.ok) {
         term.write(errorLine(result.error))
         this.$store.commit('terminalUpdate', { key: session.key, status: 'failed' })

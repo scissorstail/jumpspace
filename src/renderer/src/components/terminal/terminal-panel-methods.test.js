@@ -5,14 +5,38 @@ import { runInThisContext } from 'node:vm'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { canReconnect, endedByUser, rightClickAction, terminalShortcut } from '../../utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, RECONNECTING_LINE, searchSeed } from '../../utils/terminal-view'
+import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 
 // 터미널 패널의 찾기와 글꼴 크기. DOM 없이 도는 테스트라서 .vue를 불러올 수 없다: <script>의 내용을 꺼내 import만 바꿔서
-// 돌리고, methods와 watch를 가짜 this로 부른다 (forward-menu.test.js와 같은 방법). xterm.js와 그 애드온은 쓰이지 않는다.
+// 돌리고, methods와 watch를 가짜 this로 부른다 (forward-menu.test.js와 같은 방법). xterm.js와 그 애드온은 쓰이지 않는다:
+// 탭을 여는 start()가 만드는 터미널은 아래의 가짜이고, 만든 것을 차례로 made에 적는다.
+const made = []
+class FakeTerminal {
+  constructor(options) {
+    Object.assign(this, { options, cols: 100, rows: 30, calls: [], disposed: false, osc: null, element: null })
+    this.parser = { registerOscHandler: (code, handler) => { this.osc = { code, handler } } }
+    made.push(this)
+  }
+
+  loadAddon() {}
+
+  open(el) { this.calls.push(['open', el]) }
+
+  focus() { this.calls.push('focus') }
+
+  onData(listener) { this.typed = listener }
+
+  write(data) { this.calls.push(['write', data]) }
+
+  dispose() { this.disposed = true }
+}
+class FakeAddon {}
+
 const here = dirname(fileURLToPath(import.meta.url))
 const source = readFileSync(join(here, 'terminal-panel.vue'), 'utf8').replace(/\r\n/g, '\n')
 const script = source.match(/<script>\n([\s\S]*?)<\/script>/)[1]
 const imported = [...script.matchAll(/^import (?:\{ ([^}]+) \}|(\w+)) from .*$/gm)].flatMap(match => (match[1] ?? match[2]).split(', '))
-const given = { nextFontSize, searchSeed, canReconnect, endedByUser, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, mapGetters: () => ({}) }
+const given = { nextFontSize, searchSeed, canReconnect, endedByUser, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 const component = runInThisContext(`(function (${imported.join(', ')}) {\n${body}\n})`)(...imported.map(name => given[name]))
 
@@ -456,6 +480,227 @@ describe('connecting an ended tab again', () => {
     expect(entry.id).toBe(7)
     expect(seen.registered).toEqual([])
     expect(seen.commits).toHaveLength(1)
+  })
+})
+
+// 탭을 열 때. main의 답(terminal:open)은 테스트가 정한다. 가짜 this에는 탭의 화면이 놓일 자리와 store, 출력의 길을 둔다.
+function opening() {
+  const calls = []
+  let answer
+  const asked = new Promise(resolve => { answer = resolve })
+  vi.stubGlobal('window', {
+    preload: {
+      terminal: {
+        open: (...args) => { calls.push(['open', ...args]); return asked },
+        close: id => calls.push(['close', id]),
+        resize: (...args) => calls.push(['resize', ...args])
+      }
+    }
+  })
+  const { vm } = panel(null)
+  const seen = { commits: [], registered: [], unregistered: [] }
+  const session = { key: 1, request: { kind: 'connect', payload: { host: 'app.test' } } }
+  const screen = { name: 'the place of tab 1' }
+  vm.allSessions = [session]
+  vm.$refs['term-1'] = [screen]
+  vm.$store = { commit: (...args) => seen.commits.push(args) }
+  vm.router = { register: (id, write) => seen.registered.push([id, write]), unregister: id => seen.unregistered.push(id) }
+  vm.colors = () => ({ background: '#000' })
+  vm.drawWithWebgl = () => {}
+  vm.enableShortcuts = () => {}
+  const closes = () => calls.filter(([op]) => op === 'close')
+  return { vm, calls, closes, answer, seen, session, screen }
+}
+
+describe('opening a session', () => {
+  it('makes the screen of the tab, asks main with the request and the size, and takes the request out of the store', async () => {
+    const { vm, calls, answer, seen, session, screen } = opening()
+
+    const done = vm.start(session)
+    const term = made.at(-1)
+    expect(seen.commits).toEqual([['terminalUpdate', { key: 1, request: null }]])
+    expect(term.calls).toEqual([['open', screen], 'focus'])
+    expect(term.options).toMatchObject({ cursorBlink: false, fontSize: 13, theme: { background: '#000' } })
+    expect(vm.terms.get(1)).toMatchObject({ term, id: null, ended: false })
+    expect(calls).toEqual([['open', 'connect', { host: 'app.test' }, { cols: 100, rows: 30 }]])
+
+    answer({ ok: true, id: 9, windowsPty: { backend: 'conpty', buildNumber: 21376 } })
+    await done
+    expect(vm.terms.get(1).id).toBe(9)
+    expect(term.options.windowsPty).toEqual({ backend: 'conpty', buildNumber: 21376 })
+    expect(seen.registered.map(([id]) => id)).toEqual([9])
+    expect(seen.commits.at(-1)).toEqual(['terminalUpdate', { key: 1, id: 9, status: 'running' }])
+    // 받은 출력은 그 탭의 화면으로 간다
+    seen.registered[0][1]('hello')
+    expect(term.calls.at(-1)).toEqual(['write', 'hello'])
+    expect(calls).toHaveLength(1)
+  })
+
+  it('marks the tab as connected when ssh prints its sign after the login, and for nothing else', async () => {
+    const { vm, answer, seen, session } = opening()
+
+    const done = vm.start(session)
+    answer({ ok: true, id: 9 })
+    await done
+    const { code, handler } = made.at(-1).osc
+    expect(code).toBe(CONNECTED_OSC)
+    expect(handler('something else')).toBe(true)
+    expect(seen.commits.some(([, patch]) => patch.connected)).toBe(false)
+    expect(handler(CONNECTED_DATA)).toBe(true)
+    expect(seen.commits.at(-1)).toEqual(['terminalUpdate', { key: 1, connected: true }])
+  })
+
+  it('says why in the tab when main cannot open it', async () => {
+    const { vm, closes, answer, seen, session } = opening()
+
+    const done = vm.start(session)
+    answer({ ok: false, error: 'no bash' })
+    await done
+    expect(made.at(-1).calls.at(-1)).toEqual(['write', errorLine('no bash')])
+    expect(seen.commits.at(-1)).toEqual(['terminalUpdate', { key: 1, status: 'failed' }])
+    expect(vm.terms.get(1).id).toBe(null)
+    expect(seen.registered).toEqual([])
+    expect(closes()).toEqual([])
+  })
+
+  // 탭을 닫을 때는 세션의 번호를 아직 모른다: 답이 오면 그때 닫는다. 닫지 않으면 그 세션은 탭 없이 main에서 계속 돈다
+  // (ssh는 로그인까지 가고, 서버에는 보는 화면 없이 접속한 채로 남는다).
+  it('ends the session main opened when the tab was closed while waiting', async () => {
+    const { vm, calls, closes, answer, seen, session } = opening()
+
+    const done = vm.start(session)
+    const entry = vm.terms.get(1)
+    vm.closeSession(session)
+    expect(closes()).toEqual([])
+    expect(entry.term.disposed).toBe(true)
+
+    answer({ ok: true, id: 9, windowsPty: { backend: 'conpty' } })
+    await done
+    expect(calls.at(-1)).toEqual(['close', 9])
+    expect(entry.id).toBe(null)
+    expect(entry.term.options.windowsPty).toBe(undefined)
+    expect(seen.registered).toEqual([])
+    expect(seen.commits.map(([name]) => name)).toEqual(['terminalUpdate', 'terminalRemove'])
+  })
+
+  it('leaves a closed tab alone when main could not open its session either', async () => {
+    const { vm, closes, answer, seen, session } = opening()
+
+    const done = vm.start(session)
+    const { term } = vm.terms.get(1)
+    vm.closeSession(session)
+    const written = term.calls.length
+    answer({ ok: false, error: 'no bash' })
+    await done
+    expect(term.calls).toHaveLength(written)
+    expect(closes()).toEqual([])
+    expect(seen.commits.map(([name]) => name)).toEqual(['terminalUpdate', 'terminalRemove'])
+  })
+})
+
+describe('closing a tab', () => {
+  // 가짜 this에 main에 한 요청과 store에 한 commit의 기록을 더한다. 화면을 놓아주는 것(dispose)은 터미널의 기록에 남는다.
+  const closing = entry => {
+    const calls = []
+    vi.stubGlobal('window', { preload: { terminal: { close: id => calls.push(['close', id]) } } })
+    const { vm } = panel(entry)
+    const seen = { commits: [], unregistered: [] }
+    vm.$store = { commit: (...args) => seen.commits.push(args) }
+    vm.router = { unregister: id => seen.unregistered.push(id) }
+    return { vm, calls, seen }
+  }
+  const screen = extra => {
+    const entry = { ...terminal(), ended: false, ...extra }
+    entry.term.dispose = () => entry.calls.push('dispose')
+    return entry
+  }
+
+  it('ends its session, lets go of its screen and takes the tab out of the list', () => {
+    const entry = screen()
+    const { vm, calls, seen } = closing(entry)
+
+    vm.closeSession({ key: 1 })
+    expect(calls).toEqual([['close', 7]])
+    expect(seen.unregistered).toEqual([7])
+    expect(entry.calls).toEqual(['dispose'])
+    expect(vm.terms.has(1)).toBe(false)
+    expect(seen.commits).toEqual([['terminalRemove', 1]])
+  })
+
+  // 끝난 세션의 번호로도 닫는다: main이 다시 접속하려고 기억해 둔 요청을 잊는다
+  it('tells main about an ended session too, and has nothing to tell for one that is not open yet', () => {
+    const ended = screen({ ended: true })
+    const first = closing(ended)
+    first.vm.closeSession({ key: 1 })
+    expect(first.calls).toEqual([['close', 7]])
+
+    const waiting = screen({ id: null })
+    const second = closing(waiting)
+    second.vm.closeSession({ key: 1 })
+    expect(second.calls).toEqual([])
+    expect(second.seen.unregistered).toEqual([])
+    expect(waiting.calls).toEqual(['dispose'])
+    expect(second.vm.terms.has(1)).toBe(false)
+    expect(second.seen.commits).toEqual([['terminalRemove', 1]])
+  })
+
+  it('takes a tab without a screen out of the list', () => {
+    const { vm, calls, seen } = closing(null)
+
+    vm.closeSession({ key: 5 })
+    expect(calls).toEqual([])
+    expect(seen.commits).toEqual([['terminalRemove', 5]])
+  })
+
+  it('gives the keyboard to the tab that is selected after it', () => {
+    const next = screen()
+    const { vm } = closing(screen())
+    vm.terms.set(2, next)
+    // store가 옆 탭을 고른다
+    vm.$store = { commit: () => Object.assign(vm, { activeKey: 2, panes: { left: 2, right: null } }) }
+
+    vm.closeSession({ key: 1 })
+    expect(next.calls).toEqual(['fit', 'focus'])
+  })
+
+  it('closes every tab of the diagrams that were removed, and no other', () => {
+    const { vm } = closing(null)
+    const closed = []
+    vm.allSessions = [{ key: 1, owner: 0 }, { key: 2, owner: 3 }, { key: 3, owner: 1 }, { key: 4, owner: 3 }]
+    vm.closeSession = session => closed.push(session.key)
+
+    vm.closeOwners([3, 0])
+    expect(closed).toEqual([1, 2, 4])
+    vm.closeOwners([])
+    expect(closed).toHaveLength(3)
+  })
+})
+
+describe('the panel going away', () => {
+  it('ends every session and stops listening, and ends the one main opens after that', async () => {
+    const { vm, closes, answer, session } = opening()
+    const stopped = []
+    Object.assign(vm, {
+      stopData: () => stopped.push('data'),
+      stopExit: () => stopped.push('exit'),
+      observer: { disconnect: () => stopped.push('observer') },
+      spaceObserver: { disconnect: () => stopped.push('space') }
+    })
+    const open = { ...terminal(), ended: false }
+    open.term.dispose = () => open.calls.push('dispose')
+    vm.terms.set(2, open)
+
+    const done = vm.start(session)
+    const waiting = vm.terms.get(1)
+    component.beforeDestroy.call(vm)
+    expect(stopped).toEqual(['data', 'exit', 'observer', 'space'])
+    expect(closes()).toEqual([['close', 7]])
+    expect([open.calls, waiting.term.disposed]).toEqual([['dispose'], true])
+
+    answer({ ok: true, id: 9 })
+    await done
+    expect(closes()).toEqual([['close', 7], ['close', 9]])
+    expect(waiting.id).toBe(null)
   })
 })
 
