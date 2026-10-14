@@ -59,6 +59,19 @@ describe('terminalBash', () => {
     expect(terminalBash('D:\\Git\\bin\\bash.exe', { platform: 'win32', exists: () => true })).toBe('D:\\Git\\bin\\bash.exe')
     expect(() => terminalBash('D:\\nope\\git-bash.exe', { platform: 'win32', exists: () => false })).toThrow(/bash\.exe of Git for Windows was not found/)
   })
+
+  // 설정에 Git을 설치한 폴더를 넣었다: 폴더는 있지만 실행되지 않는다 (#227)
+  it('takes a folder for missing, and a file for there', () => {
+    const folder = join(root, 'Git')
+    mkdirSync(join(folder, 'bin'), { recursive: true })
+    expect(() => terminalBash(folder, { platform: 'win32' })).toThrow(/bash\.exe of Git for Windows was not found: .*Git\nCheck "Git Bash path" in Settings\./)
+    expect(() => terminalBash(join(folder, 'git-bash.exe'), { platform: 'win32' })).toThrow(/was not found/)
+
+    // 옆의 bin\bash.exe를 Windows의 경로로 만드므로 그 파일을 찾는 것은 Windows에서만 본다
+    if (process.platform !== 'win32') return
+    writeFileSync(join(folder, 'bin', 'bash.exe'), '')
+    expect(terminalBash(join(folder, 'git-bash.exe'), { platform: 'win32' })).toBe(join(folder, 'bin', 'bash.exe'))
+  })
 })
 
 describe('exitStatus', () => {

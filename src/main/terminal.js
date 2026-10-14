@@ -1,8 +1,7 @@
-import { existsSync } from 'node:fs'
 import { release as osRelease } from 'node:os'
 import { win32 } from 'node:path'
 import { MAX_WRITE } from '../shared/terminal-input.js'
-import { expandEnv, prepareSession } from './launcher.js'
+import { expandEnv, isFile, prepareSession } from './launcher.js'
 
 export const MAX_SESSIONS = 16
 
@@ -10,7 +9,7 @@ export const MAX_SESSIONS = 16
 class WindowGone extends Error {}
 
 // 앱 안의 터미널에서 쓸 bash. Windows에서는 설정의 git-bash.exe(mintty를 띄우는 실행기) 옆에 있는 bin\bash.exe를 쓴다.
-export function terminalBash(gitBashPath, { platform = process.platform, exists = existsSync, env = process.env } = {}) {
+export function terminalBash(gitBashPath, { platform = process.platform, exists = isFile, env = process.env } = {}) {
   if (platform !== 'win32') {
     return '/bin/bash'
   }

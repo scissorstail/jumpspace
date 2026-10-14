@@ -128,6 +128,8 @@ describe('launch', () => {
 
     await expect(launch('connect', node, { tempDir, gitBashPath: join(root, 'nope.exe'), spawn })).rejects.toThrow(/Git Bash was not found.*Settings/s)
     await expect(launch('connect', node, { tempDir, gitBashPath: '', spawn })).rejects.toThrow(/\(not set\)/)
+    // 폴더는 있지만 실행되지 않는다: Git을 설치한 폴더를 넣었을 때도 설정을 고치라고 말한다 (#227)
+    await expect(launch('connect', node, { tempDir, gitBashPath: root, spawn })).rejects.toThrow(/Git Bash was not found.*Settings/s)
     expect(calls).toHaveLength(0)
     expect(files(tempDir)).toEqual([])
   })

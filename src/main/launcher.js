@@ -1,6 +1,6 @@
 import { spawn as nodeSpawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { existsSync, rmSync } from 'node:fs'
+import { rmSync, statSync } from 'node:fs'
 import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { buildConnect, buildForward, buildProxyJump, toUnixPath } from './ssh.js'
@@ -10,6 +10,12 @@ const STALE_MS = 24 * 60 * 60 * 1000
 // %ProgramFiles% 같은 Windows 환경변수 표기를 펼친다. (예전에는 cmd.exe가 대신 해줬다)
 export function expandEnv(value, env = process.env) {
   return String(value).replace(/%([^%]+)%/g, (match, name) => env[name] ?? match)
+}
+
+// 실행할 수 있는 파일이 거기 있는가. 폴더도 있는 것이지만 실행되지 않는다: 설정에 Git을 설치한 폴더를 넣으면
+// "spawn ... ENOENT"나 "File not found"만 보이고 설정을 고치라는 말이 없었다 (#227).
+export function isFile(path) {
+  return statSync(path, { throwIfNoEntry: false })?.isFile() ?? false
 }
 
 // 스크립트 경로는 bash -c 인자 안에서 single-quote로 감싸 넘기므로 따옴표가 있으면 안전하게 넘길 수 없다.
@@ -92,7 +98,7 @@ export async function launch(kind, payload, { tempDir, gitBashPath, spawn = node
   const session = prepareSession(kind, payload, { tempDir })
 
   const bash = expandEnv(gitBashPath || '')
-  if (!bash || !existsSync(bash)) {
+  if (!bash || !isFile(bash)) {
     throw new Error(`Git Bash was not found: ${bash || '(not set)'}\nCheck "Git Bash path" in Settings.`)
   }
 
