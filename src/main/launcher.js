@@ -1,6 +1,6 @@
 import { spawn as nodeSpawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { existsSync } from 'node:fs'
+import { existsSync, rmSync } from 'node:fs'
 import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { buildConnect, buildForward, buildProxyJump, toUnixPath } from './ssh.js'
@@ -75,9 +75,14 @@ export function prepareSession(kind, payload, { tempDir }) {
         await writeFile(configFile, config, { encoding: 'utf-8', mode: 0o600 })
       }
     },
-    async cleanup() {
-      await rm(scriptFile, { force: true })
-      await rm(configFile, { force: true })
+    // 기다리지 않고 지운다: 세션을 끝내는 쪽(terminal.js)은 앱이 끝나는 중일 수도 있다. 지우지 못한 파일(다른 프로그램이
+    // 잡고 있다)은 두고 간다: 하루가 지나면 sweepTempDir이 치운다.
+    cleanup() {
+      for (const file of [scriptFile, configFile]) {
+        try {
+          rmSync(file, { force: true })
+        } catch {}
+      }
     }
   }
 }
@@ -102,7 +107,7 @@ export async function launch(kind, payload, { tempDir, gitBashPath, spawn = node
     await waitForSpawn(child)
     child.unref()
   } catch (e) {
-    await session.cleanup()
+    session.cleanup()
     throw e
   }
 }

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events'
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { extname, join } from 'node:path'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { expandEnv, launch, prepareSession, sweepTempDir } from './launcher.js'
 
@@ -97,6 +97,21 @@ describe('launch', () => {
     expect(files(tempDir)).toEqual([])
   })
 
+  it('reports why the process could not be started, also when its files cannot be removed either', async () => {
+    const spawn = () => {
+      // 시작에 실패하는 동안 스크립트가 지울 수 없는 것이 되었다: 파일 대신 비어 있지 않은 폴더.
+      const script = join(tempDir, files(tempDir).find(name => name.endsWith('.sh')))
+      rmSync(script)
+      mkdirSync(script)
+      writeFileSync(join(script, 'held'), '')
+      throw new Error('spawn failed')
+    }
+
+    await expect(launch('proxyJump', [node, { ...node, host: 'b' }], { tempDir, gitBashPath: fakeBash, spawn })).rejects.toThrow('spawn failed')
+    // ssh config는 그래도 지워졌다.
+    expect(files(tempDir).map(name => extname(name))).toEqual(['.sh'])
+  })
+
   it('validates the request before touching the disk', async () => {
     const { spawn, calls } = fakeSpawn()
     const missing = join(root, 'never-created')
@@ -170,9 +185,25 @@ describe('prepareSession', () => {
     expect(readFileSync(script, 'utf8') + readFileSync(config, 'utf8')).not.toContain('S3cr3t')
     expect(Object.values(session.env)).toContain('S3cr3t')
 
-    await session.cleanup()
+    // 기다리지 않고 지운다: 불린 쪽이 끝나는 중이어도 파일은 이미 없다.
+    session.cleanup()
     expect(files(tempDir)).toEqual([])
-    await session.cleanup() // 이미 지워져 있어도 괜찮다
+    session.cleanup() // 이미 지워져 있어도 괜찮다
+  })
+
+  it('cleanup() removes what it can and never throws', async () => {
+    const tempDir = mkdtempSync(join(root, 'stuck-'))
+    const session = prepareSession('proxyJump', [node, { ...node, name: 'db', host: 'db.internal' }], { tempDir })
+    await session.write()
+
+    // 스크립트를 지울 수 없는 것으로 바꾼다: 파일 대신 비어 있지 않은 폴더.
+    const script = join(tempDir, files(tempDir).find(name => name.endsWith('.sh')))
+    rmSync(script)
+    mkdirSync(script)
+    writeFileSync(join(script, 'held'), '')
+
+    expect(() => session.cleanup()).not.toThrow()
+    expect(files(tempDir).map(name => extname(name))).toEqual(['.sh'])
   })
 })
 

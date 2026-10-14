@@ -138,13 +138,13 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
         env: { ...process.env, ...prepared.env, TERM: 'xterm-256color', COLORTERM: 'truecolor', JUMPSPACE_IN_APP: '1' }
       })
     } catch (e) {
-      await prepared.cleanup()
+      prepared.cleanup()
       throw e
     }
 
     const { pty, bundled } = spawned
     const id = nextId++
-    const session = { owner, pty, windowsPty: windowsPtyInfo({ platform, release, bundled }), pending: '', timer: null }
+    const session = { owner, pty, cleanup: prepared.cleanup, windowsPty: windowsPtyInfo({ platform, release, bundled }), pending: '', timer: null }
     sessions.set(id, session)
 
     // 모아 둔 출력을 화면으로 보낸다. (OUTPUT_DELAY_MS)
@@ -169,6 +169,9 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
       const exitCode = exitStatus(event, { platform })
       // 끝났다는 알림보다 마지막 출력이 먼저 가야 한다.
       flush()
+      // 스스로 끝난 스크립트는 자기 파일을 지우고 가지만, 그러지 못하고 끝날 때가 있다 (Windows에서 접속 중 Ctrl+C, 밖에서
+      // 죽은 bash). 다시 접속하면 새 파일을 쓴다.
+      session.cleanup()
       // 사용자가 닫은 세션(close/closeAll이 이미 지웠다)은 다시 열 일이 없다.
       if (sessions.delete(id)) remember(id, { owner, kind, payload })
       send(owner, 'terminal:exit', id, exitCode)
@@ -177,12 +180,15 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
   }
 
   // 세션을 끝낸다. 모아 둔 출력은 버린다.
+  // 스크립트와 ssh config는 여기서 지운다. 스크립트의 trap에 맡길 수 없다: Windows에서는 ConPTY가 닫히면 bash가 trap을
+  // 실행하지 못하고 끝나서, 닫은 탭마다 파일(호스트와 사용자 이름이 들어 있다)이 임시 폴더에 남았다. (하루가 지나야 치워진다)
   function end(id, session) {
     sessions.delete(id)
     clearTimeout(session.timer)
     session.timer = null
     session.pending = ''
     killPty(session.pty)
+    session.cleanup()
   }
 
   return {

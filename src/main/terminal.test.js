@@ -1,6 +1,6 @@
-import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { extname, join } from 'node:path'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 import { createTerminalManager, exitStatus, killPty, MAX_PENDING_OUTPUT, MAX_SESSIONS, OUTPUT_DELAY_MS, REFLOW_BUILD, terminalBash, windowsPtyInfo } from './terminal.js'
 import { sq, toUnixPath } from './ssh.js'
@@ -253,6 +253,84 @@ describe('createTerminalManager', () => {
     const noBash = createTerminalManager({ tempDir, getBash: () => { throw new Error('no bash') }, spawnPty: vi.fn(), send: vi.fn() })
     await expect(noBash.open('connect', node, { owner: 1 })).rejects.toThrow('no bash')
     expect(readdirSync(tempDir)).toEqual([])
+  })
+
+  it('reports why the pty could not be started, also when its files cannot be removed either', async () => {
+    const tempDir = mkdtempSync(join(root, 'stuck-'))
+    const spawnPty = (file, args) => {
+      // 시작에 실패하는 동안 스크립트가 지울 수 없는 것이 되었다: 파일 대신 비어 있지 않은 폴더.
+      rmSync(args[0])
+      mkdirSync(args[0])
+      writeFileSync(join(args[0], 'held'), '')
+      throw new Error('no pty')
+    }
+    const manager = createTerminalManager({ tempDir, getBash: () => '/bin/bash', spawnPty, send: vi.fn(), platform: 'linux' })
+
+    await expect(manager.open('connect', node, { owner: 1 })).rejects.toThrow('no pty')
+    expect(manager.size).toBe(0)
+  })
+
+  // 가짜 pty는 스크립트를 실행하지 않는다: 아래에서 파일을 지우는 것은 main이다. (Windows에서는 닫힌 세션의 bash가
+  // 자기 trap을 실행하지 못한다)
+  const jump = [node, { ...node, name: 'db', host: 'db.internal' }]
+
+  it('removes the script and the config of a session when it is closed, and leaves those of the others', async () => {
+    const { manager, spawnPty, tempDir } = setup()
+    const first = await manager.open('proxyJump', jump, { owner: 1 })
+    await manager.open('connect', node, { owner: 1 })
+    // 경로를 거치는 세션은 스크립트와 ssh config를, 직접 접속은 스크립트만 쓴다.
+    expect(readdirSync(tempDir).map(name => extname(name)).sort()).toEqual(['.jmp', '.sh', '.sh'])
+
+    // 다른 창의 요청으로는 지워지지 않는다.
+    manager.close(first, 2)
+    expect(readdirSync(tempDir)).toHaveLength(3)
+
+    manager.close(first, 1)
+    expect(readdirSync(tempDir).map(name => toUnixPath(join(tempDir, name)))).toEqual([spawnPty.mock.calls[1][1][0]])
+  })
+
+  it('removes the files of every session of a window that goes away, and of all of them when the app ends', async () => {
+    const { manager, tempDir } = setup()
+    await manager.open('proxyJump', jump, { owner: 1 })
+    await manager.open('connect', node, { owner: 1 })
+    await manager.open('proxyJump', jump, { owner: 2 })
+    await manager.open('connect', node, { owner: 3 })
+
+    manager.closeAll(1)
+    expect(readdirSync(tempDir).map(name => extname(name)).sort()).toEqual(['.jmp', '.sh', '.sh'])
+    manager.closeAll()
+    expect(readdirSync(tempDir)).toEqual([])
+  })
+
+  it('removes the files of a session that ended without cleaning up after itself, and writes new ones to reconnect', async () => {
+    const { manager, ptys, tempDir } = setup()
+    const id = await manager.open('forward', { via: [node], forwards: [{ checked: true, from: '8080', to: '80' }] }, { owner: 1 })
+    expect(readdirSync(tempDir)).toHaveLength(2)
+
+    // bash가 밖에서 죽었을 때처럼 스크립트의 trap 없이 끝났다.
+    ptys[0].emitExit(1)
+    expect(readdirSync(tempDir)).toEqual([])
+
+    await manager.reopen(id, 1)
+    expect(readdirSync(tempDir)).toHaveLength(2)
+    expect(existsSync(ptys[1].args[0])).toBe(true)
+    expect(ptys[1].args[0]).not.toBe(ptys[0].args[0])
+  })
+
+  it('goes on when a file of a closed session cannot be removed', async () => {
+    const { manager, ptys, tempDir } = setup()
+    const id = await manager.open('proxyJump', jump, { owner: 1 })
+    const script = ptys[0].args[0]
+    // 지울 수 없는 것으로 바꾼다: 파일 대신 비어 있지 않은 폴더.
+    rmSync(script)
+    mkdirSync(script)
+    writeFileSync(join(script, 'held'), '')
+
+    expect(() => manager.close(id, 1)).not.toThrow()
+    expect(ptys[0].kill).toHaveBeenCalled()
+    expect(manager.size).toBe(0)
+    // 스크립트는 남았고, ssh config는 그래도 지워졌다.
+    expect(readdirSync(tempDir).map(name => extname(name))).toEqual(['.sh'])
   })
 
   it('limits the number of sessions and closes all of a window', async () => {
@@ -567,31 +645,39 @@ describe.skipIf(!BASH || !existsSync(BASH))('a real pty', () => {
     expect(exit).toBe(0)
   }, 30000)
 
-  it.skipIf(process.platform === 'win32')('closing a session also ends the program that runs in it', async () => {
+  // Windows에서는 pty(ConPTY)가 닫히면 그 안의 프로그램이 신호 없이 하나씩 끝난다. 그래서 bash는 trap을 실행하지 못하고,
+  // 먼저 끝난 프로그램을 기다리던 bash는 자기 차례가 올 때까지(20~30ms) 다음 명령을 실행한다: 끝난 프로그램은 잘 끝난 것으로 보인다.
+  it('closing a session also ends the program that runs in it, and its files are gone', async () => {
     const { spawn } = await import('node-pty')
     const bashEnv = join(root, 'bashenv-sleep.sh')
+    const started = join(root, 'started')
     const marker = join(root, 'still-running')
-    // 가짜 ssh: 진짜 ssh처럼 따로 된 프로세스로, 잠시 기다린 뒤에도 살아 있으면 표시 파일을 만든다.
-    writeFileSync(bashEnv, `ssh() { printf "FAKE-SSH\\n"; bash -c ${sq(`sleep 3; : > ${sq(toUnixPath(marker))}`)}; }\n`)
+    // 가짜 ssh: 진짜 ssh처럼 따로 된 프로세스로, 시작했다고 표시하고 3초 뒤에도 살아 있으면 표시 파일을 만든다.
+    // 3초를 정말 기다렸는지 잰다: 위에 쓴 대로 Windows에서는 중간에 끝난 sleep의 다음 명령도 실행될 수 있다.
+    const program = `: > ${sq(toUnixPath(started))}; s=$SECONDS; sleep 3; [ $((SECONDS - s)) -ge 2 ] && : > ${sq(toUnixPath(marker))}`
+    writeFileSync(bashEnv, `ssh() { bash -c ${sq(program)}; }\n`)
 
-    const output = []
     const tempDir = mkdtempSync(join(root, 'kill-'))
     const manager = createTerminalManager({
       tempDir,
       getBash: () => BASH,
       spawnPty: (file, args, options) => spawn(file, args, { ...options, env: { ...options.env, BASH_ENV: toUnixPath(bashEnv) } }),
-      send: (owner, channel, id, value) => channel === 'terminal:data' && output.push(value)
+      // 새 ConPTY는 시작할 때 터미널에게 묻고(DA1) 답을 3초까지 기다린다. 화면(xterm.js)이 하듯 답한다.
+      send: (owner, channel, id, value) => channel === 'terminal:data' && value.includes('\x1b[c') && manager.write(id, owner, '\x1b[?1;2c')
     })
 
     const id = await manager.open('connect', node, { owner: 1 })
-    const end = Date.now() + 10000
-    while (!output.join('').includes('FAKE-SSH') && Date.now() < end) await new Promise(resolve => setTimeout(resolve, 50))
+    const end = Date.now() + 15000
+    while (!existsSync(started) && Date.now() < end) await new Promise(resolve => setTimeout(resolve, 50))
+    expect(existsSync(started)).toBe(true)
+    expect(readdirSync(tempDir)).toHaveLength(1)
 
     manager.close(id, 1)
+    // 스크립트는 닫는 순간 main이 지운다: bash가 아직 그 파일을 읽고 있어도, 앱이 바로 끝나도 남지 않는다.
+    expect(readdirSync(tempDir)).toEqual([])
     await new Promise(resolve => setTimeout(resolve, 4000))
 
     expect(existsSync(marker)).toBe(false)
-    // 스크립트의 trap이 임시 파일도 지웠다.
     expect(readdirSync(tempDir)).toEqual([])
   }, 30000)
 })
