@@ -3,16 +3,21 @@
 // 제 앞의 노드를 알지 못해서, 경유 경로 없이 모든 노드가 바로 접속하게 된다. 그래서 고리를 닫는 연결은 받지 않는다
 // (components/editor/index.vue의 refuseLoop). link-loop.test.js가 진짜 엔진과 답이 같은지 본다.
 
+// 노드마다 그 뒤에 이어진 노드들: 앞 노드의 번호 -> 뒤 노드들의 번호 (연결 순서대로)
+function nextOf(links) {
+  const next = new Map()
+  for (const [before, after] of links) {
+    next.set(before, [...(next.get(before) || []), after])
+  }
+  return next
+}
+
 // from에서 to로 가는 연결을 더하면 고리가 닫히는가: 제 자신으로 가는 연결이거나, 이미 to에서 from으로 가는 길이 있을 때.
 // 이미 있는 고리는 세지 않는다 (그 고리에 닿지 않는 연결은 받는다). 고리가 있어도 끝난다: 한 번 본 노드는 다시 보지 않는다.
 export function closesLoop(links, from, to) {
   if (from === to) return true
 
-  const next = new Map()
-  for (const [before, after] of links) {
-    next.set(before, [...(next.get(before) || []), after])
-  }
-
+  const next = nextOf(links)
   const seen = new Set([to])
   const todo = [to]
   while (todo.length) {
@@ -33,10 +38,7 @@ export function closesLoop(links, from, to) {
 // 제 자신으로 가는 연결은 노드 하나짜리 고리다. 예전 버전에서 그렸거나 파일에서 온 다이어그램을 열 때 쓴다:
 // 지금은 고리를 그릴 수 없지만, 그런 다이어그램은 있는 그대로 열린다.
 export function loopIn(links) {
-  const next = new Map()
-  for (const [before, after] of links) {
-    next.set(before, [...(next.get(before) || []), after])
-  }
+  const next = nextOf(links)
 
   // 깊이 우선으로 따라간다. path는 지금 따라가는 길, turns는 길 위의 노드마다 다음에 볼 연결의 차례.
   // done은 거기서 떠난 길에 고리가 없다고 이미 본 노드: 다시 따라가지 않는다.
