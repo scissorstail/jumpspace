@@ -1378,6 +1378,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 1305 passed (with Git's bash; 2 new, 4 sharpened), lint ok, build ok, the tests caught 10 of 10 mutations by hand (the five of the askpass line among them). Tests only: no headless checks, no real window.
 - Found / next: no bug in the app. A mutant of the askpass line (`>= /dev/tty`) left a file named `=` in the repository root while the tests ran; removed, nothing of it was committed. Tests were added, so this run does not count toward the two runs with nothing to add or fix. Next: refactor (#229).
 
+### #232 2026-10-15 · refactor (the fourteenth run of the cycle of #218)
+- Did: since the refactor of #229 the sources changed in `json-text.js` and its two users (#230, ten lines) and in tests (#231). `clones.cjs` finds no repeated script code (only CSS and template boilerplate, looked at and left in #223 and #229), `stale-refs.cjs` nothing stale. Read the two main modules no refactor run of this cycle had read: `ssh.js` is built from `wrap`, `banner`, `authOptions`, `hostAliases` and `hostConfig` already; what repeats is the remote command of Connect and ProxyJump (`-tt` before `--`, the command after it), two short lines on both sides of `--`, which a helper would not make clearer. `storage.js` (the queue of saves, `load()` and its reasons) has nothing that does two things. Nothing to move.
+- Result: no commit of code. CI of HEAD (6b1a4ed, run 38615956105) green.
+- Found / next: nothing to add or fix: the first such run in a row. Next: a completeness review (#230).
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
