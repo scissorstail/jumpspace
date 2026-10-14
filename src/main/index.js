@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import {
@@ -27,6 +27,7 @@ import { toResult } from './ipc-result.js'
 import { createSettingStore, openStore, STORE_OPTIONS } from './setting-store.js'
 import { buildSshConfig } from './ssh-config.js'
 import { createProjectStorage, itemsFromJson, parseItems } from './storage.js'
+import { readText } from './json-text.js'
 import { createBoundsSaver, createWindowStore, restoreBounds } from './window-bounds.js'
 import { mayUnload } from './unload-question.js'
 import { mayQuit } from './quit-question.js'
@@ -126,7 +127,7 @@ function main() {
 
     if (!filenames || filenames.length === 0) return null
 
-    return JSON.stringify(parseItems(await readFile(filenames[0], 'utf-8')))
+    return JSON.stringify(parseItems(await readText(filenames[0])))
   })
 
   handle('dialog:selectKeyFile', () => {

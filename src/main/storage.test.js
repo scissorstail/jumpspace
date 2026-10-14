@@ -54,6 +54,18 @@ describe('storage', () => {
     expect(JSON.parse(await storage.load())).toEqual(other)
   })
 
+  // PowerShell 5.1의 >와 Out-File은 따로 정하지 않으면 UTF-16 LE로 쓴다 (메모장의 "UTF-16 LE/BE"도). UTF-8로 읽어서 "not valid JSON"이었다.
+  it('reads a file and a backup written in UTF-16 with a byte order mark', async () => {
+    const named = [{ name: '서버 Ü', data: { id: 'test@0.1.0', nodes: {} } }]
+    const text = BOM + JSON.stringify({ version: 1, items: named })
+    await writeFile(storage.file, Buffer.from(text, 'utf16le'))
+    expect(JSON.parse(await storage.load())).toEqual(named)
+
+    await writeFile(storage.file, '{broken')
+    await writeFile(storage.backup, Buffer.from(text, 'utf16le').swap16())
+    expect(JSON.parse(await storage.load())).toEqual(named)
+  })
+
   // 화면은 여러 곳에서 저장을 부른다 (잠글 때, 목록을 고칠 때, 캔버스를 옮긴 뒤). 둘이 겹치면 같은 임시 파일을 쓰고,
   // 먼저 끝난 쪽이 그 파일을 가져가서 나중 쪽이 "ENOENT ... rename projects.json.tmp -> projects.json"으로 실패했다.
   // 읽을 수 없는 파일은 "저장된 것이 없다"와 다르다. 없다고 하면 화면이 빈 목록으로 시작해서 그 파일과 백업을 덮어쓴다.
