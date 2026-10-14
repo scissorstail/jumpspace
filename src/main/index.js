@@ -170,12 +170,15 @@ function main() {
   on('terminal:resize', (event, id, cols, rows) => terminals.resize(id, event.sender.id, cols, rows))
   on('terminal:close', (event, id) => terminals.close(id, event.sender.id))
 
-  // 새로고침하거나 창을 닫으면 그 화면의 터미널은 끝낸다.
+  // 새로고침하거나 창을 닫거나 그 화면의 렌더러가 죽으면 그 화면의 터미널은 끝낸다.
   app.on('web-contents-created', (event, contents) => {
     const owner = contents.id
     contents.on('did-start-navigation', details => {
       if (details.isMainFrame && !details.isSameDocument) terminals.closeAll(owner)
     })
+    // 렌더러가 죽으면 위의 것도 destroyed도 오지 않는다: 세션이 보는 화면 없이 접속한 채로, 창을 닫거나 앱을 끝낼 때까지
+    // 남았다 (ProxyJump 세션 하나의 연결 둘, ssh 둘, 스크립트 둘). 죽은 이유는 보지 않는다: 어느 경우든 탭은 없다.
+    contents.on('render-process-gone', () => terminals.closeAll(owner))
     contents.on('destroyed', () => terminals.closeAll(owner))
   })
   // (before-quit가 아니다: 그것은 창이 닫히기 전에 온다. 잠금을 푼 채로 끝내려다 취소하면 터미널은 살아 있어야 한다)

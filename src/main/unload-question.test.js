@@ -58,4 +58,14 @@ describe('main, when the page holds the window', () => {
     expect(index).toMatch(/app\.on\('will-quit', \(\) => terminals\.closeAll\(\)\)/)
     expect(index).not.toMatch(/app\.on\('before-quit', \(\) => terminals\.closeAll\(\)\)/)
   })
+
+  // 화면이 없어지면 그 화면의 터미널도 끝낸다: 다른 문서로 가거나(새로 고침), 창이 없어지거나, 렌더러가 죽을 때.
+  // 렌더러가 죽을 때는 앞의 둘이 오지 않아서, 세션이 보는 화면 없이 접속한 채로 남았다 (#214).
+  it('ends the terminals of a page that navigates, is destroyed or whose renderer is gone', () => {
+    const block = index.match(/app\.on\('web-contents-created', \(event, contents\) => \{\n([\s\S]*?)\n {2}\}\)\n/)?.[1] ?? ''
+    expect(block).toMatch(/^\s+const owner = contents\.id\n/)
+    expect(block).toMatch(/contents\.on\('did-start-navigation', details => \{\n\s+if \(details\.isMainFrame && !details\.isSameDocument\) terminals\.closeAll\(owner\)\n\s+\}\)/)
+    expect(block).toMatch(/\n\s+contents\.on\('render-process-gone', \(\) => terminals\.closeAll\(owner\)\)\n/)
+    expect(block).toMatch(/\n\s+contents\.on\('destroyed', \(\) => terminals\.closeAll\(owner\)\)$/)
+  })
 })
