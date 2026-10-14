@@ -1408,6 +1408,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 1320 passed (with Git's bash; 2 new, 2 extended), lint ok, build ok, the tests caught 6 of 6 mutations. Tests only, so no headless or real-window run.
 - Found / next: no bug; tests were added, so this run does not count toward the two runs with nothing to add or fix. Every module of main, shared and the renderer's utils has now had a sweep. Next: refactor (#235).
 
+### #238 2026-10-15 · refactor (the twentieth run of the cycle of #218)
+- Did: since the refactor of #235 the sources changed in `ssh.js`, `ssh-config.js` and `ssh-config-parse.js` (#236) and in tests (#237). `clones.cjs` finds no repeated script code, `stale-refs.cjs` nothing stale. One seam from #236: the rule of `%` (ssh reads it in `HostName`, `IdentityFile` and `RemoteCommand` as a token, so the app writes it doubled and *From SSH config* halves it) stood as `replaceAll` in eight places of three files, each with its own comment. `escapeTokens` and `unescapeTokens` in `src/shared/ssh-config-parse.js` hold it now, next to `EXEC_TAIL`. Commit dd53a0b.
+- Result: tests 1320 passed (with Git's bash; none changed), lint ok, build ok, the old tests caught 5 of 6 mutations of the new code; headless checks 26 runs passed (858 checks; the parser is part of the page), `real-window-check.cjs` 39 passed, `real-window-check-2.cjs` with `term,login` 45 passed; no `electron.exe` or `ssh.exe` left.
+- Found / next: the mutant that survived was there before the refactor: no test holds that the config of a ProxyJump or forward session (`hostConfig` of `ssh.js`) doubles the `%` of a key path, only that of *Copy SSH config*. Code changed, so this run does not count toward the two runs with nothing to add or fix. Next: a completeness review (#236), then tests take that gap.
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
