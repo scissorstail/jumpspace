@@ -1353,6 +1353,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: no commit of code. CI of HEAD (c3f33a5, run 38583228439) green.
 - Found / next: nothing to add or fix: the first such run in a row. Next: a completeness review (#224).
 
+### #227 2026-10-15 · completeness (the ninth run of the cycle of #218)
+- Did: wrong input in *Settings > Git Bash path*: the folder Git was installed in instead of its `git-bash.exe`. The check before starting asked only whether the path exists, and a folder does, so what the person saw was node-pty's "File not found: <folder>" in the app terminal and "spawn <folder> ENOENT" for a Git Bash window (both tried with `C:\Program Files\Git`), with no word of the setting. `isFile()` (new in `launcher.js`) is now the check of both, so a folder gets the message of a missing path, which names the setting. CHANGELOG. Commit 31bdd30.
+- Result: tests 1295 passed (with Git's bash; 1 new, 1 sharpened), lint ok, build ok, the tests caught 3 of 3 mutations; `real-window-check.cjs` all passed, `real-window-check-2.cjs` with `term,login` all passed; no `electron.exe` or `ssh.exe` left. Main only, the page is unchanged: no headless run.
+- Found / next: a fix, so this run does not count toward the two runs with nothing to add or fix (#226 was the first). Next: tests (#225).
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
