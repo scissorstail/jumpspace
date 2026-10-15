@@ -57,8 +57,8 @@ function terminal({ selection = '', found = true, shown = true, cols = 80, rows 
     focus: () => calls.push('focus')
   }
   const search = {
-    findNext: text => { calls.push(['findNext', text]); return found },
-    findPrevious: text => { calls.push(['findPrevious', text]); return found }
+    findNext: (text, options) => { calls.push(['findNext', text, options]); return found },
+    findPrevious: (text, options) => { calls.push(['findPrevious', text, options]); return found }
   }
   return { term, search, fit: { fit: () => calls.push('fit') }, id: 7, calls }
 }
@@ -73,7 +73,7 @@ function panel(entry, { text = '', fontSize = 13 } = {}) {
     panes: { left: 1, right: null },
     fontSize,
     terms: new Map(entry ? [[1, entry]] : []),
-    search: { isOpen: false, text, isMissing: false },
+    search: { isOpen: false, text, isMissing: false, caseSensitive: false },
     $refs: { search: { focus: () => focused.push('search') } },
     $nextTick: fn => fn(),
     $store: { dispatch: (...args) => dispatched.push(args) },
@@ -190,7 +190,7 @@ describe('finding in the terminal of the selected tab', () => {
     const { vm } = panel(entry, { text: 'needle' })
 
     vm.find('first')
-    expect(entry.calls).toEqual(['clearSelection', ['findPrevious', 'needle']])
+    expect(entry.calls).toEqual(['clearSelection', ['findPrevious', 'needle', { caseSensitive: false }]])
     expect(vm.search.isMissing).toBe(false)
   })
 
@@ -200,7 +200,7 @@ describe('finding in the terminal of the selected tab', () => {
 
     vm.find('previous')
     vm.find('next')
-    expect(entry.calls).toEqual([['findPrevious', 'needle'], ['findNext', 'needle']])
+    expect(entry.calls).toEqual([['findPrevious', 'needle', { caseSensitive: false }], ['findNext', 'needle', { caseSensitive: false }]])
   })
 
   it('says so when the text is not there, and takes it back when it is found again', () => {
@@ -230,6 +230,44 @@ describe('finding in the terminal of the selected tab', () => {
     expect(() => vm.find('first')).not.toThrow()
     expect(vm.search.isMissing).toBe(false)
   })
+
+  // 대소문자 구분 (owner, 2026-10-15): 바꾸면 찾는 글이 바뀐 것처럼 맨 아래에서 다시 찾는다
+  it('tells the terminal whether case matters, and starts again from the newest output when that changes', () => {
+    const entry = terminal()
+    const { vm } = panel(entry, { text: 'Needle' })
+
+    vm.toggleCase()
+    expect(vm.search.caseSensitive).toBe(true)
+    vm.find('next')
+    expect(entry.calls).toEqual(['clearSelection', ['findPrevious', 'Needle', { caseSensitive: true }], ['findNext', 'Needle', { caseSensitive: true }]])
+
+    entry.calls.length = 0
+    vm.toggleCase()
+    expect(vm.search.caseSensitive).toBe(false)
+    expect(entry.calls).toEqual(['clearSelection', ['findPrevious', 'Needle', { caseSensitive: false }]])
+  })
+
+  it('says at once whether the text is there with the other setting', () => {
+    const entry = terminal()
+    entry.search.findPrevious = (text, options) => !options.caseSensitive
+    const { vm } = panel(entry, { text: 'NEEDLE' })
+
+    vm.toggleCase()
+    expect(vm.search.isMissing).toBe(true)
+    vm.toggleCase()
+    expect(vm.search.isMissing).toBe(false)
+  })
+
+  it('keeps it when the field closes, and takes a selection with it', () => {
+    const entry = terminal({ selection: 'Needle' })
+    const { vm } = panel(entry, { text: 'zzz' })
+    vm.search.caseSensitive = true
+
+    vm.closeSearch()
+    vm.openSearch()
+    expect(vm.search.caseSensitive).toBe(true)
+    expect(entry.calls).toEqual(['focus', ['findNext', 'Needle', { caseSensitive: true }]])
+  })
 })
 
 describe('opening and closing the search field', () => {
@@ -238,7 +276,7 @@ describe('opening and closing the search field', () => {
     const { vm, focused } = panel(entry, { text: 'before' })
 
     vm.openSearch()
-    expect(vm.search).toEqual({ isOpen: true, text: 'before', isMissing: false })
+    expect(vm.search).toEqual({ isOpen: true, text: 'before', isMissing: false, caseSensitive: false })
     expect(focused).toEqual(['search'])
     expect(entry.calls).toEqual([])
   })
@@ -250,8 +288,8 @@ describe('opening and closing the search field', () => {
     vm.search.isMissing = true
 
     vm.openSearch()
-    expect(vm.search).toEqual({ isOpen: true, text: 'needle', isMissing: false })
-    expect(entry.calls).toEqual([['findNext', 'needle']])
+    expect(vm.search).toEqual({ isOpen: true, text: 'needle', isMissing: false, caseSensitive: false })
+    expect(entry.calls).toEqual([['findNext', 'needle', { caseSensitive: false }]])
   })
 
   it('keeps the text of before for a selection over several lines', () => {
@@ -270,7 +308,7 @@ describe('opening and closing the search field', () => {
     vm.search.isMissing = true
 
     vm.closeSearch()
-    expect(vm.search).toEqual({ isOpen: false, text: 'zzz', isMissing: false })
+    expect(vm.search).toEqual({ isOpen: false, text: 'zzz', isMissing: false, caseSensitive: false })
     expect(entry.calls).toEqual(['focus'])
   })
 
@@ -280,7 +318,7 @@ describe('opening and closing the search field', () => {
     vm.search.isMissing = true
 
     component.watch.activeKey.call(vm)
-    expect(vm.search).toEqual({ isOpen: false, text: 'needle', isMissing: false })
+    expect(vm.search).toEqual({ isOpen: false, text: 'needle', isMissing: false, caseSensitive: false })
   })
 })
 

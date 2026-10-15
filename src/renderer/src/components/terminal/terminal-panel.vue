@@ -65,8 +65,10 @@
         v-model="search.text"
         :class="{ 'is-left': isSplit && activeKey === panes.left }"
         :is-missing="search.isMissing"
+        :case-sensitive="search.caseSensitive"
         @input="find('first')"
         @find="find"
+        @toggle-case="toggleCase"
         @close="closeSearch"
       />
     </div>
@@ -112,7 +114,7 @@ export default {
       // 캔버스와 패널이 나눠 쓰는 높이 (#workspace). 창 크기가 바뀌면 다시 잰다.
       available: Infinity,
       // 지나간 출력에서 찾기 (Ctrl+Shift+F). 찾는 글은 닫아도 남는다.
-      search: { isOpen: false, text: '', isMissing: false }
+      search: { isOpen: false, text: '', isMissing: false, caseSensitive: false }
     }
   },
   computed: {
@@ -442,7 +444,7 @@ export default {
         this.search.text = seed
         this.search.isMissing = false
         // 고른 그 자리를 찾은 것으로 해 둔다: 그래야 다음 Enter가 같은 자리에 머물지 않고 넘어간다.
-        entry.search.findNext(seed)
+        entry.search.findNext(seed, this.searchOptions())
       }
       this.search.isOpen = true
       this.$nextTick(() => this.$refs.search?.focus())
@@ -461,8 +463,19 @@ export default {
 
       const { text } = this.search
       if (direction === 'first') entry.term.clearSelection()
-      const found = text !== '' && (direction === 'next' ? entry.search.findNext(text) : entry.search.findPrevious(text))
+      const options = this.searchOptions()
+      const found = text !== '' && (direction === 'next' ? entry.search.findNext(text, options) : entry.search.findPrevious(text, options))
       this.search.isMissing = text !== '' && !found
+    },
+    // 찾는 방법 (@xterm/addon-search). 표시(decorations)는 쓰지 않는다: allowProposedApi가 있어야 한다.
+    searchOptions() {
+      return { caseSensitive: this.search.caseSensitive }
+    },
+    // 대소문자 구분을 켜고 끈다. 찾는 글이 바뀐 것처럼 맨 아래에서 다시 찾는다: 없음 표시도 그에 맞춘다.
+    // 찾는 칸을 닫아도, 다른 탭으로 가도 그대로다 (찾던 글처럼). 앱을 다시 켜면 꺼져 있다.
+    toggleCase() {
+      this.search.caseSensitive = !this.search.caseSensitive
+      this.find('first')
     },
     fit(entry, force = false) {
       if (!entry || !entry.term.element || entry.term.element.offsetParent === null) return

@@ -21,6 +21,19 @@
       @keydown.enter.exact.prevent="$emit('find', 'previous')"
       @keydown.enter.shift.exact.prevent="$emit('find', 'next')"
     >
+    <!-- 대소문자 구분 (owner, 2026-10-15). 마우스로 눌러도 키보드는 입력칸에 남는다: 바로 Enter로 찾을 수 있다. -->
+    <button
+      type="button"
+      class="terminal-search-button terminal-search-case"
+      :class="{ 'is-on': caseSensitive }"
+      aria-label="Match case"
+      title="Match case"
+      :aria-pressed="caseSensitive ? 'true' : 'false'"
+      @mousedown.prevent
+      @click="$emit('toggle-case')"
+    >
+      Aa
+    </button>
     <span
       v-show="isMissing"
       class="terminal-search-missing"
@@ -73,7 +86,9 @@ export default {
   props: {
     value: { type: String, required: true },
     // 찾는 글이 터미널에 없다
-    isMissing: { type: Boolean, default: false }
+    isMissing: { type: Boolean, default: false },
+    // 대소문자를 가려서 찾는다
+    caseSensitive: { type: Boolean, default: false }
   },
   methods: {
     // 열 때와, 열린 채로 Ctrl+Shift+F를 다시 눌렀을 때: 바로 고쳐 칠 수 있게 전부 고른다.
@@ -153,6 +168,18 @@ export default {
   &:disabled {
     opacity: 0.4;
     cursor: default;
+  }
+}
+
+// 대소문자 구분: 작은 글자 단추, 켜져 있으면 노란 글자와 테두리
+.terminal-search-case {
+  padding: 3px 4px;
+  font-size: 11px;
+  font-weight: bold;
+
+  &.is-on {
+    box-shadow: inset 0 0 0 1px var(--js-sun);
+    color: var(--js-sun);
   }
 }
 </style>

@@ -23,6 +23,12 @@ describe('the search field of the terminal panel', () => {
     expect(search).toMatch(/aria-label="Close find"\n\s+title="Close \(Esc\)"\n\s+@click="\$emit\('close'\)"/)
   })
 
+  // 대소문자 구분 (owner, 2026-10-15): 작은 글자 단추. 마우스로 눌러도 키보드는 입력칸에 남는다.
+  it('has a small button that makes case matter, says whether it is on, and leaves the keyboard in the field', () => {
+    expect(search).toMatch(/class="terminal-search-button terminal-search-case"\n\s+:class="\{ 'is-on': caseSensitive \}"\n\s+aria-label="Match case"\n\s+title="Match case"\n\s+:aria-pressed="caseSensitive \? 'true' : 'false'"\n\s+@mousedown\.prevent\n\s+@click="\$emit\('toggle-case'\)"\n\s+>\n\s+Aa\n/)
+    expect(search).toMatch(/caseSensitive: \{ type: Boolean, default: false \}/)
+  })
+
   it('says when the text is not in the terminal', () => {
     expect(search).toMatch(/:class="\{ 'is-missing': isMissing \}"/)
     expect(search).toMatch(/v-show="isMissing"\n\s+class="terminal-search-missing"\n\s+role="status"\n\s+>No match<\/span>/)
@@ -41,6 +47,10 @@ describe('finding in a terminal', () => {
   })
 
   it('starts again while typing, and moves from the match with the keys and buttons of the field', () => {
-    expect(panel).toMatch(/@input="find\('first'\)"\n\s+@find="find"\n\s+@close="closeSearch"/)
+    expect(panel).toMatch(/@input="find\('first'\)"\n\s+@find="find"\n\s+@toggle-case="toggleCase"\n\s+@close="closeSearch"/)
+  })
+
+  it('shows the field whether case matters', () => {
+    expect(panel).toMatch(/:is-missing="search\.isMissing"\n\s+:case-sensitive="search\.caseSensitive"\n/)
   })
 })
