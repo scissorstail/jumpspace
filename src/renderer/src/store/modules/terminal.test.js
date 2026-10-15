@@ -17,6 +17,8 @@ describe('terminal store', () => {
     expect(JSON.stringify(session.hops)).not.toContain('secret')
     expect(session.status).toBe('starting')
     expect(state.isPanelOpen).toBe(true)
+    // 처음부터 있어야 바뀔 때 화면이 안다 (terminalUpdate는 있는 객체에 덧쓴다)
+    expect(session).toMatchObject({ connected: false, busy: false })
   })
 
   // 터미널은 그것을 연 다이어그램(item)의 것이다.

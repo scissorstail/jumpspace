@@ -6,7 +6,7 @@ import cloneDeep from 'lodash/cloneDeep'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, shownView, viewOf } from '../../utils/view'
 import { ARRANGE_GAP, arrangeLayout, boxOf } from '../../utils/arrange'
-import { activeTerminalNode, hopKey, routeStates } from '../../utils/terminal-sessions'
+import { activeTerminalNode, busyNodes, hopKey, routeStates } from '../../utils/terminal-sessions'
 import { isCanvasDoubleClick, lockedPress } from '../../utils/locked-press'
 import { closesLoop, loopIn, loopText } from '../../utils/link-loop'
 import { toastError } from '../../utils/notify'
@@ -143,6 +143,7 @@ const given = {
   arrangeLayout,
   boxOf,
   activeTerminalNode,
+  busyNodes,
   hopKey,
   routeStates,
   isCanvasDoubleClick,
@@ -931,6 +932,23 @@ describe('the sessions of the terminals on the canvas', () => {
       nodes: [['is-live'], ['is-active-terminal', 'is-live'], ['is-connecting'], ['is-failed'], []],
       lines: [['is-live'], []]
     })
+  })
+
+  // 출력이 오가는 세션의 노드: 그 초록 점이 깜박인다 (canvas.scss). 로그인한 세션의 마지막 노드만이다.
+  it('marks the node of a logged-in session with output as busy: the last node of its path, and only while the output goes on', () => {
+    const busy = [
+      { key: 'k1', status: 'running', connected: true, busy: true, hops: [key('a.example'), key('b.example')] },
+      { key: 'k2', status: 'starting', busy: true, hops: [key('c.example')] },
+      { key: 'k3', status: 'running', connected: true, busy: false, hops: [key('d.example')] }
+    ]
+    const { vm, marks } = canvas({ terminalSessions: busy, activeTerminalKey: 'k3' })
+
+    vm.markLiveRoutes()
+    expect(marks().nodes).toEqual([['is-live'], ['is-busy', 'is-live'], ['is-connecting'], ['is-active-terminal', 'is-live'], []])
+
+    vm.$store.getters.terminalSessions = busy.map(session => ({ ...session, busy: false }))
+    vm.markLiveRoutes()
+    expect(marks().nodes).toEqual([['is-live'], ['is-live'], ['is-connecting'], ['is-active-terminal', 'is-live'], []])
   })
 
   it('takes the marks away again when the sessions are gone', () => {

@@ -82,7 +82,7 @@ import { SearchAddon } from '@xterm/addon-search'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
-import { canReconnect, createOutputRouter, endedByUser, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
+import { canReconnect, createActivityWatch, createOutputRouter, endedByUser, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, panelDrag, panelHeight, RECONNECTING_LINE, searchSeed, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import { MAX_WRITE } from '../../../../shared/terminal-input.js'
@@ -177,6 +177,8 @@ export default {
     // key -> 그 탭의 화면: xterm(term)과 그 애드온(fit, search, webgl), main의 세션 번호(id), 그리고 start()가 두는 상태
     this.terms = new Map()
     this.router = createOutputRouter()
+    // 출력이 오가는지: 그 세션의 노드의 초록 점이 깜박인다 (utils/terminal-sessions.js의 busyNodes)
+    this.activity = createActivityWatch((key, busy) => this.$store.commit('terminalUpdate', { key, busy }))
   },
   mounted() {
     this.stopData = window.preload.terminal.onData((id, data) => this.router.push(id, data))
@@ -190,6 +192,7 @@ export default {
   beforeDestroy() {
     this.stopData?.()
     this.stopExit?.()
+    this.activity?.stop()
     this.observer?.disconnect()
     this.spaceObserver?.disconnect()
     for (const [, entry] of this.terms) {
@@ -304,7 +307,10 @@ export default {
     attach(session, entry, { id, windowsPty }) {
       entry.id = id
       if (windowsPty) entry.term.options.windowsPty = windowsPty
-      this.router.register(id, data => entry.term.write(data))
+      this.router.register(id, data => {
+        entry.term.write(data)
+        this.activity.output(session.key)
+      })
       this.$store.commit('terminalUpdate', { key: session.key, id, status: 'running' })
       // 여는 동안 패널 크기가 바뀌었을 수 있다.
       this.fit(entry, true)
@@ -365,6 +371,7 @@ export default {
 
       const entry = this.terms.get(session.key)
       this.router.unregister(id)
+      this.activity.forget(session.key)
       // exit나 Ctrl+C로 직접 끝냈으면 탭을 바로 닫는다. 오류나 접속 실패로 끝났을 때만 남겨서 다시 접속할 수 있게 한다.
       if (endedByUser({ exitCode, connected: session.connected, interruptedAt: entry?.interruptedAt ?? null })) {
         this.closeSession(session)
@@ -411,6 +418,7 @@ export default {
         entry.term.dispose()
         this.terms.delete(session.key)
       }
+      this.activity.forget(session.key)
       this.$store.commit('terminalRemove', session.key)
       // 닫기 단추가 사라져도 키보드 포커스가 갈 곳이 있게, 남은 활성 터미널로 옮긴다.
       this.$nextTick(() => this.fitActive(true))

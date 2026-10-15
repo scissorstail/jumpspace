@@ -7,8 +7,9 @@ import { describe, expect, it } from 'vitest'
 // 연결선 위의 신호, 깜박이는 점, 우클릭 메뉴가 커지며 나오는 것, CRT 배경의 내려가는 띠, 탭을 끌 때 비켜 주는 움직임,
 // 그리고 색이나 투명도가 서서히 바뀌는 transition. 다시 생기면 여기서 걸린다.
 // (Bootstrap이 가져온 것은 여기서 보지 않는다. 우리가 쓴 스타일과 화면 코드만 본다.)
-// 하나만 예외다 (owner, 같은 날: "잘 안보이는 흐린 회전 스피너"): 저장하는 동안 머리글에서 도는 고리.
-// Bootstrap의 spinner가 스스로 도는 것이라 아래의 검사에는 걸리지 않는다. 그래서 따로 센다: 다른 곳에 또 생기면 걸린다.
+// 예외는 둘이다. 저장하는 동안 머리글에서 도는 고리 (owner, 같은 날: "잘 안보이는 흐린 회전 스피너"): Bootstrap의 spinner가
+// 스스로 도는 것이라 아래의 검사에는 걸리지 않는다. 그래서 따로 센다: 다른 곳에 또 생기면 걸린다. 그리고 출력이 오가는 세션의
+// 노드에서 깜박이는 초록 점 (owner, 2026-10-15: "작업중에 노드에 초록색 불이 깜빡이게"): 그 규칙과 박자의 두 줄만 받는다.
 const root = __dirname
 
 const sources = dir =>
@@ -24,6 +25,12 @@ const code = text =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/(^|\s)\/\/.*$/gm, '$1')
+
+// 깜박이는 점의 두 줄 (canvas.scss). 다른 곳에 생기거나 이것이 바뀌면 걸린다.
+const allowed = {
+  'an animation': ['components/editor/canvas.scss: animation: js-node-busy 0.5s steps(1, end) infinite;'],
+  keyframes: ['components/editor/canvas.scss: @keyframes js-node-busy {']
+}
 
 const motion = [
   ['an animation', /\banimation(?:-[a-z-]+)?\s*[:=]/],
@@ -53,8 +60,8 @@ describe('nothing in the app moves by itself', () => {
     expect(files).toContain('assets/theme.scss')
   })
 
-  it.each(motion)('no file has %s', (name, pattern) => {
-    expect(found(pattern)).toEqual([])
+  it.each(motion)('no file has %s, but for the dot of a busy node', (name, pattern) => {
+    expect(found(pattern)).toEqual(allowed[name] ?? [])
   })
 
   // 도는 것은 저장 표시 하나다. Bootstrap의 spinner는 이름으로 찾는다 (태그, 가져온 컴포넌트, 그 클래스).

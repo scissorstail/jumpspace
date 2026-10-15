@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runInThisContext } from 'node:vm'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { canReconnect, endedByUser, rightClickAction, terminalShortcut } from '../../utils/terminal-sessions'
+import { canReconnect, createActivityWatch, createOutputRouter, endedByUser, rightClickAction, terminalShortcut } from '../../utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, RECONNECTING_LINE, searchSeed } from '../../utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import { MAX_WRITE } from '../../../../shared/terminal-input.js'
@@ -39,7 +39,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const source = readFileSync(join(here, 'terminal-panel.vue'), 'utf8').replace(/\r\n/g, '\n')
 const script = source.match(/<script>\n([\s\S]*?)<\/script>/)[1]
 const imported = [...script.matchAll(/^import (?:\{ ([^}]+) \}|(\w+)) from .*$/gm)].flatMap(match => (match[1] ?? match[2]).split(', '))
-const given = { nextFontSize, searchSeed, canReconnect, endedByUser, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, MAX_WRITE, MAX_CLIPBOARD, toastError, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
+const given = { nextFontSize, searchSeed, canReconnect, createActivityWatch, createOutputRouter, endedByUser, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, MAX_WRITE, MAX_CLIPBOARD, toastError, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 const component = runInThisContext(`(function (${imported.join(', ')}) {\n${body}\n})`)(...imported.map(name => given[name]))
 
@@ -68,7 +68,10 @@ function panel(entry, { text = '', fontSize = 13 } = {}) {
   const dispatched = []
   const focused = []
   const toasts = []
+  // 출력이 오가는지 보는 것 (createActivityWatch): 부른 차례를 적는다
+  const activity = []
   const vm = {
+    activity: { output: key => activity.push(['output', key]), forget: key => activity.push(['forget', key]), stop: () => activity.push(['stop']) },
     activeKey: 1,
     panes: { left: 1, right: null },
     fontSize,
@@ -80,7 +83,7 @@ function panel(entry, { text = '', fontSize = 13 } = {}) {
     $bvToast: { toast: (body, options) => toasts.push({ body, title: options.title, variant: options.variant }) }
   }
   for (const [name, method] of Object.entries(component.methods)) vm[name] = method.bind(vm)
-  return { vm, dispatched, focused, toasts }
+  return { vm, dispatched, focused, toasts, activity }
 }
 
 afterEach(() => vi.unstubAllGlobals())
@@ -90,6 +93,18 @@ describe('the script of the terminal panel', () => {
     expect(component.name).toBe('TerminalPanel')
     expect(imported).toContain('SearchAddon')
     expect(imported.length).toBeGreaterThan(15)
+  })
+
+  // 출력이 오가는지 store에 알린다: 그 노드의 초록 점이 깜박인다 (utils/terminal-sessions.js의 busyNodes)
+  it('tells the store when the output of a tab starts and when it is over', () => {
+    const commits = []
+    const vm = { $store: { commit: (...args) => commits.push(args) } }
+    component.created.call(vm)
+
+    vm.activity.output(3)
+    vm.activity.output(3)
+    vm.activity.forget(3)
+    expect(commits).toEqual([['terminalUpdate', { key: 3, busy: true }], ['terminalUpdate', { key: 3, busy: false }]])
   })
 })
 
@@ -414,16 +429,26 @@ describe('fitting a terminal', () => {
 
 // 세션이 끝났을 때와 다시 접속할 때. 가짜 this에 세션 목록, 출력의 길(router), store에 한 commit의 기록을 더한다.
 function ending(entry, session) {
-  const { vm } = panel(entry)
+  const { vm, activity } = panel(entry)
   const seen = { commits: [], unregistered: [], registered: [], closed: [] }
   vm.allSessions = [session]
   vm.router = { unregister: id => seen.unregistered.push(id), register: id => seen.registered.push(id) }
   vm.$store = { commit: (...args) => seen.commits.push(args) }
   vm.closeSession = closing => seen.closed.push(closing)
-  return { vm, seen }
+  return { vm, seen, activity }
 }
 
 describe('a session that ends', () => {
+  it('stops counting as busy at once, whether its tab stays or closes', () => {
+    const stays = ending({ ...terminal(), ended: false, interruptedAt: null }, { key: 1, id: 7, connected: false })
+    stays.vm.onExit(7, 255)
+    expect(stays.activity).toEqual([['forget', 1]])
+
+    const closes = ending({ ...terminal(), ended: false, interruptedAt: null }, { key: 1, id: 7, connected: true })
+    closes.vm.onExit(7, 0)
+    expect(closes.activity).toEqual([['forget', 1]])
+  })
+
   it('stays for reconnecting when the connection failed: a line says so and the tab is marked', () => {
     const entry = { ...terminal(), ended: false, interruptedAt: null }
     const session = { key: 1, id: 7, connected: false }
@@ -567,7 +592,7 @@ function opening() {
       }
     }
   })
-  const { vm } = panel(null)
+  const { vm, activity } = panel(null)
   const seen = { commits: [], registered: [], unregistered: [] }
   const session = { key: 1, request: { kind: 'connect', payload: { host: 'app.test' } } }
   const screen = { name: 'the place of tab 1' }
@@ -579,10 +604,24 @@ function opening() {
   vm.drawWithWebgl = () => {}
   vm.enableShortcuts = () => {}
   const closes = () => calls.filter(([op]) => op === 'close')
-  return { vm, calls, closes, answer, seen, session, screen }
+  return { vm, calls, closes, answer, seen, session, screen, activity }
 }
 
 describe('opening a session', () => {
+  it('hands the output of main to the screen of the tab and counts it as output of that tab', async () => {
+    const { vm, answer, seen, session, activity } = opening()
+
+    const done = vm.start(session)
+    const term = made.at(-1)
+    answer({ ok: true, id: 9 })
+    await done
+    const [[id, write]] = seen.registered
+    write('hello')
+    expect(id).toBe(9)
+    expect(term.calls.at(-1)).toEqual(['write', 'hello'])
+    expect(activity).toEqual([['output', 1]])
+  })
+
   it('makes the screen of the tab, asks main with the request and the size, and takes the request out of the store', async () => {
     const { vm, calls, answer, seen, session, screen } = opening()
 
@@ -673,11 +712,11 @@ describe('closing a tab', () => {
   const closing = entry => {
     const calls = []
     vi.stubGlobal('window', { preload: { terminal: { close: id => calls.push(['close', id]) } } })
-    const { vm } = panel(entry)
+    const { vm, activity } = panel(entry)
     const seen = { commits: [], unregistered: [] }
     vm.$store = { commit: (...args) => seen.commits.push(args) }
     vm.router = { unregister: id => seen.unregistered.push(id) }
-    return { vm, calls, seen }
+    return { vm, calls, seen, activity }
   }
   const screen = extra => {
     const entry = { ...terminal(), ended: false, ...extra }
@@ -687,9 +726,10 @@ describe('closing a tab', () => {
 
   it('ends its session, lets go of its screen and takes the tab out of the list', () => {
     const entry = screen()
-    const { vm, calls, seen } = closing(entry)
+    const { vm, calls, seen, activity } = closing(entry)
 
     vm.closeSession({ key: 1 })
+    expect(activity).toEqual([['forget', 1]])
     expect(calls).toEqual([['close', 7]])
     expect(seen.unregistered).toEqual([7])
     expect(entry.calls).toEqual(['dispose'])
@@ -748,7 +788,7 @@ describe('closing a tab', () => {
 
 describe('the panel going away', () => {
   it('ends every session and stops listening, and ends the one main opens after that', async () => {
-    const { vm, closes, answer, session } = opening()
+    const { vm, closes, answer, session, activity } = opening()
     const stopped = []
     Object.assign(vm, {
       stopData: () => stopped.push('data'),
@@ -764,6 +804,7 @@ describe('the panel going away', () => {
     const waiting = vm.terms.get(1)
     component.beforeDestroy.call(vm)
     expect(stopped).toEqual(['data', 'exit', 'observer', 'space'])
+    expect(activity).toEqual([['stop']])
     expect(closes()).toEqual([['close', 7]])
     expect([open.calls, waiting.term.disposed]).toEqual([['dispose'], true])
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { activeTerminalNode, canReconnect, countByOwner, createOutputRouter, duplicateNumbers, endedByUser, hopKey, INTERRUPT_WINDOW_MS, numberedTitle, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
+import { activeTerminalNode, BUSY_IDLE_MS, busyNodes, canReconnect, countByOwner, createActivityWatch, createOutputRouter, duplicateNumbers, endedByUser, hopKey, INTERRUPT_WINDOW_MS, numberedTitle, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -220,6 +220,128 @@ describe('activeTerminalNode', () => {
     expect(activeTerminalNode([{ key: 1, hops: [] }, { key: 2 }], 1)).toBe(null)
     expect(activeTerminalNode([{ key: 1, hops: [] }, { key: 2 }], 2)).toBe(null)
     expect(activeTerminalNode(undefined, 1)).toBe(null)
+  })
+})
+
+describe('busyNodes', () => {
+  const key = name => `ops@${name}:22`
+
+  it('is the last node of every logged-in session with output', () => {
+    expect([...busyNodes([
+      { status: 'running', connected: true, busy: true, hops: [key('jump'), key('app')] },
+      { status: 'running', connected: true, busy: true, hops: [key('db')] }
+    ])]).toEqual([key('app'), key('db')])
+  })
+
+  it('leaves out a quiet session, one that has not logged in, one that ended and one without a path', () => {
+    expect([...busyNodes([
+      { status: 'running', connected: true, busy: false, hops: [key('a')] },
+      { status: 'running', connected: false, busy: true, hops: [key('b')] },
+      { status: 'starting', busy: true, hops: [key('c')] },
+      { status: 'exited', exitCode: 0, busy: true, hops: [key('d')] },
+      { status: 'exited', exitCode: 255, busy: true, hops: [key('e')] },
+      { status: 'failed', busy: true, hops: [key('f')] },
+      { status: 'running', connected: true, busy: true, hops: [] }
+    ])]).toEqual([])
+    expect(busyNodes(undefined).size).toBe(0)
+  })
+})
+
+describe('createActivityWatch', () => {
+  // 가짜 시계와 타이머: 테스트가 시간을 앞으로 보낸다
+  function watch() {
+    let time = 0
+    let next = 1
+    const timers = new Map()
+    const changes = []
+    const activity = createActivityWatch((key, busy) => changes.push([key, busy]), {
+      now: () => time,
+      setTimer: (fn, ms) => {
+        timers.set(next, { fn, at: time + ms })
+        return next++
+      },
+      clearTimer: id => timers.delete(id)
+    })
+    const advance = ms => {
+      const end = time + ms
+      for (;;) {
+        const [due] = [...timers.entries()].filter(([, timer]) => timer.at <= end).sort((a, b) => a[1].at - b[1].at)
+        if (!due) break
+        timers.delete(due[0])
+        time = due[1].at
+        due[1].fn()
+      }
+      time = end
+    }
+    return { activity, changes, advance, timers }
+  }
+
+  it('waits a second', () => {
+    expect(BUSY_IDLE_MS).toBe(1000)
+  })
+
+  it('says busy at the first output and quiet a second after it', () => {
+    const { activity, changes, advance } = watch()
+
+    activity.output(1)
+    expect(changes).toEqual([[1, true]])
+    advance(BUSY_IDLE_MS - 1)
+    expect(changes).toEqual([[1, true]])
+    advance(1)
+    expect(changes).toEqual([[1, true], [1, false]])
+  })
+
+  it('stays busy while the output goes on, with one timer, and says so once', () => {
+    const { activity, changes, advance, timers } = watch()
+
+    for (let i = 0; i < 10; i++) {
+      activity.output(1)
+      expect(timers.size).toBe(1)
+      advance(300)
+    }
+    expect(changes).toEqual([[1, true]])
+    advance(BUSY_IDLE_MS - 300 - 1)
+    expect(changes).toEqual([[1, true]])
+    advance(1)
+    expect(changes).toEqual([[1, true], [1, false]])
+    expect(timers.size).toBe(0)
+  })
+
+  it('watches each session on its own, and starts again after a quiet time', () => {
+    const { activity, changes, advance } = watch()
+
+    activity.output(1)
+    advance(600)
+    activity.output(2)
+    advance(400)
+    expect(changes).toEqual([[1, true], [2, true], [1, false]])
+    advance(600)
+    expect(changes).toEqual([[1, true], [2, true], [1, false], [2, false]])
+    activity.output(1)
+    expect(changes.at(-1)).toEqual([1, true])
+  })
+
+  it('forgets a session that ended: quiet at once and its timer gone, nothing for one it does not watch', () => {
+    const { activity, changes, advance, timers } = watch()
+
+    activity.output(1)
+    activity.forget(1)
+    expect(changes).toEqual([[1, true], [1, false]])
+    expect(timers.size).toBe(0)
+    advance(BUSY_IDLE_MS * 2)
+    activity.forget(2)
+    expect(changes).toEqual([[1, true], [1, false]])
+  })
+
+  it('stops every timer without a word', () => {
+    const { activity, changes, advance, timers } = watch()
+
+    activity.output(1)
+    activity.output(2)
+    activity.stop()
+    expect(timers.size).toBe(0)
+    advance(BUSY_IDLE_MS * 2)
+    expect(changes).toEqual([[1, true], [2, true]])
   })
 })
 

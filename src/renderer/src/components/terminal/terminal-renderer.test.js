@@ -28,10 +28,15 @@ describe('attaching a session to its screen', () => {
   // 늦으면 패널이 높아질 때 지난 출력이 빈 줄로 덮인다 (ConPTY)
   it('tells xterm about the Windows pty before any output is taken', () => {
     const told = attach.indexOf('if (windowsPty) entry.term.options.windowsPty = windowsPty')
-    const taken = attach.indexOf('this.router.register(id, data => entry.term.write(data))')
+    const taken = attach.indexOf('this.router.register(id, data => {')
 
     expect(told).toBeGreaterThan(-1)
     expect(taken).toBeGreaterThan(told)
+  })
+
+  // 화면에 쓰고, 그 탭의 출력으로 센다: 출력이 오가는 동안 그 노드의 초록 점이 깜박인다
+  it('writes the output to the screen and counts it for the blinking dot of the node', () => {
+    expect(attach).toMatch(/this\.router\.register\(id, data => \{\n\s+entry\.term\.write\(data\)\n\s+this\.activity\.output\(session\.key\)\n\s+\}\)/)
   })
 
   it('is the one place that takes the output, for a new session and a reconnected one', () => {

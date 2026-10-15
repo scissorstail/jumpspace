@@ -154,6 +154,65 @@ export function activeTerminalNode(sessions, activeKey, isPanelOpen = true) {
   return hops.length > 0 ? hops[hops.length - 1] : null
 }
 
+// 출력이 오가는 세션의 노드 (owner, 2026-10-15: "작업중에 노드에 초록색 불이 깜빡이게"): 그 초록 점이 깜박인다 (canvas.scss).
+// 로그인한 세션만 본다: 연결 중의 노란 점과 실패의 빨간 점은 가만히 있다. 그 탭을 연 노드, 곧 경로의 마지막 홉만이다:
+// 앞의 점프 호스트는 지나가기만 한다. 돌려주는 값: Set(hopKey)
+export function busyNodes(sessions) {
+  const nodes = new Set()
+  for (const session of sessions || []) {
+    const hops = session.hops || []
+    if (session.busy && sessionPhase(session) === 'connected' && hops.length > 0) nodes.add(hops[hops.length - 1])
+  }
+  return nodes
+}
+
+// 마지막 출력에서 이만큼 아무것도 오지 않으면 세션은 조용하다 (깜박임이 멈춘다).
+export const BUSY_IDLE_MS = 1000
+
+// 세션마다 출력이 오는지 본다. 출력이 오면 바로 onChange(key, true), 마지막 출력에서 idleMs가 지나면 onChange(key, false).
+// 바뀔 때만 알린다: 출력은 잦아서, 올 때마다 store에 쓰면 캔버스와 탭 줄이 그때마다 다시 그려진다.
+// 타이머는 세션마다 하나다: 출력이 올 때마다 다시 걸지 않고, 깨어나서 남은 시간만큼 다시 잰다.
+export function createActivityWatch(onChange, { idleMs = BUSY_IDLE_MS, now = () => Date.now(), setTimer = setTimeout, clearTimer = clearTimeout } = {}) {
+  const watched = new Map()
+  const wake = key => {
+    const entry = watched.get(key)
+    if (!entry) return
+    const left = entry.last + idleMs - now()
+    if (left > 0) {
+      entry.timer = setTimer(() => wake(key), left)
+      return
+    }
+    watched.delete(key)
+    onChange(key, false)
+  }
+
+  return {
+    // 세션 key의 출력이 왔다
+    output(key) {
+      const entry = watched.get(key)
+      if (entry) {
+        entry.last = now()
+        return
+      }
+      watched.set(key, { last: now(), timer: setTimer(() => wake(key), idleMs) })
+      onChange(key, true)
+    },
+    // 세션이 끝났거나 탭이 닫혔다: 더 기다리지 않는다
+    forget(key) {
+      const entry = watched.get(key)
+      if (!entry) return
+      clearTimer(entry.timer)
+      watched.delete(key)
+      onChange(key, false)
+    },
+    // 패널이 사라진다: 타이머를 모두 거둔다 (알리지 않는다)
+    stop() {
+      for (const { timer } of watched.values()) clearTimer(timer)
+      watched.clear()
+    }
+  }
+}
+
 // main에서 오는 출력을 세션 id로 나눠 준다. id를 아직 모르는 출력(탭이 열리기 전에 온 것)은 모아 두었다가
 // register(id, write)를 부를 때 한꺼번에 넘긴다.
 export function createOutputRouter({ maxPending = 256 * 1024 } = {}) {

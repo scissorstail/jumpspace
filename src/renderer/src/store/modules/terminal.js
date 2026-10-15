@@ -47,8 +47,8 @@ export default {
     terminalAdd(state, { title, kind, payload, route = [] }) {
       const key = nextKey++
       const hops = route.map(hopKey)
-      // connected: 로그인 표시를 받았는지 (캔버스의 연결 중/연결됨 구분)
-      state.sessions.push({ key, id: null, owner: state.owner, title, hops, status: 'starting', connected: false, exitCode: null, request: { kind, payload } })
+      // connected: 로그인 표시를 받았는지 (캔버스의 연결 중/연결됨 구분). busy: 출력이 오가는 중인지 (그 노드의 점이 깜박인다)
+      state.sessions.push({ key, id: null, owner: state.owner, title, hops, status: 'starting', connected: false, busy: false, exitCode: null, request: { kind, payload } })
       state.activeKey = key
       state.isPanelOpen = true
     },

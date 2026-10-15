@@ -169,3 +169,29 @@ describe('a locked node', () => {
     expect(socket).toMatch(/\n\s*&\.output \{\n\s*background: var\(--js-line\);/)
   })
 })
+
+// 출력이 오가는 세션의 노드에서 초록 점이 깜박인다 (owner, 2026-10-15: "작업중에 노드에 초록색 불이 깜빡이게").
+// 앱에서 저절로 움직이는 둘째 것이다 (motion.test.js가 그 두 줄만 받는다). 노란 점과 빨간 점, 다른 무엇도 깜박이지 않는다.
+describe('the dot of a busy node', () => {
+  const plain = scss.replace(/^\s*\/\/.*$/gm, '')
+  const rules = [...plain.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selectors, body]) => ({ selectors: selectors.split(',').map(x => x.trim()), body }))
+  const animated = rules.filter(rule => /(?:^|\s)animation:/.test(rule.body))
+  const frames = block(scss, '@keyframes js-node-busy')
+
+  it('blinks only on a node with a logged-in session that is busy', () => {
+    expect(animated.map(rule => rule.selectors)).toEqual([['.is-live.is-busy .node.site::after']])
+  })
+
+  it('switches at once, twice a second, as long as the node is busy', () => {
+    expect(animated[0].body.match(/animation: ([^;]+);/)[1]).toBe('js-node-busy 0.5s steps(1, end) infinite')
+  })
+
+  it('dims the dot half of the time instead of hiding it, and keeps its color', () => {
+    const opacity = Number(frames.match(/50% \{\s*opacity: ([\d.]+);\s*\}/)?.[1])
+
+    expect(opacity).toBeGreaterThan(0)
+    expect(opacity).toBeLessThan(1)
+    expect(frames).not.toMatch(/background|color|visibility|display/)
+    expect(animated[0].body).not.toMatch(/background/)
+  })
+})

@@ -19,7 +19,7 @@ import ReadonlyPlugin from 'rete-readonly-plugin'
 import SiteNode from './nodes/site-node'
 import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, shownView, viewOf } from '@/utils/view'
 import { arrangeLayout, boxOf } from '@/utils/arrange'
-import { activeTerminalNode, hopKey, routeStates } from '@/utils/terminal-sessions'
+import { activeTerminalNode, busyNodes, hopKey, routeStates } from '@/utils/terminal-sessions'
 import { isCanvasDoubleClick, lockedPress } from '@/utils/locked-press'
 import { closesLoop, loopIn, loopText } from '@/utils/link-loop'
 import { toastError } from '@/utils/notify'
@@ -395,6 +395,7 @@ export default {
     // 앱 안의 터미널 세션이 지나가는 노드와 연결선에 상태를 붙인다: 연결 중(is-connecting), 연결됨(is-live), 실패(is-failed). 모양은 CSS.
     // 노드와 세션은 user@host:port로 맞춰 본다. 지금 열린 item이 연 세션만 본다 (store의 terminalSessions): 터미널은 그것을 연 item의 것이다.
     // 고른 탭을 연 노드에는 is-active-terminal도 붙인다: 선택한 노드처럼 보이지만 Rete의 선택은 아니다 (Delete나 끌기의 대상이 바뀌면 안 된다).
+    // 출력이 오가는 세션의 노드에는 is-busy를 붙인다: 그 초록 점이 깜박인다 (busyNodes).
     markLiveRoutes() {
       if (!this.editor) return
 
@@ -408,11 +409,13 @@ export default {
       }
 
       const active = this.activeTerminalNode
+      const busy = busyNodes(this.$store.getters.terminalSessions)
 
       for (const [node, view] of this.editor.view.nodes) {
         const key = keyOf(node)
         mark(view.el, nodes.get(key))
         view.el.classList.toggle('is-active-terminal', active !== null && key === active)
+        view.el.classList.toggle('is-busy', busy.has(key))
       }
       for (const [connection, view] of this.editor.view.connections) {
         mark(view.el, links.get(`${keyOf(connection.output.node)}>${keyOf(connection.input.node)}`))
