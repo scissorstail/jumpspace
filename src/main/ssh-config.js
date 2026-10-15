@@ -1,4 +1,4 @@
-import { bracketHost, toUnixPath } from './ssh.js'
+import { bracketHost, identityFile } from './ssh.js'
 import { EXEC_TAIL, escapeTokens } from '../shared/ssh-config-parse.js'
 import { validateForwards, validateNode } from '../shared/validate.js'
 
@@ -38,7 +38,7 @@ export function buildSshConfig(rawNodes, { forwards = [] } = {}) {
       `    HostName ${escapeTokens(node.host)}`,
       node.user && `    User ${node.user}`,
       node.port && `    Port ${node.port}`,
-      node.keyPath && `    IdentityFile "${escapeTokens(toUnixPath(node.keyPath))}"`,
+      node.keyPath && `    ${identityFile(node.keyPath)}`,
       node.keyPath && '    IdentitiesOnly yes',
       index > 0 && `    ProxyJump ${aliases.slice(0, index).join(',')}`,
       canExec && `    RemoteCommand ${escapeTokens(exec)}${EXEC_TAIL}`,

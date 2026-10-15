@@ -83,7 +83,13 @@ function askpassPrelude(nodes, promptHosts = nodes.map(x => x.host)) {
 // 다른 경로는 -i로 둔다: 없는 파일을 ssh가 터미널에 알려 준다 (config 줄의 없는 파일은 말없이 건너뛴다).
 function keyOption(keyPath) {
   const path = toUnixPath(keyPath)
-  return path.includes('%') ? `-o ${sq(`IdentityFile "${escapeTokens(path)}"`)}` : `-i ${sq(path)}`
+  return path.includes('%') ? `-o ${sq(identityFile(keyPath))}` : `-i ${sq(path)}`
+}
+
+// config의 IdentityFile 줄 (Connect의 -o, 세션의 config, Copy SSH config). 경로는 /로 쓰고 빈칸이 있어도 되게 따옴표 안에,
+// %는 %%로 쓴다 (ssh는 IdentityFile의 %를 토큰으로 읽는다). 따옴표는 경로에 올 수 없다 (validateKeyPath).
+export function identityFile(keyPath) {
+  return `IdentityFile "${escapeTokens(toUnixPath(keyPath))}"`
 }
 
 // 직접 접속(Connect)에서 노드 하나의 인증에 쓰는 ssh 옵션
@@ -172,7 +178,7 @@ function hostConfig(nodes, aliases) {
     'StrictHostKeyChecking accept-new',
     `User ${node.user}`,
     `Port ${node.port}`,
-    ...(node.keyPath ? [`IdentityFile "${escapeTokens(toUnixPath(node.keyPath))}"`, 'IdentitiesOnly yes'] : []),
+    ...(node.keyPath ? [identityFile(node.keyPath), 'IdentitiesOnly yes'] : []),
     ...(node.password ? ['NumberOfPasswordPrompts 1'] : []),
     ...(node.password && !node.keyPath ? ['PubkeyAuthentication no'] : [])
   ].join('\n') + '\n').join('\n') + '\n'
