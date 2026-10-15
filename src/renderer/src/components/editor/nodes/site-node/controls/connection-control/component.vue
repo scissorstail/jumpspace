@@ -224,13 +224,9 @@ export default {
     forwardSummaryText() {
       return forwardSummary(this.forwards, this.forwardPlan, this.isInfoHidden ? maskText : undefined)
     },
-    // 이름, user, host, port, 포워딩 요약의 툴팁: 말줄임으로 잘린 글자를 다 보여준다.
-    // 잠긴 노드는 단추 말고는 마우스에 반응하지 않으므로 툴팁도 없다 (owner, 2026-10-15). 단추의 툴팁은 그대로다.
+    // 이름, user, host, port, 포워딩 요약의 툴팁: 말줄임으로 잘린 글자를 다 보여준다. 잠긴 동안에도 있다 (owner, 2026-10-15:
+    // "툴팁은 나오지만 드래그만 안되게"). 잠긴 노드 위에서 끌면 캔버스가 움직이고(utils/locked-press.js), 툴팁은 누를 때 브라우저가 숨긴다.
     tooltips() {
-      if (this.isLocked) {
-        return { name: null, user: null, host: null, port: null, forward: null }
-      }
-
       return { name: this.name || '(untitled)', ...this.infoText, forward: this.forwardSummaryText?.title ?? null }
     },
     // 설정 팝오버에서 편집하는 값

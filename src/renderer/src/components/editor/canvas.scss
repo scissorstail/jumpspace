@@ -186,7 +186,7 @@
   }
 
   // 잠긴 노드는 단추 말고는 마우스에 반응하지 않는다 (owner, 2026-10-15): 올려도 모양이 그대로이고, 커서는 배경 위처럼 화살표다.
-  // 누름은 캔버스의 것이 되고(utils/locked-press.js), 글자의 툴팁은 component.vue가 뺀다. 단추를 띄우는 :hover(component.vue)는 남는다.
+  // 누름은 캔버스의 것이 되고(utils/locked-press.js), 글자의 툴팁은 남는다 (owner, 같은 날 뒤에). 단추를 띄우는 :hover(component.vue)도 남는다.
   &.locked {
     .node.site {
       cursor: default;

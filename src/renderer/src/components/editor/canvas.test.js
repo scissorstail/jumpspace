@@ -127,7 +127,7 @@ describe('the node of the selected terminal tab', () => {
 })
 
 // 잠긴 노드는 단추 말고는 마우스에 반응하지 않는다 (owner, 2026-10-15). 누름은 utils/locked-press.js가 캔버스로 넘기고,
-// 글자의 툴팁은 component.vue가 뺀다. 단추를 띄우는 :hover는 component.vue에 있고 그대로다.
+// 글자의 툴팁은 남는다 (owner, 같은 날 뒤에: "툴팁은 나오지만 드래그만 안되게"). 단추를 띄우는 :hover는 component.vue에 있고 그대로다.
 describe('a locked node', () => {
   const value = (text, property) => text.match(new RegExp(`(?:^|\\s)${property}: ([^;]+);`))?.[1]
   // 블록 바로 안의 선언만 (안에 든 블록은 뺀다)

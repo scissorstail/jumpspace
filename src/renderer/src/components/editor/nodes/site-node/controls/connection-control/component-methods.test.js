@@ -365,18 +365,20 @@ describe('what a node shows', () => {
     expect(JSON.stringify(vm.tooltips)).not.toMatch(/ops|10\.0|8080/)
   })
 
-  // 잠긴 노드는 단추 말고는 마우스에 반응하지 않는다 (owner, 2026-10-15)
-  it('gives them no tooltip while the diagram is locked, and gives them back when it is unlocked', () => {
+  // 잠긴 노드도 툴팁은 보여 준다: 끌기만 안 된다 (owner, 2026-10-15: "툴팁은 나오지만 드래그만 안되게")
+  it('keeps those tooltips while the space is locked, masked while the details are hidden', () => {
     const { vm } = nodeOf({ connection: bastion() })
+    const unlocked = { ...vm.tooltips }
 
     vm.isLocked = true
 
-    expect(vm.tooltips).toEqual({ name: null, user: null, host: null, port: null, forward: null })
+    expect(vm.tooltips).toEqual(unlocked)
+    expect(vm.tooltips).toEqual({ name: 'bastion', user: 'ops', host: '10.0.0.1', port: '22', forward: ':8080 → localhost:80' })
 
-    vm.isLocked = false
+    hide()
 
-    expect(vm.tooltips.name).toBe('bastion')
-    expect(vm.tooltips.forward).toBe(':8080 → localhost:80')
+    expect(vm.tooltips).toEqual({ name: 'bastion', ...vm.infoText, forward: vm.forwardSummaryText.title })
+    expect(JSON.stringify(vm.tooltips)).not.toMatch(/ops|10\.0|8080/)
   })
 
   it('takes the tooltips of its text from that list, and keeps the tooltips of its buttons', () => {
