@@ -1423,6 +1423,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 1329 passed (with Git's bash; 3 new, one of them runs the script under bash and reads the arguments the fake ssh gets: a path with a `%`, a space and a `'` is one config line), lint ok, build ok, the tests caught 5 of 5 mutations; `real-window-check.cjs` 39 passed, `real-window-check-2.cjs` with `term,login` 45 passed; no `electron.exe` or `ssh.exe` left. Main only, no headless run.
 - Found / next: a fix, so this run does not count toward the two runs with nothing to add or fix. Next: refactor (#238).
 
+### #241 2026-10-15 · refactor (the twenty-third run of the cycle of #218)
+- Did: since the refactor of #238 the sources changed in `json-text.js` and its two callers (#239; `readText` is one function already) and in `ssh.js` (#240). `clones.cjs` finds no repeated script code but the closing of a popover (looked at and left in #223 and #229), `stale-refs.cjs` nothing stale. One seam from #240: the line `IdentityFile "<path>"` (slashes, quotes, the `%` doubled) was built three times, for the option Connect gives a path with a `%`, for the config of a ProxyJump or forward session and for *Copy SSH config*. `identityFile()` of `ssh.js` builds it for all three. Commit 56efb89.
+- Result: tests 1329 passed (with Git's bash; none changed), lint ok, build ok, the old tests caught 5 of 5 mutations of the moved code; `real-window-check.cjs` 39 passed, `real-window-check-2.cjs` with `term,login` 45 passed; no `electron.exe` or `ssh.exe` left. Main only, no headless run.
+- Found / next: no bug. Code changed, so this run does not count toward the two runs with nothing to add or fix. Next: a completeness review (#239).
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
