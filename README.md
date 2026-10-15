@@ -113,7 +113,9 @@ Open the link icon of a node and add rows of `local port -> target host : target
 
 The other way round: unlock the editor, right-click the canvas and choose *From SSH config*, then paste one or more `Host` blocks. Before anything is made, the dialog lists what the text gives: one node for each `Host`, with only the values written there (`HostName`, `User`, `Port`, `IdentityFile`, `RemoteCommand` as *Exec*, `LocalForward` as enabled forwards). Everything else stays empty, except the port: it is 22 when the text names none, as for ssh. A `ProxyJump` to another `Host` of the same text becomes a connection, so a path copied with *Copy SSH config* comes back as the same path. The nodes appear where the menu item was pressed and are saved when you lock the editor, like any other node.
 
-Not taken over, and named in the dialog: other keywords (`ForwardAgent`, `Include`, ...), blocks that are not one server (`Host *`, other patterns, `Match`), a `ProxyJump` to a host that is not in the text, and everything after the first 50 hosts. A config holds no passwords, so none is set. A value that ssh would be refused with (the rules of the node settings) is marked in the list; the node is made anyway and can be corrected in its settings.
+Not taken over, and named in the dialog: other keywords (`ForwardAgent`, `Include`, ...), blocks that are not one server (`Host *`, other patterns, `Match`), a `ProxyJump` to a host that is not in the text, and everything after the first 50 hosts. A config holds no passwords, so none is set. A value that ssh would be refused with (the rules of the node settings) is marked in the list; the node can be made anyway and corrected in its settings.
+
+When the text would go too far, the first press of **Create** makes nothing and lists the reasons instead: more than 10 nodes at once, `Host` blocks left out over the limit of 50, nodes with a value that ssh would refuse, and nodes the diagram already has (the same user, host and port). **Create anyway** makes them, **Back** (where the keyboard is) goes back to the text; changing the text takes the question back. Without such a reason one press makes the nodes.
 
 ### your data
 

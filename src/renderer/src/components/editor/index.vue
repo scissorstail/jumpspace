@@ -534,6 +534,11 @@ export default {
       }))
       this.setView(fitView(viewport, box, k))
     },
+    // 다이어그램에 있는 노드들의 user@host:port. From SSH config의 창이 이미 있는 노드를 알아보는 데 쓴다.
+    // 편집 중이라 아직 저장되지 않은 값까지 보도록 노드의 data가 아니라 화면의 값(vueContext)을 읽는다.
+    nodeKeys() {
+      return this.editor ? this.editor.nodes.map(node => hopKey(node.controls.get('connection')?.vueContext)) : []
+    },
     // SSH config에서 읽은 노드들을 더하고 잇는다 (utils/config-import.js의 importPlan이 만든 nodes와 links).
     // origin: 놓을 자리 (캔버스 좌표). 하나 더할 때마다 다시 계산하지 않고(isAdding) 끝에 한 번 계산한다.
     async addFromConfig({ nodes, links }, origin) {

@@ -1,7 +1,10 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { runInThisContext } from 'node:vm'
 import { describe, expect, it } from 'vitest'
+import { importConcerns, importCount, importPlan, rowDetail } from '../../../utils/config-import.js'
+import { parseSshConfig } from '../../../../../shared/ssh-config-parse.js'
 
 // 캔버스 메뉴의 "From SSH config"가 어떻게 이어져 있는지를 소스에서 읽는다 (DOM 없이 도는 테스트라서).
 // 글을 읽는 일은 src/shared/ssh-config-parse.js, 노드와 연결로 바꾸는 일은 utils/config-import.js가 하고 따로 테스트한다.
@@ -42,9 +45,16 @@ describe('From SSH config: the menu item', () => {
 describe('From SSH config: the dialog', () => {
   it('is opened by the layout when the editor asks, and hands the plan back to the editor', () => {
     expect(layout).toContain('@ssh-config="openConfigPopup"')
-    expect(layout).toMatch(/<ConfigPopup\n\s+:show\.sync="isShowConfigPopup"\n\s+@create="addFromConfig"\n\s+\/>/)
+    expect(layout).toMatch(/<ConfigPopup\n\s+:show\.sync="isShowConfigPopup"\n\s+:existing="configExisting"\n\s+@create="addFromConfig"\n\s+\/>/)
     expect(methodOf(layout, 'openConfigPopup')).toContain('this.configPoint = point')
     expect(methodOf(layout, 'addFromConfig')).toContain('this.$refs.editorRef.addFromConfig(plan, this.configPoint)')
+  })
+
+  // 이미 있는 노드는 user@host:port로 알아본다. 편집 중의 값(vueContext)이라 아직 저장되지 않은 것도 본다.
+  it('gets the nodes the diagram has when it opens', () => {
+    expect(methodOf(layout, 'openConfigPopup')).toContain('this.configExisting = this.$refs.editorRef.nodeKeys()')
+    expect(methodOf(editor, 'nodeKeys')).toContain("this.editor.nodes.map(node => hopKey(node.controls.get('connection')?.vueContext))")
+    expect(popup).toMatch(/existing: \{\n\s+type: Array,/)
   })
 
   it('makes nothing in a locked diagram or without a diagram', () => {
@@ -52,7 +62,8 @@ describe('From SSH config: the dialog', () => {
   })
 
   it('shows what the pasted text gives before anything is made', () => {
-    expect(popup).toContain('return importPlan(parseSshConfig(this.text))')
+    expect(popup).toContain('return parseSshConfig(this.text)')
+    expect(popup).toContain('return importPlan(this.parsed)')
     expect(popup).toContain('v-for="row in plan.rows"')
     expect(popup).toContain('v-for="note in plan.notes"')
   })
@@ -71,6 +82,122 @@ describe('From SSH config: the dialog', () => {
   // 읽은 값을 그대로 노드에 넣는다: 클립보드를 읽거나 main에 무엇을 보내는 길을 새로 만들지 않는다.
   it('reads nothing but what is typed or pasted into it', () => {
     expect(popup).not.toMatch(/window\.preload|clipboard/)
+  })
+})
+
+// 지나쳐 보이면 Create를 한 번 멈추고 이유를 보여준다 (owner, 2026-10-15). 무엇이 이유인지는 config-import.test.js가 본다.
+// 창의 <script>를 꺼내 import만 바꿔서 돌리고 computed, watch, methods를 가짜 this로 부른다 (component-methods.test.js와 같은 방법).
+describe('From SSH config: asking before it goes too far', () => {
+  const script = popup.match(/<script>\n([\s\S]*?)<\/script>/)[1]
+  const imported = [...script.matchAll(/^import (?:\{([^}]+)\}|(\w+)) from .*$/gm)].flatMap(match => (match[1] ?? match[2]).split(',').map(name => name.trim()))
+  const given = { dismissOnEscape: {}, importConcerns, importCount, importPlan, rowDetail, parseSshConfig }
+  const body = script.replace(/^import [\s\S]*? from .*\n/gm, '').replace('export default', 'return')
+  const component = runInThisContext(`(function (${imported.join(', ')}) {\n${body}\n})`)(...imported.map(name => given[name]))
+  const template = popup.slice(0, popup.indexOf('</template>\n\n<script>'))
+
+  // 창 하나. Vue처럼 글이 바뀌면 text의 watch를 부른다. 일어난 일(emit, Back의 포커스)을 차례로 적는다.
+  function dialog(existing = []) {
+    const happened = []
+    const refs = { back: { focus: () => happened.push(['focus', 'Back']) }, ask: { scrollIntoView: options => happened.push(['scroll to the reasons', options]) } }
+    const vm = { existing, $emit: (...args) => happened.push(args), $nextTick: fn => fn(), $refs: refs }
+    vm.$data = component.data.call(vm)
+    for (const key of Object.keys(vm.$data)) {
+      Object.defineProperty(vm, key, {
+        get: () => vm.$data[key],
+        set: value => {
+          const old = vm.$data[key]
+          vm.$data[key] = value
+          if (key in component.watch && old !== value) component.watch[key].call(vm, value, old)
+        }
+      })
+    }
+    for (const [name, get] of Object.entries(component.computed)) Object.defineProperty(vm, name, { get: () => get.call(vm) })
+    for (const [name, method] of Object.entries(component.methods)) vm[name] = method.bind(vm)
+    return { vm, happened }
+  }
+  const hosts = count => Array.from({ length: count }, (x, i) => `Host h${i + 1}\n  HostName 192.0.2.${i + 1}\n  User ops`).join('\n')
+  const created = happened => happened.filter(([name]) => name === 'create')
+
+  it('runs the script of the dialog', () => {
+    expect(imported).toEqual(Object.keys(given))
+    expect(Object.keys(component.watch)).toEqual(['show', 'text'])
+  })
+
+  it('creates at once when nothing looks too much', () => {
+    const { vm, happened } = dialog()
+    vm.text = hosts(10)
+
+    vm.create()
+
+    expect(vm.concerns).toEqual([])
+    expect(created(happened)).toHaveLength(1)
+    expect(created(happened)[0][1].nodes).toHaveLength(10)
+    expect(happened).toContainEqual(['update:show', false])
+  })
+
+  // 낮은 창에서는 본문이 스크롤된다 (theme.scss): 본문의 끝에 붙는 이유를 굴려서 보이게 한다
+  it('shows the reasons and makes nothing on the first press, brings them in sight, puts the keyboard on Back, and creates on the second', () => {
+    const { vm, happened } = dialog()
+    vm.text = hosts(11)
+
+    vm.create()
+
+    expect(vm.isAsking).toBe(true)
+    expect(vm.concerns).toEqual(['11 nodes at once: more than 10 fill the diagram.'])
+    expect(happened).toEqual([['scroll to the reasons', { block: 'nearest' }], ['focus', 'Back']])
+
+    vm.create()
+
+    expect(created(happened)).toHaveLength(1)
+    expect(created(happened)[0][1].nodes).toHaveLength(11)
+    expect(happened.at(-1)).toEqual(['update:show', false])
+  })
+
+  it('asks about a node the diagram already has', () => {
+    const { vm, happened } = dialog(['ops@192.0.2.1:22'])
+    vm.text = hosts(2)
+
+    vm.create()
+
+    expect(created(happened)).toEqual([])
+    expect(vm.concerns).toEqual(['1 node already in this diagram (same user, host and port): h1.'])
+  })
+
+  it('takes the question back when the text changes or the dialog closes', () => {
+    const { vm, happened } = dialog()
+    vm.text = hosts(11)
+    vm.create()
+    vm.text = hosts(12)
+
+    expect(vm.isAsking).toBe(false)
+
+    vm.create()
+
+    expect(vm.isAsking).toBe(true)
+    expect(created(happened)).toEqual([])
+
+    component.watch.show.call(vm)
+
+    expect([vm.isAsking, vm.text]).toEqual([false, ''])
+  })
+
+  it('makes nothing without a node, asking or not', () => {
+    const { vm, happened } = dialog()
+    vm.isAsking = true
+    vm.create()
+
+    expect(happened).toEqual([])
+  })
+
+  it('shows the reasons above the buttons; Back and Create anyway stand where Cancel and Create were', () => {
+    expect(template).toMatch(/<div\n\s+v-if="isAsking"\n\s+ref="ask"\n\s+class="config-ask mt-3"\n\s+role="alert"\n\s+>/)
+    expect(template).toContain('Create {{ count }} anyway?')
+    expect(template).toContain('v-for="reason in concerns"')
+    expect(template).toContain('@click="isAsking ? (isAsking = false) : $emit(\'update:show\', false)"')
+    expect(template).toContain("{{ isAsking ? 'Back' : 'Cancel' }}")
+    expect(template).toContain("{{ isAsking ? 'Create anyway' : 'Create' }}")
+    expect(template.indexOf('class="config-ask')).toBeLessThan(template.indexOf('<template #footer>'))
+    expect(template).toMatch(/ref="back"\n\s+class="ml-auto"/)
   })
 })
 

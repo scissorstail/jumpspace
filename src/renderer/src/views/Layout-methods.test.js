@@ -73,6 +73,7 @@ function layout({ projectData = [diagram('alpha'), diagram('beta')], answers = [
         resetView: () => calls.push(['resetView']),
         arrangeNodes: () => calls.push(['arrangeNodes']),
         addFromConfig: (plan, point) => calls.push(['addFromConfig', plan, point]),
+        nodeKeys: () => ['ops@10.0.0.1:22', '@10.0.0.2:22'],
         compile: async () => ({ id: 'test@0.1.0', nodes: { 7: {} } })
       },
       mainNavigator: {
@@ -376,6 +377,8 @@ describe('the header and the canvas menu', () => {
     const vm = layout()
     vm.openConfigPopup([120, 80])
     expect(vm.isShowConfigPopup).toBe(true)
+    // 창은 그때 다이어그램에 있던 노드들을 안다: 이미 있는 노드를 만들려 하면 묻는다
+    expect(vm.configExisting).toEqual(['ops@10.0.0.1:22', '@10.0.0.2:22'])
 
     vm.addFromConfig({ nodes: [] })
     vm.isEditorLocked = false

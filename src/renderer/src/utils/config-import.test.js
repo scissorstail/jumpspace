@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SSH_PORT, importCount, importPlan, rowDetail } from './config-import.js'
+import { DEFAULT_SSH_PORT, MANY_CONFIG_NODES, importConcerns, importCount, importPlan, rowDetail } from './config-import.js'
 import { MAX_CONFIG_HOSTS, parseSshConfig } from '../../../shared/ssh-config-parse.js'
 import { buildSshConfig } from '../../../main/ssh-config.js'
 import { isRoutable } from './forward.js'
@@ -207,5 +207,71 @@ describe('importCount', () => {
     expect(importCount(planOf('Host a\n\nHost b'))).toBe('2 nodes')
     expect(importCount(planOf('Host a\n\nHost b\n  ProxyJump a'))).toBe('2 nodes, 1 connection')
     expect(importCount(planOf('Host a\n\nHost b\n  ProxyJump a\n\nHost c\n  ProxyJump a'))).toBe('3 nodes, 2 connections')
+  })
+})
+
+// 지나쳐 보이면 만들기 전에 이유를 늘어놓고 묻는다 (owner, 2026-10-15). 무엇이 지나친지는 여기서 정했다.
+describe('importConcerns', () => {
+  const hosts = (count, first = 1) => Array.from({ length: count }, (x, i) => `Host h${first + i}\n  HostName 192.0.2.${first + i}\n  User ops`).join('\n')
+  const concernsOf = (text, existing) => {
+    const parsed = parseSshConfig(text)
+    return importConcerns(importPlan(parsed), parsed, existing)
+  }
+
+  it('are none for a text that fits, up to ten nodes', () => {
+    expect(MANY_CONFIG_NODES).toBe(10)
+    expect(concernsOf(hosts(1))).toEqual([])
+    expect(concernsOf(hosts(MANY_CONFIG_NODES))).toEqual([])
+  })
+
+  it('name more than ten nodes at once', () => {
+    expect(concernsOf(hosts(MANY_CONFIG_NODES + 1))).toEqual(['11 nodes at once: more than 10 fill the diagram.'])
+  })
+
+  it('name the Host blocks left out over the limit, with the many nodes', () => {
+    expect(concernsOf(hosts(MAX_CONFIG_HOSTS + 2))).toEqual([
+      '50 nodes at once: more than 10 fill the diagram.',
+      '2 more Host blocks left out: at most 50 at a time.'
+    ])
+    expect(concernsOf(hosts(MAX_CONFIG_HOSTS + 1))[1]).toBe('1 more Host block left out: at most 50 at a time.')
+  })
+
+  it('name the nodes with a value ssh would refuse, three of them and how many more', () => {
+    const bad = name => `Host ${name}\n  HostName 192.0.2.9\n  Port 70000`
+
+    expect(concernsOf(`${bad('x1')}\n${hosts(1)}`)).toEqual(['1 node with a value ssh would refuse: x1.'])
+    expect(concernsOf(['x1', 'x2', 'x3'].map(bad).join('\n'))).toEqual(['3 nodes with a value ssh would refuse: x1, x2, x3.'])
+    expect(concernsOf(['x1', 'x2', 'x3', 'x4', 'x5'].map(bad).join('\n'))).toEqual(['5 nodes with a value ssh would refuse: x1, x2, x3 and 2 more.'])
+  })
+
+  it('name the nodes the diagram already has: the same user, host and port', () => {
+    expect(concernsOf(hosts(2), ['ops@192.0.2.2:22'])).toEqual(['1 node already in this diagram (same user, host and port): h2.'])
+    expect(concernsOf(hosts(2), ['ops@192.0.2.1:22', 'ops@192.0.2.2:22', 'x@y:1'])).toEqual(['2 nodes already in this diagram (same user, host and port): h1, h2.'])
+    // ssh's port 22 that the plan fills in counts like a written one
+    expect(concernsOf('Host a\n  HostName 192.0.2.1\n  User ops', ['ops@192.0.2.1:22'])).toHaveLength(1)
+  })
+
+  it('do not take another user, another port or a block without a user for the same node', () => {
+    expect(concernsOf('Host a\n  HostName 192.0.2.1\n  User ops', ['root@192.0.2.1:22', 'ops@192.0.2.1:2200'])).toEqual([])
+    expect(concernsOf('Host a\n  HostName 192.0.2.1', ['root@192.0.2.1:22'])).toEqual([])
+  })
+
+  // 창의 notes가 이미 말하는 것이고, 지나치게 만드는 것이 아니다
+  it('leave out what the notes already tell: unused keywords, Host * and Match, a jump host not in the text, two names for one server', () => {
+    const text = 'Host *\n  ServerAliveInterval 30\n\nMatch host x\n  User y\n\nHost a\n  HostName 192.0.2.1\n  ForwardAgent yes\n  ProxyJump nowhere\n\nHost b\n  HostName 192.0.2.1'
+
+    expect(planOf(text).notes).toHaveLength(3)
+    expect(concernsOf(text)).toEqual([])
+  })
+
+  it('come in a fixed order, all of them at once', () => {
+    const text = `${hosts(11)}\nHost x1\n  HostName 192.0.2.99\n  Port 70000`
+
+    expect(concernsOf(text, ['ops@192.0.2.3:22']).map(reason => reason.split(' ').slice(1, 3).join(' '))).toEqual(['nodes at', 'node with', 'node already'])
+  })
+
+  it('are none without a plan', () => {
+    expect(importConcerns(undefined, undefined)).toEqual([])
+    expect(importConcerns(importPlan({}), {}, [])).toEqual([])
   })
 })

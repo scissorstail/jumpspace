@@ -149,6 +149,7 @@
     <!-- 캔버스 메뉴의 From SSH config: 붙여 넣은 SSH config로 노드를 만든다 -->
     <ConfigPopup
       :show.sync="isShowConfigPopup"
+      :existing="configExisting"
       @create="addFromConfig"
     />
   </div>
@@ -196,6 +197,8 @@ export default {
       isShowInfoPopup: false,
       isShowSettingPopup: false,
       isShowConfigPopup: false,
+      // From SSH config의 창을 열 때 다이어그램에 있던 노드들의 user@host:port (이미 있는 노드를 만들려 하면 창이 묻는다)
+      configExisting: [],
       isEditorLocked: true,
       projectData: null,
       editorData: null,
@@ -301,6 +304,7 @@ export default {
     // 캔버스 메뉴의 From SSH config: 붙여 넣는 창을 연다. 메뉴는 잠금을 푼 동안에만 열린다.
     openConfigPopup(point) {
       this.configPoint = point
+      this.configExisting = this.$refs.editorRef.nodeKeys()
       this.isShowConfigPopup = true
     },
     // 창에서 Create를 눌렀을 때. 다른 노드처럼 잠글 때 저장된다.

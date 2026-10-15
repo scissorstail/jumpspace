@@ -3,6 +3,7 @@
 
 import { MAX_CONFIG_HOSTS } from '../../../shared/ssh-config-parse.js'
 import { validateForwards, validateNode } from '../../../shared/validate.js'
+import { hopKey } from './terminal-sessions.js'
 
 // config에 Port가 없으면 ssh는 22번으로 접속한다. 노드는 포트가 비어 있으면 접속할 수 없고(utils/forward.js의 isRoutable),
 // 경로 안에서는 "ssh로 접속하지 않는 포워딩 대상"이라는 다른 뜻이 된다. 그래서 글에 없는 값 중 이것만 ssh의 기본값으로 채운다.
@@ -125,4 +126,35 @@ export function rowDetail(row) {
 // 창에 보여줄 한 줄: 무엇을 만드는지
 export function importCount({ nodes, links }) {
   return links.length ? `${plural(nodes.length, 'node')}, ${plural(links.length, 'connection')}` : plural(nodes.length, 'node')
+}
+
+// 지나쳐 보이면 만들기 전에 이유를 늘어놓고 묻는다 (owner, 2026-10-15: "너무 지나치다 싶으면 생성하기 전에 사유를 나열하고 물어보기").
+// 무엇이 지나친지는 여기서 정했다: 이보다 많은 노드를 한꺼번에 놓으면 다이어그램이 가득 찬다.
+export const MANY_CONFIG_NODES = 10
+// 이유 하나에 이름을 몇 개까지 적는지
+const NAMES_SHOWN = 3
+
+const namesOf = list => (list.length > NAMES_SHOWN ? `${list.slice(0, NAMES_SHOWN).join(', ')} and ${list.length - NAMES_SHOWN} more` : list.join(', '))
+
+// 만들기 전에 물어볼 이유들. 빈 목록이면 묻지 않고 만든다.
+//   plan: importPlan의 결과, parsed: parseSshConfig의 결과 (한도로 빠진 묶음의 수 over),
+//   existing: 이 다이어그램에 이미 있는 노드들의 user@host:port (utils/terminal-sessions.js의 hopKey)
+// 이미 있는 노드는 user, host, port가 모두 같아야 같다: User가 없는 블록(@host:22)은 root@host:22와 다르다.
+// 물을 이유가 아닌 것: 쓰지 않은 키워드, 서버 하나가 아닌 묶음(Host *, Match), 잇지 못한 ProxyJump(창의 notes가 이미 말한다),
+// 같은 글 안에서 한 서버를 가리키는 두 묶음(별칭: 글이 그렇게 적었다).
+export function importConcerns(plan, parsed, existing = []) {
+  const { nodes = [], rows = [] } = plan || {}
+  const reasons = []
+
+  if (nodes.length > MANY_CONFIG_NODES) reasons.push(`${plural(nodes.length, 'node')} at once: more than ${MANY_CONFIG_NODES} fill the diagram.`)
+  if (parsed?.over) reasons.push(`${plural(parsed.over, 'more Host block')} left out: at most ${MAX_CONFIG_HOSTS} at a time.`)
+
+  const refused = rows.filter(row => row.problem).map(row => row.name)
+  if (refused.length) reasons.push(`${plural(refused.length, 'node')} with a value ssh would refuse: ${namesOf(refused)}.`)
+
+  const there = new Set(existing)
+  const twice = nodes.filter(data => there.has(hopKey(data))).map(data => data.name)
+  if (twice.length) reasons.push(`${plural(twice.length, 'node')} already in this diagram (same user, host and port): ${namesOf(twice)}.`)
+
+  return reasons
 }
