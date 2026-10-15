@@ -81,7 +81,7 @@ describe('storage', () => {
       ['the file is empty and there is no backup', { 'projects.json': '' }, ['projects.json is not valid JSON.', 'projects.json.bak is missing.']],
       ['the file and its backup are cut off', { 'projects.json': cut, 'projects.json.bak': cut }, ['projects.json is not valid JSON.', 'projects.json.bak is not valid JSON.']],
       ['the file is missing and its backup is cut off', { 'projects.json.bak': cut }, ['projects.json is missing.', 'projects.json.bak is not valid JSON.']],
-      ['the file is JSON without diagrams and there is no backup', { 'projects.json': '{"version":1}' }, ['projects.json does not hold a list of diagrams.', 'projects.json.bak is missing.']]
+      ['the file is JSON without diagrams and there is no backup', { 'projects.json': '{"version":1}' }, ['projects.json does not hold a list of spaces.', 'projects.json.bak is missing.']]
     ])('%s: load fails, says so file by file, and leaves the folder as it was', async (name, files, said) => {
       await seed(files)
 

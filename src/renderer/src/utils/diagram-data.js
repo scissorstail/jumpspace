@@ -25,7 +25,7 @@ const label = key => (String(key).length > 20 ? `${String(key).slice(0, 20)}...`
 // 까닭에는 노드의 번호만 넣는다: 데이터의 다른 글자(이름, 주소, 비밀번호)는 옮기지 않는다.
 export function diagramProblem(data) {
   if (!isRecord(data) || data.id !== EDITOR_ID || !isRecord(data.nodes)) {
-    return 'Its data is not a diagram of this app.'
+    return 'Its data is not in the format of this app.'
   }
 
   const linked = new Set()

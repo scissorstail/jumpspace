@@ -225,12 +225,12 @@ describe('importConcerns', () => {
   })
 
   it('name more than ten nodes at once', () => {
-    expect(concernsOf(hosts(MANY_CONFIG_NODES + 1))).toEqual(['11 nodes at once: more than 10 fill the diagram.'])
+    expect(concernsOf(hosts(MANY_CONFIG_NODES + 1))).toEqual(['11 nodes at once: more than 10 fill the space.'])
   })
 
   it('name the Host blocks left out over the limit, with the many nodes', () => {
     expect(concernsOf(hosts(MAX_CONFIG_HOSTS + 2))).toEqual([
-      '50 nodes at once: more than 10 fill the diagram.',
+      '50 nodes at once: more than 10 fill the space.',
       '2 more Host blocks left out: at most 50 at a time.'
     ])
     expect(concernsOf(hosts(MAX_CONFIG_HOSTS + 1))[1]).toBe('1 more Host block left out: at most 50 at a time.')
@@ -245,8 +245,8 @@ describe('importConcerns', () => {
   })
 
   it('name the nodes the diagram already has: the same user, host and port', () => {
-    expect(concernsOf(hosts(2), ['ops@192.0.2.2:22'])).toEqual(['1 node already in this diagram (same user, host and port): h2.'])
-    expect(concernsOf(hosts(2), ['ops@192.0.2.1:22', 'ops@192.0.2.2:22', 'x@y:1'])).toEqual(['2 nodes already in this diagram (same user, host and port): h1, h2.'])
+    expect(concernsOf(hosts(2), ['ops@192.0.2.2:22'])).toEqual(['1 node already in this space (same user, host and port): h2.'])
+    expect(concernsOf(hosts(2), ['ops@192.0.2.1:22', 'ops@192.0.2.2:22', 'x@y:1'])).toEqual(['2 nodes already in this space (same user, host and port): h1, h2.'])
     // ssh's port 22 that the plan fills in counts like a written one
     expect(concernsOf('Host a\n  HostName 192.0.2.1\n  User ops', ['ops@192.0.2.1:22'])).toHaveLength(1)
   })

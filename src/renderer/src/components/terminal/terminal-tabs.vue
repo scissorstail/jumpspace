@@ -86,7 +86,7 @@
       type="button"
       class="terminal-maximize"
       :aria-label="isMaximized ? 'Lower terminals' : 'Maximize terminals'"
-      :title="isMaximized ? 'Lower terminals (show the diagram)' : 'Maximize terminals (up to the header)'"
+      :title="isMaximized ? 'Lower terminals (show the space)' : 'Maximize terminals (up to the header)'"
       @click="$emit('maximize', !isMaximized)"
     >
       <b-icon

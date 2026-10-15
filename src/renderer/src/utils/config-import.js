@@ -146,7 +146,7 @@ export function importConcerns(plan, parsed, existing = []) {
   const { nodes = [], rows = [] } = plan || {}
   const reasons = []
 
-  if (nodes.length > MANY_CONFIG_NODES) reasons.push(`${plural(nodes.length, 'node')} at once: more than ${MANY_CONFIG_NODES} fill the diagram.`)
+  if (nodes.length > MANY_CONFIG_NODES) reasons.push(`${plural(nodes.length, 'node')} at once: more than ${MANY_CONFIG_NODES} fill the space.`)
   if (parsed?.over) reasons.push(`${plural(parsed.over, 'more Host block')} left out: at most ${MAX_CONFIG_HOSTS} at a time.`)
 
   const refused = rows.filter(row => row.problem).map(row => row.name)
@@ -154,7 +154,7 @@ export function importConcerns(plan, parsed, existing = []) {
 
   const there = new Set(existing)
   const twice = nodes.filter(data => there.has(hopKey(data))).map(data => data.name)
-  if (twice.length) reasons.push(`${plural(twice.length, 'node')} already in this diagram (same user, host and port): ${namesOf(twice)}.`)
+  if (twice.length) reasons.push(`${plural(twice.length, 'node')} already in this space (same user, host and port): ${namesOf(twice)}.`)
 
   return reasons
 }

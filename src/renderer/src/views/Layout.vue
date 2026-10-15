@@ -84,7 +84,7 @@
         v-show="isSwitcherOpen"
         id="diagram-switcher"
         role="dialog"
-        aria-label="Diagrams"
+        aria-label="Spaces"
         @keydown.esc="closeSwitcher({ returnFocus: true })"
       >
         <MainNavigator
@@ -385,7 +385,7 @@ export default {
         // 읽기에 실패한 상태에서 저장하면 기존 데이터를 빈 목록으로 덮어쓰게 되므로 저장을 막는다.
         // 이 알림은 닫을 때까지 남는다: 5초 뒤에 사라지면, 그 사이 화면을 보지 않은 사람은 저장되지 않는 줄 모르고 일한다.
         this.isProjectLoadFailed = true
-        this.notifyError('Failed to load projects. Changes will not be saved.', error, { noAutoHide: true })
+        this.notifyError('Failed to load spaces. Changes will not be saved.', error, { noAutoHide: true })
       }
 
       this.projectData = items
@@ -413,7 +413,7 @@ export default {
         await window.preload.saveProjects(JSON.stringify(this.projectData))
       } catch (e) {
         console.error(e)
-        this.notifyError('Failed to save projects', e)
+        this.notifyError('Failed to save spaces', e)
       } finally {
         this.savingCount -= 1
       }

@@ -76,5 +76,5 @@ export const LOOP_NAMES = 6
 export function loopText(names) {
   const shown = names.length > LOOP_NAMES ? [...names.slice(0, LOOP_NAMES), '...'] : names
 
-  return `${[...shown, names[0]].join(' → ')}\nThese links make a loop. While it is there no path can be worked out: every node of this diagram connects directly. Unlock the editor and take one of those links away.`
+  return `${[...shown, names[0]].join(' → ')}\nThese links make a loop. While it is there no path can be worked out: every node of this space connects directly. Unlock the editor and take one of those links away.`
 }

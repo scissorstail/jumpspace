@@ -25,7 +25,7 @@ const settings = forwards => ({ connection: { name: 'app', user: 'ops', host: '1
 const diagram = (...nodes) => ({ id: EDITOR_ID, nodes: Object.fromEntries(nodes.map(x => [x.id, x])) })
 const without = (object, key) => Object.fromEntries(Object.entries(object).filter(([name]) => name !== key))
 
-const NOT_A_DIAGRAM = 'Its data is not a diagram of this app.'
+const NOT_A_DIAGRAM = 'Its data is not in the format of this app.'
 
 // problem: diagramProblem이 답할 말 (null이면 받아들인다).
 // strict: Rete는 통째로 읽지만 앱이 그 노드로 일하지 못해서 받아들이지 않는 것 (까닭을 적는다).

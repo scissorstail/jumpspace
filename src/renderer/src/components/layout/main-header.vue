@@ -14,8 +14,8 @@
         class="header-title-button"
         aria-haspopup="dialog"
         :aria-expanded="isSwitcherOpen ? 'true' : 'false'"
-        :aria-label="title ? `Diagrams (open: ${title})` : 'Diagrams'"
-        :title="title ? `${title}: switch diagram` : 'Choose a diagram'"
+        :aria-label="title ? `Spaces (open: ${title})` : 'Spaces'"
+        :title="title ? `${title}: switch space` : 'Choose a space'"
         @click="$emit('switcher')"
       >
         <span
@@ -86,7 +86,7 @@
         <b-dropdown-item
           @click="$emit('export')"
         >
-          <small>Export Space</small>
+          <small>Export All Spaces</small>
         </b-dropdown-item>
       </b-dropdown>
     </div>

@@ -193,7 +193,7 @@ describe('the loop in the links of a diagram', () => {
 })
 
 describe('the words about a loop in an opened diagram', () => {
-  const REST = '\nThese links make a loop. While it is there no path can be worked out: every node of this diagram connects directly. Unlock the editor and take one of those links away.'
+  const REST = '\nThese links make a loop. While it is there no path can be worked out: every node of this space connects directly. Unlock the editor and take one of those links away.'
 
   it('name the nodes in the order of the links and end where they began', () => {
     expect(loopText(['bastion', 'app'])).toBe(`bastion → app → bastion${REST}`)

@@ -17,8 +17,8 @@ export function matchesKeyword(name, keyword) {
 export function listEmptyText(items, keyword) {
   const list = items || []
   if (list.some(x => x.isEditing || matchesKeyword(x.name, keyword))) return null
-  if (list.length === 0) return 'No diagrams yet. Add one with +.'
-  return `No diagram matches "${String(keyword).trim()}".`
+  if (list.length === 0) return 'No spaces yet. Add one with +.'
+  return `No space matches "${String(keyword).trim()}".`
 }
 
 // 창을 닫거나 새로 고치면 잃는 것이 있는지: 다이어그램을 열고 잠금을 푼 동안이다 (바꾼 것은 잠글 때 저장된다).
@@ -48,10 +48,10 @@ export async function loadProjectData({ load, save, legacy }) {
 // 캔버스 가운데의 안내. 열린 항목이 없으면 고르라고, 열린 항목에 노드가 없으면 노드를 더하는 방법을 알려준다.
 // 잠겨 있으면 우클릭 메뉴가 열리지 않으므로 먼저 잠금을 풀라고 한다. 노드가 있으면 null.
 export function canvasHint({ isOpen, nodeCount, isLocked }) {
-  if (!isOpen) return { title: 'No diagram open', text: 'Click the title above to choose a diagram, or add a new one.' }
+  if (!isOpen) return { title: 'No space open', text: 'Click the title above to choose a space, or add a new one.' }
   if (nodeCount > 0) return null
   return {
-    title: 'Empty diagram',
+    title: 'Empty space',
     text: isLocked ? 'Unlock the editor (lock icon), then right-click the canvas to add a server.' : 'Right-click the canvas to add a server.'
   }
 }

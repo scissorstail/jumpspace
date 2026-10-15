@@ -143,7 +143,7 @@ describe('From SSH config: asking before it goes too far', () => {
     vm.create()
 
     expect(vm.isAsking).toBe(true)
-    expect(vm.concerns).toEqual(['11 nodes at once: more than 10 fill the diagram.'])
+    expect(vm.concerns).toEqual(['11 nodes at once: more than 10 fill the space.'])
     expect(happened).toEqual([['scroll to the reasons', { block: 'nearest' }], ['focus', 'Back']])
 
     vm.create()
@@ -160,7 +160,7 @@ describe('From SSH config: asking before it goes too far', () => {
     vm.create()
 
     expect(created(happened)).toEqual([])
-    expect(vm.concerns).toEqual(['1 node already in this diagram (same user, host and port): h1.'])
+    expect(vm.concerns).toEqual(['1 node already in this space (same user, host and port): h1.'])
   })
 
   it('takes the question back when the text changes or the dialog closes', () => {

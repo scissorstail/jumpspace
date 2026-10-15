@@ -122,7 +122,7 @@ describe('opening a diagram', () => {
     expect(vm.openedItem).toBe(vm.items[0])
     expect(vm.openedItemIndex).toBe(0)
     expect(emitted).toEqual([['selected', { item: vm.items[0], index: 0, isLocked: true }]])
-    expect(toasts).toEqual([['Cannot open "broken"', 'Its data is not a diagram of this app.\nNothing was changed.']])
+    expect(toasts).toEqual([['Cannot open "broken"', 'Its data is not in the format of this app.\nNothing was changed.']])
     expect(asked).toEqual([])
     // 데이터는 그대로다
     expect(vm.items[1].data).toEqual({ nodes: {} })
@@ -300,7 +300,7 @@ describe('removing', () => {
     vm.items[2].isSelected = true
 
     await vm.removeSelectedItems()
-    expect(asked.map(x => x[0])).toEqual(['Remove 2 selected diagram(s)?'])
+    expect(asked.map(x => x[0])).toEqual(['Remove 2 selected space(s)?'])
     expect(names(vm)).toEqual(['beta'])
     expect(emitted[0]).toEqual(['removed', [0, 2]])
   })

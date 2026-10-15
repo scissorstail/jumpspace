@@ -137,7 +137,7 @@ describe('what is saved, and when', () => {
     await flush()
 
     expect(vm.savingCount).toBe(0)
-    expect(toasts).toEqual([['Failed to save projects', 'disk full']])
+    expect(toasts).toEqual([['Failed to save spaces', 'disk full']])
   })
 
   it('after a failed load nothing is saved, so the file is not overwritten with an empty list', async () => {
@@ -149,7 +149,7 @@ describe('what is saved, and when', () => {
     expect(vm.isProjectLoadFailed).toBe(true)
     expect(vm.projectData).toEqual([])
     // 닫을 때까지 남는 알림이다
-    expect(toasts).toEqual([['Failed to load projects. Changes will not be saved.', 'unreadable', { noAutoHide: true }]])
+    expect(toasts).toEqual([['Failed to load spaces. Changes will not be saved.', 'unreadable', { noAutoHide: true }]])
 
     vm.updateProject({ items: [diagram('typed meanwhile')], index: null })
     await vm.saveProject()

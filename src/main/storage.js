@@ -73,7 +73,7 @@ function unreadableReason(e) {
   if (e.code === 'ENOENT') return 'is missing'
   if (e instanceof SyntaxError) return 'is not valid JSON'
   if (e.code) return 'could not be opened (' + e.code + ')'
-  return 'does not hold a list of diagrams'
+  return 'does not hold a list of spaces'
 }
 
 // renameFile, wait: 테스트가 실패하는 rename과 기다리지 않는 기다림을 끼워 넣는다
