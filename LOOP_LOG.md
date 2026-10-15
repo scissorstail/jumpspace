@@ -1428,6 +1428,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Result: tests 1329 passed (with Git's bash; none changed), lint ok, build ok, the old tests caught 5 of 5 mutations of the moved code; `real-window-check.cjs` 39 passed, `real-window-check-2.cjs` with `term,login` 45 passed; no `electron.exe` or `ssh.exe` left. Main only, no headless run.
 - Found / next: no bug. Code changed, so this run does not count toward the two runs with nothing to add or fix. Next: a completeness review (#239).
 
+### #242 2026-10-15 · completeness (the twenty-fourth run of the cycle of #218)
+- Did: a review of one failure situation, a temp folder whose path has letters outside ASCII and a space, as a Korean Windows user name gives (`%TEMP%` lies under the user folder); the tests cover a path with spaces only. `lists/hangul-temp-probe.mjs` (new in the checks folder) starts sessions through `createTerminalManager` with a real pty and Git's bash, in a made-up `.../홍길동 사용자/Temp/jumpspace`, with a key path of that kind; ssh is a bash function that reads the file it gets with `-F`. Connect and ProxyJump start, the script path and the key path arrive unchanged, the config is read, and both sessions leave nothing in the folder. Git's own `ssh -G` reads a config at such a path with an `IdentityFile` of such a path. Nothing to fix; no commit of code.
+- Result: no change of the repository, so no tests, no build and no real-window run; CI of HEAD (067465b) is green.
+- Found / next: nothing to add or fix: the first such run in a row (the last was #232). Next: tests (#240).
+
 ## Routine
 
 - **Local routine since 2026-10-10 (owner: "every 40 minutes, tests, finding and fixing bugs, maintenance").** Two scheduled tasks of the Claude desktop app on the owner's PC, `jumpspace-maintenance-a` (cron `0,40 */2 * * *`) and `jumpspace-maintenance-b` (cron `20 1-23/2 * * *`, local time), together one run every 40 minutes. Each run is a fresh session; this file is its only memory. They run only while the app is open. The cloud trigger below is the old one and stays disabled.
