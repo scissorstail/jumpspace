@@ -28,6 +28,15 @@ describe('buildConnect', () => {
     expect(script).not.toContain('-tt')
   })
 
+  // -i는 경로를 그대로 찾아본 뒤 %를 토큰으로 펼친다: "unknown key %e"로 접속하기 전에 끝났다 (#240). %%로 쓴 -i는 파일이 없다.
+  it('gives a key path with a % as a config line, with the % doubled, and any other one with -i', () => {
+    const script = buildConnect({ ...node, keyPath: 'C:\\keys\\100%\\pct%ex' }, paths).script
+    expect(script).toContain('"$@" -o \'IdentityFile "C:/keys/100%%/pct%%ex"\' -o IdentitiesOnly=yes -p \'22\' -- \'deploy@example.com\'')
+    expect(script).not.toContain(' -i ')
+
+    expect(buildConnect({ ...node, keyPath: 'D:\\keys\\my key' }, paths).script).toContain("-i 'D:/keys/my key' -o IdentitiesOnly=yes")
+  })
+
   it('keeps hostile name as data', () => {
     const script = buildConnect({ ...node, name: "x'; touch /tmp/pwned; echo '" }, paths).script
     expect(script).toContain(sq("Connect... deploy@example.com:22 (x'; touch /tmp/pwned; echo ')"))
@@ -275,6 +284,13 @@ describe('buildProxyJump', () => {
 
     const { config } = buildProxyJump(nodes, paths)
     expect([...config.matchAll(/^Host (\w+)$/gm)].map(x => x[1])).toEqual([first, second])
+  })
+
+  // ssh는 IdentityFile의 %를 토큰으로 읽는다: 테스트는 Copy SSH config의 것만 지켰다 (#238에서 본 빈틈)
+  it('doubles the % of a key path in the config of a ProxyJump and a forward session', () => {
+    const keyed = { ...node, keyPath: 'C:\\keys\\100%' }
+    expect(buildProxyJump([keyed, node], paths).config).toContain('IdentityFile "C:/keys/100%%"\n')
+    expect(buildForward({ via: [keyed], forwards: [{ checked: true, from: '1080', host: 'db', to: '5432' }] }, paths).config).toContain('IdentityFile "C:/keys/100%%"\n')
   })
 
   it('skips IdentityFile when a node has no key', () => {

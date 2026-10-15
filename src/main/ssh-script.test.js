@@ -215,6 +215,14 @@ describe.skipIf(!canRun)('generated scripts run under bash', () => {
       expect(existsSync(r.paths.scriptPath)).toBe(false)
     })
 
+    // -i는 %를 토큰으로 펼쳐서 "unknown key"로 끝났다 (#240): 그런 경로는 config 줄 하나로, %는 %%로
+    it('hands a key path with a % and a space to ssh as one config line', () => {
+      const r = newRun()
+      const result = run(buildConnect({ ...node, keyPath: "/keys/my 100%'s key" }, r.paths), r)
+
+      expect(result.args.slice(2, 6)).toEqual(['-o', 'IdentityFile "/keys/my 100%%\'s key"', '-o', 'IdentitiesOnly=yes'])
+    })
+
     it('keeps hostile values as data', () => {
       const name = "x'; touch PWNED; echo '"
       const exec = "echo 'a b'; touch PWNED2"

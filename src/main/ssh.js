@@ -78,11 +78,19 @@ function askpassPrelude(nodes, promptHosts = nodes.map(x => x.host)) {
   }
 }
 
+// 키 파일을 ssh에 건넨다. -i는 그 경로를 글자 그대로 찾아본 뒤 다시 %를 토큰(%d, %u, ...)으로 펼친다: %가 든 경로는
+// "unknown key"로 접속하기도 전에 끝났고, %%로 쓰면 그 이름의 파일이 없다 (#240). 그런 경로만 config 줄로 주고 %는 %%로 쓴다.
+// 다른 경로는 -i로 둔다: 없는 파일을 ssh가 터미널에 알려 준다 (config 줄의 없는 파일은 말없이 건너뛴다).
+function keyOption(keyPath) {
+  const path = toUnixPath(keyPath)
+  return path.includes('%') ? `-o ${sq(`IdentityFile "${escapeTokens(path)}"`)}` : `-i ${sq(path)}`
+}
+
 // 직접 접속(Connect)에서 노드 하나의 인증에 쓰는 ssh 옵션
 function authOptions(node) {
   return [
     // 지정한 키만 사용한다. (ssh-agent의 다른 키를 먼저 시도하다가 "Too many authentication failures"가 나는 것을 막는다)
-    node.keyPath && `-i ${sq(toUnixPath(node.keyPath))} -o IdentitiesOnly=yes`,
+    node.keyPath && `${keyOption(node.keyPath)} -o IdentitiesOnly=yes`,
     // 틀린 비밀번호로 여러 번 시도해서 계정이 잠기는 일을 막는다.
     node.password && '-o NumberOfPasswordPrompts=1',
     // 비밀번호만 쓰는 노드는 키 인증을 시도하지 않는다.
