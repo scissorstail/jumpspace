@@ -349,6 +349,43 @@ describe('what a node shows', () => {
 
     expect(vm.forwardSummaryText).toEqual({ first: ':*** → ***.***.***.***:***', more: '', text: ':*** → ***.***.***.***:***', title: ':*** → ***.***.***.***:***' })
   })
+
+  it('gives its name, details and forwards a tooltip with the whole text while it can be edited', () => {
+    const { vm } = nodeOf({ connection: bastion() })
+
+    expect(vm.tooltips).toEqual({ name: 'bastion', user: 'ops', host: '10.0.0.1', port: '22', forward: ':8080 → localhost:80' })
+    expect(nodeOf({}).vm.tooltips).toEqual({ name: '(untitled)', user: '', host: '', port: '', forward: null })
+  })
+
+  it('masks those tooltips like the text while the details are hidden', () => {
+    hide()
+    const { vm } = nodeOf({ connection: bastion() })
+
+    expect(vm.tooltips).toEqual({ name: 'bastion', ...vm.infoText, forward: vm.forwardSummaryText.title })
+    expect(JSON.stringify(vm.tooltips)).not.toMatch(/ops|10\.0|8080/)
+  })
+
+  // 잠긴 노드는 단추 말고는 마우스에 반응하지 않는다 (owner, 2026-10-15)
+  it('gives them no tooltip while the diagram is locked, and gives them back when it is unlocked', () => {
+    const { vm } = nodeOf({ connection: bastion() })
+
+    vm.isLocked = true
+
+    expect(vm.tooltips).toEqual({ name: null, user: null, host: null, port: null, forward: null })
+
+    vm.isLocked = false
+
+    expect(vm.tooltips.name).toBe('bastion')
+    expect(vm.tooltips.forward).toBe(':8080 → localhost:80')
+  })
+
+  it('takes the tooltips of its text from that list, and keeps the tooltips of its buttons', () => {
+    const template = source.slice(0, source.indexOf('</template>\n\n<script>'))
+    const info = template.slice(template.indexOf('class="info-block"'))
+
+    expect([...info.matchAll(/\stitle="|:title="([^"]+)"/g)].map(match => match[1])).toEqual(['tooltips.name', 'tooltips.user', 'tooltips.host', 'tooltips.port', 'tooltips.forward'])
+    expect(template.slice(0, template.indexOf('class="info-block"'))).toContain(':title="connectLabel"')
+  })
 })
 
 describe('starting ssh from a node', () => {

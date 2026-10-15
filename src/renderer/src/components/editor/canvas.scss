@@ -178,16 +178,35 @@
     background: var(--js-danger);
   }
 
+  // 잠긴 노드는 단추 말고는 마우스에 반응하지 않는다 (owner, 2026-10-15): 올려도 모양이 그대로이고, 커서는 배경 위처럼 화살표다.
+  // 누름은 캔버스의 것이 되고(utils/locked-press.js), 글자의 툴팁은 component.vue가 뺀다. 단추를 띄우는 :hover(component.vue)는 남는다.
   &.locked {
-    .node.site .socket {
-      &.input,
-      &.output {
-        border-color: var(--js-line);
+    .node.site {
+      cursor: default;
+
+      &:hover {
+        outline-color: var(--js-secondary);
+        background: var(--js-surface);
       }
 
-      &.output {
-        background: var(--js-line);
+      .socket {
+        cursor: default;
+
+        &.input,
+        &.output {
+          border-color: var(--js-line);
+        }
+
+        &.output {
+          background: var(--js-line);
+        }
       }
+    }
+
+    // 고른 터미널 탭의 노드도 제 모양 그대로다. (위의 &:hover가 그 규칙보다 무거워서 따로 적는다)
+    .is-active-terminal .node.site:hover {
+      outline-color: var(--js-primary);
+      background: var(--js-surface-2);
     }
   }
 }

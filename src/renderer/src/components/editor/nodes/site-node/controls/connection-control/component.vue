@@ -66,32 +66,32 @@
         <div class="info-card">
           <div
             class="info-name"
-            :title="name || '(untitled)'"
+            :title="tooltips.name"
           >
             <span>{{ name || '(untitled)' }}</span>
           </div>
           <div
             class="info-text"
-            :title="infoText.user"
+            :title="tooltips.user"
           >
             {{ infoText.user }}
           </div>
           <div
             class="info-text"
-            :title="infoText.host"
+            :title="tooltips.host"
           >
             {{ infoText.host }}
           </div>
           <div
             class="info-text"
-            :title="infoText.port"
+            :title="tooltips.port"
           >
             {{ infoText.port }}
           </div>
           <div
             v-if="forwardSummaryText"
             class="info-text info-forward"
-            :title="forwardSummaryText.title"
+            :title="tooltips.forward"
           >
             <b-icon
               icon="arrow-left-right"
@@ -223,6 +223,15 @@ export default {
     },
     forwardSummaryText() {
       return forwardSummary(this.forwards, this.forwardPlan, this.isInfoHidden ? maskText : undefined)
+    },
+    // 이름, user, host, port, 포워딩 요약의 툴팁: 말줄임으로 잘린 글자를 다 보여준다.
+    // 잠긴 노드는 단추 말고는 마우스에 반응하지 않으므로 툴팁도 없다 (owner, 2026-10-15). 단추의 툴팁은 그대로다.
+    tooltips() {
+      if (this.isLocked) {
+        return { name: null, user: null, host: null, port: null, forward: null }
+      }
+
+      return { name: this.name || '(untitled)', ...this.infoText, forward: this.forwardSummaryText?.title ?? null }
     },
     // 설정 팝오버에서 편집하는 값
     connectionFields() {

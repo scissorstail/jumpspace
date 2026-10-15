@@ -125,3 +125,47 @@ describe('the node of the selected terminal tab', () => {
     expect(scss).not.toContain('translate(')
   })
 })
+
+// 잠긴 노드는 단추 말고는 마우스에 반응하지 않는다 (owner, 2026-10-15). 누름은 utils/locked-press.js가 캔버스로 넘기고,
+// 글자의 툴팁은 component.vue가 뺀다. 단추를 띄우는 :hover는 component.vue에 있고 그대로다.
+describe('a locked node', () => {
+  const value = (text, property) => text.match(new RegExp(`(?:^|\\s)${property}: ([^;]+);`))?.[1]
+  // 블록 바로 안의 선언만 (안에 든 블록은 뺀다)
+  const own = text => {
+    let rest = text
+    while (/\{[^{}]*\}/.test(rest)) rest = rest.replace(/[^{};]*\{[^{}]*\}/g, '')
+    return rest
+  }
+  const resting = own(block(scss, '  .node.site'))
+  const restingTab = own(block(scss, '  .is-active-terminal .node.site'))
+  const locked = block(scss, '  &.locked')
+  const node = block(locked, '.node.site')
+  const hover = block(node, '&:hover')
+  const tabHover = block(locked, '.is-active-terminal .node.site:hover')
+
+  it('looks the same with the mouse over it as without', () => {
+    expect(value(resting, 'outline')).toMatch(/ var\(--js-[\w-]+\)$/)
+    expect(value(hover, 'outline-color')).toBe(value(resting, 'outline').split(' ').pop())
+    expect(value(hover, 'background')).toBe(value(resting, 'background'))
+    // 잠그지 않은 노드는 올리면 색이 바뀐다
+    expect(value(block(block(scss, '  .node.site'), '&:hover'), 'outline-color')).not.toBe(value(hover, 'outline-color'))
+  })
+
+  it('keeps the look of the node of the selected terminal tab with the mouse over it', () => {
+    expect(value(tabHover, 'outline-color')).toBe(value(restingTab, 'outline-color'))
+    expect(value(tabHover, 'background')).toBe(value(restingTab, 'background'))
+    expect(own(tabHover).split('\n').map(x => x.trim().split(':')[0]).filter(Boolean)).toEqual(['outline-color', 'background'])
+  })
+
+  it('shows the arrow of the canvas over the node and its sockets, not the hand of something to press', () => {
+    expect(value(own(node), 'cursor')).toBe('default')
+    expect(value(own(block(node, '.socket')), 'cursor')).toBe('default')
+  })
+
+  it('keeps its sockets in the dim color of the lines', () => {
+    const socket = block(node, '.socket')
+
+    expect(socket).toMatch(/&\.input,\n\s*&\.output \{\n\s*border-color: var\(--js-line\);/)
+    expect(socket).toMatch(/\n\s*&\.output \{\n\s*background: var\(--js-line\);/)
+  })
+})
