@@ -320,9 +320,6 @@ export function canReconnect(session) {
   return session?.status === 'exited' && session.id !== null && session.id !== undefined
 }
 
-// 터미널에서 가로채는 단축키: 'copy', 'paste', 'find', 'font-up', 'font-down', 'font-reset', 아니면 null(터미널이 그대로 처리).
-// Windows 터미널처럼 Ctrl+C는 고른 글자가 있을 때만 복사이고(없으면 실행 중인 프로그램을 중단시킨다), Ctrl+V는 붙여넣기다.
-// Shift+Insert 붙여넣기는 브라우저가 처리하므로 여기서 다루지 않는다.
 // 터미널에서 오른쪽 클릭이 하는 일: 'copy'(고른 글자가 있다), 'paste', 아니면 'program'.
 // 프로그램이 마우스를 받겠다고 한 동안(tmux의 mouse on, vim, Claude Code)에는 클릭이 프로그램의 것이다: 화면이 그 클릭을
 // 프로그램에 보내므로, 여기서 붙여넣기까지 하면 클립보드의 글이 프로그램에 함께 들어간다. Shift를 누르면 터미널의 것이다
@@ -333,6 +330,23 @@ export function rightClickAction({ mouseTracking = 'none', shiftKey = false, has
   return hasSelection ? 'copy' : 'paste'
 }
 
+// 버튼을 누르지 않은 마우스 이동의 보고인지 (#252). xterm.js는 프로그램이 모든 이동을 달라고 한 동안(1003, tmux가 그 창의
+// 프로그램을 위해 켠다) 마우스가 한 칸 넘을 때마다 하나씩 보낸다: ESC [ < 코드 ; 열 ; 줄 M, 코드는 3(버튼 없음) + 32(이동)에
+// 수정 키(Shift 4, Alt 8, Ctrl 16)를 더한 것이다. 보고 하나가 onData 한 번이다.
+// Windows에서 Git의 ssh는 창 크기가 바뀐 뒤 입력의 첫 바이트를 잃을 수 있고(LOOP_LOG의 Known bugs, #103), 그러면 ESC를 잃은
+// 나머지가 친 글자로 들어간다 (owner, 2026-10-17: "[<35 어쩌구가 들어가는걸 막을 수 있나요?"). 이동은 가장 많이 오가는 입력이다.
+// 누르기, 끌기(32 - 34)와 휠(64, 65)은 여기에 들지 않는다. 옛 인코딩(ESC [ M과 세 글자)은 xterm.js가 onBinary로 보내고,
+// 패널은 그것을 듣지 않는다.
+export function isMotionReport(data) {
+  // eslint-disable-next-line no-control-regex
+  const report = /^\x1b\[<(\d+);\d+;\d+M$/.exec(data)
+
+  return report !== null && (Number(report[1]) & ~28) === 35
+}
+
+// 터미널에서 가로채는 단축키: 'copy', 'paste', 'find', 'font-up', 'font-down', 'font-reset', 아니면 null(터미널이 그대로 처리).
+// Windows 터미널처럼 Ctrl+C는 고른 글자가 있을 때만 복사이고(없으면 실행 중인 프로그램을 중단시킨다), Ctrl+V는 붙여넣기다.
+// Shift+Insert 붙여넣기는 브라우저가 처리하므로 여기서 다루지 않는다.
 export function terminalShortcut(event, { hasSelection = false } = {}) {
   if (event?.type !== 'keydown' || !event.ctrlKey || event.altKey || event.metaKey) return null
   if (event.code === 'KeyC') return event.shiftKey || hasSelection ? 'copy' : null

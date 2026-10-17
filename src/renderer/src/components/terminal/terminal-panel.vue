@@ -84,7 +84,7 @@ import { SearchAddon } from '@xterm/addon-search'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
-import { canReconnect, createActivityWatch, createOutputRouter, endedByUser, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
+import { canReconnect, createActivityWatch, createOutputRouter, endedByUser, isMotionReport, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, panelDrag, panelHeight, RECONNECTING_LINE, searchSeed, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import { MAX_WRITE } from '../../../../shared/terminal-input.js'
@@ -238,7 +238,7 @@ export default {
       const search = new SearchAddon()
       term.loadAddon(fit)
       term.loadAddon(search)
-      const entry = { term, fit, search, webgl: null, id: null, ended: false, reconnecting: false, interruptedAt: null }
+      const entry = { term, fit, search, webgl: null, id: null, ended: false, reconnecting: false, interruptedAt: null, onWindows: false }
       this.terms.set(session.key, entry)
 
       const el = this.$refs[`term-${session.key}`]?.[0]
@@ -272,6 +272,9 @@ export default {
     },
     // 터미널에 친 것(붙여 넣은 것도)을 세션으로 보낸다. 끝난 세션에서는 Enter만 받는다: 다시 접속이다.
     typed(key, entry, data) {
+      // Windows에서는 버튼 없는 마우스 이동을 보내지 않는다 (#252): Git의 ssh가 창 크기가 바뀐 뒤 그 첫 바이트(ESC)를 잃으면
+      // 나머지 "[<35;..M"이 친 글자로 들어갔다. 누르기, 끌기, 휠은 보낸다. (utils/terminal-sessions.js의 isMotionReport)
+      if (entry.onWindows && isMotionReport(data)) return
       if (entry.ended) {
         if (data === '\r') this.reconnect(this.allSessions.find(x => x.key === key))
         return
@@ -309,6 +312,8 @@ export default {
     attach(session, entry, { id, windowsPty }) {
       entry.id = id
       if (windowsPty) entry.term.options.windowsPty = windowsPty
+      // main은 Windows에서만 windowsPty를 준다. (term.options.windowsPty는 xterm.js의 기본값이 {}라서 어디서나 참이다)
+      entry.onWindows = !!windowsPty
       this.router.register(id, data => {
         entry.term.write(data)
         this.activity.output(session.key)

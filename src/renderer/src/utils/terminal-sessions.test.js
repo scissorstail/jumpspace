@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { activeTerminalNode, BUSY_IDLE_MS, busyNodes, canReconnect, countByOwner, createActivityWatch, createOutputRouter, duplicateNumbers, endedByUser, hopKey, INTERRUPT_WINDOW_MS, numberedTitle, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
+import { activeTerminalNode, BUSY_IDLE_MS, busyNodes, canReconnect, countByOwner, createActivityWatch, createOutputRouter, duplicateNumbers, endedByUser, hopKey, INTERRUPT_WINDOW_MS, isMotionReport, numberedTitle, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -359,6 +359,30 @@ describe('rightClickAction', () => {
       expect(rightClickAction({ mouseTracking, hasSelection: true })).toBe('program')
       expect(rightClickAction({ mouseTracking, shiftKey: true })).toBe('paste')
       expect(rightClickAction({ mouseTracking, shiftKey: true, hasSelection: true })).toBe('copy')
+    }
+  })
+})
+
+// #252: Windows에서 Git의 ssh가 창 크기가 바뀐 뒤 ESC를 잃으면 "[<35;10;5M"이 친 글자로 들어갔다
+describe('isMotionReport', () => {
+  // xterm.js의 SGR 보고 (CoreMouseService): 코드는 버튼 없음(3) + 이동(32)에 Shift 4, Alt 8, Ctrl 16을 더한 것
+  it('is a move of the mouse with no button pressed, with or without Shift, Alt or Ctrl', () => {
+    for (const code of [35, 39, 43, 47, 51, 55, 59, 63]) expect(isMotionReport(`\x1b[<${code};10;5M`)).toBe(true)
+    expect(isMotionReport('\x1b[<35;1;1M')).toBe(true)
+    expect(isMotionReport('\x1b[<35;240;61M')).toBe(true)
+  })
+
+  // 누르기와 놓기(0 - 2), 버튼을 누른 채 끌기(32 - 34), 휠(64, 65)은 프로그램이 다르게 쓰는 입력이다
+  it('is not a press, a release, a drag with a button or a turn of the wheel', () => {
+    for (const report of ['\x1b[<0;10;5M', '\x1b[<0;10;5m', '\x1b[<2;10;5M', '\x1b[<32;10;5M', '\x1b[<33;10;5M', '\x1b[<34;10;5M', '\x1b[<36;10;5M', '\x1b[<64;10;5M', '\x1b[<65;10;5M', '\x1b[<99;10;5M']) {
+      expect(isMotionReport(report)).toBe(false)
+    }
+  })
+
+  // 하나의 보고가 onData 한 번이다: 그 밖의 것은 그대로 보낸다
+  it('is nothing else: a report without its ESC, typed text, two reports at once, a move that ends with m, a broken report', () => {
+    for (const data of ['[<35;10;5M', 'ls\r', '\x1b[<35;10;5M\x1b[<35;11;5M', 'a\x1b[<35;10;5M', '\x1b[<35;10;5Ma', '\x1b[<35;10;5m', '\x1b[<35;10M', '\x1b[<35;;5M', '\x1b[M#!!', '', undefined]) {
+      expect(isMotionReport(data)).toBe(false)
     }
   })
 })

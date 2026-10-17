@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runInThisContext } from 'node:vm'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { canReconnect, createActivityWatch, createOutputRouter, endedByUser, rightClickAction, terminalShortcut } from '../../utils/terminal-sessions'
+import { canReconnect, createActivityWatch, createOutputRouter, endedByUser, isMotionReport, rightClickAction, terminalShortcut } from '../../utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, RECONNECTING_LINE, searchSeed } from '../../utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import { MAX_WRITE } from '../../../../shared/terminal-input.js'
@@ -16,7 +16,8 @@ import { toastError } from '../../utils/notify'
 const made = []
 class FakeTerminal {
   constructor(options) {
-    Object.assign(this, { options, cols: 100, rows: 30, calls: [], disposed: false, osc: null, element: null })
+    // windowsPty: xterm.js의 기본값처럼 빈 객체다 (OptionsService). 그래서 그것으로는 Windows인지 알 수 없다 (#252).
+    Object.assign(this, { options: { windowsPty: {}, ...options }, cols: 100, rows: 30, calls: [], disposed: false, osc: null, element: null })
     this.parser = { registerOscHandler: (code, handler) => { this.osc = { code, handler } } }
     made.push(this)
   }
@@ -39,7 +40,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const source = readFileSync(join(here, 'terminal-panel.vue'), 'utf8').replace(/\r\n/g, '\n')
 const script = source.match(/<script>\n([\s\S]*?)<\/script>/)[1]
 const imported = [...script.matchAll(/^import (?:\{ ([^}]+) \}|(\w+)) from .*$/gm)].flatMap(match => (match[1] ?? match[2]).split(', '))
-const given = { nextFontSize, searchSeed, canReconnect, createActivityWatch, createOutputRouter, endedByUser, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, MAX_WRITE, MAX_CLIPBOARD, toastError, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
+const given = { nextFontSize, searchSeed, canReconnect, createActivityWatch, createOutputRouter, endedByUser, isMotionReport, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, MAX_WRITE, MAX_CLIPBOARD, toastError, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 const component = runInThisContext(`(function (${imported.join(', ')}) {\n${body}\n})`)(...imported.map(name => given[name]))
 
@@ -181,6 +182,27 @@ describe('what is typed into a terminal', () => {
 
     vm.typed(1, entry, 'x')
     expect(calls).toEqual([])
+  })
+
+  // #252: Git의 ssh는 창 크기가 바뀐 뒤 ESC를 잃을 수 있다. 그러면 "[<35;10;5M"이 친 글자로 들어갔다 (Windows에서만)
+  it('leaves out moves of the mouse without a button on Windows, and sends presses, drags and the wheel', () => {
+    const calls = written()
+    const entry = { ...terminal(), ended: false, interruptedAt: null, onWindows: true }
+    const { vm } = typing(entry)
+
+    for (const data of ['\x1b[<35;10;5M', '\x1b[<51;11;5M']) vm.typed(1, entry, data)
+    expect(calls).toEqual([])
+    for (const data of ['\x1b[<0;10;5M', '\x1b[<32;11;5M', '\x1b[<0;11;5m', '\x1b[<64;11;5M', 'ls\r']) vm.typed(1, entry, data)
+    expect(calls).toEqual([[7, '\x1b[<0;10;5M'], [7, '\x1b[<32;11;5M'], [7, '\x1b[<0;11;5m'], [7, '\x1b[<64;11;5M'], [7, 'ls\r']])
+  })
+
+  it('sends every move of the mouse elsewhere', () => {
+    const calls = written()
+    const entry = { ...terminal(), ended: false, interruptedAt: null, onWindows: false }
+    const { vm } = typing(entry)
+
+    vm.typed(1, entry, '\x1b[<35;10;5M')
+    expect(calls).toEqual([[7, '\x1b[<35;10;5M']])
   })
 
   it('is not sent to an ended session: Enter connects again, anything else is dropped', () => {
@@ -613,8 +635,11 @@ describe('opening a session', () => {
 
     const done = vm.start(session)
     const term = made.at(-1)
+    expect(vm.terms.get(1).onWindows).toBe(false)
     answer({ ok: true, id: 9 })
     await done
+    // windowsPty가 없다: Windows가 아니다 (xterm.js의 term.options.windowsPty는 기본값이 {}라서 그것으로는 알 수 없다)
+    expect(vm.terms.get(1).onWindows).toBe(false)
     const [[id, write]] = seen.registered
     write('hello')
     expect(id).toBe(9)
@@ -637,6 +662,8 @@ describe('opening a session', () => {
     await done
     expect(vm.terms.get(1).id).toBe(9)
     expect(term.options.windowsPty).toEqual({ backend: 'conpty', buildNumber: 21376 })
+    // main은 Windows에서만 windowsPty를 준다: 그 터미널은 버튼 없는 마우스 이동을 보내지 않는다 (typed, #252)
+    expect(vm.terms.get(1).onWindows).toBe(true)
     expect(seen.registered.map(([id]) => id)).toEqual([9])
     expect(seen.commits.at(-1)).toEqual(['terminalUpdate', { key: 1, id: 9, status: 'running' }])
     // 받은 출력은 그 탭의 화면으로 간다
@@ -687,7 +714,7 @@ describe('opening a session', () => {
     await done
     expect(calls.at(-1)).toEqual(['close', 9])
     expect(entry.id).toBe(null)
-    expect(entry.term.options.windowsPty).toBe(undefined)
+    expect(entry.term.options.windowsPty).toEqual({})
     expect(seen.registered).toEqual([])
     expect(seen.commits.map(([name]) => name)).toEqual(['terminalUpdate', 'terminalRemove'])
   })
