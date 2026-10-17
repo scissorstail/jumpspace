@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_CANVAS, DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, sanitizeView, scaleView, shownView, viewOf } from './view'
+import { DEFAULT_CANVAS, DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, canvasPoint, fitView, fullCanvasIn, isRealSize, sanitizeView, scaleView, shownView, viewOf } from './view'
 import { MAX_AREA } from '../../../shared/view.js'
 
 describe('sanitizeView', () => {
@@ -240,6 +240,33 @@ describe('viewOf', () => {
 
   it('produces something sanitizeView accepts', () => {
     expect(sanitizeView(viewOf({ k: 0.85, x: 0, y: 0 }))).toEqual({ k: 0.85, x: 0, y: 0 })
+  })
+})
+
+// 오른쪽 클릭한 자리가 캔버스의 어디인가 (캔버스 메뉴로 만드는 노드가 거기에 놓인다, #269)
+describe('canvasPoint', () => {
+  it('is the point itself on a canvas that is neither moved nor zoomed', () => {
+    expect(canvasPoint([300, 520], { left: 0, top: 0 }, 1)).toEqual([300, 520])
+  })
+
+  it('takes the place of the canvas in the window away, then the zoom', () => {
+    expect(canvasPoint([300, 520], { left: 100, top: 44 }, 1)).toEqual([200, 476])
+    expect(canvasPoint([300, 520], { left: 0, top: 0 }, 0.5)).toEqual([600, 1040])
+    expect(canvasPoint([300, 520], { left: 100, top: 44 }, 2)).toEqual([100, 238])
+  })
+
+  // 캔버스의 점 p는 창에서 origin + p * k에 그려진다: 그 자리에 놓은 노드의 모서리는 오른쪽 클릭한 그 점에 온다
+  it('gives the point of the canvas that is drawn at that point of the window', () => {
+    for (const k of [MIN_ZOOM, 0.37, 0.934, 1, 1.6, MAX_ZOOM]) {
+      for (const origin of [{ left: 0, top: 44 }, { left: -812.5, top: 260.25 }, { left: 33.3, top: -1200 }]) {
+        for (const point of [[0, 0], [300, 520], [1099, 799], [-40, 12.5]]) {
+          const [cx, cy] = canvasPoint(point, origin, k)
+
+          expect(origin.left + cx * k).toBeCloseTo(point[0], 9)
+          expect(origin.top + cy * k).toBeCloseTo(point[1], 9)
+        }
+      }
+    }
   })
 })
 

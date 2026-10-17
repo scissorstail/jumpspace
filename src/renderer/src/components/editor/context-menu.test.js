@@ -134,6 +134,21 @@ describe('what the menu takes from the installed rete-context-menu-plugin', () =
     expect(plugin.match(/\}, vueComponent, /g)).toHaveLength(2)
   })
 
+  // 캔버스 메뉴로 만드는 노드는 오른쪽 클릭한 자리에 놓인다 (#269, index.vue의 menuPoint): 그 자리는 메뉴를 보이기 전에
+  // 묻는 showcontextmenu의 e에서 온다. 노드 메뉴도 같은 것을 묻는다.
+  it('asks showcontextmenu with the event of the right click before it shows either menu', () => {
+    expect(plugin).toMatch(/if \(!editor\.trigger\('showcontextmenu', \{\n\s+e: e,\n\s+node: node\n\s+\}\)\) return;\n\s+var _ref3 = \[e\.clientX, e\.clientY\],/)
+  })
+
+  // 노드 종류마다의 항목은 allocate가 목록(메뉴 안의 경로)을 줄 때만 생기고, 그 노드를 항목을 누를 때의 마우스 자리에 둔다
+  // (메뉴가 열린 뒤의 mousemove). 그래서 index.vue는 목록을 주지 않고 Add node를 items에 둔다. items는 그 키의 차례로 들어간다.
+  it('adds an item for a node kind only when allocate gives a list, and the items of the option in the order of their keys', () => {
+    expect(plugin).toMatch(/var path = allocate\(component\);\n\n\s+if \(Array\.isArray\(path\)\) \{/)
+    expect(plugin).toMatch(/return createNode\(component, mouse\);/)
+    expect(plugin).toMatch(/Object\.keys\(items\)\.map\(function \(key\) \{\n\s+if \(typeof items\[key\] === 'function'\) callback\(key, items\[key\], path\);/)
+    expect(plugin).toMatch(/traverse\(items, function \(name, func, path\) \{\n\s+return _this\.addItem\(name, func, path\);/)
+  })
+
   it('keeps the place in x and y, sets it in show() and draws it as left and top', () => {
     expect(plugin).toMatch(/show: function show\(x, y\) \{\n.*\n\s+this\.visible = true;\n\s+this\.x = x;\n\s+this\.y = y;\n\s+this\.args = args;/)
     expect(plugin).toMatch(/top: this\.y \+ 'px',\n\s+left: this\.x \+ 'px'/)

@@ -7,7 +7,7 @@ import { NAME_TOAST } from 'bootstrap-vue/esm/constants/components'
 import { EVENT_NAME_HIDDEN } from 'bootstrap-vue/esm/constants/events'
 import { getRootEventName } from 'bootstrap-vue/esm/utils/events'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, shownView, viewOf } from '../../utils/view'
+import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, canvasPoint, fitView, fullCanvasIn, isRealSize, shownView, viewOf } from '../../utils/view'
 import { ARRANGE_GAP, arrangeLayout, boxOf } from '../../utils/arrange'
 import { activeTerminalNode, busyNodes, hopKey, routeStates } from '../../utils/terminal-sessions'
 import { isCanvasDoubleClick, lockedPress } from '../../utils/locked-press'
@@ -49,8 +49,15 @@ class FakeEditor {
     this.view = {
       // 진짜처럼 보기를 바꾸면 zoomed, translated가 일어난다
       area: {
-        // 캔버스에 붙은 요소들: 플러그인이 붙이는 차례대로 (use)
-        el: { children: [], get lastElementChild() { return this.children[this.children.length - 1] || null } },
+        // 캔버스에 붙은 요소들: 플러그인이 붙이는 차례대로 (use). rect는 창에서 본 이 요소의 왼쪽 위다 (진짜는 보기를 옮긴
+        // 만큼 움직인다. 여기서는 테스트가 정한다).
+        el: {
+          children: [],
+          rect: { left: 0, top: 0 },
+          getBoundingClientRect() { return this.rect },
+          get lastElementChild() { return this.children[this.children.length - 1] || null }
+        },
+        // Rete가 마지막 pointermove로 아는 마우스 (캔버스 좌표)
         mouse: { x: 0, y: 0 },
         transform,
         zoom: (k, ox, oy) => { log.push(['zoom', k, ox, oy]); transform.k = k; this.fire('zoomed') },
@@ -141,6 +148,7 @@ const given = {
   DEFAULT_VIEW,
   MAX_ZOOM,
   MIN_ZOOM,
+  canvasPoint,
   fitView,
   fullCanvasIn,
   isRealSize,
@@ -730,11 +738,14 @@ describe('connecting two nodes', () => {
   })
 })
 
+// 오른쪽 클릭: 플러그인은 메뉴를 보이기 전에 그 이벤트(e)와 노드(캔버스면 없다)를 주고 묻는다
+const rightClick = (editor, clientX, clientY, node) => editor.fire('showcontextmenu', { e: { clientX, clientY }, node })
+
 describe('a locked diagram', () => {
   it('opens no right-click menu and says why', () => {
     const { editor } = setup({ isLocked: true })
 
-    expect(editor.fire('showcontextmenu')).toEqual([false])
+    expect(rightClick(editor, 300, 200)).toEqual([false])
     // 자리(toaster)도 x(noCloseButton)도 BootstrapVue의 기본: 다른 알림처럼 오른쪽 위에 x와 함께 (toasts.test.js)
     expect(logged('toast')).toEqual([['Unlock the editor (lock icon) to add or delete nodes.', {
       id: 'editor-hint-locked', title: 'Editor locked', variant: 'secondary', solid: true, autoHideDelay: 2500
@@ -744,7 +755,7 @@ describe('a locked diagram', () => {
   it('opens the menu as usual when it is not locked', () => {
     const { editor } = setup({ isLocked: false })
 
-    expect(editor.fire('showcontextmenu')).toEqual([undefined])
+    expect(rightClick(editor, 300, 200)).toEqual([undefined])
     expect(logged('toast')).toEqual([])
   })
 
@@ -1228,13 +1239,15 @@ describe('working the values out, one calculation at a time', () => {
 })
 
 describe('the right-click menu of the canvas', () => {
-  it('calls its first item Add node and has no Clone', () => {
+  // 플러그인이 노드 종류마다 넣는 항목은 없다 (allocate가 목록을 주지 않는다, context-menu.test.js): 그 항목은 노드를
+  // 항목을 누르는 자리에 두었다. Add node는 items의 것이다 (#269).
+  it('has Add node and From SSH config, in this order, and no Clone', () => {
     const { editor } = setup()
     const menu = editor.plugins.get('menu')
 
-    expect(menu.rename()).toBe('Add node')
+    expect(Object.keys(menu.items)).toEqual(['Add node', 'From SSH config'])
+    expect(Array.isArray(menu.allocate(new FakeSiteNode()))).toBe(false)
     expect(menu.nodeItems.Clone).toBe(false)
-    expect(Object.keys(menu.items)).toEqual(['From SSH config'])
   })
 
   // 자리와 닫기는 context-menu.js의 메뉴가 한다 (#267): 플러그인은 캔버스 메뉴에도 노드 메뉴에도 그 메뉴를 쓴다 (context-menu.test.js)
@@ -1244,13 +1257,47 @@ describe('the right-click menu of the canvas', () => {
     expect(editor.plugins.get('menu').vueComponent).toBe(given.placedMenu)
   })
 
-  it('From SSH config tells the layout where the pointer is on the canvas', () => {
-    const { editor } = setup()
-    editor.view.area.mouse = { x: 320, y: 140 }
+  // 창의 (300, 520)을 오른쪽 클릭했다. 캔버스 요소의 왼쪽 위가 창의 (100, 44)에 있고 확대는 0.5: 캔버스의 (400, 952)다.
+  // 항목은 메뉴 안에 있어서 그 오른쪽 아래에서 눌린다. Rete의 마우스(area.mouse)는 그때 거기에 있다.
+  function rightClicked() {
+    const result = setup()
+    const { area } = result.editor.view
+    area.el.rect = { left: 100, top: 44 }
+    area.transform.k = 0.5
+    rightClick(result.editor, 300, 520)
+    area.mouse = { x: 500, y: 1000 }
+    return result
+  }
+
+  it('Add node puts an empty node with the corner of its box where the canvas was right-clicked', async () => {
+    const { editor } = rightClicked()
+    const made = []
+    editor.components.set('Site', { createNode: async data => { made.push(data); return makeNode() } })
+
+    await editor.plugins.get('menu').items['Add node']()
+
+    expect(made).toEqual([{}])
+    expect(editor.nodes.map(node => node.position)).toEqual([[400, 952]])
+  })
+
+  it('From SSH config tells the layout the same point', () => {
+    const { editor } = rightClicked()
 
     editor.plugins.get('menu').items['From SSH config']()
 
-    expect(emitted('ssh-config')).toEqual([[[320, 140]]])
+    expect(emitted('ssh-config')).toEqual([[[400, 952]]])
+  })
+
+  it('takes the point of the last right click', async () => {
+    const { editor } = rightClicked()
+    editor.components.set('Site', { createNode: async () => makeNode() })
+    rightClick(editor, 160, 84)
+
+    await editor.plugins.get('menu').items['Add node']()
+    editor.plugins.get('menu').items['From SSH config']()
+
+    expect(editor.nodes.map(node => node.position)).toEqual([[120, 80]])
+    expect(emitted('ssh-config')).toEqual([[[120, 80]]])
   })
 
   it('Duplicate makes a node with a copy of the values, a little down and to the right', async () => {
@@ -1309,7 +1356,7 @@ describe('nodes from a pasted SSH config', () => {
     expect(vm.isAdding).toBe(false)
   })
 
-  // Arrange nodes와 같은 규칙을 그 노드들에만 쓴다. 묶음의 왼쪽 위 노드의 상자 모서리가 누른 자리에 온다.
+  // Arrange nodes와 같은 규칙을 그 노드들에만 쓴다. 묶음의 왼쪽 위 노드의 상자 모서리가 그 점(origin, 오른쪽 클릭한 자리)에 온다.
   it('are placed in the order of their links, with the corner of the first one at the point', () => {
     const { vm, editor } = setup()
     const [jump, app] = put(editor, makeNode({ name: 'jump' }), makeNode({ name: 'app' }))

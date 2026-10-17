@@ -255,7 +255,7 @@ export default {
   created() {
     this.isRestoringView = false
     this.saveViewTimer = null
-    // From SSH config를 누른 자리 (캔버스 좌표). 만든 노드를 거기에 놓는다.
+    // 캔버스 메뉴를 연 오른쪽 클릭의 자리 (캔버스 좌표, 에디터의 menuPoint: From SSH config가 보낸다). 만든 노드를 거기에 놓는다.
     this.configPoint = [0, 0]
   },
   mounted() {

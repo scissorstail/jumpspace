@@ -19,17 +19,16 @@ const menuStyle = read('..', '..', 'editor', 'context-menu.scss')
 const methodOf = (source, name) => source.match(new RegExp(`\\n    (?:async )?${name}\\([^)]*\\) \\{\\n([\\s\\S]*?)\\n    \\}`))?.[1] ?? ''
 
 describe('From SSH config: the menu item', () => {
-  it('is an item of the canvas menu and tells the layout where it was pressed', () => {
+  // 그 자리는 Add node의 노드가 놓이는 자리와 같다: 오른쪽 클릭한 곳 (#269, editor-methods.test.js가 그 계산을 본다)
+  it('is an item of the canvas menu and tells the layout where the canvas was right-clicked', () => {
     const items = editor.match(/\n {6}items: \{\n([\s\S]*?)\n {6}\},/)?.[1] ?? ''
 
-    expect(items).toContain("'From SSH config': () => {")
-    expect(items).toContain('this.editor.view.area.mouse')
-    expect(items).toContain("this.$emit('ssh-config', [x, y])")
+    expect(items).toContain("'From SSH config': () => this.$emit('ssh-config', this.menuPoint)")
   })
 
   // 메뉴는 잠금을 푼 동안에만 열린다: 잠긴 다이어그램에는 이 길이 없다.
   it('cannot be reached while the diagram is locked, because no menu opens then', () => {
-    expect(editor).toMatch(/this\.editor\.on\('showcontextmenu', \(\) => \{\n\s+if \(this\.isLocked\) \{\n\s+this\.showLockedHint\(\)\n\s+return false/)
+    expect(editor).toMatch(/this\.editor\.on\('showcontextmenu', \(\{ e \}\) => \{\n\s+if \(this\.isLocked\) \{\n\s+this\.showLockedHint\(\)\n\s+return false/)
   })
 
   // 플러그인은 메뉴의 너비를 120px로 정해 둔다: 긴 항목이 두 줄이 된다.

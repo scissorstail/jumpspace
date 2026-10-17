@@ -15,6 +15,12 @@ export function viewOf(transform) {
   return { k: round(transform.k, 3), x: round(transform.x, 1), y: round(transform.y, 1) }
 }
 
+// 창의 한 점([x, y])이 캔버스의 어느 점인가 (캔버스 좌표). origin은 Rete가 옮기고 확대하는 요소(area.el)의 왼쪽 위가 창에서
+// 있는 곳({ left, top }), k는 확대: 캔버스의 점 p는 창에서 origin + p * k에 그려지므로 그 거꾸로다.
+export function canvasPoint([x, y], origin, k) {
+  return [(x - origin.left) / k, (y - origin.top) / k]
+}
+
 // 상자(캔버스 좌표 { left, top, right, bottom })를 화면 영역(viewport: { left, top, width, height })의 가운데에 두는 보기.
 // 확대는 지금 값(k)을 넘지 않고, 상자가 영역의 90%보다 크면 그만큼 줄인다.
 export function fitView(viewport, box, k) {

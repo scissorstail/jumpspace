@@ -18,7 +18,7 @@ import ReadonlyPlugin from 'rete-readonly-plugin'
 
 import SiteNode from './nodes/site-node'
 import placedMenu from './context-menu'
-import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, shownView, viewOf } from '@/utils/view'
+import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, canvasPoint, fitView, fullCanvasIn, isRealSize, shownView, viewOf } from '@/utils/view'
 import { arrangeLayout, boxOf } from '@/utils/arrange'
 import { activeTerminalNode, busyNodes, hopKey, routeStates } from '@/utils/terminal-sessions'
 import { isCanvasDoubleClick, lockedPress } from '@/utils/locked-press'
@@ -92,6 +92,8 @@ export default {
     this.isAdding = false
     this.justRemovedLink = null
     this.isRestoringLink = false
+    // 마지막으로 오른쪽 클릭한 자리 (캔버스 좌표): 캔버스 메뉴로 만드는 노드가 거기에 놓인다
+    this.menuPoint = [0, 0]
     // 아직 시작하지 않은 계산과 마지막으로 맡긴 계산 (compile)
     this.pendingCompile = null
     this.lastCompile = null
@@ -122,15 +124,15 @@ export default {
       // 플러그인의 메뉴에 자리와 닫기를 더한 것 (context-menu.js): 왼쪽 위 모서리가 포인터에 오고, 메뉴 밖을 누르면 닫힌다.
       vueComponent: placedMenu,
       delay: 250,
-      rename: () => 'Add node',
-      // 캔버스 메뉴의 둘째 항목: 붙여 넣은 SSH config로 노드를 만든다 (owner, 2026-10). 붙여 넣는 창은 Layout이 띄운다.
-      // 노드가 놓일 자리는 Add node와 같다: 항목을 누를 때 마우스가 있는 곳 (캔버스 좌표).
+      // 플러그인이 노드 종류마다 넣는 항목은 쓰지 않는다: 그 노드는 항목을 누를 때의 마우스 자리에 놓였다 (메뉴가 열린 뒤의
+      // mousemove). Add node는 아래의 items에 있다.
+      allocate: () => null,
+      // 캔버스 메뉴의 항목, 이 차례로 (아이콘은 그 자리로 정해진다, context-menu.scss). 둘 다 노드를 오른쪽 클릭한 자리에 둔다:
+      // 노드 상자의 왼쪽 위 모서리가 그 점에 온다 (owner, 2026-10-18, #269: "일관적이면 더 좋죠").
       items: {
-        'From SSH config': () => {
-          const { x, y } = this.editor.view.area.mouse
-
-          this.$emit('ssh-config', [x, y])
-        }
+        'Add node': () => this.addNodeAt(this.menuPoint),
+        // 붙여 넣은 SSH config로 노드를 만든다 (owner, 2026-10). 붙여 넣는 창은 Layout이 띄우고, 노드는 addFromConfig가 둔다.
+        'From SSH config': () => this.$emit('ssh-config', this.menuPoint)
       },
       nodeItems: {
         Duplicate: async (args) => {
@@ -151,12 +153,16 @@ export default {
       }
     })
 
-    // 잠겨 있으면 우클릭 메뉴를 열지 않고 이유를 알려준다.
-    this.editor.on('showcontextmenu', () => {
+    // 잠겨 있으면 우클릭 메뉴를 열지 않고 이유를 알려준다. 열면 그 자리를 기억한다 (menuPoint): 플러그인은 메뉴를 보이기
+    // 전에 오른쪽 클릭의 이벤트(e)와 함께 묻는다.
+    this.editor.on('showcontextmenu', ({ e }) => {
       if (this.isLocked) {
         this.showLockedHint()
         return false
       }
+
+      const { area } = this.editor.view
+      this.menuPoint = canvasPoint([e.clientX, e.clientY], area.el.getBoundingClientRect(), area.transform.k)
     })
     // 사라진 안내는 다음에 다시 띄울 수 있다 (showHint)
     this.$root.$on(TOAST_HIDDEN, this.hintGone)
@@ -548,6 +554,13 @@ export default {
     // 편집 중이라 아직 저장되지 않은 값까지 보도록 노드의 data가 아니라 화면의 값(vueContext)을 읽는다.
     nodeKeys() {
       return this.editor ? this.editor.nodes.map(node => hopKey(node.controls.get('connection')?.vueContext)) : []
+    },
+    // 빈 노드 하나를 캔버스의 한 점(캔버스 좌표)에 더한다: 노드 상자의 왼쪽 위 모서리가 그 점에 온다 (캔버스 메뉴의 Add node).
+    async addNodeAt([x, y]) {
+      const node = await this.editor.components.get('Site').createNode({})
+
+      node.position = [x, y]
+      this.editor.addNode(node)
     },
     // SSH config에서 읽은 노드들을 더하고 잇는다 (utils/config-import.js의 importPlan이 만든 nodes와 links).
     // origin: 놓을 자리 (캔버스 좌표). 하나 더할 때마다 다시 계산하지 않고(isAdding) 끝에 한 번 계산한다.
