@@ -1,4 +1,5 @@
 // 앱 안의 터미널 탭에 쓰는 순수 로직
+import { validateForwards } from '../../../shared/validate.js'
 
 // 탭 이름: 노드 이름(없으면 host). 포워딩은 앞에 ⇄를 붙인다. 거치는 노드 수는 이름에 넣지 않는다 (owner, 2026-10-12):
 // 이름이 같은 탭의 번호와 겹쳐 'app (+1) (2)'가 되었다. 툴팁이 말한다 (utils/terminal-view.js의 sessionRouteText).
@@ -324,11 +325,45 @@ export function canReconnect(session) {
 // 탭에는 아직 없고 (다시 접속하는 중인 탭도: main은 그 답을 줄 때까지 요청을 끝난 세션들에서 꺼내 둔다), 열지 못한 탭(failed)은
 // 세션 id가 없다. 돌고 있는 포워딩 탭은 그 로컬 포트들을 쥐고 있어서, 복사본의 ssh는 그 포트를 열지 못하고 곧바로 끝난다
 // (ExitOnForwardFailure): 복사하지 않고 그렇다고 알린다 (owner, 2026-10-17, #258). 끝난 포워딩 탭은 복사된다.
-export function duplicateRefusal(session) {
+// 끝난 포워딩 탭이라도 그 포트를 다른 탭이 지금 포워딩하면 복사본은 같은 까닭으로 끝난다: 그것도 알린다 (#264).
+export function duplicateRefusal(session, sessions = []) {
   if (session?.status === 'starting') return 'This terminal is still opening. Try again once it is open.'
   if (session?.id === null || session?.id === undefined) return 'This terminal did not start. Start it from its node.'
   if (session.kind === 'forward' && session.status === 'running') return 'The ports this tab forwards are in use while it runs, so a second tab could not forward them. Open it again once it has ended.'
+  const ports = portsInUse(session, sessions)
+  if (ports.length) return `${portsText(ports)}, so a new tab could not forward ${ports.length === 1 ? 'it' : 'them'}. Open it again once that tab has ended.`
   return null
+}
+
+// 포워딩 요청의 로컬 포트들: main이 검증하는 그대로다 ('08080'도 '8080'). main이 열지 않을 목록이면 없다. store가 탭에
+// 둔다 (#264): 비밀이 아니고, 요청은 화면에 남지 않는다.
+export function forwardPorts(payload) {
+  try {
+    return validateForwards(payload?.forwards).map(x => x.from)
+  } catch {
+    return []
+  }
+}
+
+// 이 포워딩 탭의 로컬 포트 가운데 다른 탭이 지금 포워딩하는 것들 (#264): 돌고 있거나 여는 중인(곧 쥔다) 포워딩 탭이 쥐고
+// 있다. 포트는 이 컴퓨터의 것이라 다른 스페이스의 탭도 센다: sessions는 창의 모든 세션이다.
+export function portsInUse(session, sessions) {
+  if (session?.kind !== 'forward' || !session.ports?.length) return []
+  const others = (sessions || []).filter(x => x && x.key !== session.key && x.kind === 'forward' && (x.status === 'running' || x.status === 'starting'))
+  const held = new Set(others.flatMap(x => x.ports || []))
+  return session.ports.filter(port => held.has(port))
+}
+
+function portsText(ports) {
+  return ports.length === 1 ? `Local port ${ports[0]} is forwarded by another tab now` : `Local ports ${ports.join(', ')} are forwarded by another tab now`
+}
+
+// 끝난 탭에서 Enter로 다시 접속하지 않는 까닭 (접속하면 null). 다른 탭이 이 포워딩 탭의 로컬 포트를 포워딩하는 동안은
+// ssh가 그 포트를 열지 못하고 곧바로 끝난다 (#259에서 쟀다): 다시 열지 않고 그 탭에 그렇다고 쓴다 (owner, 2026-10-17, #264).
+export function reconnectRefusal(session, sessions) {
+  const ports = portsInUse(session, sessions)
+  if (!ports.length) return null
+  return `${portsText(ports)}, so this one could not forward ${ports.length === 1 ? 'it' : 'them'}. Press Enter again once that tab has ended.`
 }
 
 // 터미널에서 오른쪽 클릭이 하는 일: 'copy'(고른 글자가 있다), 'paste', 아니면 'program'.

@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runInThisContext } from 'node:vm'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { canReconnect, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, rightClickAction, terminalShortcut } from '../../utils/terminal-sessions'
+import { canReconnect, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, reconnectRefusal, rightClickAction, terminalShortcut } from '../../utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, RECONNECTING_LINE, searchSeed } from '../../utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import { MAX_WRITE } from '../../../../shared/terminal-input.js'
@@ -40,7 +40,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const source = readFileSync(join(here, 'terminal-panel.vue'), 'utf8').replace(/\r\n/g, '\n')
 const script = source.match(/<script>\n([\s\S]*?)<\/script>/)[1]
 const imported = [...script.matchAll(/^import (?:\{ ([^}]+) \}|(\w+)) from .*$/gm)].flatMap(match => (match[1] ?? match[2]).split(', '))
-const given = { nextFontSize, searchSeed, canReconnect, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, MAX_WRITE, MAX_CLIPBOARD, toastError, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
+const given = { nextFontSize, searchSeed, canReconnect, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, reconnectRefusal, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, MAX_WRITE, MAX_CLIPBOARD, toastError, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 const component = runInThisContext(`(function (${imported.join(', ')}) {\n${body}\n})`)(...imported.map(name => given[name]))
 
@@ -614,6 +614,31 @@ describe('connecting an ended tab again', () => {
     expect(seen.registered).toEqual([])
     expect(seen.commits).toHaveLength(1)
   })
+
+  // 다른 탭이 이 포워딩 탭의 로컬 포트를 포워딩하는 동안은 ssh가 곧바로 끝난다 (owner, 2026-10-17, #264)
+  it('does not connect a forwarding tab again while another tab, also of another space, forwards its port, says so in the tab, and does once that tab has ended', async () => {
+    const { calls, answer } = reopening()
+    const entry = { ...terminal(), ended: true, reconnecting: false, interruptedAt: 5 }
+    const session = { key: 1, id: 7, kind: 'forward', ports: ['8080'], status: 'exited', exitCode: 255, connected: false, owner: 0 }
+    const { vm, seen } = ending(entry, session)
+    // 포트는 이 컴퓨터의 것이다: 다른 스페이스의 탭이 쥐어도 그렇다 (sessions는 열린 스페이스의 탭뿐이다)
+    const copy = { key: 2, id: 8, kind: 'forward', ports: ['8080'], status: 'running', owner: 1 }
+    vm.sessions = [session]
+    vm.allSessions = [session, copy]
+
+    await vm.reconnect(session)
+    expect(calls).toEqual([])
+    expect(entry.calls).toEqual([['write', errorLine('Local port 8080 is forwarded by another tab now, so this one could not forward it. Press Enter again once that tab has ended.')]])
+    expect(entry).toMatchObject({ id: 7, ended: true, reconnecting: false })
+    expect(seen.commits).toEqual([])
+
+    vm.allSessions = [session, { ...copy, status: 'exited', exitCode: 255 }]
+    const done = vm.reconnect(session)
+    expect(calls).toEqual([['reopen', 7, { cols: 80, rows: 24 }]])
+    answer({ ok: true, id: 9 })
+    await done
+    expect(entry).toMatchObject({ id: 9, ended: false })
+  })
 })
 
 // 탭을 열 때. main의 답(terminal:open)은 테스트가 정한다. 가짜 this에는 탭의 화면이 놓일 자리와 store, 출력의 길을 둔다.
@@ -815,6 +840,24 @@ describe('a tab clicked with Ctrl', () => {
     expect(toasts.map(({ title, body }) => [title, body])).toEqual([
       ['Not opened again', 'The ports this tab forwards are in use while it runs, so a second tab could not forward them. Open it again once it has ended.']
     ])
+  })
+
+  // 끝난 포워딩 탭이라도 그 포트를 다른 탭이 지금 포워딩하면 (#264): 다른 스페이스의 탭도 센다 (allSessions)
+  it('opens nothing for an ended forwarding tab while another tab, also of another space, forwards its port', () => {
+    const { vm, toasts, commits } = clicking()
+    const ended = { key: 3, id: 7, kind: 'forward', ports: ['8080'], status: 'exited', exitCode: 255, owner: 0 }
+    vm.sessions = [ended]
+    vm.allSessions = [ended, { key: 4, id: 8, kind: 'forward', ports: ['8080'], status: 'running', owner: 1 }]
+
+    vm.duplicate(ended)
+    expect(commits).toEqual([])
+    expect(toasts.map(({ title, body }) => [title, body])).toEqual([
+      ['Not opened again', 'Local port 8080 is forwarded by another tab now, so a new tab could not forward it. Open it again once that tab has ended.']
+    ])
+
+    vm.allSessions = [ended, { key: 4, id: 8, kind: 'forward', ports: ['8080'], status: 'exited', exitCode: 255, owner: 1 }]
+    vm.duplicate(ended)
+    expect(commits).toEqual([['terminalDuplicate', 3]])
   })
 
   it('opens nothing and says why for a tab that is still opening, or connecting again, or that did not start', () => {

@@ -21,15 +21,27 @@ describe('terminal store', () => {
     expect(session).toMatchObject({ connected: false, busy: false })
   })
 
-  // 종류는 요청(비밀번호 포함)이 지워진 뒤에도 남는다: 돌고 있는 포워딩 탭은 복사하지 않는다 (#258, utils의 duplicateRefusal)
-  it('keeps the kind of a session after its request is gone, and nothing else of the request', () => {
+  // 종류와 포워딩하는 로컬 포트는 요청(비밀번호 포함)이 지워진 뒤에도 남는다: 돌고 있는 포워딩 탭은 복사하지 않고 (#258),
+  // 다른 탭이 쥔 포트로는 다시 접속하지 않는다 (#264, utils의 duplicateRefusal과 reconnectRefusal)
+  it('keeps the kind and the local ports of a session after its request is gone, and nothing secret', () => {
     const state = freshState()
-    terminal.mutations.terminalAdd(state, { title: '⇄ db', kind: 'forward', payload: { via: [{ user: 'u', host: 'a', port: '22', password: 'secret' }], forwards: [] } })
+    const forwards = [{ checked: true, from: '08080', host: 'db', to: '5432' }, { checked: false, from: '9090', host: 'db', to: '80' }, { checked: true, from: 3000, host: '', to: '3000' }]
+    terminal.mutations.terminalAdd(state, { title: '⇄ db', kind: 'forward', payload: { via: [{ user: 'u', host: 'a', port: '22', password: 'secret' }], forwards } })
     const [session] = state.sessions
     terminal.mutations.terminalUpdate(state, { key: session.key, request: null })
 
     expect(session.kind).toBe('forward')
+    // main이 검증하는 그대로: 켜진 것만, '08080'은 '8080'
+    expect(session.ports).toEqual(['8080', '3000'])
     expect(JSON.stringify(state.sessions)).not.toContain('secret')
+  })
+
+  it('keeps no ports for a session that forwards nothing, or whose forwards main would refuse', () => {
+    const state = freshState()
+    terminal.mutations.terminalAdd(state, { title: 'a', kind: 'connect', payload: { user: 'u', host: 'a', port: '22', forwards: [{ checked: true, from: '8080', to: '80' }] } })
+    terminal.mutations.terminalAdd(state, { title: '⇄ a', kind: 'forward', payload: { via: [], forwards: [{ checked: true, from: 'x', to: '80' }] } })
+    terminal.mutations.terminalAdd(state, { title: '⇄ b', kind: 'forward', payload: { via: [], forwards: [] } })
+    expect(state.sessions.map(x => x.ports)).toEqual([[], [], []])
   })
 
   // 터미널은 그것을 연 다이어그램(item)의 것이다.
@@ -250,6 +262,19 @@ describe('terminal store', () => {
     }
     const order = state => getters.terminalSessions(state).map(x => x.key)
 
+    // 복사본의 요청은 세션 id뿐이다: 포트는 그 탭의 것을 받는다 (#264)
+    it('gives the copy of a forwarding tab the local ports of that tab', () => {
+      const state = fresh()
+      mutations.terminalAdd(state, { title: '⇄ app', kind: 'forward', payload: { via: route, forwards: [{ checked: true, from: '8080', host: 'db', to: '5432' }] }, route })
+      const key = state.activeKey
+      mutations.terminalUpdate(state, { key, request: null, id: 5, status: 'exited', exitCode: 255 })
+
+      mutations.terminalDuplicate(state, key)
+      const copy = state.sessions.find(x => x.key === state.activeKey)
+      expect(copy).toMatchObject({ kind: 'forward', ports: ['8080'], request: { duplicateOf: 5 } })
+      expect(copy.ports).not.toBe(state.sessions.find(x => x.key === key).ports)
+    })
+
     it('comes right after its tab, with its name and path, takes the keyboard and holds only the id of its session', () => {
       const state = fresh()
       const a = open(state, 'web', 7)
@@ -259,7 +284,7 @@ describe('terminal store', () => {
       mutations.terminalDuplicate(state, a)
       const copy = state.sessions[1]
       expect(order(state)).toEqual([a, copy.key, b])
-      expect(copy).toEqual({ key: copy.key, id: null, owner: 0, title: 'web', kind: 'proxyJump', hops: ['u@a:22', 'v@b:2222'], status: 'starting', connected: false, busy: false, exitCode: null, request: { duplicateOf: 7 } })
+      expect(copy).toEqual({ key: copy.key, id: null, owner: 0, title: 'web', kind: 'proxyJump', ports: [], hops: ['u@a:22', 'v@b:2222'], status: 'starting', connected: false, busy: false, exitCode: null, request: { duplicateOf: 7 } })
       expect(copy.key).toBeGreaterThan(b)
       expect(copy.hops).not.toBe(state.sessions[0].hops)
       expect(JSON.stringify(state.sessions)).not.toContain('secret')

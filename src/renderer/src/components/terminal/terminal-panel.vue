@@ -85,7 +85,7 @@ import { SearchAddon } from '@xterm/addon-search'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
-import { canReconnect, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
+import { canReconnect, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, reconnectRefusal, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, panelDrag, panelHeight, RECONNECTING_LINE, searchSeed, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import { MAX_WRITE } from '../../../../shared/terminal-input.js'
@@ -396,6 +396,13 @@ export default {
     async reconnect(session) {
       const entry = session && this.terms.get(session.key)
       if (!entry || entry.reconnecting || !canReconnect(session)) return
+      // 다른 탭이 이 포워딩 탭의 로컬 포트를 포워딩하는 동안은 다시 열지 않고 그렇다고 쓴다: ssh가 곧바로 끝난다 (#264).
+      // 포트는 다른 스페이스의 탭도 쥔다 (allSessions).
+      const refusal = reconnectRefusal(session, this.allSessions)
+      if (refusal) {
+        entry.term.write(errorLine(refusal))
+        return
+      }
 
       entry.reconnecting = true
       const { exitCode } = session
@@ -448,9 +455,10 @@ export default {
       this.$store.commit('terminalActivate', key)
     },
     // 탭을 Ctrl+클릭했다 (owner, 2026-10-17, #257): 그 탭과 같은 접속을 새 탭에 하나 더 연다 (store의 terminalDuplicate,
-    // 세션은 start()가 연다). 여는 중인 탭과 열지 못한 탭에는 main에 요청이 없다: 그렇다고 알린다 (duplicateRefusal).
+    // 세션은 start()가 연다). 여는 중인 탭과 열지 못한 탭에는 main에 요청이 없다: 그렇다고 알린다 (duplicateRefusal). 포워딩
+    // 탭은 그 포트를 쥔 다른 탭도 본다 (allSessions, #264).
     duplicate(session) {
-      const refusal = duplicateRefusal(session)
+      const refusal = duplicateRefusal(session, this.allSessions)
       if (refusal) {
         toastError(this, 'Not opened again', refusal)
         return

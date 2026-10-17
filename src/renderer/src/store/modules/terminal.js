@@ -12,7 +12,7 @@
 // activeKey(고른 탭, 키 입력을 받는다)와 sideKey(다른 칸의 탭). rightKeys는 오른쪽 칸의 탭들이고, 나머지는 왼쪽 칸의 것이다.
 // 나눌 때는 고른 탭의 옆 탭 하나만 오른쪽 칸으로 간다. 탭은 끌어서 다른 칸으로 옮긴다. 한 칸에 탭이 더 없으면 나누기가 끝난다.
 // 탭 줄의 순서는 sessions의 순서 하나다: 칸마다 그 칸의 탭을 그 순서대로 보인다. 그래서 합치면 나누기 전의 줄로 돌아간다.
-import { activatePane, closePane, hopKey, moveToSide, reorderSessions, restorePanes, sessionsOf, shownPanes, splitPartner } from '../../utils/terminal-sessions'
+import { activatePane, closePane, forwardPorts, hopKey, moveToSide, reorderSessions, restorePanes, sessionsOf, shownPanes, splitPartner } from '../../utils/terminal-sessions'
 
 let nextKey = 1
 
@@ -53,7 +53,9 @@ export default {
       const hops = route.map(hopKey)
       // connected: 로그인 표시를 받았는지 (캔버스의 연결 중/연결됨 구분). busy: 출력이 오가는 중인지 (그 노드의 점이 깜박인다)
       // kind는 요청이 지워진 뒤에도 남는다 (비밀이 없다): 돌고 있는 포워딩 탭은 Ctrl+클릭으로 복사하지 않는다 (#258).
-      state.sessions.push({ key, id: null, owner: state.owner, title, kind, hops, status: 'starting', connected: false, busy: false, exitCode: null, request: { kind, payload } })
+      // ports: 포워딩하는 로컬 포트들 (그 밖의 탭은 빈 목록). 다른 탭이 쥔 포트로는 다시 접속하거나 복사하지 않는다 (#264).
+      const ports = kind === 'forward' ? forwardPorts(payload) : []
+      state.sessions.push({ key, id: null, owner: state.owner, title, kind, ports, hops, status: 'starting', connected: false, busy: false, exitCode: null, request: { kind, payload } })
       // 나눈 동안에는 고른 칸에 열린다: 그 칸의 탭 줄에 들어간다.
       if (state.sideKey !== null && state.rightKeys.includes(state.activeKey)) state.rightKeys = [...state.rightKeys, key]
       state.activeKey = key
@@ -65,7 +67,7 @@ export default {
       const source = sessionsOf(state.sessions, state.owner).find(x => x.key === key)
       if (!source || source.id === null) return
 
-      const copy = { key: nextKey++, id: null, owner: source.owner, title: source.title, kind: source.kind, hops: [...source.hops], status: 'starting', connected: false, busy: false, exitCode: null, request: { duplicateOf: source.id } }
+      const copy = { key: nextKey++, id: null, owner: source.owner, title: source.title, kind: source.kind, ports: [...(source.ports || [])], hops: [...source.hops], status: 'starting', connected: false, busy: false, exitCode: null, request: { duplicateOf: source.id } }
       state.sessions.splice(state.sessions.indexOf(source) + 1, 0, copy)
       // activatePane은 rightKeys로 칸을 정한다: 오른쪽 칸의 탭이면 새 탭도 먼저 그 줄에 넣는다.
       if (state.sideKey !== null && state.rightKeys.includes(key)) state.rightKeys = [...state.rightKeys, copy.key]

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { activeTerminalNode, BUSY_IDLE_MS, busyNodes, canReconnect, countByOwner, createActivityWatch, createOutputRouter, duplicateNumbers, duplicateRefusal, endedByUser, hopKey, INTERRUPT_WINDOW_MS, isMotionReport, numberedTitle, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
+import { activeTerminalNode, BUSY_IDLE_MS, busyNodes, canReconnect, countByOwner, createActivityWatch, createOutputRouter, duplicateNumbers, duplicateRefusal, endedByUser, forwardPorts, hopKey, INTERRUPT_WINDOW_MS, isMotionReport, numberedTitle, portsInUse, reconnectRefusal, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -488,6 +488,60 @@ describe('duplicateRefusal', () => {
     expect(duplicateRefusal({ kind: 'forward', status: 'exited', id: 3, exitCode: 255 })).toBe(null)
     expect(duplicateRefusal({ kind: 'forward', status: 'starting', id: null })).toBe('This terminal is still opening. Try again once it is open.')
     for (const kind of ['connect', 'proxyJump']) expect(duplicateRefusal({ kind, status: 'running', id: 3 }), kind).toBe(null)
+  })
+
+  // 끝난 포워딩 탭이라도 그 포트를 다른 탭이 지금 포워딩하면 복사본은 곧바로 끝난다 (#264)
+  it('keeps an ended forwarding tab from a copy while another tab forwards one of its ports', () => {
+    const ended = { key: 1, kind: 'forward', ports: ['8080'], status: 'exited', id: 3, exitCode: 255 }
+    const copy = { key: 2, kind: 'forward', ports: ['8080'], status: 'running', id: 4 }
+    expect(duplicateRefusal(ended, [ended, copy])).toBe('Local port 8080 is forwarded by another tab now, so a new tab could not forward it. Open it again once that tab has ended.')
+    expect(duplicateRefusal(ended, [ended, { ...copy, status: 'exited' }])).toBe(null)
+    expect(duplicateRefusal(ended)).toBe(null)
+  })
+})
+
+// 포워딩 요청의 로컬 포트 (#264): main의 validateForwards 그대로
+describe('forwardPorts', () => {
+  it('lists the local ports of the checked forwards, as main reads them', () => {
+    expect(forwardPorts({ forwards: [{ checked: true, from: '08080', host: 'db', to: '5432' }, { checked: false, from: '9090', to: '80' }, { checked: true, from: 22, to: '22' }] })).toEqual(['8080', '22'])
+  })
+
+  it('lists none for a list main would refuse, and for no list', () => {
+    for (const payload of [{ forwards: [{ checked: true, from: '0', to: '80' }] }, { forwards: [] }, { forwards: 'none' }, {}, null, undefined]) {
+      expect(forwardPorts(payload), JSON.stringify(payload)).toEqual([])
+    }
+  })
+})
+
+// 끝난 포워딩 탭에서 Enter: 다른 탭이 그 로컬 포트를 포워딩하는 동안은 다시 접속하지 않는다 (owner, 2026-10-17, #264)
+describe('reconnectRefusal', () => {
+  const ended = { key: 1, kind: 'forward', ports: ['8080', '9090'], status: 'exited', id: 3, exitCode: 255 }
+  const other = (status, ports = ['8080'], more = {}) => ({ key: 2, kind: 'forward', ports, status, id: 4, ...more })
+
+  it('says which port another tab forwards now, running or still opening, also in another space', () => {
+    const text = 'Local port 8080 is forwarded by another tab now, so this one could not forward it. Press Enter again once that tab has ended.'
+    expect(reconnectRefusal(ended, [ended, other('running')])).toBe(text)
+    expect(reconnectRefusal(ended, [ended, other('running', ['8080'], { connected: true })])).toBe(text)
+    expect(reconnectRefusal(ended, [ended, other('starting', ['8080'], { id: null })])).toBe(text)
+    expect(reconnectRefusal(ended, [ended, other('running', ['8080'], { owner: 5 })])).toBe(text)
+    expect(portsInUse(ended, [ended, other('running')])).toEqual(['8080'])
+  })
+
+  it('names every port that is taken', () => {
+    expect(reconnectRefusal(ended, [ended, other('running', ['9090', '8080', '7070'])])).toBe('Local ports 8080, 9090 are forwarded by another tab now, so this one could not forward them. Press Enter again once that tab has ended.')
+  })
+
+  it('lets it connect again when no other tab holds its ports', () => {
+    for (const sessions of [[ended], [ended, other('exited')], [ended, other('failed', ['8080'], { id: null })], [ended, other('running', ['7070'])], [ended, { ...other('running'), kind: 'connect' }], [ended, { ...other('running'), kind: 'proxyJump' }], [ended, { ...ended, status: 'running' }], undefined]) {
+      expect(reconnectRefusal(ended, sessions), JSON.stringify(sessions)).toBe(null)
+    }
+  })
+
+  it('is nothing for a tab that forwards nothing', () => {
+    expect(reconnectRefusal({ key: 1, kind: 'connect', ports: [], status: 'exited', id: 3 }, [other('running')])).toBe(null)
+    expect(reconnectRefusal({ key: 1, kind: 'connect', ports: ['8080'], status: 'exited', id: 3 }, [other('running')])).toBe(null)
+    expect(reconnectRefusal({ key: 1, kind: 'forward', status: 'exited', id: 3 }, [other('running')])).toBe(null)
+    expect(reconnectRefusal(null, [other('running')])).toBe(null)
   })
 })
 
