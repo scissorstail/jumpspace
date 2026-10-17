@@ -3,6 +3,9 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runInThisContext } from 'node:vm'
 import cloneDeep from 'lodash/cloneDeep'
+import { NAME_TOAST } from 'bootstrap-vue/esm/constants/components'
+import { EVENT_NAME_HIDDEN } from 'bootstrap-vue/esm/constants/events'
+import { getRootEventName } from 'bootstrap-vue/esm/utils/events'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, shownView, viewOf } from '../../utils/view'
 import { ARRANGE_GAP, arrangeLayout, boxOf } from '../../utils/arrange'
@@ -23,6 +26,8 @@ const imported = [...script.matchAll(/^import (?:\{ ([^}]+) \}|(\w+)) from .*$/g
 let log = []
 const logged = kind => log.filter(entry => Array.isArray(entry) && entry[0] === kind).map(entry => entry.slice(1))
 const emitted = name => logged('emit').filter(entry => entry[0] === name).map(entry => entry.slice(1))
+// 토스트가 사라진 뒤에 BootstrapVue가 $root에 보내는 이벤트 (설치된 bootstrap-vue가 짓는 이름)
+const TOAST_HIDDEN = getRootEventName(NAME_TOAST, EVENT_NAME_HIDDEN)
 
 class FakeEditor {
   constructor(id, container) {
@@ -227,6 +232,7 @@ function setup({ editorData = EMPTY, isLocked = false, getters = {}, answers = [
     $el,
     $store: { getters: { terminalSessions: [], activeTerminalKey: null, isTerminalPanelOpen: true, ...getters } },
     $emit: (name, ...args) => { log.push(['emit', name, ...args]) },
+    $root: { $on: listen('root'), $off: unlisten('root') },
     $bvToast: { toast: (text, options) => { log.push(['toast', text, options]) } },
     $bvModal: { msgBoxConfirm: async (text, options) => { log.push(['confirm', text, options]); return answers.shift() } },
     $nextTick: async () => { log.push(['nextTick']) }
@@ -237,8 +243,10 @@ function setup({ editorData = EMPTY, isLocked = false, getters = {}, answers = [
   component.mounted.call(vm)
   // 그 이벤트를 듣는 것 하나를 찾아 부른다
   const dispatch = (on, name, event) => listeners.filter(x => x.on === on && x.name === name).map(x => x.handler(event))
+  // 지금까지 띄운 토스트가 모두 사라졌다 (저절로든 x로든): BootstrapVue처럼 토스트마다 그 id와 함께 알린다
+  const toastsGone = () => logged('toast').forEach(([, options]) => dispatch('root', TOAST_HIDDEN, { componentId: options.id }))
 
-  return { vm, editor: vm.editor, engine: vm.engine, listeners, dispatch, areaEl, roomEl, $el }
+  return { vm, editor: vm.editor, engine: vm.engine, listeners, dispatch, toastsGone, areaEl, roomEl, $el }
 }
 const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve() }
 // 보기를 바꾼 것만 (zoom, translate)
@@ -323,7 +331,7 @@ describe('setting the canvas up', () => {
   it('takes its listeners and its observer away when it is destroyed', () => {
     const { vm, listeners } = setup()
 
-    expect(listeners.map(x => [x.on, x.name, x.capture])).toEqual([['canvas', 'dblclick', false], ['window', 'pointerup', true], ['canvas', 'pointerdown', true]])
+    expect(listeners.map(x => [x.on, x.name, x.capture])).toEqual([['root', TOAST_HIDDEN, false], ['canvas', 'dblclick', false], ['window', 'pointerup', true], ['canvas', 'pointerdown', true]])
 
     component.beforeDestroy.call(vm)
 
@@ -332,7 +340,7 @@ describe('setting the canvas up', () => {
   })
 
   it('can be destroyed before it was set up', () => {
-    const vm = { $el: { removeEventListener() {} } }
+    const vm = { $el: { removeEventListener() {} }, $root: { $off() {} } }
     vi.stubGlobal('window', { removeEventListener() {} })
 
     expect(() => component.beforeDestroy.call(vm)).not.toThrow()
@@ -578,7 +586,7 @@ describe('connecting two nodes', () => {
 
   // 고리가 있으면 Rete의 엔진이 다이어그램 전체의 계산을 거부한다 (utils/link-loop.js). 그래서 고리를 닫는 연결은 받지 않는다.
   describe('a link that would close a loop', () => {
-    const HINT = ['Not linked: that link would make a loop.', { variant: 'secondary', solid: true, noCloseButton: true, autoHideDelay: 2500, toaster: 'b-toaster-bottom-center' }]
+    const HINT = ['That link would make a loop.', { id: 'editor-hint-loop', title: 'Not linked', variant: 'secondary', solid: true, autoHideDelay: 2500 }]
     const out = node => node.outputs.get('output1')
     const into = node => node.inputs.get('input1')
     const linkOf = (editor, from, to) => [...editor.view.connections.keys()].find(c => c.output.node === from && c.input.node === to)
@@ -594,7 +602,7 @@ describe('connecting two nodes', () => {
     }
 
     it('is not made, and a hint says so', () => {
-      const { editor, a, b, c } = chain()
+      const { editor, a, b, c, toastsGone } = chain()
 
       expect(editor.fire('connectioncreate', { output: out(c), input: into(b) })).toContain(false)
       editor.connect(out(c), into(b))
@@ -602,9 +610,9 @@ describe('connecting two nodes', () => {
       expect(logged('toast')).toEqual([HINT])
 
       // 길의 끝에서 처음으로 돌아가는 연결, 제 자신으로 가는 연결
-      vi.advanceTimersByTime(2500)
+      toastsGone()
       editor.connect(out(c), into(a))
-      vi.advanceTimersByTime(2500)
+      toastsGone()
       editor.connect(out(a), into(a))
       expect(links(editor)).toEqual(['1>2', '2>3', '4>1'])
       expect(logged('toast')).toEqual([HINT, HINT, HINT])
@@ -622,16 +630,18 @@ describe('connecting two nodes', () => {
       expect(logged('toast')).toEqual([])
     })
 
-    it('shows one hint at a time: no second one while the first is on the screen', () => {
-      const { editor, a, c } = chain()
+    it('shows one hint at a time: no second one while the first is on the screen, and one again once it has gone', () => {
+      const { editor, a, c, toastsGone } = chain()
 
       editor.connect(out(c), into(a))
       editor.connect(out(c), into(a))
-      vi.advanceTimersByTime(2499)
+      // 포인터가 올라가 있는 동안에는 BootstrapVue가 사라지게 하지 않는다: 시간이 지나도 떠 있는 동안은 하나다
+      vi.advanceTimersByTime(60000)
       editor.connect(out(c), into(a))
       expect(logged('toast')).toEqual([HINT])
 
-      vi.advanceTimersByTime(1)
+      // 저절로든 x로든 사라진 바로 다음에도 뜬다
+      toastsGone()
       editor.connect(out(c), into(a))
       expect(logged('toast')).toEqual([HINT, HINT])
     })
@@ -648,7 +658,7 @@ describe('connecting two nodes', () => {
 
     // 연결 플러그인은 도착 소켓에 있던 연결을 먼저 지우고 나서 새 연결을 만든다 (rete-connection-plugin의 pickInput)
     it('puts back the link the plugin took away for it, with its data', async () => {
-      const { editor, a, c, x } = chain()
+      const { editor, a, c, x, toastsGone } = chain()
       const old = linkOf(editor, x, a)
       old.data = { kept: true }
 
@@ -662,7 +672,7 @@ describe('connecting two nodes', () => {
       expect(logged('toast')).toEqual([HINT])
 
       // 되돌린 다음에도 고리는 받지 않는다
-      vi.advanceTimersByTime(2500)
+      toastsGone()
       editor.connect(out(c), into(a))
       await flush()
       expect(links(editor)).toEqual(['1>2', '2>3', '4>1'])
@@ -725,8 +735,9 @@ describe('a locked diagram', () => {
     const { editor } = setup({ isLocked: true })
 
     expect(editor.fire('showcontextmenu')).toEqual([false])
+    // 자리(toaster)도 x(noCloseButton)도 BootstrapVue의 기본: 다른 알림처럼 오른쪽 위에 x와 함께 (toasts.test.js)
     expect(logged('toast')).toEqual([['Unlock the editor (lock icon) to add or delete nodes.', {
-      variant: 'secondary', solid: true, noCloseButton: true, autoHideDelay: 2500, toaster: 'b-toaster-bottom-center'
+      id: 'editor-hint-locked', title: 'Editor locked', variant: 'secondary', solid: true, autoHideDelay: 2500
     }]])
   })
 
@@ -737,18 +748,34 @@ describe('a locked diagram', () => {
     expect(logged('toast')).toEqual([])
   })
 
-  it('says it once for presses in a row, and again four seconds later', () => {
-    const { vm } = setup({ isLocked: true })
-    vi.setSystemTime(100000)
+  it('says it once for presses in a row while it is on the screen, and again once it has gone', () => {
+    const { vm, toastsGone } = setup({ isLocked: true })
 
     vm.showLockedHint()
-    vi.setSystemTime(103999)
+    vi.advanceTimersByTime(60000)
     vm.showLockedHint()
     expect(logged('toast')).toHaveLength(1)
 
-    vi.setSystemTime(104000)
+    // x로 닫은 바로 다음에도
+    toastsGone()
     vm.showLockedHint()
     expect(logged('toast')).toHaveLength(2)
+  })
+
+  it('holds back only the hint that is on the screen', () => {
+    const { vm, dispatch } = setup({ isLocked: true })
+    const ids = () => logged('toast').map(([, options]) => options.id)
+
+    vm.showLockedHint()
+    vm.showLoopHint()
+    expect(ids()).toEqual(['editor-hint-locked', 'editor-hint-loop'])
+
+    // 다른 토스트(오류의 알림)나 다른 안내가 사라져도, 떠 있는 안내는 그대로 하나다
+    dispatch('root', TOAST_HIDDEN, { componentId: '__BVID__42' })
+    dispatch('root', TOAST_HIDDEN, { componentId: 'editor-hint-loop' })
+    vm.showLockedHint()
+    vm.showLoopHint()
+    expect(ids()).toEqual(['editor-hint-locked', 'editor-hint-loop', 'editor-hint-loop'])
   })
 
   it('says nothing while no diagram is open', () => {

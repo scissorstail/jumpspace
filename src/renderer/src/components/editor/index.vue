@@ -25,8 +25,10 @@ import { isCanvasDoubleClick, lockedPress } from '@/utils/locked-press'
 import { closesLoop, loopIn, loopText } from '@/utils/link-loop'
 import { toastError } from '@/utils/notify'
 
-// 캔버스 아래의 안내가 떠 있는 시간 (ms). 그동안에는 같은 안내를 겹쳐 띄우지 않는다.
-const LOOP_HINT_MS = 2500
+// 캔버스의 짧은 안내(showHint)가 떠 있는 시간 (ms)
+const HINT_MS = 2500
+// BootstrapVue가 토스트가 사라진 뒤에(저절로든 x로든) $root에 보내는 이벤트. 그 토스트의 id가 componentId로 온다.
+const TOAST_HIDDEN = 'bv::toast::hidden'
 // 연 다이어그램에 고리가 있다는 알림이 떠 있는 시간 (ms). 읽을 글이 길어서 다른 알림(5초)보다 오래 둔다.
 const LOOP_NOTICE_MS = 10000
 
@@ -84,10 +86,10 @@ export default {
   created() {
     this.editor = null
     this.engine = null
-    this.lastLockedHintAt = 0
+    // 지금 떠 있는 캔버스의 안내: 그 토스트들의 id (showHint)
+    this.shownHints = new Set()
     this.confirmedRemoval = null
     this.isAdding = false
-    this.lastLoopHintAt = 0
     this.justRemovedLink = null
     this.isRestoringLink = false
     // 아직 시작하지 않은 계산과 마지막으로 맡긴 계산 (compile)
@@ -156,6 +158,8 @@ export default {
         return false
       }
     })
+    // 사라진 안내는 다음에 다시 띄울 수 있다 (showHint)
+    this.$root.$on(TOAST_HIDDEN, this.hintGone)
 
     // 내용이 있는 노드는 지우기 전에 확인한다. (잠글 때까지 저장되지 않지만, 실수로 지우기 쉽다)
     // 삭제를 일단 취소하고, 확인을 받으면 다시 지운다. 불러오기 중(silent)의 삭제는 막지 않는다.
@@ -305,25 +309,32 @@ export default {
     this.areaObserver.observe(this.$el.parentElement)
   },
   beforeDestroy() {
+    this.$root.$off(TOAST_HIDDEN, this.hintGone)
     this.$el.removeEventListener('dblclick', this.onDoubleClick)
     this.$el.removeEventListener('pointerdown', this.onLockedPress, true)
     window.removeEventListener('pointerup', this.onPointerRelease, true)
     this.areaObserver?.disconnect()
   },
   methods: {
-    // 연달아 누르면 한 번만 알린다.
+    // 잠긴 캔버스를 오른쪽 클릭했을 때 (메뉴는 열지 않는다)
     showLockedHint() {
-      const now = Date.now()
-      if (!this.editorData || now - this.lastLockedHintAt < 4000) {
-        return
-      }
+      if (!this.editorData) return
 
-      this.lastLockedHintAt = now
-      this.showHint('Unlock the editor (lock icon) to add or delete nodes.', 2500)
+      this.showHint('editor-hint-locked', 'Editor locked', 'Unlock the editor (lock icon) to add or delete nodes.')
     },
-    // 캔버스 아래 가운데의 짧은 안내 (잠긴 캔버스, 받지 않은 연결): 같은 자리, 같은 모양
-    showHint(text, autoHideDelay) {
-      this.$bvToast.toast(text, { variant: 'secondary', solid: true, noCloseButton: true, autoHideDelay, toaster: 'b-toaster-bottom-center' })
+    // 캔버스의 짧은 안내 (잠긴 캔버스, 받지 않은 연결): 다른 알림처럼 오른쪽 위, 머리글 아래에 뜨고 x로 바로 닫힌다 (owner,
+    // 2026-10-18, #268: 아래 가운데에 x 없이 떠서 오류처럼 보였고, 닫을 수 없었다). 오류(toastError)의 붉은색이 아니라 보조색이다.
+    // x는 토스트의 머리글에 있어서 제목을 단다: 제목이 없으면 x만 있는 빈 줄이 된다.
+    // 같은 안내는 떠 있는 동안 다시 띄우지 않는다 (연달아 누르면 한 번만). 사라지면(저절로든 x로든, hintGone) 다음에 다시 뜬다.
+    showHint(id, title, text) {
+      if (this.shownHints.has(id)) return
+
+      this.shownHints.add(id)
+      this.$bvToast.toast(text, { id, title, variant: 'secondary', solid: true, autoHideDelay: HINT_MS })
+    },
+    // 토스트 하나가 사라졌다 (TOAST_HIDDEN): 안내였으면 다시 띄울 수 있다
+    hintGone({ componentId }) {
+      this.shownHints.delete(componentId)
     },
     // 왼쪽 소켓(입력)을 손에 든 채 또 왼쪽 소켓을 눌렀는가. 연결 플러그인은 그때 눌린 소켓에 있던 연결을 지우고
     // 아무것도 잇지 않는다 (pickInput): 왼쪽 소켓 하나를 들고 연결된 왼쪽 소켓들을 누르면 연결이 하나씩 사라졌다.
@@ -360,15 +371,9 @@ export default {
       this.showLoopHint()
       return false
     },
-    // 고리를 닫는 연결을 받지 않았다고 알린다 (잠긴 캔버스의 안내처럼, showHint). 안내가 떠 있는 동안에는 겹쳐 띄우지 않는다.
+    // 고리를 닫는 연결을 받지 않았다고 알린다 (잠긴 캔버스의 안내처럼, showHint)
     showLoopHint() {
-      const now = Date.now()
-      if (now - this.lastLoopHintAt < LOOP_HINT_MS) {
-        return
-      }
-
-      this.lastLoopHintAt = now
-      this.showHint('Not linked: that link would make a loop.', LOOP_HINT_MS)
+      this.showHint('editor-hint-loop', 'Not linked', 'That link would make a loop.')
     },
     // 선택한 노드를 모두 푼다. Rete의 화면(vue-render-plugin)은 노드를 고를 때에만 선택 표시를 다시 그리므로,
     // 풀린 노드를 직접 다시 그리게 한다. (지운 노드가 선택 목록에 남아 있을 수 있어서 지금 있는 노드만 그린다)
