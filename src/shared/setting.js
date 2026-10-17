@@ -32,7 +32,9 @@ export const DEFAULT_SETTING = {
   nodeBlur: 0,
   terminalFontSize: 13,
   // 캔버스에서 노드의 접속 정보(user, host, port, 포워딩)를 숨기고 이름만 보인다 (머리글의 눈 단추)
-  hideNodeInfo: false
+  hideNodeInfo: false,
+  // 다이어그램 목록 위에 마지막에 연 것 몇 개를 따로 보인다 (owner, 2026-10-17: 설정에서 켜고 끈다)
+  showRecentSpaces: true
 }
 
 // min..max의 정수. 숫자가 아니면 fallback (숫자를 적은 글자는 숫자로 읽는다: 슬라이더가 글자를 준다)
@@ -56,6 +58,8 @@ export function normalizeSetting(data) {
     terminalColors: TERMINAL_COLORS.includes(data?.terminalColors) ? data.terminalColors : DEFAULT_SETTING.terminalColors,
     nodeBlur: wholeNumber(data?.nodeBlur, 0, NODE_BLUR_MAX, DEFAULT_SETTING.nodeBlur),
     terminalFontSize: wholeNumber(data?.terminalFontSize, TERMINAL_FONT_SIZE_MIN, TERMINAL_FONT_SIZE_MAX, DEFAULT_SETTING.terminalFontSize),
-    hideNodeInfo: data?.hideNodeInfo === true
+    hideNodeInfo: data?.hideNodeInfo === true,
+    // 켜진 것이 기본이라서, 이 키가 없는 설정 파일(전의 판)에서도 켜져 있다. 꺼 둔 것(false)만 끈다.
+    showRecentSpaces: data?.showRecentSpaces !== false
   }
 }

@@ -66,6 +66,12 @@ describe('what main does with the values of the page', () => {
     expect(main).toMatch(/handle\('projects:export', async \(event, json, defaultName = 'export\.json'\) => \{\n +const items = itemsFromJson\(json\)\n/)
   })
 
+  // 저장하는 목록에는 연 차례(opened)가 있다. 그것은 이 앱의 목록의 것이라 내보내는 파일에 쓰지 않는다 (storage.js의 withoutOpened)
+  it('writes an export without the order in which the diagrams were opened', () => {
+    expect(main.match(/writeFile\(/g)).toHaveLength(1)
+    expect(main).toMatch(/await writeFile\(filename, JSON\.stringify\(withoutOpened\(items\)\), 'utf-8'\)/)
+  })
+
   // 템플릿 글자열은 값을 글자로 바꾼다: 바꿀 수 없는 값이면 toResult에 닿기 전에 던져서, 화면은 { ok: false } 대신 거부를 받는다
   it('puts the kind of a terminal into a text only when it is a text', () => {
     expect(main).toMatch(/handle\('terminal:open', \(event, kind, payload, size\) => toResult\(typeof kind === 'string' \? `terminal:\$\{kind\}` : 'terminal:open', async \(\) => opened\(/)

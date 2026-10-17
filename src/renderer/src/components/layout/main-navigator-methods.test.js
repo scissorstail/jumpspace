@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNING } from '../../utils/project'
 import { countByOwner, sessionsOf } from '../../utils/terminal-sessions'
 import { closeTerminalsQuestion, terminalCountText } from '../../utils/terminal-view'
-import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from '../../utils/navigator-items'
+import { copyNavigatorItem, createNavigatorItem, emptyItemData, nextOpened, recentItems, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from '../../utils/navigator-items'
 import { diagramProblem } from '../../utils/diagram-data'
 import { UNSAVED_TEXT, UNSAVED_TITLE } from '../../../../shared/unsaved.js'
 
@@ -31,6 +31,8 @@ const given = {
   copyNavigatorItem,
   createNavigatorItem,
   emptyItemData,
+  nextOpened,
+  recentItems,
   removeNavigatorItems,
   toProjectItems,
   SWITCHER_MENU_POPPER,
@@ -46,7 +48,7 @@ const diagram = (name, more = {}) => ({ name, data: { id: 'test@0.1.0', nodes: {
 const withPassword = diagram('secret', { data: { id: 'test@0.1.0', nodes: { 1: { data: { connection: { password: 'pw' } } } } } })
 
 // 가짜 this: 목록을 가진 다이어그램 목록. confirm은 확인 창(msgBoxConfirm)의 답을 차례로 준다.
-function navigator(projectData = [diagram('alpha'), diagram('beta'), diagram('gamma')], { isLocked = true, answers = [] } = {}) {
+function navigator(projectData = [diagram('alpha'), diagram('beta'), diagram('gamma')], { isLocked = true, answers = [], showRecentSpaces = true } = {}) {
   const emitted = []
   const asked = []
   const vm = {
@@ -55,7 +57,7 @@ function navigator(projectData = [diagram('alpha'), diagram('beta'), diagram('ga
     $emit: (...args) => emitted.push(args),
     $set: (target, key, value) => { target[key] = value },
     $nextTick: () => {},
-    $store: { getters: { allTerminalSessions: [] } },
+    $store: { getters: { allTerminalSessions: [], setting: { showRecentSpaces } } },
     $bvModal: { msgBoxConfirm: async (message, options) => { asked.push([message, options]); return answers.shift() } }
   }
   for (const [name, method] of Object.entries(component.methods)) vm[name] = method.bind(vm)
@@ -96,7 +98,8 @@ describe('opening a diagram', () => {
 
     await vm.openItem(vm.items[1], click)
     expect(vm.openedItem).toBe(vm.items[1])
-    expect(emitted).toEqual([['selected', { item: vm.items[1], index: 1, isLocked: true }]])
+    // 그다음에 연 차례를 저장하게 한다 (아래 "the spaces opened last")
+    expect(emitted).toEqual([['selected', { item: vm.items[1], index: 1, isLocked: true }], ['updated', { items: toProjectItems(vm.items), index: 1 }]])
     expect(asked).toEqual([])
   })
 
@@ -112,7 +115,7 @@ describe('opening a diagram', () => {
 
     await vm.openItem(vm.items[1], click)
     expect(vm.openedItem).toBe(vm.items[1])
-    expect(emitted).toHaveLength(1)
+    expect(emitted.map(x => x[0])).toEqual(['selected', 'updated'])
   })
 
   // 손으로 만든 파일의 다이어그램: 에디터의 id가 없다. Rete는 이런 데이터를 거절하고 캔버스를 그대로 둔다 (utils/diagram-data.js)
@@ -123,16 +126,17 @@ describe('opening a diagram', () => {
     await vm.openItem(vm.items[1], click)
     expect(vm.openedItem).toBe(vm.items[0])
     expect(vm.openedItemIndex).toBe(0)
-    expect(emitted).toEqual([['selected', { item: vm.items[0], index: 0, isLocked: true }]])
+    expect(emitted).toEqual([['selected', { item: vm.items[0], index: 0, isLocked: true }], ['updated', { items: toProjectItems(vm.items), index: 0 }]])
     expect(toasts).toEqual([['Cannot open "broken"', 'Its data is not in the format of this app.\nNothing was changed.']])
     expect(asked).toEqual([])
-    // 데이터는 그대로다
+    // 데이터는 그대로이고, 연 차례도 받지 않는다
     expect(vm.items[1].data).toEqual({ nodes: {} })
+    expect(vm.items[1].opened).toBe(0)
 
     await vm.openItem(vm.items[2], click)
     expect(vm.openedItem).toBe(vm.items[0])
     expect(toasts[1]).toEqual(['Cannot open "(untitled)"', 'Node 7 cannot be read.\nNothing was changed.'])
-    expect(emitted).toHaveLength(1)
+    expect(emitted).toHaveLength(2)
   })
 
   it('does not ask about unsaved changes for a diagram it will not open', async () => {
@@ -202,6 +206,64 @@ describe('opening a diagram', () => {
   })
 })
 
+// 마지막에 연 다이어그램 몇 개가 목록 위에 따로 보인다 (owner, 2026-10-17, #255). 연 차례(opened)는 저장된다.
+describe('the spaces opened last', () => {
+  const opened = vm => vm.items.map(x => x.opened ?? null)
+
+  it('gives the opened diagram the next number and saves the list with it', async () => {
+    const { vm, emitted } = navigator([diagram('alpha', { opened: 2 }), diagram('beta'), diagram('gamma', { opened: 5 })])
+
+    await vm.openItem(vm.items[1], click)
+    expect(opened(vm)).toEqual([2, 6, 5])
+    expect(emitted[1]).toEqual(['updated', { items: toProjectItems(vm.items), index: 1 }])
+    expect(emitted[1][1].items[1]).toEqual({ name: 'beta', data: { id: 'test@0.1.0', nodes: {} }, opened: 6 })
+  })
+
+  // 켜자마자 지난번에 마지막으로 연 것을 다시 열 때: 차례는 그대로이고 저장할 것이 없다
+  it('changes and saves nothing when the diagram opened last is opened again', async () => {
+    const { vm, emitted } = navigator([diagram('alpha', { opened: 2 }), diagram('beta', { opened: 5 })])
+
+    await vm.openItem(vm.items[1], click)
+    expect(opened(vm)).toEqual([2, 5])
+    expect(emitted.map(x => x[0])).toEqual(['selected'])
+  })
+
+  it('shows the ones opened last, without the open one', async () => {
+    const { vm } = navigator([diagram('alpha', { opened: 1 }), diagram('beta', { opened: 3 }), diagram('gamma'), diagram('delta', { opened: 2 }), diagram('eps', { opened: 4 })])
+    expect(names({ items: vm.recent })).toEqual(['eps', 'beta', 'delta'])
+
+    await vm.openItem(vm.items[1], click)
+    expect(names({ items: vm.recent })).toEqual(['eps', 'delta', 'alpha'])
+    expect(vm.recent).toEqual(recentItems(vm.items, vm.items[1]))
+    // 목록은 그대로다
+    expect(names(vm)).toEqual(['alpha', 'beta', 'gamma', 'delta', 'eps'])
+  })
+
+  it('shows none while searching or when the setting is off', () => {
+    const list = () => [diagram('alpha', { opened: 1 }), diagram('beta', { opened: 2 })]
+    const { vm } = navigator(list())
+    vm.keyword = 'alp'
+    expect(vm.recent).toEqual([])
+    vm.keyword = ''
+    expect(vm.recent).toHaveLength(2)
+
+    expect(navigator(list(), { showRecentSpaces: false }).vm.recent).toEqual([])
+  })
+
+  it('has rows of its own over the list, which only open: no menu, no rename, no drag, no Ctrl selection', () => {
+    const template = source.match(/<template>\n([\s\S]*?)\n<\/template>\n\n<script>/)[1]
+    const recent = template.match(/<div\n\s+v-if="recent\.length"\n[\s\S]*?\n {8}<\/div>\n/)?.[0] ?? ''
+
+    expect(recent).toContain('class="recent-item disable-transition"')
+    expect(recent).toMatch(/:id="`recent-item-\$\{item\.index\}`"/)
+    expect(recent).toContain('@click="openItem(item, { type: $event.type })"')
+    expect(recent).not.toMatch(/NavigatorItemMenu|@dblclick|list-item disable|isSelected/)
+    // 끄는 목록(draggable) 밖, 그 앞에
+    expect(recent).not.toBe('')
+    expect(template.indexOf(recent)).toBeLessThan(template.indexOf('<draggable'))
+  })
+})
+
 describe('adding, copying and renaming', () => {
   it('adds an empty diagram on top, opens it with its name box, and clears the search that would hide it', async () => {
     const { vm, emitted } = navigator()
@@ -210,9 +272,10 @@ describe('adding, copying and renaming', () => {
     await vm.addNewItem()
     expect(vm.keyword).toBe('')
     expect(names(vm)).toEqual(['', 'alpha', 'beta', 'gamma'])
-    expect(vm.items[0]).toMatchObject({ index: 3, isEditing: true, data: emptyItemData() })
+    // 열린 것이니 연 차례도 받는다
+    expect(vm.items[0]).toMatchObject({ index: 3, isEditing: true, data: emptyItemData(), opened: 1 })
     expect(vm.openedItem).toBe(vm.items[0])
-    expect(emitted.at(-1)).toEqual(['selected', { item: vm.items[0], index: 0, isLocked: false }])
+    expect(emitted.slice(-2)).toEqual([['selected', { item: vm.items[0], index: 0, isLocked: false }], ['updated', { items: toProjectItems(vm.items), index: 0 }]])
   })
 
   it('adds nothing when unlocked changes would be lost and the answer is no', async () => {

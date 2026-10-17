@@ -26,7 +26,7 @@ import { APP_URL, appFilePath, isAppUrl } from './trust.js'
 import { toResult } from './ipc-result.js'
 import { createSettingStore, openStore, STORE_OPTIONS } from './setting-store.js'
 import { buildSshConfig } from './ssh-config.js'
-import { createProjectStorage, itemsFromJson, parseItems } from './storage.js'
+import { createProjectStorage, itemsFromJson, parseItems, withoutOpened } from './storage.js'
 import { readText } from './json-text.js'
 import { createBoundsSaver, createWindowStore, restoreBounds } from './window-bounds.js'
 import { mayUnload } from './unload-question.js'
@@ -116,7 +116,7 @@ function main() {
 
     if (!filename) return false
 
-    await writeFile(filename, JSON.stringify(items), 'utf-8')
+    await writeFile(filename, JSON.stringify(withoutOpened(items)), 'utf-8')
     return true
   })
 

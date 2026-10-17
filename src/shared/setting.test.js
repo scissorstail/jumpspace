@@ -3,8 +3,8 @@ import { BACKDROPS, DEFAULT_SETTING, NODE_BLUR_MAX, normalizeSetting, TERMINAL_C
 
 describe('normalizeSetting', () => {
   it('keeps valid values', () => {
-    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', terminalColors: 'muted', nodeBlur: 12, terminalFontSize: 16, hideNodeInfo: true }))
-      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', terminalColors: 'muted', nodeBlur: 12, terminalFontSize: 16, hideNodeInfo: true })
+    expect(normalizeSetting({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', terminalColors: 'muted', nodeBlur: 12, terminalFontSize: 16, hideNodeInfo: true, showRecentSpaces: false }))
+      .toEqual({ gitBashPath: 'D:\\Git\\git-bash.exe', isHideToTrayOnClose: true, openIn: 'window', theme: 'vapor-blue', backdrop: 'crt', terminalColors: 'muted', nodeBlur: 12, terminalFontSize: 16, hideNodeInfo: true, showRecentSpaces: false })
   })
 
   it('uses the default path when it is empty, blank or not a string', () => {
@@ -128,6 +128,17 @@ describe('normalizeSetting: hideNodeInfo', () => {
     expect(normalizeSetting({ hideNodeInfo: true }).hideNodeInfo).toBe(true)
     for (const value of ['true', 1, 'yes', null, {}]) {
       expect(normalizeSetting({ hideNodeInfo: value }).hideNodeInfo).toBe(false)
+    }
+  })
+})
+
+describe('normalizeSetting: showRecentSpaces', () => {
+  it('is on unless it is exactly false (older settings have no such key)', () => {
+    expect(DEFAULT_SETTING.showRecentSpaces).toBe(true)
+    expect(normalizeSetting({}).showRecentSpaces).toBe(true)
+    expect(normalizeSetting({ showRecentSpaces: false }).showRecentSpaces).toBe(false)
+    for (const value of [true, 'false', 0, null, {}]) {
+      expect(normalizeSetting({ showRecentSpaces: value }).showRecentSpaces).toBe(true)
     }
   })
 })

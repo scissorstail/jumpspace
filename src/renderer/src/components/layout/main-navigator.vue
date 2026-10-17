@@ -91,6 +91,48 @@
         key-nav
         class="px-2 py-1"
       >
+        <!-- 마지막에 연 다이어그램 몇 개 (설정 > Recent spaces): 목록 위에 따로 있고, 목록의 자리도 그대로 남는다.
+             누르면 연다. 이름 바꾸기, 메뉴, 끌기, Ctrl+클릭으로 고르기는 목록에서만 한다. -->
+        <div
+          v-if="recent.length"
+          class="recent-list"
+          role="group"
+          aria-label="Recent spaces"
+        >
+          <div
+            class="recent-title"
+            aria-hidden="true"
+          >
+            Recent
+          </div>
+          <b-button
+            v-for="item in recent"
+            :id="`recent-item-${item.index}`"
+            :key="`recent-${item.index}`"
+            size="sm"
+            block
+            class="recent-item disable-transition"
+            variant="white"
+            @click="openItem(item, { type: $event.type })"
+          >
+            <span
+              class="list-item-name"
+              :title="item.name || null"
+            >{{ item.name || '(untitled)' }}</span>
+            <span
+              v-if="terminalCounts.get(item.index)"
+              class="list-item-terminals"
+              :title="terminalCountText(terminalCounts.get(item.index))"
+            >
+              <b-icon
+                icon="terminal"
+                aria-hidden="true"
+              />
+              <span aria-hidden="true">{{ terminalCounts.get(item.index) }}</span>
+              <span class="sr-only">{{ terminalCountText(terminalCounts.get(item.index)) }}</span>
+            </span>
+          </b-button>
+        </div>
         <draggable
           v-model="items"
           class="list-container"
@@ -188,7 +230,7 @@ import isEmpty from 'lodash/isEmpty'
 import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNING } from '@/utils/project'
 import { countByOwner, sessionsOf } from '@/utils/terminal-sessions'
 import { closeTerminalsQuestion, terminalCountText } from '@/utils/terminal-view'
-import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from '@/utils/navigator-items'
+import { copyNavigatorItem, createNavigatorItem, emptyItemData, nextOpened, recentItems, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from '@/utils/navigator-items'
 import { diagramProblem } from '@/utils/diagram-data'
 import { toastError } from '@/utils/notify'
 import { UNSAVED_TEXT, UNSAVED_TITLE } from '../../../../shared/unsaved.js'
@@ -233,6 +275,12 @@ export default {
     },
     selectedItems() {
       return this.items.filter(x => x.isSelected)
+    },
+    // 목록 위에 따로 보이는, 마지막에 연 다이어그램들 (설정 > Recent spaces). 검색하는 동안에는 없다: 찾은 것만 보인다.
+    recent() {
+      if (!this.$store.getters.setting.showRecentSpaces || this.keyword) return []
+
+      return recentItems(this.items, this.openedItem)
     },
     // item 번호(index) -> 떠 있는 터미널 탭 수
     terminalCounts() {
@@ -298,11 +346,23 @@ export default {
         }
 
         this.openedItem = item
+        const isMarked = this.markOpened(item)
         this.$emit('selected', { item, index: this.openedItemIndex, isLocked: !item.isEditing })
+        // 연 차례를 저장하게 한다: 다음에 켤 때도 Recent가 같다
+        if (isMarked) this.emitUpdated()
       } else if (!isEmpty(event)) {
         // 이미 열려 있는 항목을 눌렀다: 그대로 두고 목록만 닫는다.
         this.$emit('hide')
       }
+    },
+    // 연 차례를 남긴다 (목록 위의 Recent). 이미 가장 나중에 연 것이면 바뀌는 것이 없다 (false): 켜자마자 지난번의 다이어그램을
+    // 다시 열 때가 그렇다. (0은 한 번도 열지 않은 것이다: 아무것도 연 적이 없는 목록에서도 처음 여는 것은 바뀐다)
+    markOpened(item) {
+      const next = nextOpened(this.items)
+      if (item.opened > 0 && item.opened === next - 1) return false
+
+      this.$set(item, 'opened', next)
+      return true
     },
     async addNewItem() {
       if (!this.isLocked) {
@@ -475,6 +535,26 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+// 목록의 한 줄과 Recent의 한 줄이 같이 쓰는 모양
+@mixin list-row {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 0;
+  color: var(--js-text);
+  font-family: var(--js-font-display);
+  font-size: 1.45rem;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+  text-transform: uppercase;
+
+  &.btn-block + .btn-block {
+    margin-top: 0;
+  }
+}
+
 #main-navigator {
   flex: 1;
   min-height: 0;
@@ -513,22 +593,73 @@ export default {
         font-size: 0.85rem;
       }
 
+      // 마지막에 연 다이어그램들: 작은 제목과 줄들, 그 아래에 목록과 가르는 선
+      .recent-list {
+        width: 100%;
+        margin-bottom: 4px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid var(--js-border);
+      }
+
+      .recent-title {
+        padding: 0 4px;
+        color: var(--js-text-muted);
+        font-family: var(--js-font-display);
+        font-size: 1rem;
+        letter-spacing: 0.1em;
+        line-height: 1.2;
+        text-transform: uppercase;
+      }
+
+      .recent-item {
+        @include list-row;
+
+        &.btn:hover {
+          background-color: var(--js-hover);
+        }
+
+        &.btn:focus,
+        &.btn:active:focus {
+          outline: none;
+          box-shadow: none;
+        }
+
+        &.btn:focus-visible {
+          border: 1px solid var(--js-secondary);
+        }
+      }
+
+      // 이름과 떠 있는 터미널 수: 목록의 줄에도 Recent의 줄에도 있다
+      .list-item-name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-align: left;
+        text-overflow: ellipsis;
+      }
+
+      // 떠 있는 터미널 수: 작은 터미널 그림과 숫자. 색은 줄의 글자색을 따른다 (열린 항목의 분홍 띠 위에서도 읽힌다).
+      .list-item-terminals {
+        display: flex;
+        flex: none;
+        align-items: center;
+        gap: 4px;
+        margin-left: 8px;
+        font-family: var(--js-font-mono);
+        font-size: 0.8rem;
+        letter-spacing: 0;
+
+        svg {
+          font-size: 0.95rem;
+        }
+      }
+
       .list-container {
         width: 100%;
 
         .list-item {
-          display: flex;
-          justify-content: space-between;
-          position: relative;
-          align-items: center;
-          border: 1px solid transparent;
-          border-radius: 0;
-          color: var(--js-text);
-          font-family: var(--js-font-display);
-          font-size: 1.45rem;
-          letter-spacing: 0.05em;
-          line-height: 1.1;
-          text-transform: uppercase;
+          @include list-row;
 
           &:hover:not(.editing),
           &.dropdown-shown {
@@ -580,10 +711,6 @@ export default {
             box-shadow: inset 4px 0 0 var(--js-secondary);
           }
 
-          &.btn-block + .btn-block {
-            margin-top: 0;
-          }
-
           &.ghost {
             box-shadow: inset 0 0 0 0.2rem rgb(0 123 255 / 25%);
           }
@@ -605,31 +732,6 @@ export default {
             border-color: var(--js-border);
             background-color: var(--js-bg);
             color: var(--js-text);
-          }
-
-          &-name {
-            flex: 1;
-            min-width: 0;
-            overflow: hidden;
-            white-space: nowrap;
-            text-align: left;
-            text-overflow: ellipsis;
-          }
-
-          // 떠 있는 터미널 수: 작은 터미널 그림과 숫자. 색은 줄의 글자색을 따른다 (열린 항목의 분홍 띠 위에서도 읽힌다).
-          &-terminals {
-            display: flex;
-            flex: none;
-            align-items: center;
-            gap: 4px;
-            margin-left: 8px;
-            font-family: var(--js-font-mono);
-            font-size: 0.8rem;
-            letter-spacing: 0;
-
-            svg {
-              font-size: 0.95rem;
-            }
           }
 
           &-dropdown {

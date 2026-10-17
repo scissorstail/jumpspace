@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:f
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createProjectStorage, itemsFromJson, normalizeItems, parseItems } from './storage.js'
+import { createProjectStorage, itemsFromJson, normalizeItems, parseItems, withoutOpened } from './storage.js'
 
 const items = [{ name: 'a', data: { id: 'test@0.1.0', nodes: {} } }]
 // 파일 맨 앞의 byte order mark (U+FEFF)
@@ -416,6 +416,11 @@ describe('parseItems', () => {
     expect(() => parseItems(BOM + BOM + '[]')).toThrow('The file is not valid JSON.')
   })
 
+  // 다른 PC나 다른 때의 목록에서 연 차례이다: 가져온 다이어그램이 그 차례로 Recent에 끼어들면 안 된다
+  it('takes no order of opening from the file', () => {
+    expect(parseItems(JSON.stringify([{ name: 'a', data: { id: 'x', nodes: {} }, opened: 9 }]))).toEqual([{ name: 'a', data: { id: 'x', nodes: {} } }])
+  })
+
   it('explains what is wrong with a file that cannot be imported', () => {
     expect(() => parseItems('{ not json')).toThrow('The file is not valid JSON.')
     expect(() => parseItems('')).toThrow('The file is not valid JSON.')
@@ -445,6 +450,32 @@ describe('normalizeItems: canvas view', () => {
 
   it('does not keep extra keys of the view', () => {
     expect(normalizeItems([item({ k: 1, x: 0, y: 0, evil: 1 })])[0].view).toEqual({ k: 1, x: 0, y: 0 })
+  })
+})
+
+// 목록에서 마지막으로 연 차례: 화면은 그 차례로 최근에 연 다이어그램을 목록 위에 보인다 (#255)
+describe('normalizeItems: the order of opening', () => {
+  const item = opened => ({ name: 'a', data: { nodes: {} }, opened })
+
+  it('keeps the number of the last opening, for the save and for the start', () => {
+    expect(normalizeItems([item(1), item(42)]).map(x => x.opened)).toEqual([1, 42])
+    expect(itemsFromJson(JSON.stringify([item(7)]))).toEqual([{ name: 'a', data: { nodes: {} }, opened: 7 }])
+  })
+
+  it('drops a number that is no whole number from 1 on, and adds none when it is missing', () => {
+    for (const opened of [undefined, null, 0, -1, 1.5, NaN, Infinity, 2 ** 53, '3', true, [1], {}]) {
+      expect(normalizeItems([item(opened)])[0], String(opened)).toEqual({ name: 'a', data: { nodes: {} } })
+    }
+  })
+})
+
+describe('withoutOpened', () => {
+  it('leaves the order of opening out, and nothing else', () => {
+    const items = [{ name: 'a', data: { nodes: {} }, view: { k: 1, x: 0, y: 0 }, opened: 3 }, { name: 'b', data: { nodes: {} } }]
+
+    expect(withoutOpened(items)).toEqual([{ name: 'a', data: { nodes: {} }, view: { k: 1, x: 0, y: 0 } }, { name: 'b', data: { nodes: {} } }])
+    // 원본은 그대로다: 저장하는 목록이다
+    expect(items[0].opened).toBe(3)
   })
 })
 

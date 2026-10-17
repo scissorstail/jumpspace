@@ -33,8 +33,15 @@ export function normalizeItems(value) {
     }
     // 캔버스의 마지막 위치와 확대 상태. 쓸 수 없는 값이면 버린다.
     const view = sanitizeView(x.view)
-    return { name: typeof x.name === 'string' ? x.name : '', data: migrateLegacyForwards(stripDerivedData(x.data)), ...(view && { view }) }
+    // 목록에서 마지막으로 연 차례 (화면의 Recent, #255): 1부터 세는 정수. 한 번도 열지 않았거나 쓸 수 없는 값이면 없다.
+    const opened = Number.isSafeInteger(x.opened) && x.opened > 0 ? x.opened : 0
+    return { name: typeof x.name === 'string' ? x.name : '', data: migrateLegacyForwards(stripDerivedData(x.data)), ...(view && { view }), ...(opened && { opened }) }
   })
+}
+
+// 연 차례(opened)를 뺀 항목들. 그 차례는 이 앱의 목록에서만 뜻이 있어서, 내보내는 파일에 쓰지 않고 가져온 파일에서 받지 않는다.
+export function withoutOpened(items) {
+  return items.map(({ opened, ...item }) => item)
 }
 
 // 화면이 저장하거나 내보내라고 넘긴 것(JSON 문자열)을 [{ name, data }]로 바꾼다. 문자열만 받는다: JSON.parse는 받은 것을 글자로
@@ -56,7 +63,7 @@ export function parseItems(text) {
   }
 
   try {
-    return normalizeItems(value)
+    return withoutOpened(normalizeItems(value))
   } catch {
     throw new Error('The file does not look like a jumpspace export.')
   }

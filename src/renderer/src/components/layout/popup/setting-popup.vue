@@ -15,7 +15,7 @@
         aria-modal="true"
         aria-label="Settings"
         header="Settings"
-        style="width: 90vw; max-width: 600px"
+        style="width: 90vw; max-width: 740px"
       >
         <b-card-text>
           <b-row class="mb-3">
@@ -134,6 +134,24 @@
               </b-form-group>
             </b-col>
           </b-row>
+          <b-row class="mb-3">
+            <b-col>
+              <b-form-group
+                label-align="left"
+                class="mb-0 text-left"
+                label="Recent spaces"
+                label-for="setting-recent-spaces"
+                label-cols-sm="4"
+                description="The spaces opened last, at the top of the space list."
+              >
+                <b-form-checkbox
+                  id="setting-recent-spaces"
+                  v-model="showRecentSpaces"
+                  switch
+                />
+              </b-form-group>
+            </b-col>
+          </b-row>
           <b-row>
             <b-col>
               <b-form-group
@@ -195,6 +213,7 @@ export default {
     return {
       gitBashPath: null,
       isHideToTrayOnClose: false,
+      showRecentSpaces: true,
       openIn: null,
       theme: null,
       themeOptions: [
@@ -240,6 +259,7 @@ export default {
     init() {
       this.gitBashPath = this.setting.gitBashPath
       this.isHideToTrayOnClose = this.setting.isHideToTrayOnClose
+      this.showRecentSpaces = this.setting.showRecentSpaces
       this.openIn = this.setting.openIn
       this.theme = this.setting.theme
       this.backdrop = this.setting.backdrop
@@ -259,6 +279,7 @@ export default {
         ...this.setting,
         gitBashPath: this.gitBashPath,
         isHideToTrayOnClose: this.isHideToTrayOnClose,
+        showRecentSpaces: this.showRecentSpaces,
         openIn: this.openIn,
         theme: this.theme,
         backdrop: this.backdrop,

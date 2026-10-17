@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from './navigator-items'
+import Vue from 'vue'
+import { copyNavigatorItem, createNavigatorItem, emptyItemData, nextOpened, recentItems, removeNavigatorItems, toProjectItems, RECENT_SPACES, SWITCHER_MENU_POPPER } from './navigator-items'
 
 // 판(#diagram-switcher)과 목록은 넘치는 것을 자른다. 그 안의 메뉴가 판보다 길면(항목이 적을 때) 아래가 잘려 보이지 않았다.
 describe('menus in the diagram list', () => {
@@ -27,8 +28,26 @@ describe('createNavigatorItem', () => {
     const data = { nodes: {} }
 
     expect(createNavigatorItem({ name: 'a', data }, 7)).toEqual({
-      name: 'a', data, index: 7, isMenuShown: false, isSelected: false, isEditing: false
+      name: 'a', data, index: 7, opened: 0, isMenuShown: false, isSelected: false, isEditing: false
     })
+    expect(createNavigatorItem({ name: 'a', data, opened: 3 }, 7).opened).toBe(3)
+  })
+
+  // 연 차례가 처음부터 있어서(0), 처음 열 때 그것을 주어도 목록이 바뀐 것이 아니다 (#255). 새로 붙이면 Vue는 목록(items)의
+  // watch에 알리고, 그 watch가 한 번 더 저장했다 (열 때마다 두 번).
+  it('starts with the order of opening, so that giving it one is no change of the list', async () => {
+    const changes = []
+    const vm = new Vue({ data: { items: [createNavigatorItem({ name: 'a', data: {} }, 0), { name: 'b', data: {} }] }, watch: { items() { changes.push('items') } } })
+
+    vm.$set(vm.items[0], 'opened', 1)
+    await vm.$nextTick()
+    expect(changes).toEqual([])
+
+    // 그것이 없는 항목이라면
+    vm.$set(vm.items[1], 'opened', 2)
+    await vm.$nextTick()
+    expect(changes).toEqual(['items'])
+    vm.$destroy()
   })
 
   it('can start with the name box open, and keeps the view', () => {
@@ -63,6 +82,50 @@ describe('toProjectItems', () => {
     const [item] = toProjectItems([{ name: 'a', data: {}, view: undefined, index: 1 }])
 
     expect(Object.hasOwn(item, 'view')).toBe(false)
+  })
+
+  // 연 차례는 저장해서 다음에 켤 때도 Recent가 같다 (#255). 한 번도 열지 않은 항목에는 쓰지 않는다.
+  it('keeps the order of opening, and writes none for an item never opened', () => {
+    const data = {}
+    const [opened, never] = toProjectItems([createNavigatorItem({ name: 'a', data, opened: 4 }, 0), createNavigatorItem({ name: 'b', data }, 1)])
+
+    expect(opened).toEqual({ name: 'a', data, opened: 4 })
+    expect(Object.hasOwn(never, 'opened')).toBe(false)
+  })
+})
+
+describe('recentItems', () => {
+  const list = openings => openings.map((opened, i) => createNavigatorItem({ name: `s${i}`, data: {}, ...(opened && { opened }) }, i))
+  const names = items => items.map(x => x.name)
+
+  it('gives the diagrams opened last, the last one first', () => {
+    const items = list([2, 5, 0, 1, 4])
+
+    expect(names(recentItems(items, null))).toEqual(['s1', 's4', 's0'])
+    expect(RECENT_SPACES).toBe(3)
+  })
+
+  it('leaves out the open diagram and those never opened', () => {
+    const items = list([2, 5, 0, 1, 4])
+
+    expect(names(recentItems(items, items[1]))).toEqual(['s4', 's0', 's3'])
+    expect(names(recentItems(list([0, 0, 3]), null))).toEqual(['s2'])
+    expect(recentItems(list([0, 0]), null)).toEqual([])
+  })
+
+  it('keeps the list as it is, and takes the order of the list for the same number', () => {
+    const items = list([1, 3, 3])
+
+    expect(names(recentItems(items, null, 2))).toEqual(['s1', 's2'])
+    expect(names(items)).toEqual(['s0', 's1', 's2'])
+  })
+})
+
+describe('nextOpened', () => {
+  it('is the number after the last opening, 1 for a list never opened', () => {
+    expect(nextOpened([{ opened: 2 }, {}, { opened: 7 }])).toBe(8)
+    expect(nextOpened([{}, {}])).toBe(1)
+    expect(nextOpened([])).toBe(1)
   })
 })
 
@@ -105,6 +168,14 @@ describe('copyNavigatorItem', () => {
     const copy = copyNavigatorItem(createNavigatorItem({ name: 'a', data: emptyItemData() }, 1), 2)
 
     expect(toProjectItems([copy])[0]).not.toHaveProperty('view')
+  })
+
+  // 사본은 새 다이어그램이다: 아직 연 적이 없다
+  it('does not take the order of opening of the original', () => {
+    const copy = copyNavigatorItem(createNavigatorItem({ name: 'a', data: emptyItemData(), opened: 6 }, 1), 2)
+
+    expect(copy.opened).toBe(0)
+    expect(toProjectItems([copy])[0]).not.toHaveProperty('opened')
   })
 })
 
