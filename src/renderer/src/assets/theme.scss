@@ -421,7 +421,10 @@ $control-sm-height: 29px;
   background-color: var(--js-bg);
 }
 
-// 스위치(설정의 on/off)도 네모난 단색으로: 꺼지면 흐린 칸, 켜지면 분홍 바탕에 어두운 칸
+// 스위치(설정의 on/off)도 네모난 단색으로. 손잡이는 스위치의 반이고 어느 쪽에서나 밝은 칸이다: 꺼지면 어두운 바탕의 왼쪽에
+// 흐린 칸, 켜지면 분홍 바탕의 오른쪽에 흰 칸 (owner, 2026-10-17: "토글인데 색상만 바뀌잖아요", #256에서 고른 B). 켜진 손잡이가
+// 어두웠을 때(--js-on-primary, 꺼진 스위치의 빈 반쪽과 같은 색)는 꺼지면 [밝은 칸 | 어두운 칸], 켜지면 [분홍 칸 | 어두운 칸]이어서
+// 손잡이가 옮겨 가는 것이 보이지 않고 왼쪽 반의 색만 바뀌는 것 같았다.
 .custom-switch .custom-control-label::before,
 .custom-switch .custom-control-label::after {
   border-radius: 0;
@@ -432,7 +435,7 @@ $control-sm-height: 29px;
 }
 
 .custom-switch .custom-control-input:checked ~ .custom-control-label::after {
-  background-color: var(--js-on-primary);
+  background-color: var(--js-text);
 }
 
 .custom-control-input:focus ~ .custom-control-label::before {

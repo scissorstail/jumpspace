@@ -57,6 +57,30 @@ describe('error toasts', () => {
   })
 })
 
+// 설정의 스위치 (owner, 2026-10-17: "토글인데 색상만 바뀌잖아요", #256). 손잡이는 스위치의 반이고 어느 쪽에서나 밝은
+// 칸이다. 켜진 손잡이가 꺼진 스위치의 빈 반쪽과 같은 어두운 색(--js-on-primary)이었을 때는 꺼지면 [밝은 칸 | 어두운 칸],
+// 켜지면 [분홍 칸 | 어두운 칸]이어서 왼쪽 반의 색만 바뀌는 것처럼 보였다.
+describe('a switch', () => {
+  const color = selector => theme.match(new RegExp(`\\n${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\{\\n(?: {2}[a-z-]+: [^\\n]+;\\n)*? {2}background-color: var\\((--js-[a-z-]+)\\);`))?.[1]
+  const trackOff = color('.custom-control-label::before')
+  const trackOn = color('.custom-control-input:checked ~ .custom-control-label::before')
+  const knobOff = color('.custom-switch .custom-control-label::after')
+  const knobOn = color('.custom-switch .custom-control-input:checked ~ .custom-control-label::after')
+
+  it('takes the colors of its track and its knob from the palette', () => {
+    expect({ trackOff, trackOn, knobOff, knobOn }).toEqual({ trackOff: '--js-bg', trackOn: '--js-primary', knobOff: '--js-text-muted', knobOn: '--js-text' })
+  })
+
+  it.each(['neon-night', 'sunset-drive', 'vapor-blue'])('has a light knob on both sides in %s, so that it is seen to move', name => {
+    const { colors } = palettes.find(p => p.name === name)
+    // 꺼짐: 손잡이가 빈 반쪽과 뚜렷이 다르다
+    expect(contrast(colors[knobOff], colors[trackOff])).toBeGreaterThan(7)
+    // 켜짐: 손잡이는 꺼진 스위치의 빈 반쪽의 색이 아니고, 다시 밝은 반쪽이다
+    expect(contrast(colors[knobOn], colors[trackOff])).toBeGreaterThan(7)
+    expect(luminance(colors[knobOn])).toBeGreaterThan(luminance(colors[trackOn]))
+  })
+})
+
 // 오류 문구에는 경로가 들어간다 (읽지 못한 저장 파일의 폴더, 찾지 못한 Git Bash). 빈칸이 없어서 그대로는 꺾이지 않는다.
 describe('the text of an error message', () => {
   it('keeps its line breaks and wraps a long path instead of running out of the box', () => {
