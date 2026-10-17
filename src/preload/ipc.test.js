@@ -49,6 +49,20 @@ describe('the channels between the page and main', () => {
     expect(main).toMatch(/ipcMain\.on\(channel, \(event, \.\.\.args\) => \{\n\s+if \(isTrusted\(event\)\) handler\(event, \.\.\.args\)/)
     expect(main).toMatch(/ipcMain\.handle\(channel, async \(event, \.\.\.args\) => \{\n\s+if \(!isTrusted\(event\)\) throw new Error\('Untrusted sender'\)/)
   })
+
+  // 터미널은 그것을 연 창의 것이다 (terminal.js의 owned): 창이 부르는 터미널의 일은 모두 그 창(event.sender.id)의 세션에만 닿는다.
+  // 다른 창의 세션 번호를 넘겨도 그 세션에 쓰거나, 그것을 닫거나, 같은 접속을 하나 더 열 수 없다 (#257에서 더했다).
+  it('lets a window reach only its own terminals', () => {
+    const calls = [...main.matchAll(/terminals\.(open|reopen|duplicate|write|resize|close)\(([^)]*)\)/g)].map(([, name, args]) => [name, args])
+
+    expect(calls.map(([name]) => name)).toEqual(['open', 'reopen', 'duplicate', 'write', 'resize', 'close'])
+    for (const [name, args] of calls) {
+      if (name === 'open') expect(args).toMatch(/\{ owner: event\.sender\.id, /)
+      else expect(args.split(', ')[1], name).toBe('event.sender.id')
+    }
+    // 답에 붙이는 pty의 사정(windowsPty)도 그 창의 세션의 것이다
+    expect(main.match(/\), event\.sender\.id\n {2}\)\)\)/g)).toHaveLength(3)
+  })
 })
 
 // 화면이 넘기는 값은 무엇이든 될 수 있다 (틀린 호출, 언젠가의 실수). index.js는 Electron 없이는 불러올 수 없어서 소스를 읽는다:

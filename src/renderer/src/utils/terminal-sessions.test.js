@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { activeTerminalNode, BUSY_IDLE_MS, busyNodes, canReconnect, countByOwner, createActivityWatch, createOutputRouter, duplicateNumbers, endedByUser, hopKey, INTERRUPT_WINDOW_MS, isMotionReport, numberedTitle, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
+import { activeTerminalNode, BUSY_IDLE_MS, busyNodes, canReconnect, countByOwner, createActivityWatch, createOutputRouter, duplicateNumbers, duplicateRefusal, endedByUser, hopKey, INTERRUPT_WINDOW_MS, isMotionReport, numberedTitle, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -456,6 +456,28 @@ describe('canReconnect', () => {
     expect(canReconnect({ status: 'failed', id: null })).toBe(false)
     expect(canReconnect({ status: 'exited', id: null })).toBe(false)
     expect(canReconnect(null)).toBe(false)
+  })
+})
+
+// 탭을 Ctrl+클릭: main에 그 세션이 있으면 같은 접속을 하나 더 연다 (#257)
+describe('duplicateRefusal', () => {
+  it('is nothing for a tab whose session runs or ended, connected or not', () => {
+    for (const session of [{ status: 'running', id: 3 }, { status: 'running', id: 3, connected: true }, { status: 'exited', id: 3, exitCode: 255 }, { status: 'exited', id: 0, exitCode: 0 }]) {
+      expect(duplicateRefusal(session), JSON.stringify(session)).toBe(null)
+    }
+  })
+
+  // 다시 접속하는 중인 탭은 옛 id를 갖고 있지만, main은 답을 줄 때까지 그 요청을 꺼내 두었다
+  it('asks to wait while the tab is opening, also while it connects again with its old id', () => {
+    for (const session of [{ status: 'starting', id: null }, { status: 'starting', id: 3 }]) {
+      expect(duplicateRefusal(session)).toBe('This terminal is still opening. Try again once it is open.')
+    }
+  })
+
+  it('sends to the node a tab that did not start, or has no session for another reason', () => {
+    for (const session of [{ status: 'failed', id: null }, { status: 'exited', id: null }, { status: 'running' }, null]) {
+      expect(duplicateRefusal(session), JSON.stringify(session)).toBe('This terminal did not start. Start it from its node.')
+    }
   })
 })
 

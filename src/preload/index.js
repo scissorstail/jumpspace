@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('preload', {
   terminal: {
     open: (kind, payload, size) => ipcRenderer.invoke('terminal:open', kind, payload, size),
     reopen: (id, size) => ipcRenderer.invoke('terminal:reopen', id, size),
+    duplicate: (id, size) => ipcRenderer.invoke('terminal:duplicate', id, size),
     write: (id, data) => ipcRenderer.send('terminal:write', id, data),
     resize: (id, cols, rows) => ipcRenderer.send('terminal:resize', id, cols, rows),
     close: id => ipcRenderer.send('terminal:close', id),

@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runInThisContext } from 'node:vm'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { canReconnect, createActivityWatch, createOutputRouter, endedByUser, isMotionReport, rightClickAction, terminalShortcut } from '../../utils/terminal-sessions'
+import { canReconnect, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, rightClickAction, terminalShortcut } from '../../utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, RECONNECTING_LINE, searchSeed } from '../../utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import { MAX_WRITE } from '../../../../shared/terminal-input.js'
@@ -40,7 +40,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const source = readFileSync(join(here, 'terminal-panel.vue'), 'utf8').replace(/\r\n/g, '\n')
 const script = source.match(/<script>\n([\s\S]*?)<\/script>/)[1]
 const imported = [...script.matchAll(/^import (?:\{ ([^}]+) \}|(\w+)) from .*$/gm)].flatMap(match => (match[1] ?? match[2]).split(', '))
-const given = { nextFontSize, searchSeed, canReconnect, createActivityWatch, createOutputRouter, endedByUser, isMotionReport, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, MAX_WRITE, MAX_CLIPBOARD, toastError, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
+const given = { nextFontSize, searchSeed, canReconnect, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, MAX_WRITE, MAX_CLIPBOARD, toastError, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 const component = runInThisContext(`(function (${imported.join(', ')}) {\n${body}\n})`)(...imported.map(name => given[name]))
 
@@ -609,6 +609,7 @@ function opening() {
     preload: {
       terminal: {
         open: (...args) => { calls.push(['open', ...args]); return asked },
+        duplicate: (...args) => { calls.push(['duplicate', ...args]); return asked },
         close: id => calls.push(['close', id]),
         resize: (...args) => calls.push(['resize', ...args])
       }
@@ -731,6 +732,75 @@ describe('opening a session', () => {
     expect(term.calls).toHaveLength(written)
     expect(closes()).toEqual([])
     expect(seen.commits.map(([name]) => name)).toEqual(['terminalUpdate', 'terminalRemove'])
+  })
+
+  // 탭을 Ctrl+클릭해서 연 탭 (#257): 요청은 main의 세션에 있고, 탭은 그 세션의 id만 갖는다.
+  it('asks main for another session like the one of the tab it was opened from, with the size of its screen', async () => {
+    const { vm, calls, answer, seen } = opening()
+    const session = { key: 1, request: { duplicateOf: 4 } }
+    vm.allSessions = [session]
+
+    const done = vm.start(session)
+    expect(seen.commits).toEqual([['terminalUpdate', { key: 1, request: null }]])
+    expect(calls).toEqual([['duplicate', 4, { cols: 100, rows: 30 }]])
+    answer({ ok: true, id: 9, windowsPty: { backend: 'conpty', buildNumber: 21376 } })
+    await done
+    expect(vm.terms.get(1)).toMatchObject({ id: 9, onWindows: true })
+    expect(seen.registered.map(([id]) => id)).toEqual([9])
+    expect(seen.commits.at(-1)).toEqual(['terminalUpdate', { key: 1, id: 9, status: 'running' }])
+    expect(calls).toHaveLength(1)
+  })
+
+  it('says why in the new tab when main has no such session any more, and ends the copy main opened for a tab closed meanwhile', async () => {
+    const first = opening()
+    const copy = { key: 1, request: { duplicateOf: 4 } }
+    first.vm.allSessions = [copy]
+    const done = first.vm.start(copy)
+    first.answer({ ok: false, error: 'This terminal can no longer be opened again. Start it from its node.' })
+    await done
+    expect(made.at(-1).calls.at(-1)).toEqual(['write', errorLine('This terminal can no longer be opened again. Start it from its node.')])
+    expect(first.seen.commits.at(-1)).toEqual(['terminalUpdate', { key: 1, status: 'failed' }])
+
+    const second = opening()
+    second.vm.allSessions = [copy]
+    const waiting = second.vm.start(copy)
+    second.vm.closeSession(copy)
+    second.answer({ ok: true, id: 9 })
+    await waiting
+    expect(second.calls.at(-1)).toEqual(['close', 9])
+    expect(second.seen.registered).toEqual([])
+  })
+})
+
+describe('a tab clicked with Ctrl', () => {
+  const clicking = () => {
+    const { vm, toasts } = panel(null)
+    const commits = []
+    vm.$store = { commit: (...args) => commits.push(args) }
+    return { vm, toasts, commits }
+  }
+
+  it('opens the same connection again in a new tab, for a tab whose session runs or ended', () => {
+    const { vm, toasts, commits } = clicking()
+
+    vm.duplicate({ key: 3, id: 7, status: 'running', connected: true })
+    vm.duplicate({ key: 4, id: 8, status: 'exited', exitCode: 255 })
+    expect(commits).toEqual([['terminalDuplicate', 3], ['terminalDuplicate', 4]])
+    expect(toasts).toEqual([])
+  })
+
+  it('opens nothing and says why for a tab that is still opening, or connecting again, or that did not start', () => {
+    const { vm, toasts, commits } = clicking()
+
+    vm.duplicate({ key: 3, id: null, status: 'starting' })
+    vm.duplicate({ key: 4, id: 8, status: 'starting' })
+    vm.duplicate({ key: 5, id: null, status: 'failed' })
+    expect(commits).toEqual([])
+    expect(toasts.map(({ title, body }) => [title, body])).toEqual([
+      ['Not opened again', 'This terminal is still opening. Try again once it is open.'],
+      ['Not opened again', 'This terminal is still opening. Try again once it is open.'],
+      ['Not opened again', 'This terminal did not start. Start it from its node.']
+    ])
   })
 })
 

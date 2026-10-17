@@ -320,6 +320,15 @@ export function canReconnect(session) {
   return session?.status === 'exited' && session.id !== null && session.id !== undefined
 }
 
+// 탭을 Ctrl+클릭해서 같은 접속을 하나 더 열 수 없는 까닭 (열 수 있으면 null, #257). 요청은 main의 세션에 있다: 여는 중인
+// 탭에는 아직 없고 (다시 접속하는 중인 탭도: main은 그 답을 줄 때까지 요청을 끝난 세션들에서 꺼내 둔다), 열지 못한 탭(failed)은
+// 세션 id가 없다.
+export function duplicateRefusal(session) {
+  if (session?.status === 'starting') return 'This terminal is still opening. Try again once it is open.'
+  if (session?.id === null || session?.id === undefined) return 'This terminal did not start. Start it from its node.'
+  return null
+}
+
 // 터미널에서 오른쪽 클릭이 하는 일: 'copy'(고른 글자가 있다), 'paste', 아니면 'program'.
 // 프로그램이 마우스를 받겠다고 한 동안(tmux의 mouse on, vim, Claude Code)에는 클릭이 프로그램의 것이다: 화면이 그 클릭을
 // 프로그램에 보내므로, 여기서 붙여넣기까지 하면 클립보드의 글이 프로그램에 함께 들어간다. Shift를 누르면 터미널의 것이다

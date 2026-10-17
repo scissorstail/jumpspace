@@ -36,13 +36,16 @@ describe('the list of terminal keys', () => {
     }
   })
 
-  // 키보드 규칙 밖의 세 가지는 그 일을 하는 코드가 있는지 본다
+  // 키보드 규칙 밖의 네 가지는 그 일을 하는 코드가 있는지 본다
   it('lists the mouse and Enter only while the code still does them', () => {
     const without = TERMINAL_KEYS.filter(row => !row.presses).map(row => row.keys[0])
-    expect(without).toEqual(['Right click', 'Enter', 'Middle click'])
+    expect(without).toEqual(['Right click', 'Enter', 'Middle click', 'Ctrl+click'])
     expect(read('../components/terminal/terminal-panel.vue')).toMatch(/if \(data === '\\r'\) this\.reconnect\(/)
     expect(read('../components/terminal/terminal-panel.vue')).toContain('rightClickAction(')
     expect(read('../components/terminal/terminal-tabs.vue')).toContain('@auxclick.middle="$emit(\'close\', session)"')
+    expect(read('../components/terminal/terminal-tabs.vue')).toContain('@click="clicked(session, $event)"')
+    expect(read('../components/terminal/terminal-tabs.vue')).toMatch(/if \(event\.ctrlKey\) \{\n\s+this\.\$emit\('duplicate', session\)/)
+    expect(read('../components/terminal/terminal-panel.vue')).toContain('@duplicate="duplicate"')
   })
 
   it('is what the Info window shows', () => {

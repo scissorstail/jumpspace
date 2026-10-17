@@ -789,6 +789,66 @@ describe('createTerminalManager: reconnect', () => {
   })
 })
 
+// 탭을 Ctrl+클릭: 그 탭의 세션과 같은 요청으로 하나 더 연다 (#257). 요청은 main에만 있다.
+describe('createTerminalManager: another session of the same connection', () => {
+  const path = [node, { ...node, name: 'db', host: 'db.internal' }]
+
+  it('opens a running session again with the same request and a new id, and both go on', async () => {
+    const { manager, spawnPty, ptys, send } = setup()
+    const id = await manager.open('connect', { ...node, password: 'pw' }, { owner: 3 })
+
+    const copy = await manager.duplicate(id, 3, { cols: 100, rows: 30 })
+    expect(copy).not.toBe(id)
+    expect(manager.size).toBe(2)
+    expect(spawnPty.mock.calls[1][2]).toMatchObject({ cols: 100, rows: 30 })
+    expect(Object.values(spawnPty.mock.calls[1][2].env)).toContain('pw')
+
+    ptys[1].emitData('copy')
+    await vi.waitFor(() => expect(send).toHaveBeenCalledWith(3, 'terminal:data', copy, 'copy'))
+    // 하나가 끝나도 다른 것은 돈다
+    ptys[0].emitExit(0)
+    expect(manager.size).toBe(1)
+    expect(await manager.duplicate(copy, 3)).toBeGreaterThan(copy)
+  })
+
+  it('opens a path the way the first one was opened (a script and an ssh config each)', async () => {
+    const { manager, tempDir } = setup()
+    const id = await manager.open('proxyJump', path, { owner: 1 })
+
+    await manager.duplicate(id, 1)
+    expect(readdirSync(tempDir).map(name => extname(name)).sort()).toEqual(['.jmp', '.jmp', '.sh', '.sh'])
+  })
+
+  it('opens an ended session again too, and that one can still be reconnected', async () => {
+    const { manager, ptys } = setup()
+    const id = await manager.open('connect', node, { owner: 1 })
+    ptys[0].emitExit(255)
+
+    const copy = await manager.duplicate(id, 1)
+    expect(copy).toBeGreaterThan(id)
+    expect(await manager.reopen(id, 1)).toBeGreaterThan(copy)
+  })
+
+  it('only for the window that owns the session, and not for one that was closed or never was', async () => {
+    const { manager } = setup()
+    const id = await manager.open('connect', node, { owner: 1 })
+
+    await expect(manager.duplicate(id, 2)).rejects.toThrow(/can no longer be opened again/)
+    await expect(manager.duplicate(999, 1)).rejects.toThrow(/can no longer be opened again/)
+    manager.close(id, 1)
+    await expect(manager.duplicate(id, 1)).rejects.toThrow(/can no longer be opened again/)
+    expect(manager.size).toBe(0)
+  })
+
+  it('counts against the limit of terminals', async () => {
+    const { manager } = setup({ maxSessions: 1 })
+    const id = await manager.open('connect', node, { owner: 1 })
+
+    await expect(manager.duplicate(id, 1)).rejects.toThrow(/Too many terminals/)
+    expect(manager.size).toBe(1)
+  })
+})
+
 // 진짜 pty(node-pty)와 bash로 생성된 스크립트를 실행한다. ssh는 BASH_ENV로 정의한 가짜 함수로 바꾸고,
 // 키 입력이 프로그램까지 닿는지(한 줄을 읽어서 되돌려 준다) 확인한다.
 //   Windows: JUMPSPACE_TEST_BASH에 Git의 bin\bash.exe를 지정한다.

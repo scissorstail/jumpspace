@@ -33,7 +33,7 @@
         :aria-selected="session.key === activeKey && !isMinimized ? 'true' : 'false'"
         tabindex="0"
         :title="`${label(session)}: ${statusText(session)}${routeText(session)}`"
-        @click="$emit('activate', session.key)"
+        @click="clicked(session, $event)"
         @mousedown.middle.prevent
         @auxclick.middle="$emit('close', session)"
         @keydown.enter.self="$emit('activate', session.key)"
@@ -123,8 +123,8 @@ import { revealScrollLeft, sessionRouteText, sessionStatusText } from '@/utils/t
 
 // 터미널 패널 위쪽의 탭 줄. 탭이 많으면 좁아졌다가 목록만 옆으로 넘어가고, 활성 탭은 늘 보이게 한다.
 // 좌우로 나눈 동안에는 칸마다 제 목록이 있다 (rightKeys: 오른쪽 칸의 탭들).
-// 탭을 고르기, 닫기, 끌어서 바꾼 순서, 다른 칸으로 옮긴 탭, 좌우로 나누기/합치기, 패널 최대화/내리기, 패널 최소화/다시 보이기는
-// 이벤트(activate, close, reorder, move, split, maximize, hide, show)로 패널에 알린다.
+// 탭을 고르기, 같은 접속을 하나 더 열기(탭을 Ctrl+클릭), 닫기, 끌어서 바꾼 순서, 다른 칸으로 옮긴 탭, 좌우로 나누기/합치기,
+// 패널 최대화/내리기, 패널 최소화/다시 보이기는 이벤트(activate, duplicate, close, reorder, move, split, maximize, hide, show)로 패널에 알린다.
 export default {
   name: 'TerminalTabs',
   components: { draggable },
@@ -205,6 +205,14 @@ export default {
     routeText: sessionRouteText,
     label(session) {
       return numberedTitle(session.title, this.numbers.get(session.key))
+    },
+    // 탭을 눌렀다: 고른다. Ctrl을 누른 채이면 같은 접속을 새 탭에 하나 더 연다 (owner, 2026-10-17: 메뉴는 애매하고 "컨트롤 + 클릭?", #257).
+    clicked(session, event) {
+      if (event.ctrlKey) {
+        this.$emit('duplicate', session)
+        return
+      }
+      this.$emit('activate', session.key)
     },
     // 목록 요소의 속성. vuedraggable은 id와 data-*만 요소에 두고 다른 속성은 끌기(Sortable)의 설정으로 넘기므로
     // (role="tablist"는 그래서 요소에 없었다), 요소의 속성은 component-data로 준다.

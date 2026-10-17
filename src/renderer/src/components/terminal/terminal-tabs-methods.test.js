@@ -163,6 +163,28 @@ describe('the names of the tabs', () => {
   })
 })
 
+// 탭을 누르면 고르고, Ctrl을 누른 채 누르면 같은 접속을 하나 더 연다 (#257)
+describe('a click on a tab', () => {
+  it('selects it, also with Shift or Alt held', () => {
+    const $emit = vi.fn()
+    const vm = tabs({ sessions: [session(1, 'web'), session(2, 'db')], activeKey: 1, $emit })
+
+    vm.clicked(vm.sessions[1], { ctrlKey: false })
+    vm.clicked(vm.sessions[0], { ctrlKey: false, shiftKey: true })
+    vm.clicked(vm.sessions[1], { ctrlKey: false, altKey: true })
+    expect($emit.mock.calls).toEqual([['activate', 2], ['activate', 1], ['activate', 2]])
+  })
+
+  it('with Ctrl asks the panel for another tab of the same connection, and selects nothing itself', () => {
+    const $emit = vi.fn()
+    const vm = tabs({ sessions: [session(1, 'web'), session(2, 'db')], activeKey: 1, $emit })
+
+    vm.clicked(vm.sessions[0], { ctrlKey: true })
+    vm.clicked(vm.sessions[1], { ctrlKey: true, shiftKey: true })
+    expect($emit.mock.calls).toEqual([['duplicate', vm.sessions[0]], ['duplicate', vm.sessions[1]]])
+  })
+})
+
 describe('the wheel over the tab row', () => {
   it('moves a row that has more tabs than fit, and keeps the wheel from anything else', () => {
     const el = list({ scrollLeft: 50 })

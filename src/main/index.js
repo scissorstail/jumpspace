@@ -166,6 +166,10 @@ function main() {
   handle('terminal:reopen', (event, id, size) => toResult('terminal:reopen', async () => opened(
     await terminals.reopen(id, event.sender.id, { cols: size?.cols, rows: size?.rows }), event.sender.id
   )))
+  // 탭의 세션과 같은 요청으로 하나 더 연다 (탭을 Ctrl+클릭). 이것도 요청은 main만 갖고 있다.
+  handle('terminal:duplicate', (event, id, size) => toResult('terminal:duplicate', async () => opened(
+    await terminals.duplicate(id, event.sender.id, { cols: size?.cols, rows: size?.rows }), event.sender.id
+  )))
   on('terminal:write', (event, id, data) => terminals.write(id, event.sender.id, data))
   on('terminal:resize', (event, id, cols, rows) => terminals.resize(id, event.sender.id, cols, rows))
   on('terminal:close', (event, id) => terminals.close(id, event.sender.id))

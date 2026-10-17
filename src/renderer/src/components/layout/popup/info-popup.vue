@@ -145,11 +145,12 @@ export default {
 
 <style lang="scss" scoped>
 // 키 목록: 왼쪽에 키, 오른쪽에 하는 일. 창의 나머지는 가운데 정렬이다.
+// 창은 기본 창 크기에서 스크롤 없이 들어가야 한다: 열 번째 줄(Ctrl+클릭, #257)을 위해 위아래와 줄 사이를 조금 좁혔다.
 .info-keys {
   width: 38rem;
   max-width: 100%;
-  margin: 0 auto 1rem;
-  padding-top: 0.75rem;
+  margin: 0 auto 0.75rem;
+  padding-top: 0.5rem;
   border-top: 1px solid var(--js-line);
   text-align: left;
 }
@@ -165,7 +166,7 @@ export default {
 .info-keys-list {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 0.3rem 0.9rem;
+  gap: 0.25rem 0.9rem;
   margin: 0;
   font-size: 0.85rem;
 

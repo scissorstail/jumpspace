@@ -24,6 +24,7 @@
       :is-maximized="isMaximized"
       :is-minimized="!isOpen"
       @activate="activate"
+      @duplicate="duplicate"
       @close="closeSession"
       @reorder="$store.commit('terminalReorder', $event)"
       @move="$store.commit('terminalMove', $event)"
@@ -84,7 +85,7 @@ import { SearchAddon } from '@xterm/addon-search'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
-import { canReconnect, createActivityWatch, createOutputRouter, endedByUser, isMotionReport, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
+import { canReconnect, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, panelDrag, panelHeight, RECONNECTING_LINE, searchSeed, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import { MAX_WRITE } from '../../../../shared/terminal-input.js'
@@ -222,7 +223,8 @@ export default {
       return currentTerminalTheme(this.$store.getters.setting.terminalColors)
     },
     async start(session) {
-      const { kind, payload } = session.request
+      // duplicateOf: 다른 탭과 같은 접속이다 (그 탭을 Ctrl+클릭, #257). 그 요청은 main이 갖고 있어서 그 탭의 세션 id만 넘긴다.
+      const { kind, payload, duplicateOf } = session.request
       // 요청(비밀번호 포함)은 main에 넘기면 store에서 지운다.
       this.$store.commit('terminalUpdate', { key: session.key, request: null })
 
@@ -255,7 +257,8 @@ export default {
         return true
       })
 
-      const result = await window.preload.terminal.open(kind, payload, { cols: term.cols, rows: term.rows })
+      const size = { cols: term.cols, rows: term.rows }
+      const result = await (duplicateOf === undefined ? window.preload.terminal.open(kind, payload, size) : window.preload.terminal.duplicate(duplicateOf, size))
       // 기다리는 동안 탭이 닫혔으면 방금 열린 세션도 닫는다. closeSession은 아직 번호가 없는 세션을 끝낼 수 없어서,
       // 그 세션이 탭 없이 main에서 계속 돌았다: ssh는 로그인까지 가고, 서버에는 보는 화면 없이 접속한 채로 남는다.
       if (this.terms.get(session.key) !== entry) {
@@ -440,6 +443,16 @@ export default {
       if (key === this.activeKey && this.isOpen) return
 
       this.$store.commit('terminalActivate', key)
+    },
+    // 탭을 Ctrl+클릭했다 (owner, 2026-10-17, #257): 그 탭과 같은 접속을 새 탭에 하나 더 연다 (store의 terminalDuplicate,
+    // 세션은 start()가 연다). 여는 중인 탭과 열지 못한 탭에는 main에 요청이 없다: 그렇다고 알린다 (duplicateRefusal).
+    duplicate(session) {
+      const refusal = duplicateRefusal(session)
+      if (refusal) {
+        toastError(this, 'Not opened again', refusal)
+        return
+      }
+      this.$store.commit('terminalDuplicate', session.key)
     },
     // 최소화한 탭 줄에서 최대화를 누르면 패널도 다시 보인다.
     maximize(isMaximized) {

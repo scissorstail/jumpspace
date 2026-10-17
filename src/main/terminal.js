@@ -117,7 +117,8 @@ function waitFor(promise, ms) {
 //   getBash(): 실행할 bash 경로
 //   platform, release: 테스트에서 바꾼다 (Windows에서만 ConPTY를 고른다)
 // 끝난 세션의 요청은 탭에서 다시 접속(reopen)할 수 있도록 탭이 닫힐 때까지 기억한다. (비밀번호가 들어 있어서
-// 화면(store)에는 다시 두지 않는다) 사용자가 닫은 세션은 기억하지 않는다.
+// 화면(store)에는 다시 두지 않는다) 사용자가 닫은 세션은 기억하지 않는다. 돌고 있는 세션의 요청은 같은 접속의 세션을
+// 하나 더 열 때(duplicate) 쓴다.
 export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSessions = MAX_SESSIONS, platform = process.platform, release = osRelease() }) {
   const sessions = new Map()
   const ended = new Map() // id -> { owner, kind, payload }
@@ -220,7 +221,8 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
 
     const { pty, bundled } = spawned
     const id = nextId++
-    const session = { owner, pty, cleanup: prepared.cleanup, windowsPty: windowsPtyInfo({ platform, release, bundled }), pending: '', timer: null, released: platform === 'win32' ? nativeExit(pty) : null }
+    // request: 같은 접속을 하나 더 열 때 쓴다 (duplicate). 비밀번호가 들어 있어서 화면에는 다시 주지 않는다.
+    const session = { owner, request: { kind, payload }, pty, cleanup: prepared.cleanup, windowsPty: windowsPtyInfo({ platform, release, bundled }), pending: '', timer: null, released: platform === 'win32' ? nativeExit(pty) : null }
     sessions.set(id, session)
 
     // 모아 둔 출력을 화면으로 보낸다. (OUTPUT_DELAY_MS)
@@ -300,6 +302,17 @@ export function createTerminalManager({ tempDir, getBash, spawnPty, send, maxSes
         if (!(e instanceof WindowGone)) remember(id, entry)
         throw e
       }
+    },
+
+    // 탭의 세션과 같은 요청으로 세션을 하나 더 연다 (탭을 Ctrl+클릭, owner 2026-10-17, #257). 돌고 있는 세션이든, 다시
+    // 접속하려고 기억해 둔 끝난 세션이든 된다 (그 요청은 그대로 남는다). 새 세션의 id를 돌려준다.
+    async duplicate(id, owner, { cols, rows } = {}) {
+      const entry = ended.get(id)
+      const request = owned(id, owner)?.request ?? (entry && entry.owner === owner ? entry : null)
+      if (!request) {
+        throw new Error('This terminal can no longer be opened again. Start it from its node.')
+      }
+      return open(request.kind, request.payload, { owner, cols, rows })
     },
 
     // 프로그램이 막 끝난 pty는 크기 변경에 예외를 던진다 (node-pty: "Cannot resize a pty that has already exited").

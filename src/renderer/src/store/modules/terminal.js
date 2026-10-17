@@ -1,6 +1,7 @@
 // 앱 안의 터미널 탭 목록. 노드(Rete 안의 Vue)와 하단 패널이 이 store로 주고받는다.
 // request에는 접속 요청(비밀번호 포함)이 들어 있다. 패널이 main에 넘긴 뒤 지운다.
-// (끝난 탭을 다시 연결할 때 쓰는 요청은 main(terminal.js)이 갖고 있고, 여기에는 다시 두지 않는다)
+// (끝난 탭을 다시 연결할 때와 같은 접속을 하나 더 열 때 쓰는 요청은 main(terminal.js)이 갖고 있고, 여기에는 다시 두지 않는다:
+// 하나 더 연 탭의 request는 { duplicateOf: 그 탭의 세션 id }뿐이다)
 // hops는 세션이 지나가는 서버들(user@host:port, 경로 순서)이다. 캔버스가 열린 경로의 연결선을 표시하는 데 쓴다.
 //
 // 터미널은 그것을 연 다이어그램(item)의 것이다. owner는 지금 열려 있는 item의 번호(목록 항목의 index)이고,
@@ -55,6 +56,19 @@ export default {
       // 나눈 동안에는 고른 칸에 열린다: 그 칸의 탭 줄에 들어간다.
       if (state.sideKey !== null && state.rightKeys.includes(state.activeKey)) state.rightKeys = [...state.rightKeys, key]
       state.activeKey = key
+      state.isPanelOpen = true
+    },
+    // 탭 key와 같은 접속을 새 탭에 하나 더 연다 (탭을 Ctrl+클릭, owner 2026-10-17, #257). 새 탭은 그 탭 바로 뒤, 그 탭의 칸의
+    // 줄에 들어가고 키 입력을 받는다. 요청은 main이 갖고 있어서 세션의 id만 둔다: main에 세션이 없는 탭이면 아무것도 하지 않는다.
+    terminalDuplicate(state, key) {
+      const source = sessionsOf(state.sessions, state.owner).find(x => x.key === key)
+      if (!source || source.id === null) return
+
+      const copy = { key: nextKey++, id: null, owner: source.owner, title: source.title, hops: [...source.hops], status: 'starting', connected: false, busy: false, exitCode: null, request: { duplicateOf: source.id } }
+      state.sessions.splice(state.sessions.indexOf(source) + 1, 0, copy)
+      // activatePane은 rightKeys로 칸을 정한다: 오른쪽 칸의 탭이면 새 탭도 먼저 그 줄에 넣는다.
+      if (state.sideKey !== null && state.rightKeys.includes(key)) state.rightKeys = [...state.rightKeys, copy.key]
+      Object.assign(state, activatePane(state, copy.key))
       state.isPanelOpen = true
     },
     terminalUpdate(state, { key, ...patch }) {

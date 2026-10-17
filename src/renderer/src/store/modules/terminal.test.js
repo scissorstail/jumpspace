@@ -220,4 +220,85 @@ describe('terminal store', () => {
 
     expect(state.sessions[0].hops).toEqual([])
   })
+
+  // 탭을 Ctrl+클릭하면 같은 접속을 하나 더 연다 (#257). 요청은 main의 세션에 있다: 새 탭은 그 세션의 id만 갖는다.
+  describe('another tab of the same connection', () => {
+    const { mutations, getters } = terminal
+    const route = [{ user: 'u', host: 'a', port: '22', password: 'secret' }, { user: 'v', host: 'b', port: '2222' }]
+    const fresh = () => {
+      const state = freshState()
+      mutations.terminalOwner(state, 0)
+      return state
+    }
+    // 연 탭: 패널이 요청을 main에 넘기고 세션 id를 받은 뒤의 모양
+    const open = (state, title, id) => {
+      mutations.terminalAdd(state, { title, kind: 'proxyJump', payload: route, route })
+      const key = state.activeKey
+      mutations.terminalUpdate(state, { key, request: null, ...(id === undefined ? {} : { id, status: 'running' }) })
+      return key
+    }
+    const order = state => getters.terminalSessions(state).map(x => x.key)
+
+    it('comes right after its tab, with its name and path, takes the keyboard and holds only the id of its session', () => {
+      const state = fresh()
+      const a = open(state, 'web', 7)
+      const b = open(state, 'db', 8)
+      mutations.terminalPanel(state, false)
+
+      mutations.terminalDuplicate(state, a)
+      const copy = state.sessions[1]
+      expect(order(state)).toEqual([a, copy.key, b])
+      expect(copy).toEqual({ key: copy.key, id: null, owner: 0, title: 'web', hops: ['u@a:22', 'v@b:2222'], status: 'starting', connected: false, busy: false, exitCode: null, request: { duplicateOf: 7 } })
+      expect(copy.key).toBeGreaterThan(b)
+      expect(copy.hops).not.toBe(state.sessions[0].hops)
+      expect(JSON.stringify(state.sessions)).not.toContain('secret')
+      expect(state.activeKey).toBe(copy.key)
+      expect(state.isPanelOpen).toBe(true)
+    })
+
+    it('works for a tab that ended too: its session id is what main remembered for reconnecting', () => {
+      const state = fresh()
+      const a = open(state, 'web', 7)
+      mutations.terminalUpdate(state, { key: a, status: 'exited', exitCode: 255 })
+
+      mutations.terminalDuplicate(state, a)
+      expect(state.sessions.map(x => x.request)).toEqual([null, { duplicateOf: 7 }])
+      expect(state.sessions[0]).toMatchObject({ status: 'exited', exitCode: 255, id: 7 })
+    })
+
+    it('opens in the row of its tab while the panel is split, and takes the keyboard into that half', () => {
+      const state = fresh()
+      const a = open(state, 'a', 1)
+      const b = open(state, 'b', 2)
+      mutations.terminalActivate(state, a)
+      mutations.terminalSplit(state, true)
+      // 왼쪽: a (고른 탭), 오른쪽: b
+
+      mutations.terminalDuplicate(state, b)
+      const bb = state.activeKey
+      expect(getters.terminalRightKeys(state)).toEqual([b, bb])
+      expect(getters.terminalPanes(state)).toEqual({ left: a, right: bb })
+
+      mutations.terminalDuplicate(state, a)
+      const aa = state.activeKey
+      expect(getters.terminalRightKeys(state)).toEqual([b, bb])
+      expect(getters.terminalPanes(state)).toEqual({ left: aa, right: bb })
+      expect(order(state)).toEqual([a, aa, b, bb])
+    })
+
+    it('does nothing for a tab without a session in main, a tab of another space, or no tab', () => {
+      const state = fresh()
+      const a = open(state, 'a')
+      const before = JSON.stringify(state)
+      mutations.terminalDuplicate(state, a)
+      mutations.terminalDuplicate(state, 999)
+      expect(JSON.stringify(state)).toBe(before)
+
+      const b = open(state, 'b', 3)
+      mutations.terminalOwner(state, 1)
+      const away = JSON.stringify(state)
+      mutations.terminalDuplicate(state, b)
+      expect(JSON.stringify(state)).toBe(away)
+    })
+  })
 })
