@@ -598,6 +598,22 @@ describe('connecting an ended tab again', () => {
     expect(seen.registered).toEqual([])
     expect(seen.commits).toHaveLength(1)
   })
+
+  // main은 열지 못한 요청을 다시 시도할 수 있게 옛 id로 다시 기억해 둔다. 탭을 닫을 때의 close가 그보다 먼저 닿았으면
+  // (open의 첫 await 뒤의 실패) 탭이 없는 요청이 남는다: 옛 id를 한 번 더 닫는다 (#261)
+  it('has main forget the request it kept again when the tab was closed while waiting and could not be opened', async () => {
+    const { calls, answer } = reopening()
+    const { entry, session, vm, seen } = ended()
+
+    const done = vm.reconnect(session)
+    vm.terms.delete(1)
+    answer({ ok: false, error: 'Cannot create process, error code: 216' })
+    await done
+    expect(calls.filter(call => call[0] === 'close')).toEqual([['close', 7]])
+    expect(entry.calls).toEqual([['write', RECONNECTING_LINE]])
+    expect(seen.registered).toEqual([])
+    expect(seen.commits).toHaveLength(1)
+  })
 })
 
 // 탭을 열 때. main의 답(terminal:open)은 테스트가 정한다. 가짜 this에는 탭의 화면이 놓일 자리와 store, 출력의 길을 둔다.

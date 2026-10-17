@@ -774,6 +774,37 @@ describe('createTerminalManager: reconnect', () => {
     expect(await manager.reopen(id, 1)).toBeGreaterThan(2)
   })
 
+  // 화면은 Enter와 탭의 x를 한꺼번에 보낼 수 있다 (#261). open의 첫 await 뒤에 난 실패(pty가 시작되지 않았다)는 그 사이에
+  // 온 close 뒤에 요청을 되돌려 놓는다: 탭이 없는 요청(비밀번호 포함)이다. 화면이 옛 id를 한 번 더 닫아야 잊힌다
+  // (terminal-panel의 reconnect). 여기서는 close가 같은 틱에 온다: 세션의 파일을 쓰기도 전이다.
+  it('puts a request back that failed after its tab was closed, and forgets it at a second close', async () => {
+    const { spawnPty: plain, ptys } = fakePtyFactory()
+    let failing = false
+    const spawnPty = (...args) => {
+      if (failing) throw new Error('Cannot create process, error code: 216')
+      return plain(...args)
+    }
+    const { manager } = setup({ spawnPty })
+    const id = await manager.open('connect', { ...node, password: 'pw' }, { owner: 1 })
+    ptys[0].emitExit(255)
+
+    failing = true
+    const again = manager.reopen(id, 1)
+    manager.close(id, 1)
+    await expect(again).rejects.toThrow(/Cannot create process/)
+
+    // 돌아온 요청: 아직 열 수 있다
+    failing = false
+    const copy = await manager.duplicate(id, 1)
+    expect(copy).toBeGreaterThan(id)
+    expect(Object.values(ptys[1].options.env)).toContain('pw')
+    manager.close(copy, 1)
+
+    manager.close(id, 1)
+    await expect(manager.duplicate(id, 1)).rejects.toThrow(/can no longer be opened again/)
+    await expect(manager.reopen(id, 1)).rejects.toThrow(/can no longer be reconnected/)
+  })
+
   it('remembers a bounded number of ended sessions', async () => {
     const { manager, ptys } = setup({ maxSessions: 1 })
     const ids = []

@@ -202,7 +202,8 @@ export default {
       if (entry.id !== null) window.preload.terminal.close(entry.id)
       entry.term.dispose()
     }
-    // 아직 열리는 중인 세션은 답이 왔을 때 start()와 reconnect()가 닫는다: 여기에 없는 탭의 세션을 닫는 것이 그들의 일이다.
+    // 아직 열리는 중인 세션은 답이 왔을 때 start()와 reconnect()가 닫는다: 여기에 없는 탭의 세션을 닫는 것이 그들의 일이다
+    // (reconnect()는 열지 못했을 때 main이 다시 기억해 둔 요청도 잊게 한다).
     this.terms.clear()
   },
   methods: {
@@ -403,9 +404,11 @@ export default {
       const result = await window.preload.terminal.reopen(entry.id, { cols: entry.term.cols, rows: entry.term.rows })
       entry.reconnecting = false
 
-      // 기다리는 동안 탭이 닫혔으면 새 세션도 닫는다.
+      // 기다리는 동안 탭이 닫혔으면 새 세션도 닫는다. 열지 못했으면 main은 다시 시도할 수 있게 그 요청(비밀번호 포함)을 옛 id로
+      // 다시 기억해 두었다: 탭을 닫을 때의 close는 open의 첫 await 뒤에 난 실패(pty가 시작되지 않았다)보다 먼저 main에 닿아서
+      // 잊을 것이 없었다. 그래서 옛 id를 한 번 더 닫는다 (#261).
       if (!this.terms.has(session.key)) {
-        if (result.ok) window.preload.terminal.close(result.id)
+        window.preload.terminal.close(result.ok ? result.id : entry.id)
         return
       }
       if (!result.ok) {
