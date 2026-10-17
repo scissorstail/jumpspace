@@ -21,6 +21,17 @@ describe('terminal store', () => {
     expect(session).toMatchObject({ connected: false, busy: false })
   })
 
+  // 종류는 요청(비밀번호 포함)이 지워진 뒤에도 남는다: 돌고 있는 포워딩 탭은 복사하지 않는다 (#258, utils의 duplicateRefusal)
+  it('keeps the kind of a session after its request is gone, and nothing else of the request', () => {
+    const state = freshState()
+    terminal.mutations.terminalAdd(state, { title: '⇄ db', kind: 'forward', payload: { via: [{ user: 'u', host: 'a', port: '22', password: 'secret' }], forwards: [] } })
+    const [session] = state.sessions
+    terminal.mutations.terminalUpdate(state, { key: session.key, request: null })
+
+    expect(session.kind).toBe('forward')
+    expect(JSON.stringify(state.sessions)).not.toContain('secret')
+  })
+
   // 터미널은 그것을 연 다이어그램(item)의 것이다.
   describe('terminals belong to the diagram that opened them', () => {
     const { mutations, getters } = terminal
@@ -248,7 +259,7 @@ describe('terminal store', () => {
       mutations.terminalDuplicate(state, a)
       const copy = state.sessions[1]
       expect(order(state)).toEqual([a, copy.key, b])
-      expect(copy).toEqual({ key: copy.key, id: null, owner: 0, title: 'web', hops: ['u@a:22', 'v@b:2222'], status: 'starting', connected: false, busy: false, exitCode: null, request: { duplicateOf: 7 } })
+      expect(copy).toEqual({ key: copy.key, id: null, owner: 0, title: 'web', kind: 'proxyJump', hops: ['u@a:22', 'v@b:2222'], status: 'starting', connected: false, busy: false, exitCode: null, request: { duplicateOf: 7 } })
       expect(copy.key).toBeGreaterThan(b)
       expect(copy.hops).not.toBe(state.sessions[0].hops)
       expect(JSON.stringify(state.sessions)).not.toContain('secret')

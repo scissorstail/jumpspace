@@ -785,8 +785,20 @@ describe('a tab clicked with Ctrl', () => {
 
     vm.duplicate({ key: 3, id: 7, status: 'running', connected: true })
     vm.duplicate({ key: 4, id: 8, status: 'exited', exitCode: 255 })
-    expect(commits).toEqual([['terminalDuplicate', 3], ['terminalDuplicate', 4]])
+    vm.duplicate({ key: 5, id: 9, kind: 'forward', status: 'exited', exitCode: 255 })
+    expect(commits).toEqual([['terminalDuplicate', 3], ['terminalDuplicate', 4], ['terminalDuplicate', 5]])
     expect(toasts).toEqual([])
+  })
+
+  // 돌고 있는 포워딩 탭의 복사본은 그 포트를 열지 못하고 곧바로 끝난다 (#258)
+  it('opens nothing for a forwarding tab that runs, and says why', () => {
+    const { vm, toasts, commits } = clicking()
+
+    vm.duplicate({ key: 3, id: 7, kind: 'forward', status: 'running', connected: true })
+    expect(commits).toEqual([])
+    expect(toasts.map(({ title, body }) => [title, body])).toEqual([
+      ['Not opened again', 'The ports this tab forwards are in use while it runs, so a second tab could not forward them. Open it again once it has ended.']
+    ])
   })
 
   it('opens nothing and says why for a tab that is still opening, or connecting again, or that did not start', () => {

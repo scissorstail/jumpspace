@@ -479,6 +479,16 @@ describe('duplicateRefusal', () => {
       expect(duplicateRefusal(session), JSON.stringify(session)).toBe('This terminal did not start. Start it from its node.')
     }
   })
+
+  // 돌고 있는 포워딩 탭은 그 로컬 포트를 쥐고 있다: 복사본의 ssh는 그 포트를 열지 못하고 곧바로 끝난다 (#258)
+  it('keeps a running forwarding tab from a copy that could not forward its ports, and lets an ended one be copied', () => {
+    const inUse = 'The ports this tab forwards are in use while it runs, so a second tab could not forward them. Open it again once it has ended.'
+    expect(duplicateRefusal({ kind: 'forward', status: 'running', id: 3 })).toBe(inUse)
+    expect(duplicateRefusal({ kind: 'forward', status: 'running', id: 3, connected: true })).toBe(inUse)
+    expect(duplicateRefusal({ kind: 'forward', status: 'exited', id: 3, exitCode: 255 })).toBe(null)
+    expect(duplicateRefusal({ kind: 'forward', status: 'starting', id: null })).toBe('This terminal is still opening. Try again once it is open.')
+    for (const kind of ['connect', 'proxyJump']) expect(duplicateRefusal({ kind, status: 'running', id: 3 }), kind).toBe(null)
+  })
 })
 
 describe('endedByUser', () => {

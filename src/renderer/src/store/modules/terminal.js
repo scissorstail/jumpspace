@@ -52,7 +52,8 @@ export default {
       const key = nextKey++
       const hops = route.map(hopKey)
       // connected: 로그인 표시를 받았는지 (캔버스의 연결 중/연결됨 구분). busy: 출력이 오가는 중인지 (그 노드의 점이 깜박인다)
-      state.sessions.push({ key, id: null, owner: state.owner, title, hops, status: 'starting', connected: false, busy: false, exitCode: null, request: { kind, payload } })
+      // kind는 요청이 지워진 뒤에도 남는다 (비밀이 없다): 돌고 있는 포워딩 탭은 Ctrl+클릭으로 복사하지 않는다 (#258).
+      state.sessions.push({ key, id: null, owner: state.owner, title, kind, hops, status: 'starting', connected: false, busy: false, exitCode: null, request: { kind, payload } })
       // 나눈 동안에는 고른 칸에 열린다: 그 칸의 탭 줄에 들어간다.
       if (state.sideKey !== null && state.rightKeys.includes(state.activeKey)) state.rightKeys = [...state.rightKeys, key]
       state.activeKey = key
@@ -64,7 +65,7 @@ export default {
       const source = sessionsOf(state.sessions, state.owner).find(x => x.key === key)
       if (!source || source.id === null) return
 
-      const copy = { key: nextKey++, id: null, owner: source.owner, title: source.title, hops: [...source.hops], status: 'starting', connected: false, busy: false, exitCode: null, request: { duplicateOf: source.id } }
+      const copy = { key: nextKey++, id: null, owner: source.owner, title: source.title, kind: source.kind, hops: [...source.hops], status: 'starting', connected: false, busy: false, exitCode: null, request: { duplicateOf: source.id } }
       state.sessions.splice(state.sessions.indexOf(source) + 1, 0, copy)
       // activatePane은 rightKeys로 칸을 정한다: 오른쪽 칸의 탭이면 새 탭도 먼저 그 줄에 넣는다.
       if (state.sideKey !== null && state.rightKeys.includes(key)) state.rightKeys = [...state.rightKeys, copy.key]

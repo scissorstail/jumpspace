@@ -322,10 +322,12 @@ export function canReconnect(session) {
 
 // 탭을 Ctrl+클릭해서 같은 접속을 하나 더 열 수 없는 까닭 (열 수 있으면 null, #257). 요청은 main의 세션에 있다: 여는 중인
 // 탭에는 아직 없고 (다시 접속하는 중인 탭도: main은 그 답을 줄 때까지 요청을 끝난 세션들에서 꺼내 둔다), 열지 못한 탭(failed)은
-// 세션 id가 없다.
+// 세션 id가 없다. 돌고 있는 포워딩 탭은 그 로컬 포트들을 쥐고 있어서, 복사본의 ssh는 그 포트를 열지 못하고 곧바로 끝난다
+// (ExitOnForwardFailure): 복사하지 않고 그렇다고 알린다 (owner, 2026-10-17, #258). 끝난 포워딩 탭은 복사된다.
 export function duplicateRefusal(session) {
   if (session?.status === 'starting') return 'This terminal is still opening. Try again once it is open.'
   if (session?.id === null || session?.id === undefined) return 'This terminal did not start. Start it from its node.'
+  if (session.kind === 'forward' && session.status === 'running') return 'The ports this tab forwards are in use while it runs, so a second tab could not forward them. Open it again once it has ended.'
   return null
 }
 
