@@ -67,6 +67,32 @@ describe('closing a terminal tab', () => {
   })
 })
 
+// 탭 줄을 쓴 뒤 키보드는 터미널에 있다 (#266). 패널이 어느 터미널에 주는지는 terminal-panel-methods.test.js가 돌려 본다.
+describe('the keyboard after a use of the tab row', () => {
+  // Enter와 Space는 막는다: 키보드가 그 터미널로 옮겨 간 뒤 그 Enter가 터미널에 들어가 세션으로 갔다.
+  it('is given back by the panel for a tab chosen with the mouse or the keys, and at the end of every drag', () => {
+    expect(tabs).toMatch(/@click="clicked\(session, \$event\)"/)
+    expect(tabs).toMatch(/@keydown\.enter\.self\.prevent="\$emit\('activate', session\.key\)"\n\s+@keydown\.space\.self\.prevent="\$emit\('activate', session\.key\)"/)
+    expect(tabs).toMatch(/@input="dropped\(row, \$event\)"\n\s+@end="\$emit\('dragged'\)"/)
+    expect(panel).toMatch(/@activate="selectTab"/)
+    expect(panel).toMatch(/@dragged="dragged"/)
+  })
+
+  // 놓아서 순서가 바뀌면 화면들도 그 순서로 다시 놓이고, 옮겨진 화면에 있던 키보드는 빠진다 (#266, 확인 폴더의
+  // lists/focus-move-probe.cjs). 패널은 끌기가 끝났다는 알림을 받자마자 키보드를 주므로, 그 알림은 다시 그린 뒤에 와야 한다:
+  // vuedraggable은 Sortable의 이벤트마다 목록을 먼저 바꾸고(input) 그 이벤트는 $nextTick에 보낸다. 앱에 들어가는 것은
+  // package.json의 module이다. 이것이 바뀌면 패널의 dragged()가 다시 그리기를 기다려야 한다.
+  it('hears of the end of a drag from vuedraggable only after the new order has been drawn', () => {
+    const lib = join(here, '..', '..', '..', '..', '..', 'node_modules', 'vuedraggable')
+    const entry = JSON.parse(readFileSync(join(lib, 'package.json'), 'utf8')).module
+    const code = readFileSync(join(lib, entry), 'utf8').replace(/\r\n/g, '\n')
+
+    expect(code).toMatch(/function emit\(evtName, evtData\) \{\n\s+var _this = this;\n\n\s+this\.\$nextTick\(function \(\) \{\n\s+return _this\.\$emit\(evtName\.toLowerCase\(\), evtData\);\n/)
+    expect(code).toMatch(/_this2\["onDrag" \+ evtName\]\(evtData\);\n\s+\}\n\n\s+emit\.call\(_this2, evtName, evtData\);/)
+    expect(code).toMatch(/var eventsListened = \[[^\]]*"End"[^\]]*\];/)
+  })
+})
+
 // 최소화하면 탭 줄만 창 아래쪽에 남는다 (owner, 2026-10-12). 전에는 패널이 통째로 사라지고 머리글에 단추가 생겼다.
 describe('the minimized terminal panel', () => {
   it('stays as long as the diagram has terminals, without its screens and its resize edge', () => {

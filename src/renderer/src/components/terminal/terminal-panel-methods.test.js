@@ -875,6 +875,66 @@ describe('a tab clicked with Ctrl', () => {
   })
 })
 
+// 탭 줄을 쓴 뒤 키보드가 있을 곳 (#266): 다른 탭을 고르지 않았으면 앞의 터미널이다. 탭을 누르면 키보드가 탭으로 가서,
+// 고른 탭을 누르거나, Ctrl+클릭이 아무것도 열지 않거나, 탭을 끈 뒤에는 친 것이 아무 데도 가지 않았다.
+describe('the keyboard after a use of the tab row', () => {
+  const using = ({ isOpen = true } = {}) => {
+    const front = terminal()
+    const { vm, toasts } = panel(front)
+    const commits = []
+    vm.$store = { commit: (...args) => commits.push(args) }
+    vm.isOpen = isOpen
+    return { vm, front, commits, toasts }
+  }
+
+  it('is in the terminal of the selected tab after a click on that tab, which changes nothing else', () => {
+    const { vm, front, commits } = using()
+
+    vm.selectTab(1)
+    expect(front.calls).toEqual(['focus'])
+    expect(commits).toEqual([])
+  })
+
+  // 고른 탭이 바뀌면 패널이 그 터미널을 보이면서 키보드를 준다 (shownKeys): 여기서는 고르기만 한다.
+  it('follows another tab that is clicked: that tab is selected', () => {
+    const { vm, front, commits } = using()
+
+    vm.selectTab(2)
+    expect(commits).toEqual([['terminalActivate', 2]])
+    expect(front.calls).toEqual([])
+  })
+
+  it('comes with the panel when the selected tab of a minimized panel is clicked: the panel is shown again', () => {
+    const { vm, front, commits } = using({ isOpen: false })
+
+    vm.selectTab(1)
+    expect(commits).toEqual([['terminalActivate', 1]])
+    expect(front.calls).toEqual([])
+  })
+
+  it('goes back to the terminal in front after a Ctrl+click that opens nothing, on that tab or another one, and is left to the copy otherwise', () => {
+    const { vm, front, commits, toasts } = using()
+
+    vm.duplicate({ key: 1, id: null, status: 'starting' })
+    vm.duplicate({ key: 3, id: null, status: 'failed' })
+    expect(toasts.length).toBe(2)
+    expect(front.calls).toEqual(['focus', 'focus'])
+
+    vm.duplicate({ key: 3, id: 8, status: 'running', connected: true })
+    expect(commits).toEqual([['terminalDuplicate', 3]])
+    expect(front.calls).toEqual(['focus', 'focus'])
+  })
+
+  // 끌기가 끝난 것은 바뀐 순서를 다시 그린 뒤에 온다 (vuedraggable, terminal-tabs.test.js)
+  it('goes back to the terminal in front at the end of a drag of a tab', () => {
+    const { vm, front, commits } = using()
+
+    vm.dragged()
+    expect(front.calls).toEqual(['focus'])
+    expect(commits).toEqual([])
+  })
+})
+
 describe('closing a tab', () => {
   // 가짜 this에 main에 한 요청과 store에 한 commit의 기록을 더한다. 화면을 놓아주는 것(dispose)은 터미널의 기록에 남는다.
   const closing = entry => {

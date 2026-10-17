@@ -23,11 +23,12 @@
       :right-keys="rightKeys"
       :is-maximized="isMaximized"
       :is-minimized="!isOpen"
-      @activate="activate"
+      @activate="selectTab"
       @duplicate="duplicate"
       @close="closeSession"
       @reorder="$store.commit('terminalReorder', $event)"
       @move="$store.commit('terminalMove', $event)"
+      @dragged="dragged"
       @split="$store.commit('terminalSplit', $event)"
       @maximize="maximize"
       @hide="$store.commit('terminalPanel', false)"
@@ -454,13 +455,36 @@ export default {
 
       this.$store.commit('terminalActivate', key)
     },
+    // 탭 줄에서 탭을 골랐다 (누르기, 또는 탭에서 Enter, Space). 탭은 키보드로도 고르게 tabindex가 있어서, 누르면 키보드가
+    // 탭으로 간다. 다른 탭이면 고른 탭이 바뀌고 키보드도 그 터미널로 간다 (shownKeys). 이미 고른 탭이면 바뀌는 것이 없어서
+    // 키보드가 탭에 남았고, 친 것이 아무 데도 가지 않았다 (#266): 그 터미널에 키보드를 준다.
+    selectTab(key) {
+      if (key === this.activeKey && this.isOpen) {
+        this.focusFront()
+        return
+      }
+      this.activate(key)
+    },
+    // 앞의(고른 탭의) 터미널에 키보드를 준다. 패널을 최소화해서 터미널이 숨어 있으면 아무 일도 없다.
+    focusFront() {
+      this.terms.get(this.activeKey)?.term.focus()
+    },
+    // 탭을 끌어서 놓았다: 같은 줄에서 순서를 바꿨든, 다른 줄로 옮겼든, 탭 줄 밖에 놓았든 (#266). 누를 때 키보드가 탭으로
+    // 갔고, 끄는 동안 그 탭 요소가 옮겨지면 키보드는 아무 데도 없다: 앞의 터미널로 돌려준다. 바뀐 순서로 다시 그린 뒤여야 한다:
+    // 화면들도 store의 순서(allSessions)대로 다시 놓이고, 옮겨진 화면에 있던 키보드는 빠진다. 이 알림이 그때 온다:
+    // vuedraggable은 끌기의 이벤트를 $nextTick에 보내서, 놓을 때 바꾼 순서를 다시 그린 뒤다 (terminal-tabs.test.js가 읽는다).
+    dragged() {
+      this.focusFront()
+    },
     // 탭을 Ctrl+클릭했다 (owner, 2026-10-17, #257): 그 탭과 같은 접속을 새 탭에 하나 더 연다 (store의 terminalDuplicate,
     // 세션은 start()가 연다). 여는 중인 탭과 열지 못한 탭에는 main에 요청이 없다: 그렇다고 알린다 (duplicateRefusal). 포워딩
-    // 탭은 그 포트를 쥔 다른 탭도 본다 (allSessions, #264).
+    // 탭은 그 포트를 쥔 다른 탭도 본다 (allSessions, #264). 열지 않을 때는 누를 때 그 탭으로 간 키보드를 앞의 터미널로
+    // 돌려준다 (#266).
     duplicate(session) {
       const refusal = duplicateRefusal(session, this.allSessions)
       if (refusal) {
         toastError(this, 'Not opened again', refusal)
+        this.focusFront()
         return
       }
       this.$store.commit('terminalDuplicate', session.key)

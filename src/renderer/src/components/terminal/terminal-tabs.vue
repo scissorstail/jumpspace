@@ -5,7 +5,11 @@
   >
     <!-- 탭이 많으면 이 목록만 옆으로 넘긴다. 오른쪽 끝의 패널 단추(최대화, 최소화 또는 다시 보이기)는 늘 보인다.
          탭을 끌면 순서가 바뀐다 (닫기 단추에서는 끌리지 않는다).
-         좌우로 나눈 동안에는 칸마다 제 목록이 그 칸 위에 있고 (owner, 2026-10-17), 탭을 다른 칸의 목록으로 끌어 옮길 수 있다. -->
+         좌우로 나눈 동안에는 칸마다 제 목록이 그 칸 위에 있고 (owner, 2026-10-17), 탭을 다른 칸의 목록으로 끌어 옮길 수 있다.
+         끌기가 끝나면 놓은 곳이 어디든 패널에 알린다 (dragged): 키보드를 앞의 터미널로 돌려준다 (#266).
+         end는 끌기가 시작된 때만 온다 (Sortable): 그냥 누른 것은 clicked가 맡는다.
+         탭에서 Enter와 Space는 그 탭을 고르고 키 자체는 막는다: 키보드가 그 터미널로 옮겨 간 뒤 그 Enter가 터미널에 들어가
+         세션으로 갔다 (#266: 셸이면 쳐 둔 줄이 실행되고, 끝난 탭이면 다시 접속이었다). -->
     <draggable
       v-for="row in rows"
       :key="row.side"
@@ -20,6 +24,7 @@
       :prevent-on-filter="false"
       ghost-class="terminal-tab-ghost"
       @input="dropped(row, $event)"
+      @end="$emit('dragged')"
       @wheel.native="scrollTabs"
     >
       <div
@@ -36,7 +41,7 @@
         @click="clicked(session, $event)"
         @mousedown.middle.prevent
         @auxclick.middle="$emit('close', session)"
-        @keydown.enter.self="$emit('activate', session.key)"
+        @keydown.enter.self.prevent="$emit('activate', session.key)"
         @keydown.space.self.prevent="$emit('activate', session.key)"
       >
         <span
@@ -124,7 +129,8 @@ import { revealScrollLeft, sessionRouteText, sessionStatusText } from '@/utils/t
 // 터미널 패널 위쪽의 탭 줄. 탭이 많으면 좁아졌다가 목록만 옆으로 넘어가고, 활성 탭은 늘 보이게 한다.
 // 좌우로 나눈 동안에는 칸마다 제 목록이 있다 (rightKeys: 오른쪽 칸의 탭들).
 // 탭을 고르기, 같은 접속을 하나 더 열기(탭을 Ctrl+클릭), 닫기, 끌어서 바꾼 순서, 다른 칸으로 옮긴 탭, 좌우로 나누기/합치기,
-// 패널 최대화/내리기, 패널 최소화/다시 보이기는 이벤트(activate, duplicate, close, reorder, move, split, maximize, hide, show)로 패널에 알린다.
+// 패널 최대화/내리기, 패널 최소화/다시 보이기, 끌기가 끝난 것은 이벤트(activate, duplicate, close, reorder, move, split, maximize, hide,
+// show, dragged)로 패널에 알린다.
 export default {
   name: 'TerminalTabs',
   components: { draggable },
