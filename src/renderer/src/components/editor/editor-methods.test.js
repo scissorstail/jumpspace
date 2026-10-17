@@ -304,13 +304,14 @@ describe('setting the canvas up', () => {
     expect(vm.confirmedRemoval).toBeNull()
   })
 
-  // 터미널 패널은 창 크기를 바꾸지 않고 캔버스의 높이를 바꾼다. 크기 없이 기억된 보기는 #workspace의 크기를 따른다.
-  it('follows the size of the canvas area and of the workspace: Rete fixes its size and the view is scaled again', () => {
-    const { vm, areaEl, roomEl } = setup()
+  // 터미널 패널은 창 크기를 바꾸지 않고 캔버스의 높이를 바꾼다. 보여줄 보기는 영역의 크기만으로 정해진다 (#265부터
+  // 크기 없이 기억된 보기도. 그 전에는 #workspace도 보았다).
+  it('follows the size of the canvas area: Rete fixes its size and the view is scaled again', () => {
+    const { vm, areaEl } = setup()
     vm.base = { view: { k: 1, x: 100, y: 50 }, size: { width: 1000, height: 600 } }
 
     expect(observers).toHaveLength(1)
-    expect(observers[0].observed).toEqual([areaEl, roomEl])
+    expect(observers[0].observed).toEqual([areaEl])
 
     areaEl.clientHeight = 300
     observers[0].callback()
@@ -402,24 +403,25 @@ describe('the view the user chose and the view that is shown', () => {
     expect(emitted('view-change')).toEqual([])
   })
 
-  // 한 번도 옮기지 않은 다이어그램, 예전 파일: 패널이 없는 캔버스에서의 보기로 친다. 여는 순간의 영역 크기를 그 크기로 삼지 않는다.
+  // 한 번도 옮기지 않은 다이어그램, 예전 파일: 기본 창의 캔버스(DEFAULT_CANVAS, 1010 x 688)에서의 보기로 친다.
+  // 여는 순간의 영역 크기를 그 크기로 삼지 않는다.
   it.each([
     ['no size', {}],
     ['a width only', { w: 1000 }],
     ['a height of 0', { w: 1000, h: 0 }]
-  ])('opens a view saved with %s as a view of the canvas without the terminal panel', (name, size) => {
-    const { vm } = setup({ area: [1000, 400], room: [1000, 800] })
+  ])('opens a view saved with %s as a view of the canvas of the default window', (name, size) => {
+    const { vm } = setup({ area: [1010, 344], room: [1010, 688] })
 
     vm.openView({ k: 0.8, x: 0, y: 0, ...size })
 
     expect(vm.base).toEqual({ view: { k: 0.8, x: 0, y: 0 }, size: null })
-    // 패널이 캔버스의 반을 차지한다: 반으로 줄여서 보여준다
-    expect(moves()).toEqual([['zoom', 0.4, 0, 0], ['translate', 250, 0]])
+    // 영역이 그 캔버스의 반 높이다 (패널이 반을 차지한다): 반으로 줄이고, 가운데 점은 가운데에 남는다
+    expect(moves()).toEqual([['zoom', 0.4, 0, 0], ['translate', 252.5, 0]])
   })
 
   it('Reset view goes back to the starting view, remembers it without a size and tells the layout', () => {
-    const { vm } = setup({ area: [1000, 400], room: [1000, 800] })
-    vm.base = { view: { k: 2, x: 5, y: 5 }, size: { width: 1000, height: 400 } }
+    const { vm } = setup({ area: [1010, 344], room: [1010, 688] })
+    vm.base = { view: { k: 2, x: 5, y: 5 }, size: { width: 1010, height: 344 } }
 
     vm.resetView()
 
@@ -427,15 +429,19 @@ describe('the view the user chose and the view that is shown', () => {
     expect(vm.base.view).not.toBe(DEFAULT_VIEW)
     expect(emitted('view-change')).toEqual([[{ ...DEFAULT_VIEW }]])
     // 패널이 열려 있으면 다른 보기처럼 줄여서 보여준다
-    expect(moves()).toEqual([['zoom', DEFAULT_VIEW.k / 2, 0, 0], ['translate', 250, 0]])
+    expect(moves()).toEqual([['zoom', DEFAULT_VIEW.k / 2, 0, 0], ['translate', 252.5, 0]])
   })
 
-  it('Reset view shows exactly the starting view when no terminal panel takes room', () => {
-    const { vm } = setup({ area: [1000, 800], room: [1000, 800] })
-
+  // owner, 2026-10-17 (#265): 처음 보기도 창 크기를 같은 비율로 따른다
+  it('Reset view shows exactly the starting view in the canvas of the default window, and that view scaled in another', () => {
+    const { vm } = setup({ area: [1010, 688], room: [1010, 688] })
     vm.resetView()
-
     expect(moves()).toEqual([['zoom', DEFAULT_VIEW.k, 0, 0], ['translate', 0, 0]])
+
+    const twice = setup({ area: [2020, 1376], room: [2020, 1376] })
+    log.length = 0
+    twice.vm.resetView()
+    expect(moves()).toEqual([['zoom', DEFAULT_VIEW.k * 2, 0, 0], ['translate', 0, 0]])
   })
 
   it('sets a view by zooming at the origin first and moving then', () => {

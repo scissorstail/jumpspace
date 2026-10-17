@@ -1,5 +1,8 @@
 // 캔버스의 위치(x, y)와 확대(k) 상태. item마다 마지막 상태를 기억해 두었다가 다시 열 때 복원한다.
 export const DEFAULT_VIEW = { k: 0.85, x: 0, y: 0 }
+// 처음 보기(DEFAULT_VIEW)가 그대로 보이는 캔버스: 기본 창(1024 x 768, main의 window-bounds.js)에서 터미널 패널이 없을 때의
+// 캔버스 영역이다 (#265에 Windows 10, 화면 배율 125 %에서 쟀다). 크기 없이 기억된 보기는 이 크기에서의 보기로 친다 (shownView).
+export const DEFAULT_CANVAS = { width: 1010, height: 688 }
 
 // 검사와 확대 범위는 main과 같이 쓴다.
 import { MAX_ZOOM, MIN_ZOOM } from '../../../shared/view.js'
@@ -55,11 +58,13 @@ export function scaleView(view, from, to) {
 
 // 기억해 둔 보기(base: { view, size })를 지금의 캔버스 영역(area)에 맞춘 보기.
 // size는 그 보기를 정할 때의 영역 크기다. 크기 없이 기억된 보기(처음 여는 다이어그램, Reset view로 돌린 처음 보기,
-// 예전 파일, 영역이 접혀 있을 때 정한 것)는 터미널 패널이 자리를 차지하지 않을 때의 캔버스(full)에서의 보기로 친다:
-// 패널이 없으면 그대로이고, 패널이 열려 있으면 다른 보기처럼 줄어든다. 그 캔버스가 어떤 크기든 그렇다: 사용자가 정한
-// 보기는 창 높이를 따라 커지고 줄지만, 처음 보기는 어느 창에서나 처음 보기다.
-export function shownView(base, area, full) {
-  return scaleView(base.view, isRealSize(base.size) ? base.size : full, area)
+// 예전 파일, 영역이 접혀 있을 때 정한 것)는 기본 창의 캔버스(DEFAULT_CANVAS)에서의 보기로 친다: 사용자가 정한 보기처럼
+// 창 크기와 터미널 패널을 따라 같은 비율로, 가운데를 중심으로 커지고 준다 (owner, 2026-10-17, #265: 처음 보기는 창을
+// 따르지 않고 끌어서 옮긴 보기는 따라서, 창 크기를 바꿀 때 둘이 달랐다). 그래서 처음 보기는 창마다 다르지만 그 창의
+// 크기만으로 정해진다: 창 크기를 바꾼 뒤 Reset view를 다시 눌러도 화면이 움직이지 않는다.
+// (#265 전에는 터미널 패널이 없을 때의 지금 캔버스에서의 보기로 쳐서, 처음 보기는 어느 창에서나 같았고 패널만 줄였다)
+export function shownView(base, area) {
+  return scaleView(base.view, isRealSize(base.size) ? base.size : DEFAULT_CANVAS, area)
 }
 
 // 캔버스 영역(area) 안에서, 터미널 패널이 없을 때의 캔버스(full)가 그 높이로 줄어들면 차지하는 부분

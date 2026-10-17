@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, sanitizeView, scaleView, shownView, viewOf } from './view'
+import { DEFAULT_CANVAS, DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, sanitizeView, scaleView, shownView, viewOf } from './view'
 import { MAX_AREA } from '../../../shared/view.js'
 
 describe('sanitizeView', () => {
@@ -133,62 +133,65 @@ describe('isRealSize', () => {
   })
 })
 
-// 기억해 둔 보기를 지금 영역에 보여줄 때. 크기 없이 기억된 보기도 있다: 처음 여는 다이어그램(기본 보기), 예전 파일,
-// 터미널 패널을 최대화한 동안(캔버스 영역의 높이가 0이다) 정한 것.
+// 기억해 둔 보기를 지금 영역에 보여줄 때. 크기 없이 기억된 보기도 있다: 처음 여는 다이어그램(기본 보기), Reset view,
+// 예전 파일, 터미널 패널을 최대화한 동안(캔버스 영역의 높이가 0이다) 정한 것.
 describe('shownView', () => {
   const full = { width: 1100, height: 756 }
   const withPanel = { width: 1100, height: 476 }
   const view = { k: 0.85, x: 0, y: 0 }
+  const home = { view, size: null }
 
   it('scales a view from the size it was chosen in', () => {
-    expect(shownView({ view, size: withPanel }, full, full)).toEqual(scaleView(view, withPanel, full))
-    expect(shownView({ view, size: full }, withPanel, full)).toEqual(scaleView(view, full, withPanel))
-    expect(shownView({ view, size: full }, full, full)).toEqual(view)
+    expect(shownView({ view, size: withPanel }, full)).toEqual(scaleView(view, withPanel, full))
+    expect(shownView({ view, size: full }, withPanel)).toEqual(scaleView(view, full, withPanel))
+    expect(shownView({ view, size: full }, full)).toEqual(view)
   })
 
-  it('takes a view without a size as the view of the canvas without the terminal panel', () => {
+  it('takes a view without a size as a view of the canvas of the default window', () => {
+    expect(DEFAULT_CANVAS).toEqual({ width: 1010, height: 688 })
     for (const size of [null, undefined, { width: 1100, height: 0 }]) {
-      // 패널이 없으면 그대로
-      expect(shownView({ view, size }, full, full)).toEqual(view)
-      // 패널이 열려 있으면 다른 보기처럼 줄어든다 (그대로 두면 패널을 닫을 때 커져서 처음 보기가 아니게 된다)
-      const reduced = shownView({ view, size }, withPanel, full)
-      expect(reduced).toEqual(scaleView(view, full, withPanel))
-      expect(reduced.k).toBeCloseTo(0.85 * 476 / 756, 10)
+      // 기본 창의 캔버스에서는 그대로
+      expect(shownView({ view, size }, DEFAULT_CANVAS)).toEqual(view)
+      // 다른 크기에서는 다른 보기처럼: 터미널 패널이 열린 영역에서도, 다른 크기의 창에서도
+      for (const area of [full, withPanel, { width: 700, height: 900 }]) {
+        expect(shownView({ view, size }, area)).toEqual(scaleView(view, DEFAULT_CANVAS, area))
+      }
     }
   })
 
-  // 처음 보기(Reset view)는 크기 없이 기억한다. 누른 때의 캔버스 크기와 함께 기억하면 그 뒤로 창 높이를 따라 커지고
-  // 줄어서, 창 높이를 바꾼 뒤의 화면이 그 창에서 Reset view가 주는 화면과 달라진다 (owner, 2026-10-11:
-  // "터미널을 켠 상태로 프로그램 전체 높이를 조절하다 보면 reset view 했을 때 묘하게 어긋납니다").
-  it('is the starting view in a window of every height when it has no size', () => {
-    const home = { view, size: null }
-    const panel = 280
+  it('is the starting view in the default window, larger in a higher one and smaller in a lower one, around the middle', () => {
+    expect(shownView(home, { width: 1010, height: 688 })).toEqual({ k: 0.85, x: 0, y: 0 })
+    // 두 배로 높고 넓은 창: 두 배로 크고, 왼쪽 위는 그대로
+    expect(shownView(home, { width: 2020, height: 1376 })).toEqual({ k: 1.7, x: 0, y: 0 })
+    // 높이만 낮은 창 (터미널 패널이 연 것과 같다): 그 비율로 작고, 기본 캔버스의 가운데 점이 가운데에 남는다
+    const lower = shownView(home, { width: 1010, height: 430 })
+    expect(lower.k).toBeCloseTo(0.85 * 430 / 688, 10)
+    expect(lower.x).toBeCloseTo(505 * (1 - 430 / 688), 10)
+    expect(lower.y).toBeCloseTo(0, 10)
+  })
 
-    for (const height of [396, 596, 716, 756, 956]) {
-      const canvas = { width: 1100, height }
-      const area = { width: 1100, height: Math.max(200, height - panel) }
-
-      // 패널이 없으면 어느 높이의 창에서나 처음 보기 그대로
-      expect(shownView(home, canvas, canvas)).toEqual(view)
-      // 패널이 열려 있으면 그 창의 캔버스에서 패널이 남긴 만큼으로 줄어든다. 가운데 줄은 가운데에 남는다.
-      const shown = shownView(home, area, canvas)
-      expect(shown.k).toBeCloseTo(0.85 * area.height / height, 10)
-      expect(shown.x).toBeCloseTo(550 * (1 - area.height / height), 10)
-      expect(shown.y).toBeCloseTo(0, 10)
+  // owner, 2026-10-17 (#265): "리셋 뷰 하면 화면 크기와 따로 놀고 다이어그램 배경을 약간 끌어서 이동한 다음 부터는 같은
+  // 비율로 움직이는 것 같은데 일관적으로 고쳐주세요". 처음 보기도 창 크기가 바뀌면 그 창에서 끌어서 정한 보기처럼 따라간다.
+  // 그리고 따라간 보기는 새 창의 처음 보기 그대로라서, 창 크기를 바꾼 뒤 Reset view를 다시 눌러도 화면이 움직이지 않는다
+  // (owner, 2026-10-11: "터미널을 켠 상태로 프로그램 전체 높이를 조절하다 보면 reset view 했을 때 묘하게 어긋납니다").
+  it('follows a change of the window like a view chosen in that window, and is then the starting view of the new window', () => {
+    const sizes = [DEFAULT_CANVAS, full, withPanel, { width: 1100, height: 436 }, { width: 700, height: 900 }, { width: 1900, height: 960 }, { width: 400, height: 220 }]
+    for (const from of sizes) {
+      // 창 from에서 Reset view를 누른 화면을, 사용자가 그 창에서 끌어서 정한 것처럼 그 크기와 함께 기억한다
+      const chosen = { view: shownView(home, from), size: from }
+      for (const to of sizes) {
+        const followed = shownView(chosen, to)
+        const fresh = shownView(home, to)
+        expect(followed.k, JSON.stringify({ from, to })).toBeCloseTo(fresh.k, 10)
+        expect(followed.x, JSON.stringify({ from, to })).toBeCloseTo(fresh.x, 8)
+        expect(followed.y, JSON.stringify({ from, to })).toBeCloseTo(fresh.y, 8)
+      }
     }
-
-    // 크기와 함께 기억한 처음 보기는 다른 높이의 창에서 처음 보기가 아니다: 창 높이의 비율만큼 작고, 옆으로 밀려 있다.
-    const lower = { width: 1100, height: 716 }
-    const lowerArea = { width: 1100, height: 436 }
-    const kept = shownView({ view, size: full }, lowerArea, lower)
-    const fresh = shownView(home, lowerArea, lower)
-    expect(kept.k / fresh.k).toBeCloseTo(716 / 756, 10)
-    expect(kept.x - fresh.x).toBeCloseTo(550 * 436 * (1 / 716 - 1 / 756), 10)
   })
 
   it('shows it as it is while the area is collapsed', () => {
-    expect(shownView({ view, size: null }, { width: 1100, height: 0 }, full)).toEqual(view)
-    expect(shownView({ view, size: full }, { width: 1100, height: 0 }, full)).toEqual(view)
+    expect(shownView({ view, size: null }, { width: 1100, height: 0 })).toEqual(view)
+    expect(shownView({ view, size: full }, { width: 1100, height: 0 })).toEqual(view)
   })
 })
 
@@ -268,7 +271,7 @@ describe('the view in the editor component', () => {
   const layout = read('views', 'Layout.vue')
 
   it('shows the remembered view for the area of now', () => {
-    expect(editor).toMatch(/this\.setView\(shownView\(this\.base, this\.areaSize\(\), this\.fullSize\(\)\)\)/)
+    expect(editor).toMatch(/this\.setView\(shownView\(this\.base, this\.areaSize\(\)\)\)/)
   })
 
   // 패널이 없을 때의 캔버스는 영역(#editor-area)과 터미널 패널을 함께 담는 #workspace의 크기다.
@@ -287,11 +290,9 @@ describe('the view in the editor component', () => {
     expect(editor).toMatch(/this\.\$emit\('view-change', \{ \.\.\.viewOf\(view\), \.\.\.\(isRealSize\(size\) && \{ w: size\.width, h: size\.height \}\) \}\)/)
   })
 
-  // 크기가 없는 보기는 패널이 없을 때의 캔버스(#workspace)에서의 보기라서, 그 크기가 바뀌면 영역이 그대로여도
-  // 다시 보여줘야 한다: 패널이 캔버스를 가장 낮은 높이까지 밀어 올린 창에서는 창 높이를 바꿔도 영역은 그대로다.
-  // (화면 검사로는 가릴 수 없다: 지금의 패널은 높이를 한 박자 늦게 맞춰서 그동안 영역도 잠깐 바뀐다)
-  it('shows the view again when the area or the canvas without the panel changes size', () => {
-    expect(editor).toMatch(/this\.areaObserver = new ResizeObserver\(\(\) => \{\n\s+this\.editor\.view\.resize\(\)\n\s+this\.rescaleView\(\)\n\s+\}\)\n\s+this\.areaObserver\.observe\(this\.\$el\.parentElement\)\n\s+this\.areaObserver\.observe\(this\.\$el\.parentElement\.parentElement\)\n/)
+  // 보여줄 보기는 영역의 크기만으로 정해진다 (#265부터 크기가 없는 보기도: 기본 창의 캔버스에서의 보기다).
+  it('shows the view again when the area changes size', () => {
+    expect(editor).toMatch(/this\.areaObserver = new ResizeObserver\(\(\) => \{\n\s+this\.editor\.view\.resize\(\)\n\s+this\.rescaleView\(\)\n\s+\}\)\n\s+this\.areaObserver\.observe\(this\.\$el\.parentElement\)\n/)
   })
 
   // 여는 순간의 영역 크기를 그 보기의 크기로 삼으면: 머리글이 다시 그려지기 전이라 영역이 몇 px 낮아서 처음 보기가
