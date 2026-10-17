@@ -7,10 +7,11 @@
 // 세션은 만들어질 때의 owner를 갖는다. 패널과 캔버스는 지금 owner의 세션만 보여주고, 다른 item의 세션은
 // 뒤에서 계속 돈다. 활성 탭과 패널을 최소화했는지, 최대화했는지, 좌우로 나눴는지는 item마다 기억해 두었다가 돌아오면 되살린다.
 //
-// 패널은 좌우 두 칸으로 나눌 수 있다 (owner, 2026-10-12). 탭 줄은 하나이고, 두 칸에 탭이 하나씩 보인다:
-// activeKey(고른 탭, 키 입력을 받는다)와 sideKey(다른 칸의 탭). activeSide는 고른 탭이 있는 칸이다.
-// 보이는 탭 가운데 하나를 닫으면 나누기가 끝나고 남은 탭이 패널을 다 쓴다.
-import { activatePane, closePane, hopKey, reorderSessions, sessionsOf, shownPanes, splitPartner } from '../../utils/terminal-sessions'
+// 패널은 좌우 두 칸으로 나눌 수 있다 (owner, 2026-10-12). 칸마다 제 탭 줄이 있고 (owner, 2026-10-17), 두 칸에 탭이 하나씩 보인다:
+// activeKey(고른 탭, 키 입력을 받는다)와 sideKey(다른 칸의 탭). rightKeys는 오른쪽 칸의 탭들이고, 나머지는 왼쪽 칸의 것이다.
+// 나눌 때는 고른 탭의 옆 탭 하나만 오른쪽 칸으로 간다. 탭은 끌어서 다른 칸으로 옮긴다. 한 칸에 탭이 더 없으면 나누기가 끝난다.
+// 탭 줄의 순서는 sessions의 순서 하나다: 칸마다 그 칸의 탭을 그 순서대로 보인다. 그래서 합치면 나누기 전의 줄로 돌아간다.
+import { activatePane, closePane, hopKey, moveToSide, reorderSessions, restorePanes, sessionsOf, shownPanes, splitPartner } from '../../utils/terminal-sessions'
 
 let nextKey = 1
 
@@ -22,11 +23,11 @@ export default {
     isPanelOpen: false,
     // 패널을 헤더 바로 아래까지 올렸는지 (최대화). 패널을 최소화해도 남아서, 다시 펼치면 최대화한 채로 돌아온다.
     isPanelMaximized: false,
-    // 좌우로 나눈 동안 다른 칸에 보이는 탭 (null이면 나누지 않았다)과, 고른 탭이 있는 칸
+    // 좌우로 나눈 동안 다른 칸에 보이는 탭 (null이면 나누지 않았다)과, 오른쪽 칸의 탭들
     sideKey: null,
-    activeSide: 'left',
+    rightKeys: [],
     owner: null,
-    // owner -> { activeKey, isPanelOpen, isPanelMaximized, sideKey, activeSide }. mutation 안에서만 읽는다.
+    // owner -> { activeKey, isPanelOpen, isPanelMaximized, sideKey, rightKeys }. mutation 안에서만 읽는다.
     remembered: {}
   },
   getters: {
@@ -39,6 +40,8 @@ export default {
     terminalPanes: state => shownPanes(state),
     // 좌우로 나눈 동안 다른 칸(고른 탭이 없는 칸)에 보이는 탭. 나누지 않았으면 null.
     terminalSideKey: state => (state.activeKey === null ? null : state.sideKey),
+    // 오른쪽 칸의 탭들 (나누지 않았으면 비어 있다)
+    terminalRightKeys: state => state.rightKeys,
     isTerminalPanelOpen: state => state.isPanelOpen,
     // 패널이 캔버스 자리까지 차지하고 있는지: 최대화했고, 패널이 펼쳐져 있는 동안만이다 (최소화한 동안은 캔버스가 보인다).
     isTerminalPanelMaximized: state => state.isPanelOpen && state.isPanelMaximized && sessionsOf(state.sessions, state.owner).length > 0
@@ -49,6 +52,8 @@ export default {
       const hops = route.map(hopKey)
       // connected: 로그인 표시를 받았는지 (캔버스의 연결 중/연결됨 구분). busy: 출력이 오가는 중인지 (그 노드의 점이 깜박인다)
       state.sessions.push({ key, id: null, owner: state.owner, title, hops, status: 'starting', connected: false, busy: false, exitCode: null, request: { kind, payload } })
+      // 나눈 동안에는 고른 칸에 열린다: 그 칸의 탭 줄에 들어간다.
+      if (state.sideKey !== null && state.rightKeys.includes(state.activeKey)) state.rightKeys = [...state.rightKeys, key]
       state.activeKey = key
       state.isPanelOpen = true
     },
@@ -61,17 +66,14 @@ export default {
       if (!session) return
 
       // 닫은 탭의 옆 탭은 같은 item의 탭 가운데에서 고른다.
-      const siblings = sessionsOf(state.sessions, session.owner)
-      const index = siblings.indexOf(session)
+      const keys = sessionsOf(state.sessions, session.owner).map(x => x.key)
       state.sessions.splice(state.sessions.indexOf(session), 1)
-      siblings.splice(index, 1)
 
-      // 다른 item의 세션이 뒤에서 끝났으면 보이는 패널은 그대로 둔다.
+      // 다른 item의 세션이 뒤에서 끝났으면 보이는 패널은 그대로 둔다. (그 item의 칸은 돌아올 때 restorePanes가 맞춘다)
       if (session.owner !== state.owner) return
-      const next = siblings[Math.min(index, siblings.length - 1)]
-      Object.assign(state, closePane(state, key, next ? next.key : null))
+      Object.assign(state, closePane(state, key, keys))
       // 마지막 탭이 닫히면 최대화도 끝난다: 다음 터미널은 캔버스 아래에서 보통 높이로 열린다.
-      if (siblings.length === 0) {
+      if (keys.length === 1) {
         state.isPanelOpen = false
         state.isPanelMaximized = false
       }
@@ -80,18 +82,23 @@ export default {
       Object.assign(state, activatePane(state, key))
       state.isPanelOpen = true
     },
-    // 패널을 좌우로 나누거나(true: 고른 탭의 옆 탭이 오른쪽 칸에 온다) 다시 합친다(false: 고른 탭만 남는다).
+    // 패널을 좌우로 나누거나(true: 고른 탭의 옆 탭이 오른쪽 칸으로 간다) 다시 합친다(false: 탭이 모두 한 줄로 돌아가고 고른 탭만 보인다).
     // 탭이 하나뿐이면 나눌 수 없다.
     terminalSplit(state, isSplit) {
       const partner = isSplit ? splitPartner(sessionsOf(state.sessions, state.owner), state.activeKey) : null
       if (isSplit && partner === null) return
 
       state.sideKey = partner
-      state.activeSide = 'left'
+      state.rightKeys = partner === null ? [] : [partner]
       state.isPanelOpen = true
     },
-    // 탭을 끌어서 옮겼다: keys는 보이는 탭들의 새 순서
+    // 탭을 끌어서 옮겼다: keys는 탭 줄 하나(나눈 동안에는 한 칸의 줄)의 탭들의 새 순서. 그 탭들의 자리 안에서만 바뀐다.
     terminalReorder(state, keys) {
+      state.sessions = reorderSessions(state.sessions, keys)
+    },
+    // 탭 key를 다른 칸(side)의 탭 줄로 끌어 옮겼다. keys는 그 줄의 새 순서다 (옮긴 탭이 들어 있다).
+    terminalMove(state, { key, side, keys }) {
+      Object.assign(state, moveToSide(state, key, side, sessionsOf(state.sessions, state.owner).map(x => x.key)))
       state.sessions = reorderSessions(state.sessions, keys)
     },
     terminalPanel(state, isOpen) {
@@ -105,18 +112,15 @@ export default {
     terminalOwner(state, owner) {
       if (owner === state.owner) return
 
-      state.remembered[state.owner] = { activeKey: state.activeKey, isPanelOpen: state.isPanelOpen, isPanelMaximized: state.isPanelMaximized, sideKey: state.sideKey, activeSide: state.activeSide }
+      state.remembered[state.owner] = { activeKey: state.activeKey, isPanelOpen: state.isPanelOpen, isPanelMaximized: state.isPanelMaximized, sideKey: state.sideKey, rightKeys: state.rightKeys }
       state.owner = owner
 
       const mine = sessionsOf(state.sessions, owner)
       const last = state.remembered[owner]
-      state.activeKey = mine.some(x => x.key === last?.activeKey) ? last.activeKey : mine[0]?.key ?? null
       state.isPanelOpen = mine.length > 0 && (last ? last.isPanelOpen : true)
       state.isPanelMaximized = mine.length > 0 && !!last?.isPanelMaximized
-      // 나눈 것은 두 탭이 모두 남아 있을 때만 되살린다. (떠나 있는 동안 끝난 세션은 탭이 닫혔다)
-      const split = state.activeKey === last?.activeKey && last.sideKey !== state.activeKey && mine.some(x => x.key === last.sideKey)
-      state.sideKey = split ? last.sideKey : null
-      state.activeSide = split ? last.activeSide : 'left'
+      // 나눈 것은 두 칸에 탭이 남아 있을 때만 되살린다. (떠나 있는 동안 끝난 세션은 탭이 닫혔다)
+      Object.assign(state, restorePanes(last, mine.map(x => x.key)))
     }
   },
   actions: {

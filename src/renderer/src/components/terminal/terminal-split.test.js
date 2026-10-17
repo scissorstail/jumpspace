@@ -3,9 +3,9 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import terminal from '../../store/modules/terminal'
-import { activatePane, closePane, shownPanes, splitPartner } from '../../utils/terminal-sessions'
+import { activatePane, closePane, moveToSide, restorePanes, shownPanes, splitPartner, tabRowChange } from '../../utils/terminal-sessions'
 
-// 터미널 패널을 좌우로 나누기 (owner, 2026-10-12). 탭 줄은 하나이고, 두 칸에 탭이 하나씩 보인다.
+// 터미널 패널을 좌우로 나누기 (owner, 2026-10-12). 칸마다 제 탭 줄이 있고 (owner, 2026-10-17), 두 칸에 탭이 하나씩 보인다.
 const here = dirname(fileURLToPath(import.meta.url))
 const read = name => readFileSync(join(here, name), 'utf8').replace(/\r\n/g, '\n')
 const tabs = read('terminal-tabs.vue')
@@ -13,59 +13,147 @@ const panel = read('terminal-panel.vue')
 
 describe('shownPanes', () => {
   it('shows the selected tab alone while the panel is not split', () => {
-    expect(shownPanes({ activeKey: 3, sideKey: null, activeSide: 'left' })).toEqual({ left: 3, right: null })
-    expect(shownPanes({ activeKey: null, sideKey: null, activeSide: 'left' })).toEqual({ left: null, right: null })
+    expect(shownPanes({ activeKey: 3, sideKey: null, rightKeys: [] })).toEqual({ left: 3, right: null })
+    expect(shownPanes({ activeKey: null, sideKey: null, rightKeys: [] })).toEqual({ left: null, right: null })
     expect(shownPanes()).toEqual({ left: null, right: null })
   })
 
-  it('puts the selected tab into its half and the other tab into the other one', () => {
-    expect(shownPanes({ activeKey: 3, sideKey: 5, activeSide: 'left' })).toEqual({ left: 3, right: 5 })
-    expect(shownPanes({ activeKey: 3, sideKey: 5, activeSide: 'right' })).toEqual({ left: 5, right: 3 })
+  it('shows each tab in the half it belongs to', () => {
+    expect(shownPanes({ activeKey: 3, sideKey: 5, rightKeys: [5] })).toEqual({ left: 3, right: 5 })
+    expect(shownPanes({ activeKey: 3, sideKey: 5, rightKeys: [3, 7] })).toEqual({ left: 5, right: 3 })
   })
 
   it('shows no half without a selected tab, also when a tab of the other half is left', () => {
-    expect(shownPanes({ activeKey: null, sideKey: 5, activeSide: 'left' })).toEqual({ left: null, right: null })
+    expect(shownPanes({ activeKey: null, sideKey: 5, rightKeys: [5] })).toEqual({ left: null, right: null })
   })
 })
 
 describe('activatePane', () => {
-  const split = { activeKey: 3, sideKey: 5, activeSide: 'left' }
+  // 왼쪽 칸: 1, 3 (3이 보인다, 고른 탭), 오른쪽 칸: 5, 7 (5가 보인다)
+  const split = { activeKey: 3, sideKey: 5, rightKeys: [5, 7] }
 
   it('moves to the other half when its tab is selected, and leaves both halves as they are', () => {
     const moved = activatePane(split, 5)
 
-    expect(moved).toEqual({ activeKey: 5, sideKey: 3, activeSide: 'right' })
+    expect(moved).toEqual({ activeKey: 5, sideKey: 3, rightKeys: [5, 7] })
     expect(shownPanes(moved)).toEqual(shownPanes(split))
     expect(activatePane(moved, 3)).toEqual(split)
   })
 
-  it('replaces the tab of the selected half with a tab that was not in sight', () => {
-    expect(activatePane(split, 7)).toEqual({ activeKey: 7, sideKey: 5, activeSide: 'left' })
-    expect(activatePane({ ...split, activeSide: 'right' }, 7)).toEqual({ activeKey: 7, sideKey: 5, activeSide: 'right' })
+  it('shows a tab that was not in sight in its own half, and keeps the tab of the other half', () => {
+    expect(shownPanes(activatePane(split, 1))).toEqual({ left: 1, right: 5 })
+    expect(activatePane(split, 1)).toEqual({ activeKey: 1, sideKey: 5, rightKeys: [5, 7] })
+    // 7은 오른쪽 칸의 탭이다: 그 칸으로 옮겨 가고, 왼쪽 칸에는 3이 남는다
+    expect(activatePane(split, 7)).toEqual({ activeKey: 7, sideKey: 3, rightKeys: [5, 7] })
+    expect(shownPanes(activatePane(split, 7))).toEqual({ left: 3, right: 7 })
   })
 
   it('just selects the tab while the panel is not split', () => {
-    expect(activatePane({ activeKey: 3, sideKey: null, activeSide: 'left' }, 7)).toEqual({ activeKey: 7, sideKey: null, activeSide: 'left' })
+    expect(activatePane({ activeKey: 3, sideKey: null, rightKeys: [] }, 7)).toEqual({ activeKey: 7, sideKey: null, rightKeys: [] })
   })
 })
 
 describe('closePane', () => {
-  const split = { activeKey: 3, sideKey: 5, activeSide: 'right' }
-  const alone = { activeKey: 3, sideKey: null, activeSide: 'left' }
+  const keys = [1, 3, 5, 7, 9]
+  // 왼쪽 칸: 1, 3, 9 (3이 보인다), 오른쪽 칸: 5, 7 (7이 보인다, 고른 탭)
+  const split = { activeKey: 7, sideKey: 3, rightKeys: [5, 7] }
+  const alone = { activeKey: 3, sideKey: null, rightKeys: [] }
 
-  it('ends the split when one of the two tabs in sight is closed, and keeps the other one', () => {
-    expect(closePane(split, 5, 7)).toEqual({ activeKey: 3, sideKey: null, activeSide: 'left' })
-    expect(closePane(split, 3, 7)).toEqual({ activeKey: 5, sideKey: null, activeSide: 'left' })
+  it('shows the neighbor of the same half when a tab in sight is closed, and stays split', () => {
+    expect(closePane(split, 7, keys)).toEqual({ activeKey: 5, sideKey: 3, rightKeys: [5] })
+    // 3 다음의 왼쪽 탭은 9다 (5와 7은 오른쪽 칸의 것이다)
+    expect(closePane(split, 3, keys)).toEqual({ activeKey: 7, sideKey: 9, rightKeys: [5, 7] })
+    expect(closePane({ ...split, sideKey: 9 }, 9, keys)).toEqual({ activeKey: 7, sideKey: 3, rightKeys: [5, 7] })
   })
 
-  it('changes nothing when a tab that is not in sight is closed', () => {
-    expect(closePane(split, 9, 7)).toEqual(split)
-    expect(closePane(alone, 9, 7)).toEqual(alone)
+  it('ends the split when the last tab of a half is closed, and keeps the tab of the other half', () => {
+    const two = { activeKey: 3, sideKey: 5, rightKeys: [5] }
+    expect(closePane(two, 5, [3, 5])).toEqual({ activeKey: 3, sideKey: null, rightKeys: [] })
+    expect(closePane(two, 3, [3, 5])).toEqual({ activeKey: 5, sideKey: null, rightKeys: [] })
+    expect(closePane(two, 5, [1, 3, 5])).toEqual({ activeKey: 3, sideKey: null, rightKeys: [] })
+  })
+
+  it('changes nothing in sight when a tab that is not in sight is closed', () => {
+    expect(closePane(split, 1, keys)).toEqual(split)
+    expect(closePane(split, 5, keys)).toEqual({ activeKey: 7, sideKey: 3, rightKeys: [7] })
+    expect(closePane(alone, 9, keys)).toEqual(alone)
   })
 
   it('selects the neighbor when the only tab in sight is closed, or nobody when it was the last', () => {
-    expect(closePane(alone, 3, 7)).toEqual({ activeKey: 7, sideKey: null, activeSide: 'left' })
-    expect(closePane(alone, 3)).toEqual({ activeKey: null, sideKey: null, activeSide: 'left' })
+    expect(closePane(alone, 3, keys)).toEqual({ activeKey: 5, sideKey: null, rightKeys: [] })
+    expect(closePane({ activeKey: 9, sideKey: null, rightKeys: [] }, 9, keys)).toEqual({ activeKey: 7, sideKey: null, rightKeys: [] })
+    expect(closePane(alone, 3, [3])).toEqual({ activeKey: null, sideKey: null, rightKeys: [] })
+  })
+})
+
+describe('moveToSide', () => {
+  const keys = [1, 3, 5, 7]
+  // 왼쪽 칸: 1, 3 (3이 보인다, 고른 탭), 오른쪽 칸: 5, 7 (5가 보인다)
+  const split = { activeKey: 3, sideKey: 5, rightKeys: [5, 7] }
+
+  it('shows the moved tab in its new half, with the keyboard, and leaves the other half as it was', () => {
+    const moved = moveToSide(split, 1, 'right', keys)
+    expect(moved).toEqual({ activeKey: 1, sideKey: 3, rightKeys: [5, 7, 1] })
+    expect(shownPanes(moved)).toEqual({ left: 3, right: 1 })
+
+    expect(moveToSide(split, 7, 'left', keys)).toEqual({ activeKey: 7, sideKey: 5, rightKeys: [5] })
+  })
+
+  it('shows the neighbor in the half the moved tab was in sight in', () => {
+    const moved = moveToSide(split, 3, 'right', keys)
+    expect(shownPanes(moved)).toEqual({ left: 1, right: 3 })
+    expect(moveToSide(split, 5, 'left', keys)).toEqual({ activeKey: 5, sideKey: 7, rightKeys: [7] })
+  })
+
+  it('ends the split when the last tab of a half leaves it, and selects that tab', () => {
+    const two = { activeKey: 3, sideKey: 5, rightKeys: [5] }
+    expect(moveToSide(two, 5, 'left', [3, 5])).toEqual({ activeKey: 5, sideKey: null, rightKeys: [] })
+    expect(moveToSide({ activeKey: 3, sideKey: 5, rightKeys: [1, 5, 7] }, 3, 'right', keys)).toEqual({ activeKey: 3, sideKey: null, rightKeys: [] })
+  })
+
+  it('changes nothing for a tab dropped on its own half, a tab that is not there, or a panel that is not split', () => {
+    expect(moveToSide(split, 1, 'left', keys)).toEqual(split)
+    expect(moveToSide(split, 7, 'right', keys)).toEqual(split)
+    expect(moveToSide(split, 9, 'right', keys)).toEqual(split)
+    expect(moveToSide({ activeKey: 3, sideKey: null, rightKeys: [] }, 1, 'right', keys)).toEqual({ activeKey: 3, sideKey: null, rightKeys: [] })
+  })
+})
+
+describe('restorePanes', () => {
+  const last = { activeKey: 3, sideKey: 5, rightKeys: [5, 7] }
+
+  it('brings both halves back as they were', () => {
+    expect(restorePanes(last, [1, 3, 5, 7])).toEqual(last)
+  })
+
+  it('shows the first tab of a half whose tab in sight ended meanwhile', () => {
+    expect(restorePanes(last, [1, 3, 7])).toEqual({ activeKey: 3, sideKey: 7, rightKeys: [7] })
+    expect(restorePanes(last, [1, 5, 7, 9])).toEqual({ activeKey: 1, sideKey: 5, rightKeys: [5, 7] })
+    expect(restorePanes({ ...last, activeKey: 7, sideKey: 3 }, [1, 3, 5])).toEqual({ activeKey: 5, sideKey: 3, rightKeys: [5] })
+  })
+
+  it('comes back unsplit when one half has no tab left', () => {
+    expect(restorePanes(last, [1, 3])).toEqual({ activeKey: 3, sideKey: null, rightKeys: [] })
+    expect(restorePanes(last, [5, 7])).toEqual({ activeKey: 5, sideKey: null, rightKeys: [] })
+    expect(restorePanes(last, [])).toEqual({ activeKey: null, sideKey: null, rightKeys: [] })
+  })
+
+  it('selects the first tab of a space opened for the first time, and remembers no split that was not there', () => {
+    expect(restorePanes(undefined, [4, 6])).toEqual({ activeKey: 4, sideKey: null, rightKeys: [] })
+    expect(restorePanes({ activeKey: 6, sideKey: null, rightKeys: [6] }, [4, 6])).toEqual({ activeKey: 6, sideKey: null, rightKeys: [] })
+  })
+})
+
+describe('tabRowChange', () => {
+  it('is a new order of the row when its tabs stay, and a move when one came from the other row', () => {
+    expect(tabRowChange([1, 3, 5], [3, 1, 5])).toEqual({ type: 'reorder', keys: [3, 1, 5] })
+    expect(tabRowChange([1, 3], [1, 7, 3])).toEqual({ type: 'move', key: 7, keys: [1, 7, 3] })
+  })
+
+  // 다른 줄로 끌어 간 탭은 그 줄이 move로 알린다
+  it('is nothing for the row a tab left, or a list it cannot tell', () => {
+    expect(tabRowChange([1, 3, 5], [1, 5])).toBeNull()
+    expect(tabRowChange([1], [1, 7, 9])).toBeNull()
   })
 })
 
@@ -98,6 +186,8 @@ describe('the terminal store: a split panel', () => {
     return state.activeKey
   }
   const panes = state => getters.terminalPanes(state)
+  const order = state => getters.terminalSessions(state).map(x => x.key)
+  const right = state => getters.terminalRightKeys(state)
 
   it('cannot be split with one tab', () => {
     const state = fresh()
@@ -105,106 +195,159 @@ describe('the terminal store: a split panel', () => {
 
     mutations.terminalSplit(state, true)
     expect(panes(state)).toEqual({ left: a, right: null })
+    expect(right(state)).toEqual([])
   })
 
-  it('shows the selected tab left and its neighbor right, and one tab again when the split ends', () => {
+  it('moves only the neighbor of the selected tab into the right half, and puts the row back as it was when the split ends', () => {
     const state = fresh()
     const a = open(state, 'a')
     const b = open(state, 'b')
+    const c = open(state, 'c')
+    mutations.terminalActivate(state, a)
     mutations.terminalPanel(state, false)
 
     mutations.terminalSplit(state, true)
-    expect(panes(state)).toEqual({ left: b, right: a })
-    expect(state.activeKey).toBe(b)
+    expect(panes(state)).toEqual({ left: a, right: b })
+    expect(right(state)).toEqual([b])
+    expect(state.activeKey).toBe(a)
     expect(state.isPanelOpen).toBe(true)
 
-    mutations.terminalActivate(state, a)
-    expect(panes(state)).toEqual({ left: b, right: a })
+    // c는 왼쪽 칸의 탭이다: 거기서 a 대신 보이고, 오른쪽에는 b가 남는다
+    mutations.terminalActivate(state, c)
+    expect(panes(state)).toEqual({ left: c, right: b })
+    mutations.terminalActivate(state, b)
     mutations.terminalSplit(state, false)
-    expect(panes(state)).toEqual({ left: a, right: null })
-    expect(state.activeSide).toBe('left')
+    expect(panes(state)).toEqual({ left: b, right: null })
+    expect(right(state)).toEqual([])
+    expect(order(state)).toEqual([a, b, c])
   })
 
-  it('opens a new terminal in the selected half', () => {
+  it('opens a new terminal in the row of the selected half', () => {
     const state = fresh()
     const a = open(state, 'a')
-    open(state, 'b')
-    mutations.terminalSplit(state, true)
+    const b = open(state, 'b')
     mutations.terminalActivate(state, a)
+    mutations.terminalSplit(state, true)
 
+    mutations.terminalActivate(state, b)
     const c = open(state, 'c')
-    expect(panes(state).right).toBe(c)
-    expect(state.activeKey).toBe(c)
+    expect(panes(state)).toEqual({ left: a, right: c })
+    expect(right(state)).toEqual([b, c])
+
+    mutations.terminalActivate(state, a)
+    const d = open(state, 'd')
+    expect(panes(state)).toEqual({ left: d, right: c })
+    expect(right(state)).toEqual([b, c])
   })
 
-  it('ends the split when one of the two tabs in sight is closed, and keeps the other one', () => {
+  it('shows the neighbor of the same half when a tab in sight is closed, and ends the split with the last tab of a half', () => {
     const state = fresh()
     const a = open(state, 'a')
     const b = open(state, 'b')
     const c = open(state, 'c')
-
-    // [c | b], c selected: close the other half
-    mutations.terminalSplit(state, true)
-    mutations.terminalRemove(state, b)
-    expect(panes(state)).toEqual({ left: c, right: null })
-
-    // [c | a], a selected (right): close the selected one
-    mutations.terminalSplit(state, true)
     mutations.terminalActivate(state, a)
-    mutations.terminalRemove(state, a)
-    expect(panes(state)).toEqual({ left: c, right: null })
-    expect(state.activeSide).toBe('left')
+    mutations.terminalSplit(state, true)
+    mutations.terminalActivate(state, c)
+    // 왼쪽: a, c (c가 보인다), 오른쪽: b
+
+    mutations.terminalRemove(state, c)
+    expect(panes(state)).toEqual({ left: a, right: b })
+    expect(state.activeKey).toBe(a)
+
+    mutations.terminalRemove(state, b)
+    expect(panes(state)).toEqual({ left: a, right: null })
+    expect(right(state)).toEqual([])
     expect(state.isPanelOpen).toBe(true)
   })
 
-  it('keeps the split when a tab that is not in sight is closed', () => {
+  it('keeps both halves when a tab that is not in sight is closed', () => {
     const state = fresh()
     const a = open(state, 'a')
     const b = open(state, 'b')
     const c = open(state, 'c')
     mutations.terminalSplit(state, true)
+    // c를 골랐다 (왼쪽), b는 오른쪽; a는 왼쪽에 있지만 보이지 않는다
 
     mutations.terminalRemove(state, a)
     expect(panes(state)).toEqual({ left: c, right: b })
   })
 
-  it('remembers the split of each diagram', () => {
+  it('takes a tab dragged into the other row into that half, and keeps the order of the tabs in each row', () => {
     const state = fresh()
     const a = open(state, 'a')
     const b = open(state, 'b')
-    mutations.terminalSplit(state, true)
+    const c = open(state, 'c')
+    const d = open(state, 'd')
     mutations.terminalActivate(state, a)
+    mutations.terminalSplit(state, true)
+    // 왼쪽: a, c, d (a가 보인다), 오른쪽: b
+
+    // d를 오른쪽 줄의 b 앞으로
+    mutations.terminalMove(state, { key: d, side: 'right', keys: [d, b] })
+    expect(panes(state)).toEqual({ left: a, right: d })
+    expect(state.activeKey).toBe(d)
+    expect(right(state)).toEqual([b, d])
+    expect(order(state).filter(x => right(state).includes(x))).toEqual([d, b])
+    expect(order(state).filter(x => !right(state).includes(x))).toEqual([a, c])
+
+    // 왼쪽 줄에서 a를 끝으로: 오른쪽 줄의 탭은 제자리에 있다
+    mutations.terminalReorder(state, [c, a])
+    expect(order(state).filter(x => !right(state).includes(x))).toEqual([c, a])
+    expect(order(state).filter(x => right(state).includes(x))).toEqual([d, b])
+
+    // 왼쪽 칸의 마지막 탭들을 오른쪽으로: 그러면 나누기가 끝난다
+    mutations.terminalMove(state, { key: c, side: 'right', keys: [d, c, b] })
+    expect(panes(state)).toEqual({ left: a, right: c })
+    mutations.terminalMove(state, { key: a, side: 'right', keys: [a, d, c, b] })
+    expect(panes(state)).toEqual({ left: a, right: null })
+    expect(right(state)).toEqual([])
+    expect(order(state)).toEqual([a, d, c, b])
+  })
+
+  it('remembers the halves of each space', () => {
+    const state = fresh()
+    const a = open(state, 'a')
+    const b = open(state, 'b')
+    const c = open(state, 'c')
+    mutations.terminalActivate(state, a)
+    mutations.terminalSplit(state, true)
+    mutations.terminalMove(state, { key: c, side: 'right', keys: [b, c] })
 
     mutations.terminalOwner(state, 1)
     expect(panes(state)).toEqual({ left: null, right: null })
+    expect(right(state)).toEqual([])
     const other = open(state, 'x')
     expect(panes(state)).toEqual({ left: other, right: null })
+    expect(right(state)).toEqual([])
 
     mutations.terminalOwner(state, 0)
-    expect(panes(state)).toEqual({ left: b, right: a })
-    expect(state.activeKey).toBe(a)
+    expect(panes(state)).toEqual({ left: a, right: c })
+    expect(state.activeKey).toBe(c)
+    expect(right(state)).toEqual([b, c])
   })
 
   // 떠나 있는 동안 끝난 세션의 탭은 닫힌다 (exit). 한 칸이 비면 나누지 않은 것으로 돌아온다.
-  it('comes back unsplit when one of the two tabs ended meanwhile', () => {
+  it('comes back unsplit when the tabs of one half ended meanwhile, and with the other tab of a half whose tab in sight ended', () => {
     const state = fresh()
     const a = open(state, 'a')
     const b = open(state, 'b')
+    const c = open(state, 'c')
+    mutations.terminalActivate(state, a)
     mutations.terminalSplit(state, true)
+    mutations.terminalMove(state, { key: c, side: 'right', keys: [b, c] })
+    // 왼쪽: a, 오른쪽: b, c (c가 보이고, 골랐다)
+
+    mutations.terminalOwner(state, 1)
+    mutations.terminalRemove(state, c)
+    mutations.terminalOwner(state, 0)
+    expect(panes(state)).toEqual({ left: a, right: b })
+    expect(state.activeKey).toBe(b)
 
     mutations.terminalOwner(state, 1)
     mutations.terminalRemove(state, a)
     mutations.terminalOwner(state, 0)
     expect(panes(state)).toEqual({ left: b, right: null })
-
-    mutations.terminalSplit(state, false)
-    const c = open(state, 'c')
-    mutations.terminalSplit(state, true)
-    mutations.terminalOwner(state, 1)
-    mutations.terminalRemove(state, c)
-    mutations.terminalOwner(state, 0)
-    expect(panes(state)).toEqual({ left: b, right: null })
-    expect(state.activeSide).toBe('left')
+    expect(right(state)).toEqual([])
   })
 })
 
@@ -236,7 +379,30 @@ describe('the split in the panel and the tab row', () => {
     expect(panel).toMatch(/@split="\$store\.commit\('terminalSplit', \$event\)"/)
   })
 
-  it('marks the tab of the other half in the tab row', () => {
+  it('has a row of tabs for each half, and tabs can be dragged from one into the other', () => {
+    expect(tabs).toMatch(/<draggable\n\s+v-for="row in rows"\n\s+:key="row\.side"\n\s+:value="row\.sessions"/)
+    expect(tabs).toMatch(/\n\s+group="terminal-tabs"\n/)
+    expect(tabs).toMatch(/@input="dropped\(row, \$event\)"/)
+    expect(tabs).toMatch(/v-for="session in row\.sessions"/)
+    expect(panel).toMatch(/:right-keys="rightKeys"/)
+    expect(panel).toMatch(/rightKeys: 'terminalRightKeys'/)
+    expect(panel).toMatch(/@reorder="\$store\.commit\('terminalReorder', \$event\)"\n\s+@move="\$store\.commit\('terminalMove', \$event\)"/)
+  })
+
+  // 왼쪽 목록은 왼쪽 화면이 끝나는 곳(패널 폭의 50% - 5px)에서 끝나고, 오른쪽 목록은 오른쪽 화면이 시작하는 곳(50% + 11px)에서 시작한다.
+  // 줄의 안쪽은 왼쪽 여백 14px과 오른쪽 여백 8px 사이이고, 목록 사이의 간격은 4px이다.
+  it('puts the row of each half over the screen of that half', () => {
+    expect(tabs).toMatch(/\n {2}padding: 3px 8px 0 14px;\n/)
+    expect(tabs).toMatch(/\.terminal-tab-list \{\n\s+display: flex;\n\s+flex: 1;\n\s+align-items: stretch;\n\s+gap: 4px;/)
+    expect(tabs).toMatch(/\.terminal-tabs \{\n\s+display: flex;\n\s+align-items: stretch;\n\s+gap: 4px;/)
+    expect(tabs).toMatch(/\.is-split > &\.is-left \{\n\s+flex: 0 0 calc\(50% - 8px\);\n/)
+    expect(tabs).toMatch(/\.is-split > &\.is-right \{\n\s+margin-left: 12px;\n/)
+    // 두 칸 사이의 줄은 패널의 것과 같은 자리에 탭 줄까지 이어진다
+    expect(tabs).toMatch(/&::after \{\n\s+content: '';\n\s+position: absolute;\n\s+top: 0;\n\s+bottom: 0;\n\s+left: calc\(50% - 1px\);\n\s+width: 2px;\n\s+background: var\(--js-line\);\n/)
+    expect(panel).toMatch(/\.terminal-divider \{\n\s+position: absolute;\n\s+top: 0;\n\s+bottom: 0;\n\s+left: calc\(50% - 1px\);\n\s+width: 2px;\n\s+background: var\(--js-line\);\n/)
+  })
+
+  it('marks the tab of the other half in its row', () => {
     expect(tabs).toMatch(/'is-side': session\.key === sideKey && !isMinimized,/)
     expect(panel).toMatch(/:side-key="sideKey"/)
     // 테두리를 두른다: 아래의 줄 하나는 탭 줄의 테두리와 붙어서 보이지 않았다

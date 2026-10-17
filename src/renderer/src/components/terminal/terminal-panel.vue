@@ -20,11 +20,13 @@
       :sessions="sessions"
       :active-key="activeKey"
       :side-key="sideKey"
+      :right-keys="rightKeys"
       :is-maximized="isMaximized"
       :is-minimized="!isOpen"
       @activate="activate"
       @close="closeSession"
       @reorder="$store.commit('terminalReorder', $event)"
+      @move="$store.commit('terminalMove', $event)"
       @split="$store.commit('terminalSplit', $event)"
       @maximize="maximize"
       @hide="$store.commit('terminalPanel', false)"
@@ -140,7 +142,7 @@ export default {
     shownKeys() {
       return `${this.panes.left} ${this.panes.right} ${this.activeKey}`
     },
-    ...mapGetters({ sessions: 'terminalSessions', allSessions: 'allTerminalSessions', activeKey: 'activeTerminalKey', panes: 'terminalPanes', sideKey: 'terminalSideKey', isOpen: 'isTerminalPanelOpen', isMaximized: 'isTerminalPanelMaximized' })
+    ...mapGetters({ sessions: 'terminalSessions', allSessions: 'allTerminalSessions', activeKey: 'activeTerminalKey', panes: 'terminalPanes', sideKey: 'terminalSideKey', rightKeys: 'terminalRightKeys', isOpen: 'isTerminalPanelOpen', isMaximized: 'isTerminalPanelMaximized' })
   },
   watch: {
     // 색 묶음이나 색의 단계를 바꾸면 열린 터미널의 색도 바꾼다. (색 묶음의 CSS 변수는 다음 그리기에 바뀐다)

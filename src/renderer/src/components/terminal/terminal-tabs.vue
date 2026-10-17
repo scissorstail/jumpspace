@@ -1,27 +1,32 @@
 <template>
   <div
     class="terminal-tabs"
-    :class="{ 'is-minimized': isMinimized }"
+    :class="{ 'is-minimized': isMinimized, 'is-split': rows.length > 1 }"
   >
     <!-- 탭이 많으면 이 목록만 옆으로 넘긴다. 오른쪽 끝의 패널 단추(최대화, 최소화 또는 다시 보이기)는 늘 보인다.
-         탭을 끌면 순서가 바뀐다 (닫기 단추에서는 끌리지 않는다). -->
+         탭을 끌면 순서가 바뀐다 (닫기 단추에서는 끌리지 않는다).
+         좌우로 나눈 동안에는 칸마다 제 목록이 그 칸 위에 있고 (owner, 2026-10-17), 탭을 다른 칸의 목록으로 끌어 옮길 수 있다. -->
     <draggable
-      ref="tabList"
-      :value="sessions"
+      v-for="row in rows"
+      :key="row.side"
+      :value="row.sessions"
       tag="div"
       class="terminal-tab-list"
-      role="tablist"
+      :class="`is-${row.side}`"
+      :component-data="listData(row)"
       direction="horizontal"
+      group="terminal-tabs"
       filter=".terminal-tab-button"
       :prevent-on-filter="false"
       ghost-class="terminal-tab-ghost"
-      @input="$emit('reorder', $event.map(x => x.key))"
+      @input="dropped(row, $event)"
       @wheel.native="scrollTabs"
     >
       <div
-        v-for="session in sessions"
+        v-for="session in row.sessions"
         :key="session.key"
         :ref="`tab-${session.key}`"
+        :data-key="session.key"
         class="terminal-tab"
         :class="{ active: session.key === activeKey && !isMinimized, 'is-side': session.key === sideKey && !isMinimized, [`is-${session.status}`]: true, 'is-connecting': session.status === 'running' && !session.connected, 'has-error': session.status === 'exited' && !!session.exitCode }"
         role="tab"
@@ -113,12 +118,13 @@
 
 <script>
 import draggable from 'vuedraggable'
-import { duplicateNumbers, numberedTitle } from '@/utils/terminal-sessions'
+import { duplicateNumbers, numberedTitle, tabRowChange } from '@/utils/terminal-sessions'
 import { revealScrollLeft, sessionRouteText, sessionStatusText } from '@/utils/terminal-view'
 
 // 터미널 패널 위쪽의 탭 줄. 탭이 많으면 좁아졌다가 목록만 옆으로 넘어가고, 활성 탭은 늘 보이게 한다.
-// 탭을 고르기, 닫기, 끌어서 바꾼 순서, 좌우로 나누기/합치기, 패널 최대화/내리기, 패널 최소화/다시 보이기는
-// 이벤트(activate, close, reorder, split, maximize, hide, show)로 패널에 알린다.
+// 좌우로 나눈 동안에는 칸마다 제 목록이 있다 (rightKeys: 오른쪽 칸의 탭들).
+// 탭을 고르기, 닫기, 끌어서 바꾼 순서, 다른 칸으로 옮긴 탭, 좌우로 나누기/합치기, 패널 최대화/내리기, 패널 최소화/다시 보이기는
+// 이벤트(activate, close, reorder, move, split, maximize, hide, show)로 패널에 알린다.
 export default {
   name: 'TerminalTabs',
   components: { draggable },
@@ -135,6 +141,11 @@ export default {
     sideKey: {
       type: Number,
       default: null
+    },
+    // 좌우로 나눈 동안 오른쪽 칸의 탭들 (나머지는 왼쪽 칸의 것이다)
+    rightKeys: {
+      type: Array,
+      default: () => []
     },
     // 패널이 헤더 아래까지 올라가 있는지 (최대화 단추가 내리기 단추로 바뀐다)
     isMaximized: {
@@ -160,6 +171,14 @@ export default {
       if (this.isSplit) return 'Show one terminal'
       return this.canSplit ? 'Split: show two terminals side by side' : 'Split needs a second terminal'
     },
+    // 탭 목록들: 나누지 않았으면(최소화한 동안에도) 하나, 나눈 동안에는 칸마다 하나. 칸마다 그 칸의 탭을 탭 줄의 순서대로 보인다.
+    rows() {
+      if (!this.isSplit || this.isMinimized) return [{ side: 'left', sessions: this.sessions }]
+
+      const right = this.sessions.filter(x => this.rightKeys.includes(x.key))
+      const left = this.sessions.filter(x => !this.rightKeys.includes(x.key))
+      return [{ side: 'left', sessions: left }, { side: 'right', sessions: right }]
+    },
     // 이름이 같은 탭들의 번호 (key -> 번호)
     numbers() {
       return duplicateNumbers(this.sessions)
@@ -167,6 +186,9 @@ export default {
   },
   watch: {
     activeKey() {
+      this.$nextTick(() => this.reveal())
+    },
+    sideKey() {
       this.$nextTick(() => this.reveal())
     }
   },
@@ -184,17 +206,32 @@ export default {
     label(session) {
       return numberedTitle(session.title, this.numbers.get(session.key))
     },
-    // 넘치는 탭 목록은 세로 휠로도 옆으로 넘긴다.
+    // 목록 요소의 속성. vuedraggable은 id와 data-*만 요소에 두고 다른 속성은 끌기(Sortable)의 설정으로 넘기므로
+    // (role="tablist"는 그래서 요소에 없었다), 요소의 속성은 component-data로 준다.
+    listData(row) {
+      return { attrs: { role: 'tablist', 'aria-label': this.rows.length > 1 ? `Tabs of the ${row.side} half` : 'Terminal tabs' } }
+    },
+    // 목록 하나를 끌어서 바꿨다 (row: 바꾸기 전의 그 목록). 다른 칸에서 탭이 들어왔으면 move, 순서만 바뀌었으면 reorder.
+    // 탭이 이 목록을 떠난 것은 알리지 않는다: 들어간 목록이 move로 알린다.
+    dropped(row, list) {
+      const change = tabRowChange(row.sessions.map(x => x.key), list.map(x => x.key))
+      if (change?.type === 'move') this.$emit('move', { key: change.key, side: row.side, keys: change.keys })
+      if (change?.type === 'reorder') this.$emit('reorder', change.keys)
+    },
+    // 넘치는 탭 목록은 세로 휠로도 옆으로 넘긴다 (휠이 굴러간 그 목록).
     scrollTabs(event) {
-      const list = this.$refs.tabList?.$el
+      const list = event.currentTarget
       if (!list || event.deltaX || !event.deltaY || list.scrollWidth <= list.clientWidth) return
       list.scrollLeft += event.deltaY
       event.preventDefault()
     },
-    // 탭이 많아 목록이 넘칠 때 활성 탭이 보이게 넘긴다.
+    // 탭이 많아 목록이 넘칠 때 보이는 탭(나눈 동안에는 칸마다 하나)이 보이게 넘긴다.
     reveal() {
-      const list = this.$refs.tabList?.$el
-      const tab = this.$refs[`tab-${this.activeKey}`]?.[0]
+      for (const key of [this.activeKey, this.sideKey]) this.revealTab(key)
+    },
+    revealTab(key) {
+      const tab = key === null ? null : this.$refs[`tab-${key}`]?.[0]
+      const list = tab?.parentElement
       if (!list || !tab) return
 
       const listRect = list.getBoundingClientRect()
@@ -223,6 +260,22 @@ export default {
   &.is-minimized {
     border-bottom-color: transparent;
   }
+
+  // 좌우로 나눈 동안: 왼쪽 칸의 목록은 왼쪽 칸의 화면이 끝나는 곳에서 끝나고, 오른쪽 칸의 목록은 오른쪽 칸의 화면이
+  // 시작하는 곳에서 시작한다 (terminal-panel.vue의 .terminal-screen). 그 사이에 두 칸 사이의 줄이 탭 줄까지 이어진다.
+  &.is-split {
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: calc(50% - 1px);
+      width: 2px;
+      background: var(--js-line);
+    }
+  }
 }
 
 // 탭이 많으면 먼저 좁아지고(min-width까지), 그래도 넘치면 이 목록만 옆으로 넘긴다.
@@ -235,6 +288,16 @@ export default {
   overflow-x: auto;
   // 스크롤바가 생기면 탭 높이가 줄어 글자가 움직이므로 숨긴다. 휠로 넘기고, 활성 탭과 포커스한 탭은 저절로 보인다.
   scrollbar-width: none;
+
+  // 줄의 안쪽 폭(왼쪽 여백 14px, 오른쪽 8px을 뺀 것)의 50%에서 8px을 빼면 패널 폭의 50%에서 5px 앞에서 끝난다.
+  .is-split > &.is-left {
+    flex: 0 0 calc(50% - 8px);
+  }
+
+  // 왼쪽 목록 다음의 간격(4px)과 이것으로 패널 폭의 50%에서 11px 뒤에서 시작한다.
+  .is-split > &.is-right {
+    margin-left: 12px;
+  }
 }
 
 .terminal-tab {

@@ -28,36 +28,92 @@ export function numberedTitle(title, number) {
   return number ? `${title} (${number})` : title
 }
 
-// 패널을 좌우로 나눴을 때 두 칸에 보이는 탭 (owner, 2026-10-12).
-//   activeKey : 고른 탭 (키 입력을 받는 칸의 탭)
-//   sideKey   : 다른 칸에 함께 보이는 탭. null이면 나누지 않았다.
-//   activeSide: 고른 탭이 있는 칸 ('left' | 'right')
-// 돌려주는 값: { left, right } (나누지 않았으면 right는 null이고 left가 고른 탭이다)
-export function shownPanes({ activeKey = null, sideKey = null, activeSide = 'left' } = {}) {
+// 패널을 좌우로 나눴을 때 두 칸에 보이는 탭 (owner, 2026-10-12). 칸마다 제 탭 줄이 있다 (owner, 2026-10-17:
+// "터미널 나누기 했을 때 터미널 탭도 같이 옮겨가면 좋겠네요"): 탭은 왼쪽 칸이나 오른쪽 칸의 것이다.
+//   activeKey: 고른 탭 (키 입력을 받는 칸의 탭)
+//   sideKey  : 다른 칸에 함께 보이는 탭. null이면 나누지 않았다.
+//   rightKeys: 오른쪽 칸의 탭들 (나머지는 왼쪽 칸의 것이다). 나누지 않았으면 비어 있다.
+// 칸마다 보이는 탭은 그 칸의 탭 가운데 하나다. 돌려주는 값: { left, right } (나누지 않았으면 right는 null이고 left가 고른 탭이다)
+export function shownPanes({ activeKey = null, sideKey = null, rightKeys = [] } = {}) {
   if (sideKey === null || activeKey === null) return { left: activeKey, right: null }
 
-  return activeSide === 'right' ? { left: sideKey, right: activeKey } : { left: activeKey, right: sideKey }
+  return rightKeys.includes(activeKey) ? { left: sideKey, right: activeKey } : { left: activeKey, right: sideKey }
 }
 
-// 탭을 골랐다. 다른 칸에 보이는 탭이면 그 칸으로 옮겨 가고 (두 칸의 탭은 그대로다),
-// 보이지 않던 탭이면 지금 칸의 탭을 그것으로 바꾼다.
-export function activatePane({ activeKey, sideKey, activeSide }, key) {
-  if (sideKey !== null && key === sideKey) {
-    return { activeKey: key, sideKey: activeKey, activeSide: activeSide === 'right' ? 'left' : 'right' }
-  }
-  return { activeKey: key, sideKey, activeSide }
+// 탭을 골랐다. 탭은 제 칸에 보인다: 같은 칸의 탭이면 그 칸의 탭을 바꾸고, 다른 칸의 탭이면 그 칸으로 옮겨 가서
+// 그 칸의 탭을 바꾼다 (지금까지 고른 탭은 제 칸에 남는다).
+export function activatePane({ activeKey, sideKey, rightKeys = [] }, key) {
+  if (sideKey === null || rightKeys.includes(key) === rightKeys.includes(activeKey)) return { activeKey: key, sideKey, rightKeys }
+
+  return { activeKey: key, sideKey: activeKey, rightKeys }
 }
 
-// 탭을 닫았다. 보이는 두 탭 가운데 하나였으면 나누기가 끝나고 남은 탭이 패널을 다 쓴다.
-// 혼자 보이던 고른 탭이면 옆 탭(nextKey, 탭이 더 없으면 null)을 고르고, 보이지 않던 탭이면 그대로다.
-export function closePane({ activeKey, sideKey, activeSide }, key, nextKey = null) {
-  if (sideKey !== null && (key === sideKey || key === activeKey)) {
-    return { activeKey: key === activeKey ? sideKey : activeKey, sideKey: null, activeSide: 'left' }
-  }
-  return { activeKey: key === activeKey ? nextKey : activeKey, sideKey, activeSide }
+// 칸 하나의 탭들 (keys: 지금 item의 탭, 탭 줄의 순서)
+function sideKeys(keys, rightKeys, isRight) {
+  return keys.filter(x => rightKeys.includes(x) === isRight)
 }
 
-// 나누기를 켤 때 오른쪽 칸에 놓을 탭: 고른 탭의 다음 탭, 없으면 앞의 탭. 탭이 하나뿐이면 null (나눌 수 없다).
+// key의 칸에서 key를 뺀 탭들과, key가 있던 자리의 이웃 (key 다음 탭, 없으면 앞의 탭, 남은 탭이 없으면 null)
+function withoutKey(keys, rightKeys, key) {
+  const own = sideKeys(keys, rightKeys, rightKeys.includes(key))
+  const rest = own.filter(x => x !== key)
+
+  return { rest, neighbor: rest[Math.min(own.indexOf(key), rest.length - 1)] ?? null }
+}
+
+// 탭을 닫았다. keys는 닫기 전의 지금 item의 탭들이다 (탭 줄의 순서).
+// 보이던 탭이면 같은 칸의 이웃 탭이 그 자리에 보인다. 칸에 탭이 더 없으면 나누기가 끝나고 다른 칸의 탭이 패널을 다 쓴다.
+// 나누지 않았으면 고른 탭을 닫을 때 옆 탭을 고른다 (탭이 더 없으면 null). 보이지 않던 탭이면 그대로다.
+export function closePane({ activeKey, sideKey, rightKeys = [] }, key, keys = []) {
+  const { rest, neighbor } = withoutKey(keys, rightKeys, key)
+  if (sideKey === null) return { activeKey: key === activeKey ? neighbor : activeKey, sideKey: null, rightKeys: [] }
+  if (rest.length === 0) return { activeKey: key === activeKey ? sideKey : activeKey, sideKey: null, rightKeys: [] }
+
+  return { activeKey: key === activeKey ? neighbor : activeKey, sideKey: key === sideKey ? neighbor : sideKey, rightKeys: rightKeys.filter(x => x !== key) }
+}
+
+// 탭을 다른 칸의 탭 줄로 끌어 옮겼다 (side: 'left' | 'right'). keys는 옮기기 전의 지금 item의 탭들이다.
+// 옮긴 탭이 그 칸에 보이고 키 입력을 받는다. 떠난 칸에는 그 칸의 탭이 그대로 보이고, 옮긴 탭이 거기 보이던 것이면 이웃이 보인다.
+// 떠난 칸에 탭이 더 없으면 나누기가 끝난다 (탭은 모두 한 줄로 돌아가고, 옮긴 탭을 고른다).
+export function moveToSide(state, key, side, keys = []) {
+  const { activeKey, sideKey, rightKeys = [] } = state
+  const toRight = side === 'right'
+  if (sideKey === null || !keys.includes(key) || rightKeys.includes(key) === toRight) return { activeKey, sideKey, rightKeys }
+
+  const { rest, neighbor } = withoutKey(keys, rightKeys, key)
+  if (rest.length === 0) return { activeKey: key, sideKey: null, rightKeys: [] }
+
+  const stays = shownPanes(state)[toRight ? 'left' : 'right']
+  return { activeKey: key, sideKey: stays === key ? neighbor : stays, rightKeys: toRight ? [...rightKeys, key] : rightKeys.filter(x => x !== key) }
+}
+
+// 다른 item에서 돌아왔다: 그 item에서 떠날 때의 칸들을 되살린다. keys는 지금 남은 그 item의 탭들이다 (떠나 있는 동안 끝난
+// 세션의 탭은 닫혔다). 두 칸에 탭이 하나씩은 남아 있어야 나눈 채로 돌아온다. 칸에 보이던 탭이 닫혔으면 그 칸의 첫 탭이 보인다.
+// last: 떠날 때의 { activeKey, sideKey, rightKeys } (처음 여는 item이면 없다)
+export function restorePanes(last, keys = []) {
+  const activeKey = keys.includes(last?.activeKey) ? last.activeKey : keys[0] ?? null
+  const rightKeys = last?.sideKey == null ? [] : (last.rightKeys || []).filter(x => keys.includes(x))
+  const wasRight = rightKeys.length > 0 && (last.rightKeys || []).includes(last.activeKey)
+  const own = sideKeys(keys, rightKeys, wasRight)
+  const other = sideKeys(keys, rightKeys, !wasRight)
+  if (rightKeys.length === 0 || other.length === 0 || own.length === 0) return { activeKey, sideKey: null, rightKeys: [] }
+
+  return { activeKey: own.includes(last.activeKey) ? last.activeKey : own[0], sideKey: other.includes(last.sideKey) ? last.sideKey : other[0], rightKeys }
+}
+
+// 탭 줄 하나를 끌어서 바꾼 뒤의 탭들(newKeys)이 무엇인지: 줄 안에서 순서만 바뀌었으면 { type: 'reorder', keys },
+// 다른 줄의 탭이 들어왔으면 { type: 'move', key, keys }, 탭이 이 줄을 떠났으면 null (그것은 들어간 줄이 알린다).
+// rowKeys는 바꾸기 전의 그 줄의 탭들이다.
+export function tabRowChange(rowKeys, newKeys) {
+  const added = newKeys.filter(x => !rowKeys.includes(x))
+  if (newKeys.length < rowKeys.length || added.length > 1) return null
+  if (added.length === 1) return { type: 'move', key: added[0], keys: newKeys }
+
+  return { type: 'reorder', keys: newKeys }
+}
+
+// 나누기를 켤 때 오른쪽 칸으로 옮겨 갈 탭: 고른 탭의 다음 탭, 없으면 앞의 탭. 탭이 하나뿐이면 null (나눌 수 없다).
+// 다른 탭은 모두 왼쪽 칸에 남는다.
 export function splitPartner(sessions, activeKey) {
   const keys = (sessions || []).map(x => x.key)
   const index = keys.indexOf(activeKey)

@@ -95,7 +95,7 @@ describe('the minimized terminal panel', () => {
 
   // 탭 줄 아래의 줄은 탭과 터미널을 나누는 것이다. 터미널이 없으면 줄도 없다 (자리는 남는다: 높이가 그대로다).
   it('has no line under its tab row', () => {
-    expect(tabs).toMatch(/<div\n\s+class="terminal-tabs"\n\s+:class="\{ 'is-minimized': isMinimized \}"\n/)
+    expect(tabs).toMatch(/<div\n\s+class="terminal-tabs"\n\s+:class="\{ 'is-minimized': isMinimized, 'is-split': rows\.length > 1 \}"\n/)
     expect(tabs).toMatch(/&\.is-minimized \{\n\s+border-bottom-color: transparent;\n/)
   })
 
