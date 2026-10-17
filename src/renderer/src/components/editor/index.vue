@@ -17,6 +17,7 @@ import AreaPlugin from 'rete-area-plugin'
 import ReadonlyPlugin from 'rete-readonly-plugin'
 
 import SiteNode from './nodes/site-node'
+import placedMenu from './context-menu'
 import { DEFAULT_VIEW, MAX_ZOOM, MIN_ZOOM, fitView, fullCanvasIn, isRealSize, shownView, viewOf } from '@/utils/view'
 import { arrangeLayout, boxOf } from '@/utils/arrange'
 import { activeTerminalNode, busyNodes, hopKey, routeStates } from '@/utils/terminal-sessions'
@@ -116,6 +117,8 @@ export default {
     this.editor.use(VueRenderPlugin)
 
     this.editor.use(ContextMenuPlugin, {
+      // 플러그인의 메뉴에 자리와 닫기를 더한 것 (context-menu.js): 왼쪽 위 모서리가 포인터에 오고, 메뉴 밖을 누르면 닫힌다.
+      vueComponent: placedMenu,
       delay: 250,
       rename: () => 'Add node',
       // 캔버스 메뉴의 둘째 항목: 붙여 넣은 SSH config로 노드를 만든다 (owner, 2026-10). 붙여 넣는 창은 Layout이 띄운다.

@@ -132,6 +132,7 @@ const given = {
   AreaPlugin: plugin('area'),
   ReadonlyPlugin: plugin('readonly'),
   SiteNode: FakeSiteNode,
+  placedMenu: { name: 'placed menu' },
   DEFAULT_VIEW,
   MAX_ZOOM,
   MIN_ZOOM,
@@ -1207,6 +1208,13 @@ describe('the right-click menu of the canvas', () => {
     expect(menu.rename()).toBe('Add node')
     expect(menu.nodeItems.Clone).toBe(false)
     expect(Object.keys(menu.items)).toEqual(['From SSH config'])
+  })
+
+  // 자리와 닫기는 context-menu.js의 메뉴가 한다 (#267): 플러그인은 캔버스 메뉴에도 노드 메뉴에도 그 메뉴를 쓴다 (context-menu.test.js)
+  it('opens as the menu of context-menu.js', () => {
+    const { editor } = setup()
+
+    expect(editor.plugins.get('menu').vueComponent).toBe(given.placedMenu)
   })
 
   it('From SSH config tells the layout where the pointer is on the canvas', () => {
