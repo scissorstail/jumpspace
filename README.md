@@ -77,7 +77,7 @@ A flat, high-contrast synthwave night: a neon grid floor, a striped sun behind a
 ### spaces (the list under the title)
 
 - The title in the middle of the header names the open space and is the button for the list: it opens under the title and closes when you pick a space, press Escape or click outside. Nothing is docked at the side, so the canvas and the terminals always have the whole window. The list is open when the app starts.
-- A small terminal mark with a number next to a name tells how many terminal tabs that space has open.
+- A small terminal mark with a number next to a name tells how many terminal tabs that space has open. *Close terminals* at the end of its `...` menu (there only while it has some) closes all of them and leaves the space as it is; while one of them is still running it asks first.
 - `+` adds a space. Double-click a name (or *Edit* in its `...` menu) to rename it, Escape cancels. *Copy* duplicates a space, *Remove* asks first.
 - The search box filters by name and ignores case. Drag a space to reorder the list, Ctrl+click selects several for *Export spaces* or *Remove spaces* in the menu next to `+`.
 - *Import spaces* adds the spaces of a JSON file. *Export All Spaces* in the gear menu of the header exports every space.

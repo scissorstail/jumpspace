@@ -47,6 +47,18 @@ export function terminalCountText(count) {
   return count === 1 ? '1 terminal open' : `${count} terminals open`
 }
 
+// 목록에서 한 item의 터미널을 모두 닫기 전에 묻는 말 (owner, 2026-10-17, #254). 여는 중이거나 도는 탭이 없으면 묻지 않는다
+// (null): 끝난 탭과 열지 못한 탭은 닫아도 잃을 것이 없다. 트레이의 Quit도 도는 터미널이 있을 때만 묻는다.
+export function closeTerminalsQuestion(name, sessions = []) {
+  const running = sessions.filter(x => x.status === 'starting' || x.status === 'running').length
+  if (running === 0) return null
+
+  const space = `"${name || '(untitled)'}"`
+  if (sessions.length === 1) return `Close the terminal of ${space}? It is still running.`
+  const still = running === sessions.length ? 'All of them are still running.' : `${running} of them ${running === 1 ? 'is' : 'are'} still running.`
+  return `Close all ${sessions.length} terminals of ${space}? ${still}`
+}
+
 // 세션이 끝났을 때 터미널에 쓰는 줄. Enter로 다시 접속할 수 있다는 것도 알린다.
 export function endedLine(exitCode) {
   return `\r\n${GRAY}[session ended${exitCode ? `, exit status ${exitCode}` : ''}] Press Enter to reconnect.${RESET}\r\n`

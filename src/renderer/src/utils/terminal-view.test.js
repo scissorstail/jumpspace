@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { TERMINAL_COLORS, THEMES } from '../../../shared/setting.js'
 import { toOklch } from './color'
-import { endedLine, errorLine, nextFontSize, searchSeed, SEARCH_SEED_MAX, MAXIMIZE_SNAP, MIN_CANVAS_HEIGHT, MIN_PANEL_HEIGHT, panelDrag, panelHeight, RECONNECTING_LINE, revealScrollLeft, sessionRouteText, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
+import { closeTerminalsQuestion, endedLine, errorLine, nextFontSize, searchSeed, SEARCH_SEED_MAX, MAXIMIZE_SNAP, MIN_CANVAS_HEIGHT, MIN_PANEL_HEIGHT, panelDrag, panelHeight, RECONNECTING_LINE, revealScrollLeft, sessionRouteText, sessionStatusText, terminalCountText, terminalTheme } from './terminal-view'
 
 describe('sessionStatusText', () => {
   it('names every state and gives the exit status of a failed end', () => {
@@ -62,6 +62,27 @@ describe('terminalCountText', () => {
   it('names the number next to a diagram in the list', () => {
     expect(terminalCountText(1)).toBe('1 terminal open')
     expect(terminalCountText(3)).toBe('3 terminals open')
+  })
+})
+
+describe('closeTerminalsQuestion', () => {
+  const tab = status => ({ status })
+
+  it('asks nothing when no tab is opening or running: an ended or failed tab loses nothing', () => {
+    expect(closeTerminalsQuestion('alpha', [])).toBe(null)
+    expect(closeTerminalsQuestion('alpha')).toBe(null)
+    expect(closeTerminalsQuestion('alpha', [tab('exited'), tab('failed'), tab('exited')])).toBe(null)
+  })
+
+  it('asks while one is still running or being opened, with the name of the space', () => {
+    expect(closeTerminalsQuestion('alpha', [tab('running')])).toBe('Close the terminal of "alpha"? It is still running.')
+    expect(closeTerminalsQuestion('', [tab('starting')])).toBe('Close the terminal of "(untitled)"? It is still running.')
+  })
+
+  it('counts the tabs and how many of them still run', () => {
+    expect(closeTerminalsQuestion('alpha', [tab('running'), tab('starting')])).toBe('Close all 2 terminals of "alpha"? All of them are still running.')
+    expect(closeTerminalsQuestion('alpha', [tab('running'), tab('exited'), tab('failed')])).toBe('Close all 3 terminals of "alpha"? 1 of them is still running.')
+    expect(closeTerminalsQuestion('beta', [tab('running'), tab('exited'), tab('running')])).toBe('Close all 3 terminals of "beta"? 2 of them are still running.')
   })
 })
 

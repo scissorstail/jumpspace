@@ -140,12 +140,14 @@
                 <NavigatorItemMenu
                   v-if="!isSelecting"
                   :name="item.name"
+                  :terminals="terminalCounts.get(item.index) || 0"
                   @shown="item.isMenuShown = true"
                   @hidden="item.isMenuShown = false"
                   @edit="item.isMenuShown = false; editItem(item)"
                   @copy="item.isMenuShown = false; copyItem(item)"
                   @remove="item.isMenuShown = false; removeItem(item)"
                   @export="exportItems([item])"
+                  @close-terminals="item.isMenuShown = false; closeTerminals(item)"
                 />
               </div>
             </b-button>
@@ -184,8 +186,8 @@
 import draggable from 'vuedraggable'
 import isEmpty from 'lodash/isEmpty'
 import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNING } from '@/utils/project'
-import { countByOwner } from '@/utils/terminal-sessions'
-import { terminalCountText } from '@/utils/terminal-view'
+import { countByOwner, sessionsOf } from '@/utils/terminal-sessions'
+import { closeTerminalsQuestion, terminalCountText } from '@/utils/terminal-view'
 import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from '@/utils/navigator-items'
 import { diagramProblem } from '@/utils/diagram-data'
 import { toastError } from '@/utils/notify'
@@ -382,6 +384,16 @@ export default {
       // 지워진 item의 터미널은 닫는다.
       this.$emit('removed', removed.map(x => x.index))
       this.items = items
+    },
+    // item의 터미널만 모두 닫고 item은 그대로 둔다 (owner, 2026-10-17: "터미널만 전부 끄는 기능"). 아직 도는 탭이 있으면
+    // 먼저 묻는다 (utils/terminal-view.js의 closeTerminalsQuestion). 닫는 일은 패널이 한다 (Layout이 closeOwners를 부른다).
+    async closeTerminals(item) {
+      const question = closeTerminalsQuestion(item.name, sessionsOf(this.$store.getters.allTerminalSessions, item.index))
+      if (question && !(await this.$bvModal.msgBoxConfirm(question, { title: 'Close terminals', okVariant: 'danger', okTitle: 'Close terminals' }))) {
+        return
+      }
+
+      this.$emit('close-terminals', [item.index])
     },
     async exportItems(items) {
       if (hasSavedPassword(items) && !(await this.$bvModal.msgBoxConfirm(EXPORT_PASSWORD_WARNING, { title: 'Export', okTitle: 'Export' }))) {

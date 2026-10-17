@@ -96,6 +96,7 @@
           @selected="loadEditor"
           @deselected="clearEditor"
           @removed="$refs.terminalPanel.closeOwners($event)"
+          @close-terminals="$refs.terminalPanel.closeOwners($event)"
           @updated="updateProject"
         />
       </div>

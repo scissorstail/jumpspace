@@ -5,8 +5,8 @@ import { runInThisContext } from 'node:vm'
 import isEmpty from 'lodash/isEmpty'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNING } from '../../utils/project'
-import { countByOwner } from '../../utils/terminal-sessions'
-import { terminalCountText } from '../../utils/terminal-view'
+import { countByOwner, sessionsOf } from '../../utils/terminal-sessions'
+import { closeTerminalsQuestion, terminalCountText } from '../../utils/terminal-view'
 import { copyNavigatorItem, createNavigatorItem, emptyItemData, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from '../../utils/navigator-items'
 import { diagramProblem } from '../../utils/diagram-data'
 import { UNSAVED_TEXT, UNSAVED_TITLE } from '../../../../shared/unsaved.js'
@@ -25,6 +25,8 @@ const given = {
   matchesKeyword,
   EXPORT_PASSWORD_WARNING,
   countByOwner,
+  sessionsOf,
+  closeTerminalsQuestion,
   terminalCountText,
   copyNavigatorItem,
   createNavigatorItem,
@@ -303,6 +305,51 @@ describe('removing', () => {
     expect(asked.map(x => x[0])).toEqual(['Remove 2 selected space(s)?'])
     expect(names(vm)).toEqual(['beta'])
     expect(emitted[0]).toEqual(['removed', [0, 2]])
+  })
+})
+
+describe('closing the terminals of a diagram', () => {
+  const tabs = [{ owner: 1, status: 'running' }, { owner: 1, status: 'exited' }, { owner: 0, status: 'running' }, { owner: 2, status: 'exited' }]
+
+  it('asks while one of its tabs still runs, with the numbers of that row only, and closes nothing on no', async () => {
+    const { vm, emitted, asked } = navigator(undefined, { answers: [false] })
+    vm.$store.getters.allTerminalSessions = tabs
+
+    await vm.closeTerminals(vm.items[1])
+    expect(asked).toEqual([['Close all 2 terminals of "beta"? 1 of them is still running.', { title: 'Close terminals', okVariant: 'danger', okTitle: 'Close terminals' }]])
+    expect(emitted).toEqual([])
+  })
+
+  it('tells the parent the number of the row on yes, and leaves the list and the open diagram as they are', async () => {
+    const { vm, emitted } = navigator(undefined, { answers: [true] })
+    vm.$store.getters.allTerminalSessions = tabs
+    vm.openedItem = vm.items[1]
+
+    await vm.closeTerminals(vm.items[1])
+    expect(emitted).toEqual([['close-terminals', [1]]])
+    expect(names(vm)).toEqual(['alpha', 'beta', 'gamma'])
+    expect(vm.openedItem).toBe(vm.items[1])
+  })
+
+  it('closes at once when every tab of the row has ended', async () => {
+    const { vm, emitted, asked } = navigator()
+    vm.$store.getters.allTerminalSessions = tabs
+
+    await vm.closeTerminals(vm.items[2])
+    expect(asked).toEqual([])
+    expect(emitted).toEqual([['close-terminals', [2]]])
+  })
+
+  it('is in the menu of a row that has tabs, and the panel closes them', () => {
+    const menu = readFileSync(join(here, 'navigator-item-menu.vue'), 'utf8').replace(/\r\n/g, '\n')
+    const layout = readFileSync(join(here, '../../views/Layout.vue'), 'utf8').replace(/\r\n/g, '\n')
+    const row = source.match(/<NavigatorItemMenu\n([\s\S]*?)\/>/)[1]
+
+    expect(row).toContain(':terminals="terminalCounts.get(item.index) || 0"')
+    expect(row).toContain('@close-terminals="item.isMenuShown = false; closeTerminals(item)"')
+    // 맨 끝, 터미널이 있을 때만
+    expect(menu).toMatch(/<template v-if="terminals > 0">\s*<b-dropdown-divider \/>\s*<b-dropdown-item @click="\$emit\('close-terminals'\)">\s*<small>Close terminals<\/small>\s*<\/b-dropdown-item>\s*<\/template>\s*<\/b-dropdown>/)
+    expect(layout).toContain('@close-terminals="$refs.terminalPanel.closeOwners($event)"')
   })
 })
 
