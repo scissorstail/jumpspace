@@ -86,7 +86,7 @@ import { SearchAddon } from '@xterm/addon-search'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { mapGetters } from 'vuex'
-import { canReconnect, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, reconnectRefusal, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
+import { canReconnect, CLIPBOARD_OSC, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, oscCopyText, reconnectRefusal, rightClickAction, terminalShortcut } from '@/utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, panelDrag, panelHeight, RECONNECTING_LINE, searchSeed, terminalTheme } from '@/utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import { MAX_WRITE } from '../../../../shared/terminal-input.js'
@@ -256,6 +256,13 @@ export default {
       // 로그인하면 ssh가 보이지 않는 표시를 보낸다 (main의 ssh.js). 받으면 캔버스의 경로가 "연결됨"이 된다.
       term.parser.registerOscHandler(CONNECTED_OSC, data => {
         if (data === CONNECTED_DATA) this.$store.commit('terminalUpdate', { key: session.key, connected: true })
+        return true
+      })
+      // 서버의 프로그램이 클립보드에 쓴다 (OSC 52: tmux가 복사할 때 보낸다, #271). 쓰기만 한다: 읽어 달라는 것에는 답하지
+      // 않는다 (oscCopyText). 앞에 있지 않은 탭과 다른 스페이스의 탭도 쓴다: 복사하는 프로그램은 그 탭이 앞에 있는지 모른다.
+      term.parser.registerOscHandler(CLIPBOARD_OSC, data => {
+        const text = oscCopyText(data)
+        if (text !== null) window.preload.clipboard.writeText(text)
         return true
       })
 

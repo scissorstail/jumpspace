@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { activeTerminalNode, BUSY_IDLE_MS, busyNodes, canReconnect, countByOwner, createActivityWatch, createOutputRouter, duplicateNumbers, duplicateRefusal, endedByUser, forwardPorts, hopKey, INTERRUPT_WINDOW_MS, isMotionReport, numberedTitle, portsInUse, reconnectRefusal, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
+import { activeTerminalNode, BUSY_IDLE_MS, busyNodes, canReconnect, CLIPBOARD_OSC, countByOwner, createActivityWatch, createOutputRouter, duplicateNumbers, duplicateRefusal, endedByUser, forwardPorts, hopKey, INTERRUPT_WINDOW_MS, isMotionReport, numberedTitle, oscCopyText, portsInUse, reconnectRefusal, reorderSessions, rightClickAction, routeStates, sessionPhase, sessionsOf, terminalShortcut, terminalTitle } from './terminal-sessions'
 
 describe('terminalTitle', () => {
   it('names a tab after the node', () => {
@@ -383,6 +383,59 @@ describe('isMotionReport', () => {
   it('is nothing else: a report without its ESC, typed text, two reports at once, a move that ends with m, a broken report', () => {
     for (const data of ['[<35;10;5M', 'ls\r', '\x1b[<35;10;5M\x1b[<35;11;5M', 'a\x1b[<35;10;5M', '\x1b[<35;10;5Ma', '\x1b[<35;10;5m', '\x1b[<35;10M', '\x1b[<35;;5M', '\x1b[M#!!', '', undefined]) {
       expect(isMotionReport(data)).toBe(false)
+    }
+  })
+})
+
+// #271: tmux가 복사할 때 보내는 OSC 52 (ESC ] 52 ; Pc ; base64 BEL). xterm.js는 "52;" 뒤의 전부를 처리기에 준다.
+describe('oscCopyText', () => {
+  const b64 = text => Buffer.from(text, 'utf8').toString('base64')
+
+  it('is the text a copy of tmux sends, whichever clipboard it names', () => {
+    expect(CLIPBOARD_OSC).toBe(52)
+    expect(oscCopyText(`;${b64('copied in tmux')}`)).toBe('copied in tmux')
+    for (const pc of ['c', 'p', 's', '0', 'cp', 's7']) expect(oscCopyText(`${pc};${b64('a line\nand another')}`)).toBe('a line\nand another')
+  })
+
+  // 특수한 글자는 코드로 만든다: 소스에 글자 그대로 있으면 보이지 않고(BOM), 편집기가 지우거나 바꿔도 알 수 없다
+  const BOM = String.fromCharCode(0xfeff)
+  const REPLACEMENT = String.fromCharCode(0xfffd)
+
+  it('reads the text as UTF-8, without a byte order mark at its start', () => {
+    expect(oscCopyText(`c;${b64('한글 ✓ 🙂 é')}`)).toBe('한글 ✓ 🙂 é')
+    // 고장 난 UTF-8은 그 자리만 바뀐다
+    expect(oscCopyText(`c;${Buffer.from([0x61, 0xff, 0x62]).toString('base64')}`)).toBe(`a${REPLACEMENT}b`)
+    // 맨 앞의 BOM은 글이 아니라 인코딩의 표시다 (TextDecoder의 기본값)
+    expect(oscCopyText(`c;${b64(`${BOM}after a mark`)}`)).toBe('after a mark')
+  })
+
+  // tmux가 한 줄을 복사하면 줄바꿈으로 끝난다. 탭과 줄바꿈은 제어 문자지만 글이다
+  it('keeps the text exactly: spaces at both ends, tabs and line ends', () => {
+    for (const text of ['  indented line\n', 'a\tb\r\nc', '\n\n', ' ']) expect(oscCopyText(`;${b64(text)}`)).toBe(text)
+  })
+
+  // 셸에 붙여 넣으면 ESC [ 201 ~가 괄호 붙여넣기를 끝내고 뒤의 글이 명령으로 실행될 수 있다
+  it('is nothing for a text with a control character other than a tab or a line end', () => {
+    for (const text of ['safe\x1b[201~echo hi\r', 'a\x1bb', '\x00', 'a\x03b', 'a\x07', 'a\x08', 'a\x0bb', 'a\x0cb', 'a\x0eb', 'a\x1f']) {
+      expect(oscCopyText(`c;${b64(text)}`)).toBe(null)
+    }
+  })
+
+  it('takes base64 without its padding', () => {
+    expect(oscCopyText('c;YQ')).toBe('a')
+    expect(oscCopyText('c;YWI')).toBe('ab')
+  })
+
+  // 답하면 서버의 프로그램이 이 PC의 클립보드를 읽는다
+  it('is nothing for a question about the clipboard', () => {
+    expect(oscCopyText('c;?')).toBe(null)
+    expect(oscCopyText(';?')).toBe(null)
+  })
+
+  // 복사해 둔 것을 지우지 않는다: 빈 글을 쓰면 클립보드가 빈다
+  it('is nothing for an empty text, broken base64 or a sequence without its clipboard part', () => {
+    for (const data of ['c;', ';', '', 'c', b64('no clipboard part'), 'c; ', `c;${b64(BOM)}`, 'c;@@@@', 'c;YQ=a', 'c;Y', 'c;YWJj;ZA==']) {
+      expect(oscCopyText(data)).toBe(null)
     }
   })
 })

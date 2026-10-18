@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runInThisContext } from 'node:vm'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { canReconnect, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, reconnectRefusal, rightClickAction, terminalShortcut } from '../../utils/terminal-sessions'
+import { canReconnect, CLIPBOARD_OSC, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, oscCopyText, reconnectRefusal, rightClickAction, terminalShortcut } from '../../utils/terminal-sessions'
 import { endedLine, errorLine, nextFontSize, RECONNECTING_LINE, searchSeed } from '../../utils/terminal-view'
 import { CONNECTED_DATA, CONNECTED_OSC } from '../../../../shared/terminal-marker.js'
 import { MAX_WRITE } from '../../../../shared/terminal-input.js'
@@ -17,8 +17,9 @@ const made = []
 class FakeTerminal {
   constructor(options) {
     // windowsPty: xterm.js의 기본값처럼 빈 객체다 (OptionsService). 그래서 그것으로는 Windows인지 알 수 없다 (#252).
-    Object.assign(this, { options: { windowsPty: {}, ...options }, cols: 100, rows: 30, calls: [], disposed: false, osc: null, element: null })
-    this.parser = { registerOscHandler: (code, handler) => { this.osc = { code, handler } } }
+    // osc: 번호 -> 그 OSC의 처리기 (registerOscHandler)
+    Object.assign(this, { options: { windowsPty: {}, ...options }, cols: 100, rows: 30, calls: [], disposed: false, osc: {}, element: null })
+    this.parser = { registerOscHandler: (code, handler) => { this.osc[code] = handler } }
     made.push(this)
   }
 
@@ -40,7 +41,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const source = readFileSync(join(here, 'terminal-panel.vue'), 'utf8').replace(/\r\n/g, '\n')
 const script = source.match(/<script>\n([\s\S]*?)<\/script>/)[1]
 const imported = [...script.matchAll(/^import (?:\{ ([^}]+) \}|(\w+)) from .*$/gm)].flatMap(match => (match[1] ?? match[2]).split(', '))
-const given = { nextFontSize, searchSeed, canReconnect, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, reconnectRefusal, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, MAX_WRITE, MAX_CLIPBOARD, toastError, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
+const given = { nextFontSize, searchSeed, canReconnect, CLIPBOARD_OSC, createActivityWatch, createOutputRouter, duplicateRefusal, endedByUser, isMotionReport, oscCopyText, reconnectRefusal, rightClickAction, terminalShortcut, endedLine, errorLine, RECONNECTING_LINE, CONNECTED_DATA, CONNECTED_OSC, MAX_WRITE, MAX_CLIPBOARD, toastError, Terminal: FakeTerminal, FitAddon: FakeAddon, SearchAddon: FakeAddon, mapGetters: () => ({}) }
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 const component = runInThisContext(`(function (${imported.join(', ')}) {\n${body}\n})`)(...imported.map(name => given[name]))
 
@@ -720,12 +721,34 @@ describe('opening a session', () => {
     const done = vm.start(session)
     answer({ ok: true, id: 9 })
     await done
-    const { code, handler } = made.at(-1).osc
-    expect(code).toBe(CONNECTED_OSC)
+    const handler = made.at(-1).osc[CONNECTED_OSC]
     expect(handler('something else')).toBe(true)
     expect(seen.commits.some(([, patch]) => patch.connected)).toBe(false)
     expect(handler(CONNECTED_DATA)).toBe(true)
     expect(seen.commits.at(-1)).toEqual(['terminalUpdate', { key: 1, connected: true }])
+  })
+
+  // #271: tmux는 복사한 글을 OSC 52로 보낸다. 쓰기만 한다: 읽어 달라는 것에 답하면 서버가 이 PC의 클립보드를 읽는다.
+  // (가짜 preload에는 terminal.write가 없다: 터미널이 무엇이든 보내면 여기서 던진다)
+  it('puts the text a program on the server copies into the clipboard, also from a tab not in front, and tells it nothing', async () => {
+    const { vm, answer, seen, session } = opening()
+    const copied = []
+    window.preload.clipboard = { writeText: text => copied.push(text), readText: () => { throw new Error('the clipboard was read') } }
+
+    const done = vm.start(session)
+    answer({ ok: true, id: 9 })
+    await done
+    const handler = made.at(-1).osc[CLIPBOARD_OSC]
+    const commits = seen.commits.length
+    expect(handler(`;${Buffer.from('copied in tmux 한글').toString('base64')}`)).toBe(true)
+    expect(copied).toEqual(['copied in tmux 한글'])
+    vm.activeKey = 5
+    expect(handler(`c;${Buffer.from('from behind').toString('base64')}`)).toBe(true)
+    expect(copied).toEqual(['copied in tmux 한글', 'from behind'])
+    // 읽어 달라는 것, 빈 글, 고장 난 base64, 붙여 넣으면 괄호 붙여넣기를 끝내는 글: 클립보드는 그대로다
+    for (const data of ['c;?', 'c;', 'c;@@@@', `c;${Buffer.from('ls\x1b[201~echo run\r').toString('base64')}`]) expect(handler(data)).toBe(true)
+    expect(copied).toHaveLength(2)
+    expect(seen.commits).toHaveLength(commits)
   })
 
   it('says why in the tab when main cannot open it', async () => {

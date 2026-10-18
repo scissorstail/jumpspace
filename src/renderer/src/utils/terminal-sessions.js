@@ -390,6 +390,37 @@ export function isMotionReport(data) {
   return report !== null && (Number(report[1]) & ~28) === 35
 }
 
+// 서버의 프로그램이 클립보드에 넣어 달라는 글 (OSC 52, #271): ESC ] 52 ; Pc ; base64 BEL (또는 ST). tmux는 끌어서 고르거나
+// (mouse on) copy mode에서 복사하면 그 글을 자기 버퍼에 두고 이것을 보낸다 (set-clipboard, 기본값 external; Pc는 비어 있다).
+// owner, 2026-10-18: "tmux일 때 복사 붙여 넣기 하고 마우스 스크롤만 잘되면 되는데". 받은 글은 Windows의 클립보드로 간다.
+// 쓰기만 한다: 읽어 달라는 것(Pd가 ?)에는 답하지 않는다. 답하면 서버의 프로그램이 이 PC의 클립보드를 읽는다.
+// Pc(어느 클립보드인지: c, p, s, 0-7)는 보지 않는다: Windows에는 하나다. 빈 글과 고장 난 base64는 null이다: 아무것도 쓰지
+// 않는다 (xterm은 그때 클립보드를 비우지만, 여기서는 복사해 둔 것을 그대로 둔다). 글은 UTF-8이다 (맨 앞의 BOM은 글이 아니라서
+// 버린다, TextDecoder의 기본값). 탭과 줄바꿈 말고 제어 문자가 든 글도 null이다: 셸에 붙여 넣으면 그 글이 괄호 붙여넣기를
+// 끝내고(ESC [ 201 ~) 명령을 실행할 수 있다. tmux가 복사하는 것은 화면의 글이라 그런 문자가 없다.
+// xterm.js는 1000만 자보다 긴 OSC를 버리고 처리기를 부르지 않는다: 7.5 MB쯤의 글까지 온다 (main의 MAX_CLIPBOARD보다 적다).
+//   data: xterm.js가 처리기에 주는 것, "52;" 뒤의 전부 (Pc;Pd)
+export const CLIPBOARD_OSC = 52
+export function oscCopyText(data) {
+  const at = data.indexOf(';')
+  const encoded = at < 0 ? '' : data.slice(at + 1)
+  if (!encoded || encoded === '?') return null
+
+  let binary
+  try {
+    binary = atob(encoded)
+  } catch {
+    return null
+  }
+  // 한 글자씩: Uint8Array.from(binary, ...)은 7.5 MB에 0.8 - 1초 걸렸고(Node), 그동안 화면 전체가 멈춘다. 이렇게는 20 - 40 ms.
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  const text = new TextDecoder().decode(bytes)
+
+  // eslint-disable-next-line no-control-regex
+  return text && !/[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(text) ? text : null
+}
+
 // 터미널에서 가로채는 단축키: 'copy', 'paste', 'find', 'font-up', 'font-down', 'font-reset', 아니면 null(터미널이 그대로 처리).
 // Windows 터미널처럼 Ctrl+C는 고른 글자가 있을 때만 복사이고(없으면 실행 중인 프로그램을 중단시킨다), Ctrl+V는 붙여넣기다.
 // Shift+Insert 붙여넣기는 브라우저가 처리하므로 여기서 다루지 않는다.

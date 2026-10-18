@@ -5,6 +5,7 @@ import { DEFAULT_SETTING, TERMINAL_FONT_SIZE_MAX, TERMINAL_FONT_SIZE_MIN } from 
 const GRAY = '\x1b[90m'
 const RED = '\x1b[31m'
 const RESET = '\x1b[0m'
+const CAN = '\x18'
 
 // 글꼴 크기 단축키(utils/terminal-sessions.js의 terminalShortcut)를 누른 뒤의 크기: 1px씩, 설정의 범위 안에서.
 export function nextFontSize(size, shortcut) {
@@ -60,8 +61,10 @@ export function closeTerminalsQuestion(name, sessions = []) {
 }
 
 // 세션이 끝났을 때 터미널에 쓰는 줄. Enter로 다시 접속할 수 있다는 것도 알린다.
+// 맨 앞의 CAN은 프로그램이 끝내지 못한 제어 문자열을 버린다 (#271): 접속이 OSC 52의 한가운데서 끊기면, 그 OSC가 이 줄의
+// ESC에서 끝난 것으로 읽혀 잘린 글이 클립보드에 들어갈 수 있었다. CAN은 화면에 아무것도 그리지 않는다.
 export function endedLine(exitCode) {
-  return `\r\n${GRAY}[session ended${exitCode ? `, exit status ${exitCode}` : ''}] Press Enter to reconnect.${RESET}\r\n`
+  return `${CAN}\r\n${GRAY}[session ended${exitCode ? `, exit status ${exitCode}` : ''}] Press Enter to reconnect.${RESET}\r\n`
 }
 
 export const RECONNECTING_LINE = `\r\n${GRAY}[reconnecting]${RESET}\r\n`

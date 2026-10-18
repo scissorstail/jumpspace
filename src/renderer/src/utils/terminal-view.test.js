@@ -88,7 +88,8 @@ describe('closeTerminalsQuestion', () => {
 
 describe('terminal lines', () => {
   it('says how to reconnect, with the exit status only when it is not 0', () => {
-    expect(endedLine(0)).toBe('\r\n\x1b[90m[session ended] Press Enter to reconnect.\x1b[0m\r\n')
+    // 맨 앞의 CAN: 끊긴 세션이 열어 둔 OSC(클립보드에 쓰는 OSC 52, #271)를 이 줄의 ESC가 끝내지 않고 버리게 한다
+    expect(endedLine(0)).toBe('\x18\r\n\x1b[90m[session ended] Press Enter to reconnect.\x1b[0m\r\n')
     expect(endedLine(255)).toContain('[session ended, exit status 255] Press Enter to reconnect.')
     expect(RECONNECTING_LINE).toContain('[reconnecting]')
   })
