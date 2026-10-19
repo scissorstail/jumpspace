@@ -301,8 +301,6 @@ export function createOutputRouter({ maxPending = 256 * 1024 } = {}) {
   }
 }
 
-// 터미널에서 앱이 직접 처리하는 단축키. 붙여넣기(Ctrl+Shift+V, Shift+Insert)는 브라우저의 paste 이벤트로 이미 된다.
-//   'copy': Ctrl+Shift+C, Ctrl+Insert (Ctrl+C는 원격 프로그램에 보내는 인터럽트로 남긴다)
 // 사용자가 직접 끝낸 세션인지. 그렇다면 탭을 바로 닫고, 아니면(오류, 접속 실패) 다시 접속할 수 있게 남긴다.
 //   255: ssh 자체가 끝났다 (접속 거부, 인증 실패, 연결 끊김). 다만 포워딩(ssh -N)은 Ctrl+C로 끝내도 255라서,
 //        이 탭에서 방금(INTERRUPT_WINDOW_MS 안에) Ctrl+C를 눌렀다면 사용자가 끝낸 것으로 본다.
@@ -331,7 +329,7 @@ export function duplicateRefusal(session, sessions = []) {
   if (session?.id === null || session?.id === undefined) return 'This terminal did not start. Start it from its node.'
   if (session.kind === 'forward' && session.status === 'running') return 'The ports this tab forwards are in use while it runs, so a second tab could not forward them. Open it again once it has ended.'
   const ports = portsInUse(session, sessions)
-  if (ports.length) return `${portsText(ports)}, so a new tab could not forward ${ports.length === 1 ? 'it' : 'them'}. Open it again once that tab has ended.`
+  if (ports.length) return portsInUseText(ports, 'a new tab', 'Open it again once that tab has ended.')
   return null
 }
 
@@ -354,8 +352,11 @@ export function portsInUse(session, sessions) {
   return session.ports.filter(port => held.has(port))
 }
 
-function portsText(ports) {
-  return ports.length === 1 ? `Local port ${ports[0]} is forwarded by another tab now` : `Local ports ${ports.join(', ')} are forwarded by another tab now`
+// 다른 탭이 지금 포워딩하는 포트들 때문에 이 탭(who)이 포워딩할 수 없다는 글. 끝에 언제 다시 하면 되는지(then)가 온다.
+function portsInUseText(ports, who, then) {
+  const one = ports.length === 1
+  const held = one ? `Local port ${ports[0]} is forwarded by another tab now` : `Local ports ${ports.join(', ')} are forwarded by another tab now`
+  return `${held}, so ${who} could not forward ${one ? 'it' : 'them'}. ${then}`
 }
 
 // 끝난 탭에서 Enter로 다시 접속하지 않는 까닭 (접속하면 null). 다른 탭이 이 포워딩 탭의 로컬 포트를 포워딩하는 동안은
@@ -363,7 +364,7 @@ function portsText(ports) {
 export function reconnectRefusal(session, sessions) {
   const ports = portsInUse(session, sessions)
   if (!ports.length) return null
-  return `${portsText(ports)}, so this one could not forward ${ports.length === 1 ? 'it' : 'them'}. Press Enter again once that tab has ended.`
+  return portsInUseText(ports, 'this one', 'Press Enter again once that tab has ended.')
 }
 
 // 터미널에서 오른쪽 클릭이 하는 일: 'copy'(고른 글자가 있다), 'paste', 아니면 'program'.
@@ -429,10 +430,10 @@ export function terminalShortcut(event, { hasSelection = false } = {}) {
   if (event.code === 'KeyC') return event.shiftKey || hasSelection ? 'copy' : null
   if (event.code === 'KeyV') return 'paste'
   if (!event.shiftKey && event.key === 'Insert') return 'copy'
-  // 글꼴 크기: Ctrl +/= (크게), Ctrl - (작게), Ctrl 0 (기본값). 숫자판의 키도 같은 글자를 준다.
-  // xterm.js는 이 키들에 아무것도 보내지 않는다. Ctrl+Shift+-는 글자가 '_'라서 여기에 걸리지 않고 ^_(emacs의 undo)로 간다.
   // 지나간 출력에서 찾기. Shift 없는 Ctrl+F는 프로그램의 것이다 (^F: 셸에서 한 글자 앞으로, less에서 한 쪽 아래로).
   if (event.shiftKey && event.code === 'KeyF') return 'find'
+  // 글꼴 크기: Ctrl +/= (크게), Ctrl - (작게), Ctrl 0 (기본값). 숫자판의 키도 같은 글자를 준다.
+  // xterm.js는 이 키들에 아무것도 보내지 않는다. Ctrl+Shift+-는 글자가 '_'라서 여기에 걸리지 않고 ^_(emacs의 undo)로 간다.
   if (event.key === '+' || event.key === '=') return 'font-up'
   if (event.key === '-') return 'font-down'
   if (event.key === '0') return 'font-reset'
