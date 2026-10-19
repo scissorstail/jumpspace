@@ -253,8 +253,10 @@ export default {
 
     // 편집을 끝내면(잠그면) 선택을 푼다. 잠긴 동안에는 노드를 고를 수도, 선택을 풀 수도 없어서 편집 중에 누른 노드가
     // 선택된 모양으로 계속 남았다. 고른 터미널 탭의 노드도 같은 모양이라, 남은 선택이 그 노드처럼 보이기도 했다.
+    // 잠금을 풀면 잠금을 풀라는 안내(showLockedHint)를 닫는다: 푼 뒤에도 남은 시간 동안 떠 있었다.
     this.editor.on('readonly', isLocked => {
       if (isLocked) this.clearSelection()
+      else this.hideHint('editor-hint-locked')
     })
 
     // 캔버스를 더블클릭하면 Rete는 확대한다. 대신 머리글의 Reset view와 똑같이 처음 보기로 돌아간다 (owner, 2026-10).
@@ -337,6 +339,11 @@ export default {
 
       this.shownHints.add(id)
       this.$bvToast.toast(text, { id, title, variant: 'secondary', solid: true, autoHideDelay: HINT_MS })
+    },
+    // 떠 있는 안내 하나를 닫는다 (id로: id 없는 $bvToast.hide()는 오류의 알림까지 모두 닫는다). 사라지면 BootstrapVue가
+    // 알려서(hintGone) 다시 띄울 수 있다. 떠 있지 않으면 아무것도 하지 않는다.
+    hideHint(id) {
+      if (this.shownHints.has(id)) this.$bvToast.hide(id)
     },
     // 토스트 하나가 사라졌다 (TOAST_HIDDEN): 안내였으면 다시 띄울 수 있다
     hintGone({ componentId }) {

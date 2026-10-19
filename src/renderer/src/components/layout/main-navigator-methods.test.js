@@ -334,7 +334,7 @@ describe('removing', () => {
     await vm.removeItem(vm.items[0])
     await vm.removeItem(vm.items[1])
     expect(asked.map(x => x[0])).toEqual(['Remove "alpha"?', 'Remove "(untitled)"?'])
-    expect(asked[0][1]).toMatchObject({ title: 'Remove', okVariant: 'danger', okTitle: 'Remove' })
+    expect(asked[0][1]).toEqual({ title: 'Remove', okVariant: 'danger', okTitle: 'Remove', returnFocus: '#list-item-0' })
     expect(names(vm)).toEqual(['alpha', ''])
     expect(emitted).toEqual([])
   })
@@ -379,7 +379,7 @@ describe('closing the terminals of a diagram', () => {
     vm.$store.getters.allTerminalSessions = tabs
 
     await vm.closeTerminals(vm.items[1])
-    expect(asked).toEqual([['Close all 2 terminals of "beta"? 1 of them is still running.', { title: 'Close terminals', okVariant: 'danger', okTitle: 'Close terminals' }]])
+    expect(asked).toEqual([['Close all 2 terminals of "beta"? 1 of them is still running.', { title: 'Close terminals', okVariant: 'danger', okTitle: 'Close terminals', returnFocus: '#list-item-1' }]])
     expect(emitted).toEqual([])
   })
 
@@ -444,8 +444,8 @@ describe('exporting and importing', () => {
     const calls = files()
     const { vm, asked } = navigator([withPassword], { answers: [false, true] })
 
-    await vm.exportItems(vm.items)
-    expect(asked[0]).toEqual([EXPORT_PASSWORD_WARNING, { title: 'Export', okTitle: 'Export' }])
+    await vm.exportItems(vm.items, '#list-item-0')
+    expect(asked[0]).toEqual([EXPORT_PASSWORD_WARNING, { title: 'Export', okTitle: 'Export', returnFocus: '#list-item-0' }])
     expect(calls).toEqual([])
 
     await vm.exportItems(vm.items)
@@ -496,6 +496,49 @@ describe('exporting and importing', () => {
     expect(toasts).toHaveLength(1)
     expect(toasts[0][0]).toBe('Failed to import')
     expect(names(second.vm)).toEqual(['alpha', 'beta', 'gamma'])
+  })
+})
+
+// 질문을 연 메뉴 항목은 닫힌 메뉴 안에 숨어서 포커스를 받지 못한다. BootstrapVue가 키보드를 거기로 돌려주려다 못 해서, 질문을
+// 닫은 뒤 키보드가 아무 데도 없었다 (#279). 그래서 질문마다 돌아갈 곳(returnFocus)을 준다: BootstrapVue가 닫힐 때 찾는 선택자.
+describe('the keyboard after a question asked from a menu of the list', () => {
+  const MORE_ACTIONS = '#main-navigator [aria-label="More actions"]'
+
+  it('goes back to the row whose menu asked: Remove, Close terminals, Export', async () => {
+    const { vm, asked } = navigator([diagram('alpha'), withPassword], { answers: [false, false, false] })
+    vm.$store.getters.allTerminalSessions = [{ owner: 1, status: 'running' }]
+    const row = source.match(/<NavigatorItemMenu\n([\s\S]*?)\/>/)[1]
+
+    await vm.removeItem(vm.items[1])
+    await vm.closeTerminals(vm.items[1])
+    expect(row).toContain('@export="exportItems([item], rowFocus(item))"')
+    await vm.exportItems([vm.items[1]], vm.rowFocus(vm.items[1]))
+    expect(asked.map(([message, options]) => [message, options.returnFocus])).toEqual([
+      ['Remove "secret"?', '#list-item-1'],
+      ['Close the terminal of "secret"? It is still running.', '#list-item-1'],
+      [EXPORT_PASSWORD_WARNING, '#list-item-1']
+    ])
+  })
+
+  it('goes back to More actions after its questions: Remove spaces, Export spaces', async () => {
+    const { vm, asked } = navigator([diagram('alpha'), withPassword], { answers: [false, false] })
+    vm.items[1].isSelected = true
+
+    await vm.removeSelectedItems()
+    await vm.exportSelectedItems()
+    expect(asked.map(([message, options]) => [message, options.returnFocus])).toEqual([
+      ['Remove 1 selected space(s)?', MORE_ACTIONS],
+      [EXPORT_PASSWORD_WARNING, MORE_ACTIONS]
+    ])
+  })
+
+  // 그 선택자가 찾는 것: 줄의 id (이름을 바꾸는 동안의 입력칸도 같은 id다), 목록의 id와 More actions 단추의 이름
+  it('finds the row by its id and More actions by its name', () => {
+    const rowButton = source.match(/<b-button\n\s*v-if="!item.isEditing"\n([\s\S]*?)>/)[1]
+
+    expect(rowButton).toMatch(/:id="`list-item-\$\{item\.index\}`"/)
+    expect(source).toMatch(/^<template>\n\s*<div\n\s*id="main-navigator"/)
+    expect(source).toContain(":toggle-attrs=\"{ 'aria-label': 'More actions' }\"")
   })
 })
 

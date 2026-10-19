@@ -188,7 +188,7 @@
                   @edit="item.isMenuShown = false; editItem(item)"
                   @copy="item.isMenuShown = false; copyItem(item)"
                   @remove="item.isMenuShown = false; removeItem(item)"
-                  @export="exportItems([item])"
+                  @export="exportItems([item], rowFocus(item))"
                   @close-terminals="item.isMenuShown = false; closeTerminals(item)"
                 />
               </div>
@@ -235,6 +235,12 @@ import { diagramProblem } from '@/utils/diagram-data'
 import { toastError } from '@/utils/notify'
 import { UNSAVED_TEXT, UNSAVED_TITLE } from '../../../../shared/unsaved.js'
 import NavigatorItemMenu from './navigator-item-menu'
+
+// 목록의 메뉴에서 연 질문이 닫히면 키보드가 돌아갈 곳 (msgBoxConfirm의 returnFocus, 질문이 닫힐 때 찾는다). BootstrapVue는
+// 질문을 열 때 포커스가 있던 메뉴 항목으로 돌려주는데, 닫힌 메뉴 안에 숨은 항목은 포커스를 받지 못해서 키보드가 아무 데도
+// 없었고 Escape로 목록도 닫히지 않았다 (#279). 줄의 ... 메뉴의 질문은 그 줄로 (rowFocus: ... 단추는 마우스가 줄 위에 있을
+// 때만 보인다), More actions의 질문은 그 단추로. 지운 줄은 없으니 그때는 전처럼 아무 데도 가지 않는다.
+const MORE_ACTIONS_FOCUS = '#main-navigator [aria-label="More actions"]'
 
 // 다이어그램(item) 목록: 고르기, 검색, 새로 만들기, 이름 바꾸기, 순서 바꾸기, 가져오기/내보내기.
 // 헤더의 제목을 누르면 그 아래에 열리는 판(views/Layout.vue의 #diagram-switcher) 안에 있고, 닫혀 있어도 목록 상태는 여기에 남는다.
@@ -421,14 +427,14 @@ export default {
       }
     },
     async removeItem(item) {
-      if (!(await this.confirmRemove(`Remove "${item.name || '(untitled)'}"?`))) {
+      if (!(await this.confirmRemove(`Remove "${item.name || '(untitled)'}"?`, this.rowFocus(item)))) {
         return
       }
 
       this.removeItems([item])
     },
     async removeSelectedItems() {
-      if (!(await this.confirmRemove(`Remove ${this.selectedItems.length} selected space(s)?`))) {
+      if (!(await this.confirmRemove(`Remove ${this.selectedItems.length} selected space(s)?`, MORE_ACTIONS_FOCUS))) {
         return
       }
 
@@ -449,14 +455,15 @@ export default {
     // 먼저 묻는다 (utils/terminal-view.js의 closeTerminalsQuestion). 닫는 일은 패널이 한다 (Layout이 closeOwners를 부른다).
     async closeTerminals(item) {
       const question = closeTerminalsQuestion(item.name, sessionsOf(this.$store.getters.allTerminalSessions, item.index))
-      if (question && !(await this.$bvModal.msgBoxConfirm(question, { title: 'Close terminals', okVariant: 'danger', okTitle: 'Close terminals' }))) {
+      if (question && !(await this.$bvModal.msgBoxConfirm(question, { title: 'Close terminals', okVariant: 'danger', okTitle: 'Close terminals', returnFocus: this.rowFocus(item) }))) {
         return
       }
 
       this.$emit('close-terminals', [item.index])
     },
-    async exportItems(items) {
-      if (hasSavedPassword(items) && !(await this.$bvModal.msgBoxConfirm(EXPORT_PASSWORD_WARNING, { title: 'Export', okTitle: 'Export' }))) {
+    // returnFocus: 저장된 비밀번호를 묻는 질문이 닫히면 키보드가 갈 곳 (줄의 메뉴면 그 줄, More actions면 그 단추)
+    async exportItems(items, returnFocus) {
+      if (hasSavedPassword(items) && !(await this.$bvModal.msgBoxConfirm(EXPORT_PASSWORD_WARNING, { title: 'Export', okTitle: 'Export', returnFocus }))) {
         return
       }
 
@@ -468,7 +475,7 @@ export default {
       }
     },
     exportSelectedItems() {
-      this.exportItems(this.selectedItems)
+      this.exportItems(this.selectedItems, MORE_ACTIONS_FOCUS)
     },
     async importItems() {
       if (!this.isLocked) {
@@ -512,12 +519,17 @@ export default {
       this.items.forEach(x => { x.isSelected = false })
       this.vcoConfig.isActive = false
     },
-    confirmRemove(message) {
+    confirmRemove(message, returnFocus) {
       return this.$bvModal.msgBoxConfirm(message, {
         title: 'Remove',
         okVariant: 'danger',
-        okTitle: 'Remove'
+        okTitle: 'Remove',
+        returnFocus
       })
+    },
+    // 줄(item)의 ... 메뉴에서 연 질문이 닫히면 키보드가 갈 곳: 그 줄 (위의 MORE_ACTIONS_FOCUS)
+    rowFocus(item) {
+      return `#list-item-${item.index}`
     },
     notifyError(title, error) {
       toastError(this, title, error)

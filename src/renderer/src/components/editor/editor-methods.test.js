@@ -241,7 +241,7 @@ function setup({ editorData = EMPTY, isLocked = false, getters = {}, answers = [
     $store: { getters: { terminalSessions: [], activeTerminalKey: null, isTerminalPanelOpen: true, ...getters } },
     $emit: (name, ...args) => { log.push(['emit', name, ...args]) },
     $root: { $on: listen('root'), $off: unlisten('root') },
-    $bvToast: { toast: (text, options) => { log.push(['toast', text, options]) } },
+    $bvToast: { toast: (text, options) => { log.push(['toast', text, options]) }, hide: id => { log.push(['toast-hide', id]) } },
     $bvModal: { msgBoxConfirm: async (text, options) => { log.push(['confirm', text, options]); return answers.shift() } },
     $nextTick: async () => { log.push(['nextTick']) }
   }
@@ -787,6 +787,31 @@ describe('a locked diagram', () => {
     vm.showLockedHint()
     vm.showLoopHint()
     expect(ids()).toEqual(['editor-hint-locked', 'editor-hint-loop', 'editor-hint-loop'])
+  })
+
+  // 잠금을 풀라는 안내가 잠금을 푼 뒤에도 남은 시간 동안 떠 있었다 (#279)
+  it('takes its hint away when the editor is unlocked, and no other toast', () => {
+    const { vm, editor, dispatch } = setup({ isLocked: true })
+
+    // 떠 있지 않으면 닫을 것도 없다 (id 없는 hide는 모든 토스트를 닫는다)
+    editor.fire('readonly', false)
+    expect(logged('toast-hide')).toEqual([])
+
+    vm.showLockedHint()
+    vm.showLoopHint()
+    editor.fire('readonly', true)
+    expect(logged('toast-hide')).toEqual([])
+    editor.fire('readonly', false)
+    expect(logged('toast-hide')).toEqual([['editor-hint-locked']])
+
+    // 사라졌다고 알려 온 뒤에는 다시 뜨고, 다시 닫힌다
+    dispatch('root', TOAST_HIDDEN, { componentId: 'editor-hint-locked' })
+    editor.fire('readonly', false)
+    expect(logged('toast-hide')).toHaveLength(1)
+    vm.showLockedHint()
+    editor.fire('readonly', false)
+    expect(logged('toast').map(([, options]) => options.id)).toEqual(['editor-hint-locked', 'editor-hint-loop', 'editor-hint-locked'])
+    expect(logged('toast-hide')).toEqual([['editor-hint-locked'], ['editor-hint-locked']])
   })
 
   it('says nothing while no diagram is open', () => {

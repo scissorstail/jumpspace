@@ -47,4 +47,14 @@ describe('the messages of the app', () => {
     expect(toast).toMatch(/componentId: this\.safeId\(\)/)
     expect(read(require.resolve('bootstrap-vue/esm/mixins/id.js'))).toMatch(/var id = this\.id \|\| this\.localId_;/)
   })
+
+  // 캔버스는 잠금을 풀면 잠긴 캔버스의 안내를 그 id로 닫는다 (components/editor/index.vue의 hideHint): $bvToast.hide(id)는
+  // $root에 그 id를 보내고, 토스트는 제 id일 때 닫힌다. id가 없으면 모든 토스트가 닫힌다.
+  it('close one toast by its id, and all of them without one', () => {
+    const helper = read(require.resolve('bootstrap-vue/esm/components/toast/helpers/bv-toast.js'))
+    const toast = read(require.resolve('bootstrap-vue/esm/components/toast/toast.js'))
+
+    expect(helper).toMatch(/key: "hide",\n\s*value: function hide\(\) \{\n\s*var id = arguments\.length > 0 && arguments\[0\] !== undefined \? arguments\[0\] : null;\n\s*this\._root\.\$emit\(getRootActionEventName\(NAME_TOAST, EVENT_NAME_HIDE\), id\);/)
+    expect(toast).toMatch(/this\.listenOnRoot\(getRootActionEventName\(NAME_TOAST, EVENT_NAME_HIDE\), function \(id\) \{\n\s*if \(!id \|\| id === _this\.safeId\(\)\) \{\n\s*_this\.hide\(\);/)
+  })
 })
