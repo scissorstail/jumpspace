@@ -478,13 +478,9 @@ export default {
     exportSelectedItems() {
       this.exportItems(this.selectedItems, MORE_ACTIONS_FOCUS)
     },
+    // 가져온 다이어그램은 목록 끝에 더할 뿐, 열린 다이어그램과 에디터는 그대로다: 잠금을 푼 뒤 바꾼 것은 에디터에 남아 잠글 때
+    // 저장된다. 그래서 잠금을 푼 동안에도 묻지 않는다 (#284: 전에는 "They will be lost"라고 먼저 물었지만 잃는 것이 없었다).
     async importItems() {
-      if (!this.isLocked) {
-        if (!(await this.confirmUnlockedChangeWillBeLost())) {
-          return
-        }
-      }
-
       try {
         const projectData = await window.preload.importProjects()
         if (projectData) {

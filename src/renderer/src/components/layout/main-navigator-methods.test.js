@@ -542,17 +542,30 @@ describe('exporting and importing', () => {
     expect(emitted).toEqual([['updated', { items: toProjectItems(vm.items), index: null }]])
   })
 
-  it('changes nothing when the file dialog is cancelled, or when unlocked changes would be lost and the answer is no', async () => {
+  it('changes nothing when the file dialog is cancelled', async () => {
     const calls = files({ imported: null })
-    const locked = navigator()
-    await locked.vm.importItems()
-    expect(names(locked.vm)).toEqual(['alpha', 'beta', 'gamma'])
-    expect(locked.emitted).toEqual([])
-
-    const unlocked = navigator(undefined, { isLocked: false, answers: [false] })
-    await unlocked.vm.importItems()
+    const { vm, emitted, asked } = navigator()
+    await vm.importItems()
     expect(calls).toEqual([['import']])
-    expect(unlocked.asked).toHaveLength(1)
+    expect(names(vm)).toEqual(['alpha', 'beta', 'gamma'])
+    expect(emitted).toEqual([])
+    expect(asked).toEqual([])
+  })
+
+  // 가져오기는 목록 끝에 더할 뿐 열린 다이어그램과 에디터를 건드리지 않는다: 잠금을 푼 뒤 바꾼 것은 에디터에 남아 잠글 때
+  // 저장된다. 전에는 "They will be lost"라고 먼저 물었지만 잃는 것이 없었다 (#284, headless의 import-check).
+  it('asks nothing while the editor is unlocked, and leaves the open diagram as it is', async () => {
+    const calls = files({ imported: JSON.stringify([diagram('one')]) })
+    const { vm, emitted, asked } = navigator(undefined, { isLocked: false })
+    await vm.openItem(vm.items[1])
+    emitted.length = 0
+
+    await vm.importItems()
+    expect(asked).toEqual([])
+    expect(calls).toEqual([['import']])
+    expect(names(vm)).toEqual(['alpha', 'beta', 'gamma', 'one'])
+    expect(vm.openedItem).toBe(vm.items[1])
+    expect(emitted).toEqual([['updated', { items: toProjectItems(vm.items), index: 1 }]])
   })
 
   it('says so when the file cannot be read or is not a list of diagrams', async () => {
