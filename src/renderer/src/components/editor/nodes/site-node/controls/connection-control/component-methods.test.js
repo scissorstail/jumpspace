@@ -1,8 +1,10 @@
 import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runInThisContext } from 'node:vm'
 import pick from 'lodash/pick'
+import Popper from 'popper.js'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { errorBox } from '../../../../../../utils/notify'
 import { terminalTitle } from '../../../../../../utils/terminal-sessions'
@@ -602,5 +604,39 @@ describe('forwards the app never writes', () => {
     expect(nodeOf({ connection: { forwards: [5, 'x', null] } }).vm.forwards).toEqual([row, row, row])
     expect(nodeOf({ connection: { forwards: 0 } }).vm.forwards).toEqual([])
     expect(nodeOf({ connection: { forwards: [{ checked: 1, from: 8080, host: '', to: 80 }] } }).vm.forwardSummaryText.first).toBe(':8080 → localhost:80')
+  })
+})
+
+// 노드의 두 창(Node Setting, Port forwarding: v-tooltip의 v-popover)은 앱 창 안에 머문다 (#280). 포워드가 많거나 앱 창이 낮거나
+// 좁으면 창이 앱 창 밖으로 나가고 아무것도 스크롤되지 않아서, 아래의 칸과 단추에 마우스로 닿을 수 없었다. 넘치는 내용은 띠 아래에서
+// 스크롤한다 (Port forwarding은 줄 목록만: forward-menu.test.js). headless의 node-window-check가 창을 잰다.
+describe('the windows of a node in a small app window', () => {
+  const style = source.slice(source.indexOf('<style'))
+  const start = style.indexOf('\n.vt-popover {')
+  const block = start < 0 ? '' : style.slice(start, style.indexOf('\n}\n', start))
+  const require = createRequire(import.meta.url)
+
+  // popper가 앱 창 가장자리와 띄우는 거리, 오른쪽 아래로 진 그림자, 위의 띠, 테두리(위는 없다)를 빼고 남는 크기
+  it('leave room for the edge popper keeps, the shadow, the band and the frame', () => {
+    const edge = Popper.Defaults.modifiers.preventOverflow.padding
+    const [, x, y] = block.match(/\n {4}box-shadow: (\d+)px (\d+)px 0 var\(--js-shadow\);/)?.map(Number) ?? []
+    const band = Number(block.match(/\n {4}&::before \{[^}]*\n {6}height: (\d+)px;/)?.[1])
+    const frame = Number(block.match(/\n {4}border: (\d+)px solid var\(--js-secondary\);\n {4}border-top: 0;/)?.[1])
+    expect([edge, x, y, band, frame].every(n => n > 0)).toBe(true)
+
+    expect(block).toContain(`\n  --node-window-max-height: calc(100vh - ${2 * edge + y + band + frame}px);`)
+    expect(block).toContain(`\n  --node-window-max-width: calc(100vw - ${2 * edge + x + 2 * frame}px);`)
+  })
+
+  it('scroll their content under the band, which stays in sight', () => {
+    const wrapper = block.match(/\n {4}> div:first-child \{\n([^}]*)\n {4}\}/)?.[1] ?? ''
+    expect(wrapper).toContain('max-width: var(--node-window-max-width);')
+    expect(wrapper).toContain('max-height: var(--node-window-max-height);')
+    expect(wrapper).toContain('overflow-y: auto;')
+
+    // v-tooltip은 틀(-inner, 띠는 그 ::before) 안에 창의 내용을 감싼 div를 맨 먼저 그린다
+    const tooltip = readFileSync(require.resolve('v-tooltip/dist/v-tooltip.esm.js'), 'utf8')
+    expect(tooltip).toMatch(/ref: "inner",\s+class: _vm\.popoverInnerClass,\s+staticStyle: \{\s+position: "relative"\s+\}\s+\}, \[_c\("div", \[_vm\._t\("popover"/)
+    expect(readFileSync(join(here, '../../../../../../main.js'), 'utf8')).toContain("defaultInnerClass: 'vt-tooltip-inner vt-popover-inner'")
   })
 })

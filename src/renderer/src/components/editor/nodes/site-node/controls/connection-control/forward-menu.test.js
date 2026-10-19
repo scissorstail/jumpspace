@@ -15,13 +15,14 @@ const script = source.match(/<script>\n([\s\S]*?)<\/script>/)[1]
 const body = script.replace(/^import .*\n/gm, '').replace('export default', 'return')
 const component = runInThisContext(`(function (closePopoverOnEscape, activeForwards, portState) {\n${body}\n})`)({}, activeForwards, portState)
 
-// 가짜 this: props와, computed를 값으로 읽는 것, $emit으로 보낸 것의 기록
+// 가짜 this: props와, computed를 값으로 읽는 것, $emit으로 보낸 것의 기록, $nextTick으로 미룬 일(ticks, 부르는 것은 테스트)
 function menu(props) {
   const emitted = []
-  const vm = { value: [], disabled: false, hint: '', plan: { mode: 'forward', defaultHost: 'localhost', reason: '' }, ...props, $refs: {}, $emit: (...args) => emitted.push(args) }
+  const ticks = []
+  const vm = { value: [], disabled: false, hint: '', plan: { mode: 'forward', defaultHost: 'localhost', reason: '' }, ...props, $refs: {}, $emit: (...args) => emitted.push(args), $nextTick: fn => ticks.push(fn) }
   for (const [name, get] of Object.entries(component.computed)) Object.defineProperty(vm, name, { get: () => get.call(vm) })
   for (const [name, method] of Object.entries(component.methods)) vm[name] = method.bind(vm)
-  return { vm, emitted }
+  return { vm, emitted, ticks }
 }
 
 const on = { checked: true, from: 8080, host: null, to: 80 }
@@ -74,6 +75,24 @@ describe('the port forwarding menu', () => {
     expect(value).toHaveLength(1)
   })
 
+  // 줄 목록이 스크롤되면 끝에 붙은 새 줄은 보이지 않았다 (#280). 부모가 새 줄을 그린 다음에(nextTick) 끝까지 내린다.
+  it('scrolls its rows to the end once the row it added is drawn', () => {
+    const { vm, emitted, ticks } = menu({ value: [on] })
+    vm.add()
+    expect(emitted).toHaveLength(1)
+    expect(ticks).toHaveLength(1)
+
+    vm.$refs.list = { scrollTop: 0, scrollHeight: 900 }
+    ticks[0]()
+    expect(vm.$refs.list.scrollTop).toBe(900)
+  })
+
+  it('scrolls nothing when there is no list of rows', () => {
+    const { vm, ticks } = menu({ value: [] })
+    vm.add()
+    expect(() => ticks[0]()).not.toThrow()
+  })
+
   it('removes the row that was asked for', () => {
     const value = [on, off, on]
     const { vm, emitted } = menu({ value })
@@ -122,5 +141,60 @@ describe('the port forwarding menu', () => {
     expect(template).toMatch(/:state="portState\(forward\.from, forward\.checked\)"/)
     expect(template).toMatch(/:state="portState\(forward\.to, forward\.checked\)"/)
     expect(template).toMatch(/:placeholder="plan\.defaultHost"/)
+  })
+})
+
+// 노드의 창은 앱 창 안에 머물고(component.vue의 --node-window-max-height), 넘치면 이 창은 줄 목록만 스크롤한다 (#280): 포워드가
+// 많으면 창이 앱 창 밖으로 나가서 아래의 줄과 Add, Start에 닿을 수 없었다. 제목, 설명, 단추 줄은 늘 보인다. headless의
+// node-window-check가 그 창을 잰다.
+describe('the port forwarding window with more forwards than fit', () => {
+  const style = source.slice(source.indexOf('<style lang="scss">'))
+  // .forward-panel 안의 규칙 하나의 내용 (그 안의 규칙까지), 창 자신의 선언들 (그 안의 첫 규칙 앞까지). 줄마다 \n이 앞에 온다.
+  const rule = selector => `\n${style.match(new RegExp(`\\n {2}${selector.replace(/[.+]/g, '\\$&')} \\{\\n([\\s\\S]*?)\\n {2}\\}`))?.[1] ?? ''}`
+  const panel = `\n${style.match(/\n\.forward-panel \{\n([\s\S]*?)\n\n/)?.[1] ?? ''}`
+  const row = rule('.forward-row')
+  const theme = readFileSync(join(here, '../../../../../../assets/theme.scss'), 'utf8').replace(/\r\n/g, '\n')
+
+  it('stays inside the app window and scrolls only its rows', () => {
+    expect(panel).toMatch(/\n {2}display: flex;\n {2}flex-direction: column;/)
+    expect(panel).toMatch(/\n {2}max-width: 100%;/)
+    expect(panel).toMatch(/\n {2}max-height: var\(--node-window-max-height\);/)
+    expect(panel).not.toMatch(/overflow/)
+
+    expect(rule('.forward-list')).toMatch(/\n {4}overflow-y: auto;/)
+    expect(rule('.forward-list')).toMatch(/^\n {4}min-height: 0;/)
+    for (const selector of ['.forward-title', '.forward-hint', '.forward-locked', '.forward-actions']) {
+      expect(style).toMatch(new RegExp(`\\n {2}\\${selector} \\{`))
+      expect(rule(selector)).not.toMatch(/overflow|max-height/)
+    }
+  })
+
+  it('draws the list where it scrolls', () => {
+    expect(template).toMatch(/v-if="value\.length > 0"\n\s+ref="list"\n\s+class="forward-list"/)
+  })
+
+  // 단추와 체크박스의 포커스 테두리(theme.scss: 2px 띄운 2px 선)는 스크롤 영역 밖으로 나가면 잘린다
+  it('leaves room around its rows for the focus ring of their buttons and boxes', () => {
+    const ring = text => (m => m && Number(m[1]) + Number(m[2]))(text.match(/outline: (\d+)px solid var\(--js-sun\);\n\s+outline-offset: (\d+)px;/))
+    const button = ring(theme.slice(theme.indexOf('\n.btn {')))
+    const box = ring(theme.slice(theme.indexOf('\n.custom-control-input:focus-visible ~ .custom-control-label::before {')))
+    expect(button).toBeGreaterThan(0)
+    expect(box).toBe(button)
+
+    const list = rule('.forward-list')
+    expect(list).toContain(`\n    margin: 0 -${button}px -${button}px;`)
+    expect(list).toContain(`\n    padding: 0 ${button}px ${button}px;`)
+    expect(list).toContain(`\n    scroll-padding: ${button}px 0;`)
+  })
+
+  // 스크롤 영역 밖으로는 여백이 겹치지 않는다: 줄의 여백(6px)과 다음 것의 여백 중 큰 쪽이던 간격을 그대로 둔다
+  it('keeps the gaps after its last row as they were', () => {
+    const gap = Number(row.match(/\n {4}margin-bottom: (\d+)px;/)?.[1])
+    expect(gap).toBe(6)
+    expect(row).toMatch(/\n {4}&:last-child \{\n {6}margin-bottom: 0;\n {4}\}/)
+    expect(rule('.forward-list + .forward-locked')).toBe(`\n    margin-top: ${gap}px;`)
+    expect(rule('.forward-locked')).toMatch(/\n {4}margin-top: 0\.25rem;/)
+    // Add와 Start의 줄은 제 여백(0.5rem, 8px)이 더 컸다
+    expect(rule('.forward-actions')).toMatch(/\n {4}margin-top: 0\.5rem;/)
   })
 })

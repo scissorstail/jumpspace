@@ -546,6 +546,12 @@ export default {
 
 .vt-popover {
   z-index: 10000;
+  // 창(Node Setting, Port forwarding)의 내용이 가질 수 있는 가장 큰 높이: 앱 창의 높이에서 popper가 앱 창 가장자리와
+  // 띄우는 위아래 5px, 아래 그림자 8px, 위의 띠 6px와 아래 테두리 2px를 뺀다. 포워드가 많거나 앱 창이 낮으면 창이 앱 창
+  // 밖으로 나가고 아무것도 스크롤되지 않아서, 아래의 칸과 단추에 마우스로 닿을 수 없었다 (#280).
+  --node-window-max-height: calc(100vh - 26px);
+  // 너비도 같다: 양옆 5px, 오른쪽 그림자 8px, 양옆 테두리 2px씩. Port forwarding은 440px라 좁은 앱 창에서 오른쪽이 잘렸다.
+  --node-window-max-width: calc(100vw - 22px);
 
   &:focus {
     outline: 1px dashed var(--js-secondary);
@@ -576,6 +582,13 @@ export default {
       height: 6px;
       margin: 0 -2px;
       background: var(--js-bands);
+    }
+
+    // 슬롯을 감싼 div (v-tooltip의 틀): 넘치면 내용 전체가 스크롤한다. 띠는 그 밖이라 늘 보인다.
+    > div:first-child {
+      max-width: var(--node-window-max-width);
+      max-height: var(--node-window-max-height);
+      overflow-y: auto;
     }
   }
 }

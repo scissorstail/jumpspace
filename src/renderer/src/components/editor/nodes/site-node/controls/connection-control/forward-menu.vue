@@ -67,6 +67,7 @@
 
             <div
               v-if="value.length > 0"
+              ref="list"
               class="forward-list"
             >
               <div class="forward-row forward-labels">
@@ -243,6 +244,12 @@ export default {
     },
     add() {
       this.$emit('input', [...this.value, { checked: false, from: null, host: null, to: null }])
+
+      // 목록이 스크롤되면 끝에 붙은 새 줄이 보이지 않아서 아무 일도 없었던 것 같다: 그려진 뒤에 목록을 끝까지 내린다.
+      this.$nextTick(() => {
+        const list = this.$refs.list
+        if (list) list.scrollTop = list.scrollHeight
+      })
     },
     remove(index) {
       this.$emit('input', this.value.filter((x, i) => i !== index))
@@ -280,8 +287,14 @@ export default {
 }
 
 // 팝오버는 body 아래에 그려지므로 scoped를 쓰지 않고 클래스 접두사로 범위를 좁힌다.
+// 창은 앱 창 안에 머문다 (component.vue의 --node-window-max-height): 넘치면 줄 목록만 스크롤하고, 제목과 설명과
+// 단추 줄(Add, Start)은 늘 보인다. 좁은 앱 창에서는 틀(v-tooltip의 div)의 너비까지 줄고, 대상 호스트 칸이 좁아진다.
 .forward-panel {
+  display: flex;
+  flex-direction: column;
   width: 440px;
+  max-width: 100%;
+  max-height: var(--node-window-max-height);
 
   // 제목 아래를 창(모달)의 머리글처럼 선으로 나눈다. (줄 간격 1이라 설명 글과 붙어 보였다)
   .forward-title {
@@ -306,12 +319,27 @@ export default {
     }
   }
 
+  // 스크롤 영역은 양옆과 아래로 4px 넓고 그만큼 안쪽을 띄운다: 줄의 포커스 테두리(2px 띄운 2px 선)가 잘리지 않는다.
+  // 포커스를 받은 칸도 그만큼 띄워서 보여 준다 (scroll-padding).
+  .forward-list {
+    min-height: 0;
+    margin: 0 -4px -4px;
+    padding: 0 4px 4px;
+    overflow-y: auto;
+    scroll-padding: 4px 0;
+  }
+
   .forward-row {
     display: grid;
     grid-template-columns: 26px 78px 18px minmax(0, 1fr) 8px 78px 32px;
     gap: 6px;
     align-items: center;
     margin-bottom: 6px;
+
+    // 목록 다음 것과의 간격은 그것이 띄운다: 스크롤 영역 밖으로는 여백이 겹치지 않는다.
+    &:last-child {
+      margin-bottom: 0;
+    }
   }
 
   .forward-labels {
@@ -364,6 +392,11 @@ export default {
     margin-top: 0.25rem;
     font-size: 0.75rem;
     color: var(--js-text-muted);
+  }
+
+  // 줄 목록 바로 다음이면 마지막 줄의 여백(6px)만큼: 그 여백과 겹치던 때의 간격 그대로
+  .forward-list + .forward-locked {
+    margin-top: 6px;
   }
 
   .forward-actions {
