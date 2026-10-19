@@ -88,11 +88,11 @@ Top first, one per run; take the item out when it is done. When the list is empt
 - Escape does not close the right-click menu (it never did). Since #267 a menu the mouse has not gone into stays open until a press anywhere, as usual menus do, which also close with Escape. Not asked for.
 
 ### Code hot spots
-Sizes of 2026-10-14 (#219). Tests read the sources of these files (and run their scripts with a fake `this`), so a split that moves code from one file to another has to change those tests first.
-- `src/renderer/src/components/layout/main-navigator.vue` (about 680 lines, the item menu moved out in #46): list, drag, select, rename, import/export. Most of the rest is its scoped CSS; the next seam would be the header toolbar (new, more actions).
-- `src/renderer/src/components/editor/index.vue` (about 620 lines, nearly all script): the Rete setup in `mounted()` is about 210 lines of commented wiring; the link list and the hint under the canvas are built once since #219.
+Sizes of 2026-10-19 (#274). Tests read the sources of these files (and run their scripts with a fake `this`), so a split that moves code from one file to another has to change those tests first.
+- `src/renderer/src/components/layout/main-navigator.vue` (about 800 lines, Recent came in #255, the item menu moved out in #46): list, drag, select, rename, import/export. Most of the rest is its scoped CSS; the next seam would be the header toolbar (new, more actions).
+- `src/renderer/src/components/editor/index.vue` (about 650 lines, nearly all script): the Rete setup in `mounted()` is about 210 lines of commented wiring; the link list and the hint under the canvas are built once since #219.
 - `src/renderer/src/views/Layout.vue` (about 570 lines; the scene moved out, the diagram list came in; the terminal button of the header left in #134)
-- `src/renderer/src/components/terminal/terminal-panel.vue` (about 570 lines, about 415 of them script and most of that comments over the xterm.js wiring; texts and colors moved to `utils/terminal-view.js` in #57, the tab row to `terminal-tabs.vue` in #75): session start, reconnect, clipboard, resize and maximize.
+- `src/renderer/src/components/terminal/terminal-panel.vue` (about 665 lines, about 505 of them script and most of that comments over the xterm.js wiring; texts and colors moved to `utils/terminal-view.js` in #57, the tab row to `terminal-tabs.vue` in #75): session start, reconnect, clipboard, resize and maximize.
 - `src/main/index.js` (about 380 lines): mostly window, tray and IPC wiring; the app:// path check, the `{ ok, error }` wrapper and the setting store moved out in #67, the quit hold (#196) and the two questions (#157, #218) are modules of their own.
 
 ### Missing or thin tests
@@ -1590,6 +1590,11 @@ Anything that fails goes to Known bugs (first in any phase).
 - Did: read the Protocol and the Routine of this file and started the cycle of #218 again (Routine, "Started again on 2026-10-19 (#273)"): two session timers, `7,47 */2 * * *` and `27 1-23/2 * * *`, with the text of #218, its end condition brought up to date (the known bugs that wait for the owner's word) and the rules learned since added. No code changed.
 - Result: log only. Of the installer of #272 the owner said "it seems to work for now".
 - Found / next: the first timed run picks its item (tests, refactor or a completeness review, the one done least recently). Right after the start the owner said when the installer comes (Requests (21)): the Routine note and both timers were changed for it (the timers made again with the new text).
+
+### #274 2026-10-19 · refactor (the first run of the cycle of #273)
+- Did: refactor was the activity done least recently (#241), and since then 67 files of `src` changed (#244 to #271). `clones.cjs` found, besides CSS and what #223 and #229 left (the question before losing unlocked changes, the two exports, the closing of a popover), the name and terminal count of a row written twice in `main-navigator.vue` (the list and Recent, #255): left, a component of its own would need two root elements or a wrapper, and the scoped CSS of both rows would move with it. `stale-refs.cjs`: only `Menu.vue`/`Item.vue`, files of the plugin. In `utils/terminal-sessions.js` the message about ports another tab forwards was put together twice (#258, #264): now `portsInUseText()`, the same words; a comment of an older `terminalShortcut` (Ctrl+V not paste) stood alone above `endedByUser` and is gone, and in `terminalShortcut` the comment of the find key stands above its line again. The sizes of the Code hot spots are brought up to date. Commit cedb12e.
+- Result: tests 1519 passed (with Git's bash; none changed), lint ok, build ok, the old tests caught 5 of 5 mutations of the new helper; headless checks 37 runs passed (1177 checks). Renderer only, no real-window check.
+- Found / next: no bug. Code changed, so this run does not count toward the two runs in a row with nothing to add or fix. No installer: nothing the owner would notice changed since #272. Next: a completeness review (#242).
 
 ## Routine
 
