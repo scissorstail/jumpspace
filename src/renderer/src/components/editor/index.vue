@@ -202,119 +202,12 @@ export default {
       this.engine.register(c)
     })
 
-    this.editor.on(
-      [
-        'connectioncreate',
-        'connectionremove',
-        'nodecreate',
-        'noderemove',
-        'process'
-      ],
-      async () => {
-        // 여러 노드를 한꺼번에 더하는 동안(addFromConfig)에는 끝에 한 번만 계산한다.
-        // 노드마다 계산을 시작하면 서로 겹쳐서, 만든 노드에 값이 채워지지 않은 채 남았다.
-        if (this.editor.silent || this.isAdding) return
-
-        await this.compile()
-      }
-    )
-
-    // 노드 수를 알린다. (빈 캔버스의 안내는 Layout이 보여준다)
-    this.editor.on(['nodecreated', 'noderemoved'], () => this.emitNodeCount())
-
-    // 캔버스를 옮기거나 확대/축소할 때마다 알린다. (저장은 Layout이 한다)
-    // 사용자가 정한 보기(base)는 그때의 영역 크기와 함께 기억한다. 영역 크기가 바뀌면 base에서 다시 계산하므로
-    // (rescaleView) 창을 줄였다 늘리거나 터미널 패널을 열었다 닫아도 처음 보기로 정확히 돌아온다.
-    // 확대는 영역의 높이를 따르므로(utils/view.js의 scaleView), 패널을 연 채 정한 보기도 패널을 닫으면 같은 비율로 커진다.
-    // 크기에 맞추느라 생긴 변화(isRescaling)는 사용자의 보기가 아니므로 기억하지도 알리지도 않는다.
-    this.base = null
-    this.isRescaling = false
-    this.editor.on(['translated', 'zoomed'], () => {
-      if (this.isRescaling) return
-
-      const { k, x, y } = this.editor.view.area.transform
-      this.keepView({ k, x, y }, this.areaSize())
-    })
-
-    this.editor.on(
-      [
-        'rendernode',
-        'readonly'
-      ],
-      () => {
-        // Update Editor Lock status of Components
-        const isLocked = this.editor.exist('isreadonly') && this.editor.trigger('isreadonly')
-
-        this.editor.nodes.forEach(x => {
-          x.controls.get('connection').vueContext.isLocked = isLocked
-        })
-      }
-    )
-
-    // 편집을 끝내면(잠그면) 선택을 푼다. 잠긴 동안에는 노드를 고를 수도, 선택을 풀 수도 없어서 편집 중에 누른 노드가
-    // 선택된 모양으로 계속 남았다. 고른 터미널 탭의 노드도 같은 모양이라, 남은 선택이 그 노드처럼 보이기도 했다.
-    // 잠금을 풀면 잠금을 풀라는 안내(showLockedHint)를 닫는다: 푼 뒤에도 남은 시간 동안 떠 있었다.
-    this.editor.on('readonly', isLocked => {
-      if (isLocked) this.clearSelection()
-      else this.hideHint('editor-hint-locked')
-    })
-
-    // 캔버스를 더블클릭하면 Rete는 확대한다. 대신 머리글의 Reset view와 똑같이 처음 보기로 돌아간다 (owner, 2026-10).
-    // 어디가 캔버스인지는 utils/locked-press.js의 isCanvasDoubleClick: 빈 곳은 언제나, 노드 위는 잠긴 동안에만.
-    this.editor.on('zoom', ({ source }) => source !== 'dblclick')
-    this.onDoubleClick = e => {
-      if (this.editorData && isCanvasDoubleClick(e, { isLocked: this.isLocked })) this.resetView()
-    }
-    this.$el.addEventListener('dblclick', this.onDoubleClick)
-
-    // 연결은 클릭 두 번으로만 잇는다: 시작 소켓을 클릭하면 선이 마우스를 따라오고, 도착 소켓을 클릭하면 이어진다.
-    // 끌어서 놓는 방식(소켓에서 누르고 다른 소켓에서 놓기)은 Windows에서 선이 이어지지 않고 남는 일이 있어서 쓰지 않는다.
-    // 연결 플러그인은 놓는 순간(pointerup)에도 소켓을 고르므로, 그때 고르는 것만 막는다. 놓은 뒤에도 선은 따라오고, 클릭하면 이어진다.
-    this.isReleasing = false
-    this.onPointerRelease = () => {
-      this.isReleasing = true
-      setTimeout(() => { this.isReleasing = false })
-    }
-    window.addEventListener('pointerup', this.onPointerRelease, true)
-    // 왼쪽 소켓을 손에 든 채 누른 왼쪽 소켓도 고르지 않는다 (isInputOnInput). 플러그인은 버튼을 놓을 때마다 손에 든 소켓을
-    // connectiondrop으로 알린다. 떨어뜨리기 전에 알리므로, 지금도 들고 있는지는 heldLine으로 본다.
-    this.heldIo = null
-    this.editor.on('connectiondrop', io => { this.heldIo = io })
-    this.editor.on('connectionpick', io => !this.isReleasing && !this.isInputOnInput(io))
-
-    // 고리를 닫는 연결은 받지 않는다 (refuseLoop). 연결 플러그인은 새 연결을 만들기 전에 도착 소켓에 있던 연결을 먼저 지우므로,
-    // 방금(같은 차례에) 지워진 연결을 기억해 둔다: 새 연결을 거절하면 그것을 되돌린다. 불러오는 중에 지워지는 것은 기억하지 않는다.
-    this.editor.on('connectionremoved', connection => {
-      if (this.editor.silent) return
-
-      this.justRemovedLink = connection
-      setTimeout(() => {
-        if (this.justRemovedLink === connection) this.justRemovedLink = null
-      })
-    })
-    this.editor.on('connectioncreate', link => this.refuseLoop(link))
-
-    // 잠겨 있는 동안 노드의 그림, 이름, 접속 정보, 소켓은 배경처럼 군다: 그 위에서 끌면 캔버스가 움직인다 (utils/locked-press.js).
-    // Rete는 노드 위의 누름을 노드의 것으로 삼고 멈추므로, 노드에 닿기 전에(capture) 멈추고 같은 누름을 캔버스에 다시 보낸다.
-    // 다시 보낸 누름은 캔버스 자신이 target이라 여기서 또 걸리지 않고, Rete의 캔버스 끌기가 받는다.
-    this.onLockedPress = e => {
-      if (lockedPress(e, { isLocked: this.isLocked }) !== 'canvas') return
-
-      e.stopPropagation()
-      this.$el.dispatchEvent(new PointerEvent('pointerdown', e))
-    }
-    this.$el.addEventListener('pointerdown', this.onLockedPress, true)
-
-    // Rete는 캔버스 크기를 불러올 때와 창 크기가 바뀔 때만 픽셀로 고정한다. 터미널 패널을 열고 닫거나 높이를 바꾸면
-    // 캔버스 영역이 달라지므로 그때도 맞춘다. (패널이 열린 채 다른 item을 열고 패널을 닫으면 캔버스가 잘린 채 남았다)
-    // 영역 크기가 바뀌면 다이어그램도 배경 풍경처럼 같은 비율로 커지고 줄어든다. 보여줄 보기는 영역의 크기만으로 정해진다
-    // (#265부터 처음 보기도, utils/view.js의 shownView). 그 전에는 영역과 패널이 나눠 쓰는 #workspace도 보았다: 처음 보기가
-    // 그 크기에서의 보기였다.
-    this.areaObserver = new ResizeObserver(() => {
-      this.editor.view.resize()
-      this.rescaleView()
-    })
-    this.areaObserver.observe(this.$el.parentElement)
+    // 캔버스의 이벤트는 하는 일마다 나누어 듣는다 (listenFor...). 같은 이벤트에 붙은 것은 붙은 차례로 불리고, 화면의 이벤트는
+    // dblclick, pointerup, pointerdown의 차례로 붙는다 (editor-methods.test.js가 본다).
+    this.listenForChanges()
+    this.listenForView()
+    this.listenForLinks()
+    this.listenForLock()
   },
   beforeDestroy() {
     this.$root.$off(TOAST_HIDDEN, this.hintGone)
@@ -324,6 +217,128 @@ export default {
     this.areaObserver?.disconnect()
   },
   methods: {
+    // 다이어그램이 바뀌면 다시 계산하고(compile) 노드 수를 알린다 (mounted가 부른다)
+    listenForChanges() {
+      this.editor.on(
+        [
+          'connectioncreate',
+          'connectionremove',
+          'nodecreate',
+          'noderemove',
+          'process'
+        ],
+        async () => {
+          // 여러 노드를 한꺼번에 더하는 동안(addFromConfig)에는 끝에 한 번만 계산한다.
+          // 노드마다 계산을 시작하면 서로 겹쳐서, 만든 노드에 값이 채워지지 않은 채 남았다.
+          if (this.editor.silent || this.isAdding) return
+
+          await this.compile()
+        }
+      )
+
+      // 노드 수를 알린다. (빈 캔버스의 안내는 Layout이 보여준다)
+      this.editor.on(['nodecreated', 'noderemoved'], () => this.emitNodeCount())
+    },
+    // 보기: 사용자가 정한 보기를 기억하고(keepView), 더블클릭은 처음 보기로, 영역의 크기가 바뀌면 보기를 맞춘다 (mounted가 부른다)
+    listenForView() {
+      // 캔버스를 옮기거나 확대/축소할 때마다 알린다. (저장은 Layout이 한다)
+      // 사용자가 정한 보기(base)는 그때의 영역 크기와 함께 기억한다. 영역 크기가 바뀌면 base에서 다시 계산하므로
+      // (rescaleView) 창을 줄였다 늘리거나 터미널 패널을 열었다 닫아도 처음 보기로 정확히 돌아온다.
+      // 확대는 영역의 높이를 따르므로(utils/view.js의 scaleView), 패널을 연 채 정한 보기도 패널을 닫으면 같은 비율로 커진다.
+      // 크기에 맞추느라 생긴 변화(isRescaling)는 사용자의 보기가 아니므로 기억하지도 알리지도 않는다.
+      this.base = null
+      this.isRescaling = false
+      this.editor.on(['translated', 'zoomed'], () => {
+        if (this.isRescaling) return
+
+        const { k, x, y } = this.editor.view.area.transform
+        this.keepView({ k, x, y }, this.areaSize())
+      })
+
+      // 캔버스를 더블클릭하면 Rete는 확대한다. 대신 머리글의 Reset view와 똑같이 처음 보기로 돌아간다 (owner, 2026-10).
+      // 어디가 캔버스인지는 utils/locked-press.js의 isCanvasDoubleClick: 빈 곳은 언제나, 노드 위는 잠긴 동안에만.
+      this.editor.on('zoom', ({ source }) => source !== 'dblclick')
+      this.onDoubleClick = e => {
+        if (this.editorData && isCanvasDoubleClick(e, { isLocked: this.isLocked })) this.resetView()
+      }
+      this.$el.addEventListener('dblclick', this.onDoubleClick)
+
+      // Rete는 캔버스 크기를 불러올 때와 창 크기가 바뀔 때만 픽셀로 고정한다. 터미널 패널을 열고 닫거나 높이를 바꾸면
+      // 캔버스 영역이 달라지므로 그때도 맞춘다. (패널이 열린 채 다른 item을 열고 패널을 닫으면 캔버스가 잘린 채 남았다)
+      // 영역 크기가 바뀌면 다이어그램도 배경 풍경처럼 같은 비율로 커지고 줄어든다. 보여줄 보기는 영역의 크기만으로 정해진다
+      // (#265부터 처음 보기도, utils/view.js의 shownView). 그 전에는 영역과 패널이 나눠 쓰는 #workspace도 보았다: 처음 보기가
+      // 그 크기에서의 보기였다.
+      this.areaObserver = new ResizeObserver(() => {
+        this.editor.view.resize()
+        this.rescaleView()
+      })
+      this.areaObserver.observe(this.$el.parentElement)
+    },
+    // 연결: 클릭 두 번으로만 잇고, 고리를 닫는 연결은 받지 않는다 (mounted가 부른다)
+    listenForLinks() {
+      // 연결은 클릭 두 번으로만 잇는다: 시작 소켓을 클릭하면 선이 마우스를 따라오고, 도착 소켓을 클릭하면 이어진다.
+      // 끌어서 놓는 방식(소켓에서 누르고 다른 소켓에서 놓기)은 Windows에서 선이 이어지지 않고 남는 일이 있어서 쓰지 않는다.
+      // 연결 플러그인은 놓는 순간(pointerup)에도 소켓을 고르므로, 그때 고르는 것만 막는다. 놓은 뒤에도 선은 따라오고, 클릭하면 이어진다.
+      this.isReleasing = false
+      this.onPointerRelease = () => {
+        this.isReleasing = true
+        setTimeout(() => { this.isReleasing = false })
+      }
+      window.addEventListener('pointerup', this.onPointerRelease, true)
+      // 왼쪽 소켓을 손에 든 채 누른 왼쪽 소켓도 고르지 않는다 (isInputOnInput). 플러그인은 버튼을 놓을 때마다 손에 든 소켓을
+      // connectiondrop으로 알린다. 떨어뜨리기 전에 알리므로, 지금도 들고 있는지는 heldLine으로 본다.
+      this.heldIo = null
+      this.editor.on('connectiondrop', io => { this.heldIo = io })
+      this.editor.on('connectionpick', io => !this.isReleasing && !this.isInputOnInput(io))
+
+      // 고리를 닫는 연결은 받지 않는다 (refuseLoop). 연결 플러그인은 새 연결을 만들기 전에 도착 소켓에 있던 연결을 먼저 지우므로,
+      // 방금(같은 차례에) 지워진 연결을 기억해 둔다: 새 연결을 거절하면 그것을 되돌린다. 불러오는 중에 지워지는 것은 기억하지 않는다.
+      this.editor.on('connectionremoved', connection => {
+        if (this.editor.silent) return
+
+        this.justRemovedLink = connection
+        setTimeout(() => {
+          if (this.justRemovedLink === connection) this.justRemovedLink = null
+        })
+      })
+      this.editor.on('connectioncreate', link => this.refuseLoop(link))
+    },
+    // 잠금: 노드의 컨트롤에 알리고, 잠그면 선택을 풀고, 잠긴 노드 위의 누름은 캔버스로 보낸다 (mounted가 부른다)
+    listenForLock() {
+      this.editor.on(
+        [
+          'rendernode',
+          'readonly'
+        ],
+        () => {
+          // Update Editor Lock status of Components
+          const isLocked = this.editor.exist('isreadonly') && this.editor.trigger('isreadonly')
+
+          this.editor.nodes.forEach(x => {
+            x.controls.get('connection').vueContext.isLocked = isLocked
+          })
+        }
+      )
+
+      // 편집을 끝내면(잠그면) 선택을 푼다. 잠긴 동안에는 노드를 고를 수도, 선택을 풀 수도 없어서 편집 중에 누른 노드가
+      // 선택된 모양으로 계속 남았다. 고른 터미널 탭의 노드도 같은 모양이라, 남은 선택이 그 노드처럼 보이기도 했다.
+      // 잠금을 풀면 잠금을 풀라는 안내(showLockedHint)를 닫는다: 푼 뒤에도 남은 시간 동안 떠 있었다.
+      this.editor.on('readonly', isLocked => {
+        if (isLocked) this.clearSelection()
+        else this.hideHint('editor-hint-locked')
+      })
+
+      // 잠겨 있는 동안 노드의 그림, 이름, 접속 정보, 소켓은 배경처럼 군다: 그 위에서 끌면 캔버스가 움직인다 (utils/locked-press.js).
+      // Rete는 노드 위의 누름을 노드의 것으로 삼고 멈추므로, 노드에 닿기 전에(capture) 멈추고 같은 누름을 캔버스에 다시 보낸다.
+      // 다시 보낸 누름은 캔버스 자신이 target이라 여기서 또 걸리지 않고, Rete의 캔버스 끌기가 받는다.
+      this.onLockedPress = e => {
+        if (lockedPress(e, { isLocked: this.isLocked }) !== 'canvas') return
+
+        e.stopPropagation()
+        this.$el.dispatchEvent(new PointerEvent('pointerdown', e))
+      }
+      this.$el.addEventListener('pointerdown', this.onLockedPress, true)
+    },
     // 잠긴 캔버스를 오른쪽 클릭했을 때 (메뉴는 열지 않는다)
     showLockedHint() {
       if (!this.editorData) return
