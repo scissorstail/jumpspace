@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { runInThisContext } from 'node:vm'
+import { runInNewContext, runInThisContext } from 'node:vm'
 import isEmpty from 'lodash/isEmpty'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNING } from '../../utils/project'
@@ -203,6 +204,77 @@ describe('opening a diagram', () => {
     vm.onClickOutside()
     expect(vm.isSelecting).toBe(false)
     expect(vm.vcoConfig.isActive).toBe(false)
+  })
+
+  // 목록이 묻는 질문은 body에 그려져서 그 단추의 클릭도 목록 밖이다. 그 클릭으로는 고른 것을 풀지 않는다 (#282): Cancel 뒤에도
+  // 고른 채로 남는다. main.js가 쓰는 v-click-outside를 설치된 그대로 가짜 document와 함께 돌리고, 목록의 설정(vcoConfig)으로
+  // 붙여서 클릭을 보낸다. (window가 없으면 그 라이브러리는 빈 지시자를 내놓는다)
+  it('keeps the spaces picked with Ctrl through a click in one of its questions, and drops them at any other click outside', async () => {
+    const { vm } = navigator()
+    const listeners = []
+    const sandbox = {
+      // iframe을 누른 것을 알아채려고 window의 blur도 듣는다 (여기서는 일어나지 않는다)
+      window: { addEventListener() {}, removeEventListener() {} },
+      navigator: {},
+      document: { documentElement: { addEventListener: (name, handler) => listeners.push([name, handler]), removeEventListener() {} } },
+      setTimeout: run => run(),
+      module: { exports: {} }
+    }
+    sandbox.exports = sandbox.module.exports
+    runInNewContext(readFileSync(createRequire(import.meta.url).resolve('v-click-outside'), 'utf8'), sandbox)
+    const { directive } = sandbox.module.exports
+    // 클릭 하나: target에서 위로 올라가는 길(composedPath)에 목록이 있으면 목록 안이다
+    const list = {}
+    const click = (closest, path = []) => listeners.filter(([name]) => name === 'click').forEach(([, handler]) => {
+      const target = { closest }
+      handler({ target, composedPath: () => [target, ...path] })
+    })
+
+    await vm.openItem(vm.items[0], { ctrlKey: true })
+    await vm.openItem(vm.items[2], { ctrlKey: true })
+    directive.bind(list, { value: vm.vcoConfig })
+
+    // Cancel 단추: .modal 안
+    click(selector => (selector === '.modal' ? {} : null))
+    expect(vm.selectedItems).toEqual([vm.items[0], vm.items[2]])
+    expect(vm.vcoConfig.isActive).toBe(true)
+    // 목록 안의 클릭은 그 라이브러리가 넘긴다
+    click(() => null, [list])
+    expect(vm.selectedItems).toEqual([vm.items[0], vm.items[2]])
+    // 그 밖의 클릭 (캔버스, 목록 판의 바깥)
+    click(() => null)
+    expect(vm.isSelecting).toBe(false)
+    expect(vm.vcoConfig.isActive).toBe(false)
+  })
+})
+
+// 키보드로 포커스가 온 줄의 테두리는 outline이다 (#282). border였을 때는 열린 줄의 분홍 띠(항목 안의 z-index -1이라 항목의
+// border 위에 그려진다)의 그림자가 오른쪽과 아래를 덮었고, Ctrl로 고른 줄에서는 바탕색 테두리의 규칙이 이겨서 보이지 않았다.
+// 그림으로는 checks 폴더의 row-ring-check가 본다.
+describe('the focus ring of a row of the list', () => {
+  const style = source.slice(source.indexOf('<style'))
+  const rule = selectors => style.match(new RegExp(`\\n {10}${selectors.map(s => s.replace(/[.:&]/g, x => (x === '&' ? '&' : `\\${x}`))).join(',\\n {10}')} \\{\\n([\\s\\S]*?)\\n {10}\\}`))
+
+  it('is an outline in the place of the border, also while a key is held on the row', () => {
+    const ring = rule(['&.btn:focus-visible', '&.btn:focus-visible:active'])
+
+    expect(ring?.[1]).toBe('            outline: 1px solid var(--js-secondary);\n            outline-offset: -1px;')
+  })
+
+  it('comes after the rule that takes the outline away after a click, which is as specific', () => {
+    const none = rule(['&.btn:focus', '&.editing:focus', '&.btn:active:focus'])
+    const ring = rule(['&.btn:focus-visible', '&.btn:focus-visible:active'])
+
+    expect(none?.[1]).toContain('outline: none;')
+    expect(style.indexOf(ring?.[0])).toBeGreaterThan(style.indexOf(none?.[0]))
+  })
+
+  // (Recent의 줄은 띠도 고른 표시도 없어서 border 그대로다)
+  it('is not drawn as a border any more, but in the name box', () => {
+    const rows = style.slice(style.indexOf('\n        .list-item {'))
+
+    expect(rows).not.toMatch(/&\.btn:focus-visible[^{]*\{[^}]*border/)
+    expect(rule(['&.editing:focus'])?.[1]).toBe('            border: 1px solid var(--js-secondary);')
   })
 })
 

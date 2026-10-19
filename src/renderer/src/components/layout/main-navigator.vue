@@ -271,6 +271,7 @@ export default {
       openedItem: null,
       vcoConfig: {
         handler: this.onClickOutside,
+        middleware: this.dropsSelection,
         isActive: true
       }
     }
@@ -519,6 +520,12 @@ export default {
       this.items.forEach(x => { x.isSelected = false })
       this.vcoConfig.isActive = false
     },
+    // 목록 밖의 이 클릭이 Ctrl로 고른 항목을 푸는가 (v-click-outside의 middleware: false면 onClickOutside를 부르지 않는다).
+    // 목록이 묻는 질문(msgBoxConfirm: Remove spaces, Export spaces..., ...)은 body에 그려져서 그 단추도 목록 밖이다: 그 클릭은
+    // 고른 것을 풀지 않는다. Cancel 뒤에도 고른 채로 남았다가 다시 물을 수 있다 (Escape로 닫을 때처럼, #282).
+    dropsSelection(event) {
+      return !event.target?.closest?.('.modal')
+    },
     confirmRemove(message, returnFocus) {
       return this.$bvModal.msgBoxConfirm(message, {
         title: 'Remove',
@@ -735,7 +742,16 @@ export default {
             box-shadow: none;
           }
 
+          // 키보드로 포커스가 온 항목의 테두리는 outline이다: 항목이 그리는 모든 것 위에 그려진다 (#282). border였을 때는 열린
+          // 항목에서 분홍 띠의 그림자가 그 오른쪽과 아래를 덮었고(띠는 항목 안의 z-index -1이라 항목의 border 위에 그려진다),
+          // Ctrl로 고른 항목에서는 위의 바탕색 테두리 규칙이 이겨서 보이지 않았다. border의 자리(-1px)에 그려서 아무것도
+          // 움직이지 않고, 키를 누르고 있는 동안(:active)에도 그대로다.
           &.btn:focus-visible,
+          &.btn:focus-visible:active {
+            outline: 1px solid var(--js-secondary);
+            outline-offset: -1px;
+          }
+
           &.editing:focus {
             border: 1px solid var(--js-secondary);
           }
