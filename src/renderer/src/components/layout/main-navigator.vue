@@ -230,7 +230,7 @@ import isEmpty from 'lodash/isEmpty'
 import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNING } from '@/utils/project'
 import { countByOwner, sessionsOf } from '@/utils/terminal-sessions'
 import { closeTerminalsQuestion, terminalCountText } from '@/utils/terminal-view'
-import { copyNavigatorItem, createNavigatorItem, emptyItemData, nextOpened, recentItems, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from '@/utils/navigator-items'
+import { copyNavigatorItem, createNavigatorItem, emptyItemData, nextOpened, recentItems, removeNavigatorItems, rowAfterRemoval, toProjectItems, SWITCHER_MENU_POPPER } from '@/utils/navigator-items'
 import { diagramProblem } from '@/utils/diagram-data'
 import { toastError } from '@/utils/notify'
 import { UNSAVED_TEXT, UNSAVED_TITLE } from '../../../../shared/unsaved.js'
@@ -239,7 +239,8 @@ import NavigatorItemMenu from './navigator-item-menu'
 // 목록의 메뉴에서 연 질문이 닫히면 키보드가 돌아갈 곳 (msgBoxConfirm의 returnFocus, 질문이 닫힐 때 찾는다). BootstrapVue는
 // 질문을 열 때 포커스가 있던 메뉴 항목으로 돌려주는데, 닫힌 메뉴 안에 숨은 항목은 포커스를 받지 못해서 키보드가 아무 데도
 // 없었고 Escape로 목록도 닫히지 않았다 (#279). 줄의 ... 메뉴의 질문은 그 줄로 (rowFocus: ... 단추는 마우스가 줄 위에 있을
-// 때만 보인다), More actions의 질문은 그 단추로. 지운 줄은 없으니 그때는 전처럼 아무 데도 가지 않는다.
+// 때만 보인다), More actions의 질문은 그 단추로. Remove에 yes면 그 줄은 없어서 이 선택자는 아무것도 찾지 못하고, 키보드는
+// removeItem이 그 자리에 오는 줄에 준다 (#286).
 const MORE_ACTIONS_FOCUS = '#main-navigator [aria-label="More actions"]'
 
 // 다이어그램(item) 목록: 고르기, 검색, 새로 만들기, 이름 바꾸기, 순서 바꾸기, 가져오기/내보내기.
@@ -432,7 +433,11 @@ export default {
         return
       }
 
+      // 지운 줄의 키보드는 그 자리에 오는 줄로, 마지막 줄이었으면 그 앞 줄로, 보이는 줄이 남지 않으면 검색칸으로 간다 (#286: 전에는
+      // 아무 데도 없었고 Escape로 목록이 닫히지 않았다). 질문은 이미 닫히는 중이라 키보드를 가두지 않는다.
+      const next = rowAfterRemoval(this.items, item, this.matches)
       this.removeItems([item])
+      this.$nextTick(() => this.focusRow(next))
     },
     async removeSelectedItems() {
       if (!(await this.confirmRemove(`Remove ${this.selectedItems.length} selected space(s)?`, MORE_ACTIONS_FOCUS))) {
@@ -533,6 +538,15 @@ export default {
     // 줄(item)의 ... 메뉴에서 연 질문이 닫히면 키보드가 갈 곳: 그 줄 (위의 MORE_ACTIONS_FOCUS)
     rowFocus(item) {
       return `#list-item-${item.index}`
+    },
+    // 줄(item)에 키보드를 준다. 줄이 없으면(null) 검색칸에 준다.
+    focusRow(item) {
+      const row = item && this.$el.querySelector(this.rowFocus(item))
+      if (row) {
+        row.focus()
+      } else {
+        this.focusSearch()
+      }
     },
     notifyError(title, error) {
       toastError(this, title, error)

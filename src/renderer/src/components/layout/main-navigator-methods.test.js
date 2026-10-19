@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { hasSavedPassword, listEmptyText, matchesKeyword, EXPORT_PASSWORD_WARNING } from '../../utils/project'
 import { countByOwner, sessionsOf } from '../../utils/terminal-sessions'
 import { closeTerminalsQuestion, terminalCountText } from '../../utils/terminal-view'
-import { copyNavigatorItem, createNavigatorItem, emptyItemData, nextOpened, recentItems, removeNavigatorItems, toProjectItems, SWITCHER_MENU_POPPER } from '../../utils/navigator-items'
+import { copyNavigatorItem, createNavigatorItem, emptyItemData, nextOpened, recentItems, removeNavigatorItems, rowAfterRemoval, toProjectItems, SWITCHER_MENU_POPPER } from '../../utils/navigator-items'
 import { diagramProblem } from '../../utils/diagram-data'
 import { UNSAVED_TEXT, UNSAVED_TITLE } from '../../../../shared/unsaved.js'
 
@@ -35,6 +35,7 @@ const given = {
   nextOpened,
   recentItems,
   removeNavigatorItems,
+  rowAfterRemoval,
   toProjectItems,
   SWITCHER_MENU_POPPER,
   diagramProblem,
@@ -615,6 +616,27 @@ describe('the keyboard after a question asked from a menu of the list', () => {
       ['Remove 1 selected space(s)?', MORE_ACTIONS],
       [EXPORT_PASSWORD_WARNING, MORE_ACTIONS]
     ])
+  })
+
+  // Remove에 yes면 질문을 연 줄이 없어서 그 선택자는 아무것도 찾지 못한다: 키보드는 그 자리에 오는 줄로, 마지막 줄이었으면 그
+  // 앞 줄로, 보이는 줄이 남지 않으면 검색칸으로 간다 (#286). 검색에 맞지 않아 숨은 줄은 포커스를 받지 못한다.
+  it('goes after Remove to the row that takes the place of the removed one, else the one before, else the search field', async () => {
+    const { vm } = navigator(['alpha', 'beta', 'gamma', 'delta', 'epsilon'].map(name => diagram(name)), { answers: [true, true, true, false] })
+    const focused = []
+    vm.$nextTick = fn => fn()
+    vm.$el = { querySelector: selector => ({ focus: () => focused.push(selector) }) }
+
+    await vm.removeItem(vm.items[1])
+    expect(focused).toEqual(['#list-item-2'])
+    await vm.removeItem(vm.items.at(-1))
+    expect(focused).toEqual(['#list-item-2', '#list-item-3'])
+    vm.keyword = 'alp'
+    await vm.removeItem(vm.items[0])
+    expect(focused).toEqual(['#list-item-2', '#list-item-3', '.list-search input'])
+    vm.keyword = ''
+    await vm.removeItem(vm.items[0])
+    expect(names(vm)).toEqual(['gamma', 'delta'])
+    expect(focused).toHaveLength(3)
   })
 
   // 그 선택자가 찾는 것: 줄의 id (이름을 바꾸는 동안의 입력칸도 같은 id다), 목록의 id와 More actions 단추의 이름

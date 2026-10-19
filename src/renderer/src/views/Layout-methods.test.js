@@ -445,6 +445,19 @@ describe('the header and the canvas menu', () => {
     expect(agreed.api.exported).toHaveLength(1)
   })
 
+  // 질문을 연 톱니 메뉴의 항목은 그때 닫힌 메뉴 안에 숨어서 포커스를 받지 못한다: BootstrapVue가 키보드를 거기로 돌려주려다
+  // 못 해서 키보드가 아무 데도 없었다 (#286). 그 질문이 닫히면 키보드는 톱니 단추로 간다 (BootstrapVue가 닫힐 때 찾는 선택자).
+  it('the warning gives the keyboard back to the gear of the header when it closes', async () => {
+    const vm = layout({ projectData: [withPassword], answers: [false] })
+    await vm.exportProject()
+    expect(vm.calls).toEqual([['confirm', EXPORT_PASSWORD_WARNING, { title: 'Export', okTitle: 'Export', returnFocus: '#main-header [aria-label="Menu"]' }]])
+
+    // 그 선택자가 찾는 것: 머리글의 id와 톱니 단추의 이름 (main-header.vue)
+    const header = readFileSync(join(here, '../components/layout/main-header.vue'), 'utf8').replace(/\r\n/g, '\n')
+    expect(header).toMatch(/^<template>\n\s*<div\n\s*id="main-header"/)
+    expect(header).toContain(":toggle-attrs=\"{ 'aria-label': 'Menu' }\"")
+  })
+
   it('an export that fails is reported', async () => {
     const api = preload()
     api.exportProjects = async () => { throw new Error('no such folder') }

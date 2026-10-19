@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import Vue from 'vue'
-import { copyNavigatorItem, createNavigatorItem, emptyItemData, nextOpened, recentItems, removeNavigatorItems, toProjectItems, RECENT_SPACES, SWITCHER_MENU_POPPER } from './navigator-items'
+import { copyNavigatorItem, createNavigatorItem, emptyItemData, nextOpened, recentItems, removeNavigatorItems, rowAfterRemoval, toProjectItems, RECENT_SPACES, SWITCHER_MENU_POPPER } from './navigator-items'
 
 // 판(#diagram-switcher)과 목록은 넘치는 것을 자른다. 그 안의 메뉴가 판보다 길면(항목이 적을 때) 아래가 잘려 보이지 않았다.
 describe('menus in the diagram list', () => {
@@ -200,5 +200,30 @@ describe('removeNavigatorItems', () => {
     const twin = createNavigatorItem({ name: 'b', data: {} }, 7)
 
     expect(removeNavigatorItems([a, b, twin], [twin], b)).toEqual({ items: [a, b], openedRemoved: false })
+  })
+})
+
+describe('rowAfterRemoval', () => {
+  const [a, b, c, d] = ['a', 'b', 'c', 'd'].map((name, i) => createNavigatorItem({ name, data: {} }, i))
+
+  it('is the row that takes the place of the removed one, else the one before it', () => {
+    expect(rowAfterRemoval([a, b, c], b)).toBe(c)
+    expect(rowAfterRemoval([a, b, c], a)).toBe(b)
+    expect(rowAfterRemoval([a, b, c], c)).toBe(b)
+    expect(rowAfterRemoval([a], a)).toBeNull()
+  })
+
+  // 검색에 맞지 않는 줄은 숨어 있다 (v-show): 그 줄은 건너뛴다
+  it('skips the rows that are not shown, and is null when no row shown is left', () => {
+    const shown = new Set([a, d])
+    const isShown = x => shown.has(x)
+
+    expect(rowAfterRemoval([a, b, c, d], a, isShown)).toBe(d)
+    expect(rowAfterRemoval([a, b, c, d], d, isShown)).toBe(a)
+    expect(rowAfterRemoval([a, b, c], a, isShown)).toBeNull()
+  })
+
+  it('is null for an item that is not in the list', () => {
+    expect(rowAfterRemoval([a, b], c)).toBeNull()
   })
 })

@@ -51,3 +51,12 @@ export function removeNavigatorItems(items, removed, opened) {
   const gone = new Set(removed)
   return { items: items.filter(x => !gone.has(x)), openedRemoved: Boolean(opened) && gone.has(opened) }
 }
+
+// 줄 하나(removed)를 지운 뒤 키보드를 받을 항목: 보이는 줄(isShown: 검색에 맞는 줄) 가운데 그 뒤의 첫 줄, 마지막 줄이었으면
+// 그 앞의 줄. 보이는 줄이 남지 않으면 null이다 (목록은 그때 검색칸에 준다). 숨은 줄은 포커스를 받지 못한다.
+export function rowAfterRemoval(items, removed, isShown = () => true) {
+  const at = items.indexOf(removed)
+  if (at === -1) return null
+
+  return items.slice(at + 1).find(isShown) ?? items.slice(0, at).findLast(isShown) ?? null
+}

@@ -181,6 +181,11 @@ import { DEFAULT_VIEW, sanitizeView } from '../utils/view'
 
 */
 
+// 머리글의 톱니 메뉴에서 연 질문(Export All Spaces의 비밀번호 경고)이 닫히면 키보드가 갈 곳: 그 톱니 단추 (msgBoxConfirm의
+// returnFocus). BootstrapVue는 질문을 열 때 포커스가 있던 메뉴 항목으로 돌려주는데, 닫힌 메뉴 안에 숨어서 포커스를 받지 못해
+// 키보드가 아무 데도 없었다 (#286, 목록의 메뉴는 #279). 같은 메뉴의 Settings와 Show Info도 닫히면 이 단추로 돌아온다.
+const HEADER_MENU_FOCUS = '#main-header [aria-label="Menu"]'
+
 export default {
   name: 'ViewLayout',
   components: {
@@ -420,7 +425,7 @@ export default {
       }
     },
     async exportProject() {
-      if (hasSavedPassword(this.projectData) && !(await this.$bvModal.msgBoxConfirm(EXPORT_PASSWORD_WARNING, { title: 'Export', okTitle: 'Export' }))) {
+      if (hasSavedPassword(this.projectData) && !(await this.$bvModal.msgBoxConfirm(EXPORT_PASSWORD_WARNING, { title: 'Export', okTitle: 'Export', returnFocus: HEADER_MENU_FOCUS }))) {
         return
       }
 
