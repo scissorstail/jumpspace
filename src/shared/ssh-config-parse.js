@@ -39,6 +39,51 @@ function parseForward(value) {
   return { from, host, to }
 }
 
+// 묶음(block) 안의 설정 줄 하나를 노드의 값으로 읽는다. 노드에 넣을 자리가 없는 키워드는 ignored에 남긴다.
+function readSetting(block, { keyword, written, value }, ignored) {
+  // 같은 설정이 여러 번 나오면 ssh는 처음 것을 쓴다
+  const once = (key, found) => {
+    if (found && block[key] === undefined) block[key] = found
+  }
+
+  switch (keyword) {
+    case 'hostname':
+      once('host', unescapeTokens(unquote(value)))
+      break
+    case 'user':
+      once('user', unquote(value))
+      break
+    case 'port':
+      once('port', unquote(value))
+      break
+    case 'identityfile':
+      once('keyPath', unescapeTokens(unquote(value)))
+      break
+    case 'remotecommand': {
+      const command = unescapeTokens(value)
+      once('exec', command.endsWith(EXEC_TAIL) ? command.slice(0, -EXEC_TAIL.length).trim() : command)
+      break
+    }
+    case 'proxyjump':
+      if (block.jumps === undefined && value) {
+        block.jumps = value.toLowerCase() === 'none' ? [] : value.split(',').map(x => x.trim()).filter(Boolean)
+      }
+      break
+    case 'localforward': {
+      const forward = parseForward(value)
+      if (forward) (block.forwards ||= []).push(forward)
+      else ignored.add(written)
+      break
+    }
+    // buildSshConfig가 키, exec와 함께 쓰는 줄. 노드의 값은 아니지만 알릴 것도 없다.
+    case 'identitiesonly':
+    case 'requesttty':
+      break
+    default:
+      ignored.add(written)
+  }
+}
+
 // 반환:
 //   hosts:   [{ name, host, user?, port?, keyPath?, exec?, forwards?: [{ from, host, to }], jumps: [이름] }]
 //            name은 Host의 첫 이름, host는 HostName(없으면 ssh처럼 그 이름), jumps는 ProxyJump에 적힌 순서 그대로다.
@@ -52,11 +97,6 @@ export function parseSshConfig(text) {
   let over = 0
   // 지금 읽는 묶음. 첫 Host 앞이면 null, 건너뛰는 묶음이면 false.
   let current = null
-
-  // 같은 설정이 여러 번 나오면 ssh는 처음 것을 쓴다
-  const once = (key, value) => {
-    if (value && current[key] === undefined) current[key] = value
-  }
 
   for (const raw of String(text ?? '').split(/\r?\n/)) {
     const parsed = parseLine(raw.trim())
@@ -91,42 +131,7 @@ export function parseSshConfig(text) {
       continue
     }
 
-    switch (keyword) {
-      case 'hostname':
-        once('host', unescapeTokens(unquote(value)))
-        break
-      case 'user':
-        once('user', unquote(value))
-        break
-      case 'port':
-        once('port', unquote(value))
-        break
-      case 'identityfile':
-        once('keyPath', unescapeTokens(unquote(value)))
-        break
-      case 'remotecommand': {
-        const command = unescapeTokens(value)
-        once('exec', command.endsWith(EXEC_TAIL) ? command.slice(0, -EXEC_TAIL.length).trim() : command)
-        break
-      }
-      case 'proxyjump':
-        if (current.jumps === undefined && value) {
-          current.jumps = value.toLowerCase() === 'none' ? [] : value.split(',').map(x => x.trim()).filter(Boolean)
-        }
-        break
-      case 'localforward': {
-        const forward = parseForward(value)
-        if (forward) (current.forwards ||= []).push(forward)
-        else ignored.add(written)
-        break
-      }
-      // buildSshConfig가 키, exec와 함께 쓰는 줄. 노드의 값은 아니지만 알릴 것도 없다.
-      case 'identitiesonly':
-      case 'requesttty':
-        break
-      default:
-        ignored.add(written)
-    }
+    readSetting(current, parsed, ignored)
   }
 
   for (const host of hosts) {
