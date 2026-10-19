@@ -728,6 +728,20 @@ describe('opening a session', () => {
     expect(seen.commits.at(-1)).toEqual(['terminalUpdate', { key: 1, connected: true }])
   })
 
+  // 화면에 친 것은 그 탭의 세션으로 간다 (화면의 onData가 typed에 이어져 있다). main이 열기 전에는 보낼 곳이 없다.
+  it('sends what is typed in the screen of the tab to its session once main has opened it', async () => {
+    const { vm, answer, session } = opening()
+    const written = []
+    window.preload.terminal.write = (...args) => written.push(args)
+
+    const done = vm.start(session)
+    made.at(-1).typed('early')
+    answer({ ok: true, id: 9 })
+    await done
+    made.at(-1).typed('ls\r')
+    expect(written).toEqual([[9, 'ls\r']])
+  })
+
   // #271: tmux는 복사한 글을 OSC 52로 보낸다. 쓰기만 한다: 읽어 달라는 것에 답하면 서버가 이 PC의 클립보드를 읽는다.
   // (가짜 preload에는 terminal.write가 없다: 터미널이 무엇이든 보내면 여기서 던진다)
   it('puts the text a program on the server copies into the clipboard, also from a tab not in front, and tells it nothing', async () => {

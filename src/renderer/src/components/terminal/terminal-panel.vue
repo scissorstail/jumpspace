@@ -178,7 +178,7 @@ export default {
     }
   },
   created() {
-    // key -> 그 탭의 화면: xterm(term)과 그 애드온(fit, search, webgl), main의 세션 번호(id), 그리고 start()가 두는 상태
+    // key -> 그 탭의 화면: xterm(term)과 그 애드온(fit, search, webgl), main의 세션 번호(id), 그리고 openScreen()이 두는 상태
     this.terms = new Map()
     this.router = createOutputRouter()
     // 출력이 오가는지: 그 세션의 노드의 초록 점이 깜박인다 (utils/terminal-sessions.js의 busyNodes)
@@ -224,48 +224,15 @@ export default {
     colors() {
       return currentTerminalTheme(this.$store.getters.setting.terminalColors)
     },
+    // 탭을 연다: 화면을 만들고(openScreen) main에 세션을 청해서 그 화면에 잇는다(attach).
     async start(session) {
       // duplicateOf: 다른 탭과 같은 접속이다 (그 탭을 Ctrl+클릭, #257). 그 요청은 main이 갖고 있어서 그 탭의 세션 id만 넘긴다.
       const { kind, payload, duplicateOf } = session.request
       // 요청(비밀번호 포함)은 main에 넘기면 store에서 지운다.
       this.$store.commit('terminalUpdate', { key: session.key, request: null })
 
-      const term = new Terminal({
-        // 깜빡이지 않는다: 로딩 표시처럼 화면을 빠르게 다시 그리는 프로그램에서 커서가 번쩍거렸다.
-        cursorBlink: false,
-        fontFamily: FONT_FAMILY,
-        fontSize: this.fontSize,
-        scrollback: 5000,
-        theme: this.colors()
-      })
-      const fit = new FitAddon()
-      const search = new SearchAddon()
-      term.loadAddon(fit)
-      term.loadAddon(search)
-      const entry = { term, fit, search, webgl: null, id: null, ended: false, reconnecting: false, interruptedAt: null, onWindows: false }
-      this.terms.set(session.key, entry)
-
-      const el = this.$refs[`term-${session.key}`]?.[0]
-      term.open(el)
-      this.drawWithWebgl(entry)
-      this.fit(entry)
-      term.focus()
-
-      term.onData(data => this.typed(session.key, entry, data))
-      this.enableShortcuts(term, el)
-      // 로그인하면 ssh가 보이지 않는 표시를 보낸다 (main의 ssh.js). 받으면 캔버스의 경로가 "연결됨"이 된다.
-      term.parser.registerOscHandler(CONNECTED_OSC, data => {
-        if (data === CONNECTED_DATA) this.$store.commit('terminalUpdate', { key: session.key, connected: true })
-        return true
-      })
-      // 서버의 프로그램이 클립보드에 쓴다 (OSC 52: tmux가 복사할 때 보낸다, #271). 쓰기만 한다: 읽어 달라는 것에는 답하지
-      // 않는다 (oscCopyText). 앞에 있지 않은 탭과 다른 스페이스의 탭도 쓴다: 복사하는 프로그램은 그 탭이 앞에 있는지 모른다.
-      term.parser.registerOscHandler(CLIPBOARD_OSC, data => {
-        const text = oscCopyText(data)
-        if (text !== null) window.preload.clipboard.writeText(text)
-        return true
-      })
-
+      const entry = this.openScreen(session.key)
+      const { term } = entry
       const size = { cols: term.cols, rows: term.rows }
       const result = await (duplicateOf === undefined ? window.preload.terminal.open(kind, payload, size) : window.preload.terminal.duplicate(duplicateOf, size))
       // 기다리는 동안 탭이 닫혔으면 방금 열린 세션도 닫는다. closeSession은 아직 번호가 없는 세션을 끝낼 수 없어서,
@@ -281,6 +248,46 @@ export default {
       }
 
       this.attach(session, entry, result)
+    },
+    // 탭(key)의 화면: xterm.js와 그 애드온을 만들어 탭의 자리에 열고, 친 것과 단축키와 OSC 처리기를 잇는다. main의
+    // 세션은 아직 없다 (id: null): start()가 청하고 attach()가 잇는다.
+    openScreen(key) {
+      const term = new Terminal({
+        // 깜빡이지 않는다: 로딩 표시처럼 화면을 빠르게 다시 그리는 프로그램에서 커서가 번쩍거렸다.
+        cursorBlink: false,
+        fontFamily: FONT_FAMILY,
+        fontSize: this.fontSize,
+        scrollback: 5000,
+        theme: this.colors()
+      })
+      const fit = new FitAddon()
+      const search = new SearchAddon()
+      term.loadAddon(fit)
+      term.loadAddon(search)
+      const entry = { term, fit, search, webgl: null, id: null, ended: false, reconnecting: false, interruptedAt: null, onWindows: false }
+      this.terms.set(key, entry)
+
+      const el = this.$refs[`term-${key}`]?.[0]
+      term.open(el)
+      this.drawWithWebgl(entry)
+      this.fit(entry)
+      term.focus()
+
+      term.onData(data => this.typed(key, entry, data))
+      this.enableShortcuts(term, el)
+      // 로그인하면 ssh가 보이지 않는 표시를 보낸다 (main의 ssh.js). 받으면 캔버스의 경로가 "연결됨"이 된다.
+      term.parser.registerOscHandler(CONNECTED_OSC, data => {
+        if (data === CONNECTED_DATA) this.$store.commit('terminalUpdate', { key, connected: true })
+        return true
+      })
+      // 서버의 프로그램이 클립보드에 쓴다 (OSC 52: tmux가 복사할 때 보낸다, #271). 쓰기만 한다: 읽어 달라는 것에는 답하지
+      // 않는다 (oscCopyText). 앞에 있지 않은 탭과 다른 스페이스의 탭도 쓴다: 복사하는 프로그램은 그 탭이 앞에 있는지 모른다.
+      term.parser.registerOscHandler(CLIPBOARD_OSC, data => {
+        const text = oscCopyText(data)
+        if (text !== null) window.preload.clipboard.writeText(text)
+        return true
+      })
+      return entry
     },
     // 터미널에 친 것(붙여 넣은 것도)을 세션으로 보낸다. 끝난 세션에서는 Enter만 받는다: 다시 접속이다.
     typed(key, entry, data) {
