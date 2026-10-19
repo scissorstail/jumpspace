@@ -396,8 +396,10 @@ body,
 // (.input-group-sm)에서는 글꼴을 다시 키워서 같은 줄의 칸들이 29/31/33px로 달랐다. 붙은 버튼도 같은 높이.
 $control-sm-height: 29px;
 
+// :not(textarea)는 Bootstrap의 같은 규칙(높이를 글꼴로 계산한다)과 구체성을 맞춘다: 없으면 묶음 안의 입력칸이 29.2px였다.
 .form-control-sm,
-.input-group-sm > .form-control {
+.input-group-sm > .form-control,
+.input-group-sm > .form-control:not(textarea) {
   height: $control-sm-height;
   font-size: 0.8rem;
 }
@@ -409,6 +411,25 @@ $control-sm-height: 29px;
   height: $control-sm-height;
   padding-top: 0;
   padding-bottom: 0;
+}
+
+// 붙은 글자 칸(Space 목록 검색칸의 돋보기)도 같은 높이다. 29.5px로 옆의 입력칸보다 높아서, 포커스의 청록 테두리
+// 아랫변에 1px 턱이 졌다.
+.input-group-sm > .input-group-prepend > .input-group-text,
+.input-group-sm > .input-group-append > .input-group-text {
+  height: $control-sm-height;
+}
+
+// 입력칸 묶음과 단추 묶음도 네모나다. Bootstrap의 .input-group-sm, .btn-group-sm 규칙이 칸과 붙은 단추, 묶음의 양 끝에
+// 둥근 모서리(0.2rem)를 주고, 그 규칙이 .btn, .form-control, .input-group-text의 border-radius: 0보다 세다: Space
+// 목록의 돋보기 칸, Node Setting의 열쇠와 눈 단추와 그 입력칸, 설정 창의 고르는 단추 줄의 양 끝이 둥글었다.
+.input-group-sm > .form-control,
+.input-group-sm > .input-group-prepend > .input-group-text,
+.input-group-sm > .input-group-append > .input-group-text,
+.input-group-sm > .input-group-prepend > .btn,
+.input-group-sm > .input-group-append > .btn,
+.btn-group-sm > .btn {
+  border-radius: 0;
 }
 
 .custom-control-input:checked ~ .custom-control-label::before {
@@ -527,6 +548,15 @@ $control-sm-height: 29px;
   background: transparent;
 }
 
+// Bootstrap은 머리글과 바닥글에 따로 둥근 모서리를 주고, 카드의 것(:first-child, :last-child)은 위의 border-radius: 0보다
+// 세다. 바탕이 투명해서 보이지는 않지만 모서리는 어디서나 네모로 둔다.
+.modal-header,
+.modal-footer,
+.card-header:first-child,
+.card-footer:last-child {
+  border-radius: 0;
+}
+
 // 설정, 정보, From SSH config 창 (b-overlay 가운데의 카드). 앱 창이 카드보다 낮으면 카드의 위아래가 창 밖으로
 // 나가고 아무것도 스크롤되지 않아서, 아래의 단추 줄(Save)에 마우스로 닿을 수 없었다. 카드는 창 안에 머물고
 // 본문만 스크롤한다: 제목과 단추 줄은 늘 보인다. 위의 색 띠는 줄어들지 않는다.
@@ -565,9 +595,16 @@ $dialog-margin: 16px;
   box-shadow: var(--js-drop);
 }
 
+// 둥근 모서리는 bootstrap-vue의 .b-toast(감싸는 것)와 Bootstrap의 .toast-header에도 있다. 머리글의 것은 바탕이 있어서
+// 테두리 안쪽 위 모서리에 작은 홈으로 보였다.
+.b-toast {
+  border-radius: 0;
+}
+
 .toast-header,
 .b-toast .toast .toast-header {
   border-bottom: 2px solid var(--js-line);
+  border-radius: 0;
   background: var(--js-surface-2);
   color: var(--js-secondary);
   font-family: var(--js-font-display);
