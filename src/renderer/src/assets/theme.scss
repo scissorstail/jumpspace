@@ -557,6 +557,13 @@ $control-sm-height: 29px;
   border-radius: 0;
 }
 
+// 확인창의 글에는 Space나 노드의 이름이 들어간다 (Remove, Delete node, Close terminals). 이름에는 길이 제한이 없고, 빈칸 없는
+// 긴 이름은 꺾을 곳이 없어서 한 줄로 창 밖으로, 앱 창의 가장자리 너머까지 나갔다. 오류 문구(.msg-pre-line)처럼 어디서든 꺾는다.
+// 카드(설정, 정보, From SSH config)는 Bootstrap의 .card가 이미 낱말을 꺾는다.
+.modal-body {
+  overflow-wrap: anywhere;
+}
+
 // 설정, 정보, From SSH config 창 (b-overlay 가운데의 카드). 앱 창이 카드보다 낮으면 카드의 위아래가 창 밖으로
 // 나가고 아무것도 스크롤되지 않아서, 아래의 단추 줄(Save)에 마우스로 닿을 수 없었다. 카드는 창 안에 머물고
 // 본문만 스크롤한다: 제목과 단추 줄은 늘 보인다. 위의 색 띠는 줄어들지 않는다.

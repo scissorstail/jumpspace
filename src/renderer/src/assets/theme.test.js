@@ -93,6 +93,17 @@ describe('the text of an error message', () => {
   })
 })
 
+// 확인창의 글에는 이름이 들어간다 (Remove, Delete node, Close terminals). 이름에는 길이 제한이 없다.
+describe('the text of a question', () => {
+  it('wraps a long name without spaces instead of running out of the dialog', () => {
+    const start = theme.indexOf('\n.modal-body {')
+    const block = theme.slice(start, theme.indexOf('\n}\n', start))
+
+    expect(start).toBeGreaterThan(-1)
+    expect(block).toMatch(/\n {2}overflow-wrap: anywhere;/)
+  })
+})
+
 // 그림자는 흐리지 않은 단색 판이다. 검정이던 때에는 어두운 바탕과 구별되지 않아서 그림자도, 그 위 패널의 모서리도 보이지 않았다.
 describe('the color of the hard shadows', () => {
   it('is set by every palette', () => {
