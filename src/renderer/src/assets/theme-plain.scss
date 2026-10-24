@@ -1,0 +1,618 @@
+// Plain: 덜 튀는 밝은 유리 모양 (owner, 2026-10-24: "디자인이 덜 튀게 보이도록 투명과 블러와 하얀색과 반투명을 섞은 plain theme",
+// 회사에서도 쓴다). 색은 theme.scss의 :root[data-theme='plain'] 블록에 있고, 여기는 네온 밤의 모양을 바꾸는 규칙만 둔다:
+//   - 픽셀 글꼴과 대문자와 넓은 자간 대신 보통 글꼴 (--js-font-display, --js-caps, --js-tracking)
+//   - 세 가지 색 띠와 흐리지 않은 단색 그림자 대신 얇은 테두리와 흐린 그림자, 둥근 모서리
+//   - 캔버스 위에 뜨는 판(메뉴, 노드의 창, 목록, 확인창, 토스트)은 흰 반투명 유리에 뒤를 흐리는 backdrop-filter
+//   - 배경 풍경 대신 옅은 색 번짐 (설정 > Background는 그 세기만 정하고, Off는 끈다)
+// 모든 규칙은 :root[data-theme='plain'] 안이라서 다른 색 묶음에는 아무 일도 하지 않는다. 컴포넌트의 scoped 규칙을 이기도록
+// 원래 선택자에 이 접두사를 붙인 것이다 (id가 든 선택자는 id도 같이 적는다). 움직이는 것은 여기에도 없다 (motion.test.js).
+
+// 제목용 글꼴: Pretendard를 작게 맞춘 이름. 픽셀 글꼴(JS Pixel)에 맞춰 정한 글자 크기들을 그대로 쓰면 보통 글꼴은 너무 크다.
+@font-face {
+  font-family: 'JS Plain';
+  font-style: normal;
+  font-weight: 45 920;
+  font-display: swap;
+  size-adjust: 78%;
+  src: url('./fonts/Pretendard/PretendardVariable.woff2') format('woff2-variations');
+}
+
+// 유리판: 흰 반투명 바탕과 뒤를 흐리는 필터. 판 아래의 것(풍경, 노드, 선)이 흐리게 비친다.
+@mixin glass($alpha: 0.72) {
+  background: rgba(255, 255, 255, $alpha);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+}
+
+$edge: rgba(29, 36, 48, 0.12);
+$radius: 6px;
+$radius-panel: 12px;
+$shadow-low: 0 1px 2px rgba(29, 36, 48, 0.08), 0 2px 6px rgba(29, 36, 48, 0.06);
+$shadow-high: 0 12px 32px rgba(29, 36, 48, 0.14), 0 2px 6px rgba(29, 36, 48, 0.08);
+$ring: 0 0 0 3px color-mix(in srgb, var(--js-primary) 22%, transparent);
+$tint: color-mix(in srgb, var(--js-primary) 10%, transparent);
+
+:root[data-theme='plain'] {
+  --js-font-display: 'JS Plain', 'Pretendard Variable', 'Spoqa Han Sans Neo', sans-serif;
+  --js-caps: none;
+  --js-tracking: normal;
+  --js-hover: rgba(29, 36, 48, 0.06);
+  --js-bands: none;
+  --js-drop: #{$shadow-low};
+
+  // ---- Bootstrap 부품 ----
+
+  .btn {
+    border-width: 1px;
+    border-radius: $radius;
+    font-weight: 500;
+  }
+
+  .btn-secondary {
+    background: var(--js-surface);
+  }
+
+  .form-control,
+  .custom-select,
+  .input-group-text {
+    border-width: 1px;
+    border-radius: $radius;
+    background-color: var(--js-surface);
+  }
+
+  .form-control:focus {
+    border-color: var(--js-primary);
+    background-color: var(--js-surface);
+    box-shadow: $ring;
+  }
+
+  .form-control.is-invalid,
+  .form-control.is-invalid:focus {
+    box-shadow: none;
+  }
+
+  .form-group .invalid-feedback {
+    border-width: 1px;
+    border-radius: $radius;
+    background: var(--js-surface);
+    box-shadow: $shadow-high;
+  }
+
+  // 묶음(입력칸과 붙은 단추나 글자 칸, 고르는 단추 줄)은 안쪽 모서리가 네모이고, 바깥 양 끝만 둥글다.
+  .input-group-sm > .form-control,
+  .input-group-sm > .input-group-prepend > .input-group-text,
+  .input-group-sm > .input-group-append > .input-group-text,
+  .input-group-sm > .input-group-prepend > .btn,
+  .input-group-sm > .input-group-append > .btn,
+  .btn-group-sm > .btn {
+    border-radius: 0;
+  }
+
+  .input-group-sm > :first-child,
+  .input-group-sm > .input-group-prepend:first-child > :first-child,
+  .btn-group-sm > .btn:first-child {
+    border-top-left-radius: $radius;
+    border-bottom-left-radius: $radius;
+  }
+
+  .input-group-sm > :last-child,
+  .input-group-sm > .input-group-append:last-child > :last-child,
+  .btn-group-sm > .btn:last-child {
+    border-top-right-radius: $radius;
+    border-bottom-right-radius: $radius;
+  }
+
+  .custom-range {
+    &::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    &::-webkit-slider-thumb {
+      width: 16px;
+      height: 16px;
+      margin-top: -6px;
+      border: 2px solid var(--js-surface);
+      border-radius: 50%;
+      box-shadow: $shadow-low;
+    }
+
+    &:focus::-webkit-slider-thumb {
+      box-shadow: $shadow-low;
+    }
+  }
+
+  .custom-control-label::before {
+    border-width: 1px;
+  }
+
+  // 스위치: 둥근 홈과 그림자 진 흰 손잡이. 꺼지면 회색 홈의 왼쪽에, 켜지면 파란 홈의 오른쪽에 있다. 손잡이는 어느 쪽에서나 같은
+  // 흰 칸이라 옮겨 가는 것이 보인다 (owner, 2026-10-17, #256: 색만 바뀌는 것 같았다). 밤의 것처럼 흐린 손잡이에 밝은 홈이면
+  // 흰 바탕에서 켜진 손잡이(흰색)와 꺼진 스위치의 빈 반쪽(바탕색)이 같은 색이 된다.
+  .custom-switch .custom-control-label::before,
+  .custom-switch .custom-control-label::after {
+    border-radius: 0.5rem;
+  }
+
+  .custom-switch .custom-control-label::before {
+    border-color: var(--js-line);
+    background-color: var(--js-line);
+  }
+
+  .custom-switch .custom-control-input:checked ~ .custom-control-label::before {
+    border-color: var(--js-primary);
+    background-color: var(--js-primary);
+  }
+
+  .custom-switch .custom-control-label::after,
+  .custom-switch .custom-control-input:checked ~ .custom-control-label::after {
+    background-color: var(--js-surface);
+    box-shadow: 0 1px 2px rgba(29, 36, 48, 0.35);
+  }
+
+  .dropdown-menu {
+    padding: 4px;
+    border: 1px solid $edge;
+    border-radius: 10px;
+    box-shadow: $shadow-high;
+    @include glass(0.82);
+  }
+
+  // 메뉴 항목은 <small>이라 작은 픽셀 글자에 맞춘 크기로는 보통 글꼴이 10px 남짓이었다
+  .dropdown-item {
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+    border-radius: $radius;
+    font-size: 1.3rem;
+
+    &:hover,
+    &:focus {
+      background: $tint;
+      color: var(--js-text);
+    }
+  }
+
+  .badge-primary {
+    border-radius: $radius;
+  }
+
+  // 확인창, 설정/정보 창: 띠 없는 유리판
+  .modal-content,
+  .card {
+    border: 1px solid $edge;
+    border-radius: $radius-panel;
+    box-shadow: $shadow-high;
+    @include glass(0.86);
+  }
+
+  .modal-content::before,
+  .card::before {
+    display: none;
+  }
+
+  .modal-header,
+  .card-header,
+  .modal-footer,
+  .card-footer {
+    border-color: var(--js-line);
+    border-width: 1px;
+  }
+
+  .modal-title,
+  .card-header {
+    color: var(--js-text);
+    font-size: 1.45rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .modal-backdrop {
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+
+  // 설정, 정보, From SSH config 창 뒤의 막 (b-overlay의 첫 칸): 창 뒤를 조금 흐린다
+  .b-overlay > div:first-child {
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+
+  .b-toast .toast,
+  .b-toast.b-toast-solid .toast {
+    border: 1px solid $edge;
+    border-radius: 10px;
+    box-shadow: $shadow-high;
+    @include glass(0.86);
+  }
+
+  .toast-header,
+  .b-toast .toast .toast-header {
+    border-bottom: 1px solid var(--js-line);
+    border-radius: 10px 10px 0 0;
+    background: transparent;
+    color: var(--js-text);
+    font-weight: 600;
+  }
+
+  // 오류: 붉은 머리글 대신 붉은 테두리와 제목. x는 보통 글자색이다.
+  .b-toast.b-toast-danger .toast .toast-header {
+    background: transparent;
+    color: var(--js-danger);
+
+    .close {
+      color: var(--js-text);
+      opacity: 0.6;
+    }
+  }
+
+  .tooltip-inner {
+    border-radius: $radius;
+    background: var(--js-text);
+    color: var(--js-surface);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+  }
+
+  // ---- 머리글과 Space 목록 (views/Layout.vue, components/layout/main-header.vue, main-navigator.vue) ----
+
+  #main-header {
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+
+  #main-header::after {
+    display: none;
+  }
+
+  // 머리글은 어느 색 묶음에서나 44px이다 (캔버스 크기의 기준, save-hover-check): 단추의 높이는 아이콘 줄의 글꼴 높이를 따르는데,
+  // 보통 글꼴은 픽셀 글꼴보다 줄이 높아서 단추가 35.2px, 머리글이 44.2px이 되었다. 단추를 밤의 것과 같은 35px로 둔다.
+  #main-header .header-tools .btn {
+    display: inline-flex;
+    align-items: center;
+    height: 35px;
+  }
+
+  #main-header,
+  #diagram-switcher {
+    .btn-light,
+    .btn-white,
+    .btn-outline-white {
+      border-radius: $radius;
+
+      &:hover,
+      &:focus-visible,
+      &.active,
+      &:not(:disabled):not(.disabled):active {
+        color: var(--js-primary);
+      }
+    }
+  }
+
+  // 열린 Space의 이름: 분홍 이름표 대신 글자. 마우스를 올리거나 목록이 열려 있으면 옅은 바탕.
+  #main-header .header-title-tag {
+    padding: 2px 10px 2px 14px;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--js-text);
+    font-size: 1.35rem;
+    font-weight: 600;
+  }
+
+  #main-header .header-title-button:hover .header-title-tag,
+  #main-header .header-title-button[aria-expanded='true'] .header-title-tag {
+    background: var(--js-hover);
+    box-shadow: none;
+  }
+
+  #main-header .header-brand {
+    color: var(--js-text);
+    font-size: 1.4rem;
+    font-weight: 600;
+  }
+
+  #main-header .header-title-button:hover .header-brand,
+  #main-header .header-title-button[aria-expanded='true'] .header-brand {
+    color: var(--js-primary);
+  }
+
+  #diagram-switcher {
+    border: 1px solid $edge;
+    border-radius: $radius-panel;
+    box-shadow: $shadow-high;
+    @include glass(0.82);
+  }
+
+  .layout-empty-title {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--js-text);
+    font-size: 2rem;
+    font-weight: 600;
+  }
+
+  .layout-empty-text {
+    background: transparent;
+    color: var(--js-text-muted);
+  }
+
+  #main-navigator .main-navigator-content {
+    .recent-item,
+    .list-container .list-item {
+      border-radius: $radius;
+      font-size: 1.25rem;
+    }
+
+    // 열려 있는 항목: 분홍 띠 대신 옅은 파랑 바탕에 파란 글자
+    .list-container .list-item.active {
+      color: var(--js-primary);
+      font-weight: 600;
+
+      &::before {
+        border-radius: $radius;
+        background: $tint;
+        box-shadow: none;
+      }
+    }
+  }
+
+  .list-search .input-group-text {
+    border-top-left-radius: $radius;
+    border-bottom-left-radius: $radius;
+  }
+
+  .list-search .form-control {
+    border-top-right-radius: $radius;
+    border-bottom-right-radius: $radius;
+  }
+
+  // 돋보기 칸과 입력칸이 한 칸으로 보이므로, 포커스도 둘이 함께 파란 테두리만 바꾼다 (입력칸만의 고리는 두지 않는다)
+  .list-search:focus-within .input-group-text,
+  .list-search:focus-within .form-control {
+    border-color: var(--js-primary);
+    box-shadow: none;
+  }
+
+  // ---- 터미널 패널 (components/terminal) ----
+
+  // 선은 1px이고, 밤의 색 띠(4px)와 탭 줄 아래 선(2px)의 나머지는 여백으로 둔다: 최소화한 패널은 어느 색 묶음에서나 40px이고,
+  // 캔버스 크기가 그것을 뺀다 (zoom-check)
+  .terminal-panel {
+    padding-top: 3px;
+    border-top: 1px solid var(--js-line);
+    border-image: none;
+  }
+
+  // 밤의 탭 줄은 픽셀 글꼴의 줄 높이로 36px이다. 보통 글꼴은 줄이 낮아서 높이를 정해 둔다.
+  .terminal-tabs {
+    min-height: 36px;
+    padding-bottom: 1px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--js-line);
+  }
+
+  // 탭: 고른 탭은 흰 바탕에 아래 파란 줄, 나머지는 바탕 없이 흐린 글자
+  .terminal-tab {
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    font-size: 1.15rem;
+    font-weight: 500;
+
+    &:hover {
+      background: var(--js-hover);
+    }
+
+    &.active {
+      background: var(--js-surface);
+      box-shadow: inset 0 -2px 0 var(--js-primary), 0 0 0 1px $edge;
+      color: var(--js-text);
+    }
+
+    &.is-side {
+      box-shadow: inset 0 0 0 1px var(--js-primary);
+    }
+  }
+
+  .terminal-status {
+    border-radius: 50%;
+  }
+
+  .terminal-tab.active .terminal-tab-button:hover {
+    background: var(--js-hover);
+    color: var(--js-text);
+  }
+
+  .terminal-tab-button,
+  .terminal-split,
+  .terminal-maximize,
+  .terminal-hide {
+    border-radius: $radius;
+  }
+
+  .terminal-search {
+    border-color: $edge;
+    border-radius: 8px;
+    box-shadow: $shadow-high;
+    @include glass(0.86);
+  }
+
+  .terminal-search-input,
+  .terminal-search-button {
+    border-radius: 4px;
+  }
+
+  // ---- 배경 풍경 (components/layout/scene-backdrop.vue): 밤의 그림 대신 옅은 색 번짐 ----
+
+  .scene-art {
+    background:
+      radial-gradient(ellipse 50% 60% at 10% 15%, rgba(122, 162, 247, 0.4), transparent 70%),
+      radial-gradient(ellipse 45% 55% at 90% 10%, rgba(183, 156, 246, 0.34), transparent 70%),
+      radial-gradient(ellipse 55% 55% at 75% 95%, rgba(110, 200, 210, 0.34), transparent 70%),
+      radial-gradient(ellipse 45% 50% at 18% 90%, rgba(247, 178, 150, 0.28), transparent 70%),
+      var(--js-bg);
+
+    > * {
+      display: none;
+    }
+  }
+
+  // 비네트와 주사선은 어두운 풍경의 것이다
+  .scene-fx {
+    display: none;
+  }
+
+  // ---- 캔버스 (components/editor/canvas.scss, context-menu.scss) ----
+
+  // 노드: 흰 반투명 카드. 뒤를 흐리지는 않는다: backdrop-filter가 있는 판 안에서는 Node glass(.info-card)의 블러가 노드 뒤의
+  // 풍경을 보지 못한다. 테두리는 여전히 안쪽 outline이다 (Rete의 소켓 위치, canvas.scss).
+  #rete .node.site {
+    border-radius: $radius-panel;
+    outline: 1px solid $edge;
+    outline-offset: -1px;
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 4px 14px rgba(29, 36, 48, 0.1), 0 1px 2px rgba(29, 36, 48, 0.06);
+
+    &:hover {
+      outline-color: var(--js-primary);
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    // 소켓은 크기와 테두리 두께는 그대로 둥글게만: 크기가 바뀌면 연결선의 끝이 옮겨진다
+    .socket {
+      border-radius: 50%;
+    }
+  }
+
+  #rete .is-active-terminal .node.site {
+    outline: 2px solid var(--js-primary);
+    outline-offset: -2px;
+    background: var(--js-surface);
+    box-shadow: $ring, 0 4px 14px rgba(29, 36, 48, 0.1);
+  }
+
+  #rete.locked .node.site:hover {
+    outline-color: $edge;
+    background: rgba(255, 255, 255, 0.88);
+  }
+
+  #rete.locked .is-active-terminal .node.site:hover {
+    outline-color: var(--js-primary);
+    background: var(--js-surface);
+  }
+
+  #rete .is-live .node.site::after,
+  #rete .is-connecting .node.site::after,
+  #rete .is-failed .node.site::after {
+    border-radius: 50%;
+    box-shadow: none;
+  }
+
+  .node-glass #rete .info-card {
+    border: 1px solid $edge;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  div.context-menu {
+    border: 1px solid $edge;
+    border-radius: 10px;
+    box-shadow: $shadow-high;
+    @include glass(0.82);
+
+    div.item {
+      border-radius: $radius;
+
+      &:hover {
+        background-color: $tint;
+        color: var(--js-text);
+      }
+    }
+
+    div.item:first-child:hover {
+      background-color: color-mix(in srgb, var(--js-danger) 12%, transparent);
+      color: var(--js-danger);
+    }
+  }
+
+  // ---- 노드의 단추와 글자, 노드의 창 (site-node/controls/connection-control) ----
+
+  .menu-button {
+    border: 1px solid $edge;
+    border-radius: 8px;
+    box-shadow: $shadow-low;
+    @include glass(0.86);
+
+    &:hover {
+      border-color: var(--js-primary);
+      background: var(--js-primary);
+    }
+  }
+
+  // 이름: 분홍 이름표 대신 흰 반투명 칸의 진한 글자
+  .info-name {
+    border-radius: $radius;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: none;
+    color: var(--js-text);
+    font-size: 1.3rem;
+    font-weight: 600;
+
+    > span {
+      top: 0;
+    }
+  }
+
+  .info-text {
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  // 아이콘 파일은 검은 선 그림이라 밝은 바탕에서는 그대로 쓴다
+  .info-diagram,
+  .icon-picker-item img {
+    filter: none;
+  }
+
+  .vt-popover-inner {
+    border: 1px solid $edge;
+    border-radius: $radius-panel;
+    box-shadow: $shadow-high;
+    @include glass(0.88);
+
+    &::before {
+      display: none;
+    }
+  }
+
+  .forward-panel .forward-title {
+    border-bottom-width: 1px;
+    color: var(--js-text);
+    font-size: 1.45rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .icon-picker {
+    border-radius: 8px;
+  }
+
+  .icon-picker-item {
+    border-radius: $radius;
+
+    &.icon-picker-selected {
+      box-shadow: none;
+    }
+  }
+
+  .config-ask {
+    border-width: 1px;
+    border-radius: 8px;
+  }
+
+  .info-keys-list kbd {
+    border-radius: 4px;
+    background: var(--js-surface);
+  }
+}

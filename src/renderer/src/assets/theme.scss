@@ -2,7 +2,10 @@
 // 짙은 밤하늘색 바탕, 네온 분홍(선택과 강조)과 네온 청록(선과 데이터), 해 노랑.
 // 그림자는 흐리지 않은 단색 오프셋이고, 빛 번짐과 그라데이션 없이 단색 면으로 그린다. (배경 풍경만 예외)
 // 서체는 OFL 라이선스의 VT323(픽셀풍 제목, 이름표)과 JetBrains Mono(주소, 포트, 터미널)를 앱에 넣어서 쓴다.
-// 색 묶음은 세 가지이고 <html data-theme="...">로 고른다. (설정 > Theme)
+// 색 묶음은 네 가지이고 <html data-theme="...">로 고른다. (설정 > Theme) 셋은 위의 네온 밤이고, 넷째 Plain은 밝고 차분한
+// 유리 모양이다: 흰 반투명 패널과 블러, 보통 글꼴, 둥근 모서리, 흐린 그림자 (회사에서 쓸 때, owner 2026-10-24). Plain의 색은 아래의
+// 블록에 다른 것들처럼 두고, 모양을 바꾸는 규칙은 theme-plain.scss에 모은다.
+// 대문자와 자간은 var(--js-caps, uppercase)와 var(--js-tracking, ...)로 쓴다: Plain이 두 변수로 끈다 (theme-plain.test.js).
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/700.css';
 
@@ -98,16 +101,47 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-grid: #6ff7e8;
 }
 
+// Plain: 밝은 회색 바탕, 흰 패널, 차분한 파랑(주색)과 청회색(선과 데이터). 초록, 노랑, 빨강은 흰 바탕에서 읽히도록 어둡다:
+// 터미널이 이 색으로 글자를 쓰고, 대비 4.5를 넘어야 한다 (utils/terminal-view.test.js).
+:root[data-theme='plain'] {
+  --js-bg: #f5f7fa;
+  --js-bg-raised: #fafbfc;
+  --js-surface: #ffffff;
+  --js-surface-2: #eef2f6;
+  --js-line: #d3dae3;
+  --js-text: #1d2430;
+  --js-text-muted: #5d6877;
+  --js-primary: #2d6cdf;
+  --js-on-primary: #ffffff;
+  --js-secondary: #56657a;
+  --js-on-secondary: #ffffff;
+  --js-sun: #1f56b8;
+  --js-signal: #13703a; // 세션이 연결된 경로의 화살표
+  --js-danger: #c8323f;
+  --js-shadow: #c3ccd8;
+  --js-sky-2: #e7ecf5;
+  --js-city: #dfe5ee;
+  --js-grid: #c9d3e2;
+  --js-live: #13703a;
+  --js-connecting: #a85200;
+  --js-ansi-blue: #2459c9;
+  --js-ansi-magenta: #a23bb0;
+  --js-ansi-cyan: #0b7a85;
+}
+
 :root {
   --js-border: var(--js-line);
   // 열려 있는 세션 (터미널 탭의 점, 캔버스 노드의 초록 점)
   --js-live: #3dff8a;
   // 연결 중(로그인 전)의 노랑. --js-live처럼 모든 색 묶음에서 같아서, 노랑=연결 중 / 초록=연결됨 / 빨강=실패가 어디서나 같다.
-  // (--js-sun은 색 묶음마다 해의 색이라 Vapor Blue에서는 보라였다)
+  // (--js-sun은 색 묶음마다 해의 색이라 Vapor Blue에서는 보라였다) Plain만 같은 색상의 어두운 색을 쓴다: 네온 초록과 노랑은
+  // 흰 바탕에서 거의 보이지 않는다.
   --js-connecting: #ffd319;
   // 터미널의 ANSI magenta / cyan. 보통은 주색과 보조색이고, 다른 ANSI 색과 겹치는 색 묶음만 따로 정한다.
   --js-ansi-magenta: var(--js-primary);
   --js-ansi-cyan: var(--js-secondary);
+  // 파랑은 색 묶음의 색이 아니다. 밝은 바탕(Plain)에서는 이 하늘색이 읽히지 않아서 그 블록이 따로 정한다.
+  --js-ansi-blue: #5aa9ff;
   --js-hover: rgba(255, 255, 255, 0.08);
   --js-primary-soft: color-mix(in srgb, var(--js-primary) 22%, transparent);
   --js-secondary-soft: color-mix(in srgb, var(--js-secondary) 16%, transparent);
@@ -170,9 +204,9 @@ body,
   border-radius: 0;
   font-family: var(--js-font-display);
   font-size: 1.15rem;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--js-tracking, 0.06em);
   line-height: 1.1;
-  text-transform: uppercase;
+  text-transform: var(--js-caps, uppercase);
 
   &:focus,
   &.focus {
@@ -317,8 +351,8 @@ body,
   color: var(--js-text-muted);
   font-family: var(--js-font-display);
   font-size: 1.15rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: var(--js-tracking, 0.06em);
+  text-transform: var(--js-caps, uppercase);
 }
 
 .form-control {
@@ -482,8 +516,8 @@ $control-sm-height: 29px;
   color: var(--js-text);
   font-family: var(--js-font-display);
   font-size: 1.05rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: var(--js-tracking, 0.05em);
+  text-transform: var(--js-caps, uppercase);
 
   &:hover,
   &:focus {
@@ -537,9 +571,9 @@ $control-sm-height: 29px;
   color: var(--js-sun);
   font-family: var(--js-font-display);
   font-size: 1.9rem;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--js-tracking, 0.06em);
   line-height: 1;
-  text-transform: uppercase;
+  text-transform: var(--js-caps, uppercase);
 }
 
 .modal-footer,
@@ -616,8 +650,8 @@ $dialog-margin: 16px;
   color: var(--js-secondary);
   font-family: var(--js-font-display);
   font-size: 1.2rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: var(--js-tracking, 0.05em);
+  text-transform: var(--js-caps, uppercase);
 }
 
 .b-toast.b-toast-danger .toast {
@@ -647,8 +681,8 @@ $dialog-margin: 16px;
   color: var(--js-on-primary);
   font-family: var(--js-font-display);
   font-size: 1.05rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: var(--js-tracking, 0.04em);
+  text-transform: var(--js-caps, uppercase);
 }
 
 a {

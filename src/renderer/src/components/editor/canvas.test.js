@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { THEMES } from '../../../../shared/setting.js'
 
 // Windows의 checkout은 줄 끝이 CRLF일 수 있다.
 const read = (...parts) => readFileSync(join(__dirname, ...parts), 'utf8').replace(/\r\n/g, '\n')
@@ -49,8 +50,8 @@ describe('the states of a path with a terminal session', () => {
   }))
   const color = (palette, text) => palette.colors[text?.match(/^var\((--js-[\w-]+)\)$/)?.[1]]
 
-  it('reads the three palettes and the colors they share', () => {
-    expect(palettes.map(p => p.name)).toEqual(['neon-night', 'sunset-drive', 'vapor-blue'])
+  it('reads every palette and the colors they share', () => {
+    expect(palettes.map(p => p.name)).toEqual(THEMES)
     expect(shared['--js-live']).toMatch(/^#[0-9a-f]{6}$/)
     expect(shared['--js-connecting']).toMatch(/^#[0-9a-f]{6}$/)
   })

@@ -160,7 +160,7 @@ export default {
   color: var(--js-text-muted);
   font-family: var(--js-font-display);
   text-align: center;
-  text-transform: uppercase;
+  text-transform: var(--js-caps, uppercase);
 }
 
 .info-keys-list {

@@ -304,9 +304,9 @@ export default {
     color: var(--js-sun);
     font-family: var(--js-font-display);
     font-size: 1.9rem;
-    letter-spacing: 0.06em;
+    letter-spacing: var(--js-tracking, 0.06em);
     line-height: 1;
-    text-transform: uppercase;
+    text-transform: var(--js-caps, uppercase);
   }
 
   .forward-hint {
@@ -346,8 +346,8 @@ export default {
     margin-bottom: 2px;
     font-family: var(--js-font-display);
     font-size: 1.05rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    letter-spacing: var(--js-tracking, 0.06em);
+    text-transform: var(--js-caps, uppercase);
     color: var(--js-text-muted);
 
     // "Local port"는 좁은 칸보다 길어서 두 줄이 되었다. 옆의 빈 화살표 칸까지 한 줄로 쓴다.

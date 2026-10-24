@@ -327,8 +327,8 @@ export default {
   color: var(--js-text-muted);
   font-family: var(--js-font-display);
   font-size: 1.3rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: var(--js-tracking, 0.04em);
+  text-transform: var(--js-caps, uppercase);
   cursor: pointer;
   user-select: none;
 

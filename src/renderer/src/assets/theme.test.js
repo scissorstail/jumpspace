@@ -1,9 +1,12 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { THEMES } from '../../../shared/setting.js'
 
 // Windows의 checkout은 줄 끝이 CRLF일 수 있다.
 const theme = readFileSync(join(__dirname, 'theme.scss'), 'utf8').replace(/\r\n/g, '\n')
+// 네온 밤의 색 묶음들. Plain은 밝은 유리 모양이라 그 규칙을 theme-plain.scss가 바꾼다 (theme-plain.test.js).
+const NIGHT = THEMES.filter(name => name !== 'plain')
 
 describe('header and diagram list buttons', () => {
   // 클릭한 단추에는 포커스가 남는다. :focus로 강조하면 마우스로 누른 단추가 계속 켜져 있다.
@@ -71,7 +74,7 @@ describe('a switch', () => {
     expect({ trackOff, trackOn, knobOff, knobOn }).toEqual({ trackOff: '--js-bg', trackOn: '--js-primary', knobOff: '--js-text-muted', knobOn: '--js-text' })
   })
 
-  it.each(['neon-night', 'sunset-drive', 'vapor-blue'])('has a light knob on both sides in %s, so that it is seen to move', name => {
+  it.each(NIGHT)('has a light knob on both sides in %s, so that it is seen to move', name => {
     const { colors } = palettes.find(p => p.name === name)
     // 꺼짐: 손잡이가 빈 반쪽과 뚜렷이 다르다
     expect(contrast(colors[knobOff], colors[trackOff])).toBeGreaterThan(7)
@@ -107,12 +110,13 @@ describe('the text of a question', () => {
 // 그림자는 흐리지 않은 단색 판이다. 검정이던 때에는 어두운 바탕과 구별되지 않아서 그림자도, 그 위 패널의 모서리도 보이지 않았다.
 describe('the color of the hard shadows', () => {
   it('is set by every palette', () => {
-    expect(palettes.map(p => p.name)).toEqual(['neon-night', 'sunset-drive', 'vapor-blue'])
+    expect(palettes.map(p => p.name)).toEqual(THEMES)
     for (const { name, colors } of palettes) expect(colors['--js-shadow'], name).toMatch(/^#[0-9a-f]{6}$/)
   })
 
   // 그림자가 놓이는 곳(바탕, 올라온 바탕)과 그림자를 드리우는 것(패널, 테두리)에서 모두 눈에 띄어야 한다.
-  it.each(['neon-night', 'sunset-drive', 'vapor-blue'])('stands out from the background, the panels and the borders in %s', name => {
+  // Plain에는 흐리지 않은 그림자가 없다: theme-plain.scss가 흐린 그림자로 바꾼다 (theme-plain.test.js).
+  it.each(NIGHT)('stands out from the background, the panels and the borders in %s', name => {
     const { colors } = palettes.find(p => p.name === name)
     const shadow = colors['--js-shadow']
     expect(contrast(shadow, colors['--js-bg'])).toBeGreaterThan(1.5)

@@ -226,8 +226,8 @@ export default {
   color: var(--js-sun);
   font-family: var(--js-font-display);
   font-size: 1.15rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: var(--js-tracking, 0.06em);
+  text-transform: var(--js-caps, uppercase);
 }
 
 .config-rows {
@@ -280,8 +280,8 @@ export default {
   color: var(--js-sun);
   font-family: var(--js-font-display);
   font-size: 1.15rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: var(--js-tracking, 0.06em);
+  text-transform: var(--js-caps, uppercase);
 }
 
 .config-ask-reasons {

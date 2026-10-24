@@ -4,7 +4,7 @@
 export const OPEN_IN = ['app', 'window']
 
 // 화면의 색 묶음 (renderer의 assets/theme.scss에 있는 data-theme 값)
-export const THEMES = ['neon-night', 'sunset-drive', 'vapor-blue']
+export const THEMES = ['neon-night', 'sunset-drive', 'vapor-blue', 'plain']
 
 // 배경 풍경의 효과 (renderer의 components/layout/scene-backdrop.vue에 있는 .scene-* 클래스)
 export const BACKDROPS = ['vivid', 'soft', 'depth', 'crt', 'off']

@@ -575,9 +575,9 @@ export default {
   color: var(--js-text);
   font-family: var(--js-font-display);
   font-size: 1.45rem;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--js-tracking, 0.05em);
   line-height: 1.1;
-  text-transform: uppercase;
+  text-transform: var(--js-caps, uppercase);
 
   &.btn-block + .btn-block {
     margin-top: 0;
@@ -635,9 +635,9 @@ export default {
         color: var(--js-text-muted);
         font-family: var(--js-font-display);
         font-size: 1rem;
-        letter-spacing: 0.1em;
+        letter-spacing: var(--js-tracking, 0.1em);
         line-height: 1.2;
-        text-transform: uppercase;
+        text-transform: var(--js-caps, uppercase);
       }
 
       .recent-item {

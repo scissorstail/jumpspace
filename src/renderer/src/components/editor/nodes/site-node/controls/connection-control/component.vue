@@ -419,8 +419,8 @@ export default {
       color: var(--js-text-muted);
       font-family: var(--js-font-display);
       font-size: 1.15rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
+      letter-spacing: var(--js-tracking, 0.06em);
+      text-transform: var(--js-caps, uppercase);
     }
   }
 
@@ -440,9 +440,9 @@ export default {
     color: var(--js-on-primary);
     font-family: var(--js-font-display);
     font-size: 1.45rem;
-    letter-spacing: 0.04em;
+    letter-spacing: var(--js-tracking, 0.04em);
     line-height: 1.15;
-    text-transform: uppercase;
+    text-transform: var(--js-caps, uppercase);
 
     // 대문자 픽셀 글자는 아래 꼬리가 없어서 이름표 가운데보다 2px 아래에 앉는다. 이름표 크기는 그대로 두고 글자만 1px 올린다.
     > span {

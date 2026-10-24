@@ -1,5 +1,5 @@
 // 터미널 패널이 화면에 쓰는 글과 색 (순수 함수). xterm에 쓰는 줄은 ANSI 색을 붙인다.
-import { tone } from './color.js'
+import { tone, toOklch } from './color.js'
 import { DEFAULT_SETTING, TERMINAL_FONT_SIZE_MAX, TERMINAL_FONT_SIZE_MIN } from '../../../shared/setting.js'
 
 const GRAY = '\x1b[90m'
@@ -75,7 +75,8 @@ export function errorLine(error) {
 }
 
 // 터미널 색: 지금 고른 테마의 CSS 변수에서 읽는다. color(name)은 그 변수의 값을 돌려준다.
-// 초록과 노랑은 모든 색 묶음에서 같은 --js-live / --js-connecting이다. (--js-sun은 Vapor Blue에서 보라라서 magenta와 구별되지 않았다)
+// 초록과 노랑은 밤의 색 묶음에서 같은 --js-live / --js-connecting이다 (Plain은 같은 색상의 어두운 색). (--js-sun은 Vapor Blue에서
+// 보라라서 magenta와 구별되지 않았다) 파랑은 --js-ansi-blue: 보통은 하늘색 하나이고, 흰 바탕의 Plain만 어두운 파랑이다.
 // magenta와 cyan은 --js-ansi-*: 보통 주색과 보조색이고, Sunset Drive에서는 빨강·노랑과 겹치지 않게 따로 정한다.
 // 커서는 터미널이 보통 그러듯 글자색이고, 그 아래의 글자는 바탕색이다 (owner, 2026-10-11: 색 묶음의 주색으로 칠한
 // 커서는 화면을 다시 그리는 프로그램에서 번쩍이는 색 덩어리로 보였다).
@@ -96,6 +97,22 @@ const BRIGHTER = { lightness: 0.06, chroma: 0.02 }
 // 노랑은 이보다 어둡거나 흐리면 올리브색이 된다: 어느 단계에서나 여기까지만 낮춘다
 const YELLOW_FLOOR = { lightness: 0.76, chroma: 0.13 }
 
+// 밝은 바탕(Plain)의 단계. 그 색 묶음의 색은 흰 바탕에서 읽히도록 이미 어둡다: 더 밝게 하면 읽히지 않고, 더 어둡게 하면
+// 검정과 구별되지 않는다. 그래서 밝기는 자르지 않고(1) 선명함만 낮춘다. 굵은 글자의 색(BRIGHTER)도 그래서 밝기는 그대로이고
+// 조금 더 선명할 뿐이다: tone()은 위를 자르기만 한다. 노랑은 흰 바탕에서 어두운 금색일 수밖에 없고, 선명함만 지킨다.
+// vivid도 여기서는 열여섯 색을 다 정한다 (색 묶음의 색 그대로): xterm의 기본 밝은 색과 검정은 어두운 바탕의 것이라, 흰 바탕에서
+// 밝은 노랑과 초록은 읽히지 않았고, tmux의 상태 줄(초록 바탕의 검정 글자)도 어두운 초록 위의 검정이었다.
+const LIGHT_TONES = {
+  vivid: { lightness: 1, chroma: 1 },
+  soft: { lightness: 1, chroma: 0.1 },
+  muted: { lightness: 1, chroma: 0.07 }
+}
+const LIGHT_YELLOW_FLOOR = { lightness: 0, chroma: 0.1 }
+// 바탕의 밝기(OKLCH)가 이보다 높으면 밝은 바탕이다
+const LIGHT_BACKGROUND = 0.6
+
+export const isLightBackground = hex => (toOklch(hex)?.l ?? 0) > LIGHT_BACKGROUND
+
 const ANSI = ['red', 'green', 'yellow', 'blue', 'magenta', 'cyan']
 const brightName = name => `bright${name[0].toUpperCase()}${name.slice(1)}`
 
@@ -104,7 +121,7 @@ export function terminalTheme(color, level = 'vivid') {
     red: color('--js-danger'),
     green: color('--js-live'),
     yellow: color('--js-connecting'),
-    blue: '#5aa9ff',
+    blue: color('--js-ansi-blue'),
     magenta: color('--js-ansi-magenta'),
     cyan: color('--js-ansi-cyan')
   }
@@ -119,12 +136,14 @@ export function terminalTheme(color, level = 'vivid') {
     brightBlack: color('--js-text-muted')
   }
   // 모르는 단계는 vivid다 ('toString' 같은 이름도)
-  if (!Object.hasOwn(TONES, level)) return theme
+  const known = Object.hasOwn(TONES, level) ? level : 'vivid'
+  const light = isLightBackground(theme.background)
+  if (known === 'vivid' && !light) return theme
 
-  const limit = TONES[level]
+  const limit = (light ? LIGHT_TONES : TONES)[known]
 
   for (const name of ANSI) {
-    const floor = name === 'yellow' ? YELLOW_FLOOR : { lightness: 0, chroma: 0 }
+    const floor = name === 'yellow' ? (light ? LIGHT_YELLOW_FLOOR : YELLOW_FLOOR) : { lightness: 0, chroma: 0 }
     const lightness = Math.max(limit.lightness, floor.lightness)
     const chroma = Math.max(limit.chroma, floor.chroma)
 

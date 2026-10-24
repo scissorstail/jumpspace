@@ -162,8 +162,8 @@ export default {
     background: none;
     color: inherit;
     font-family: var(--js-font-display);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    letter-spacing: var(--js-tracking, 0.06em);
+    text-transform: var(--js-caps, uppercase);
 
     &:focus {
       outline: none;
@@ -214,7 +214,7 @@ export default {
     // 이름표(1.6rem x 1.2)보다 높지 않게: 기본 줄 높이(1.5)에서는 다이어그램이 열리지 않은 동안 머리글이 5.8px 높았고,
     // 첫 다이어그램을 열 때 머리글 아래의 모든 것이 그만큼 올라갔다.
     line-height: 1.1;
-    letter-spacing: 0.35em;
+    letter-spacing: var(--js-tracking, 0.35em);
     white-space: nowrap;
 
     .header-title-caret {

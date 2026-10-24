@@ -540,9 +540,9 @@ export default {
   color: var(--js-sun);
   font-family: var(--js-font-display);
   font-size: 2.6rem;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--js-tracking, 0.08em);
   line-height: 1.1;
-  text-transform: uppercase;
+  text-transform: var(--js-caps, uppercase);
 }
 
 .layout-empty-text {
@@ -551,8 +551,8 @@ export default {
   background: var(--js-bg);
   font-family: var(--js-font-display);
   font-size: 1.15rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: var(--js-tracking, 0.08em);
+  text-transform: var(--js-caps, uppercase);
 }
 
 // 목록 밖을 누르면 닫는다. 보이지 않는 막이 창 전체를 덮는다 (제목 단추도 덮으므로 제목을 다시 눌러도 닫힌다).

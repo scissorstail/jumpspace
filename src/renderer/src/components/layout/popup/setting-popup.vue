@@ -219,7 +219,8 @@ export default {
       themeOptions: [
         { text: 'Neon night', value: 'neon-night' },
         { text: 'Sunset drive', value: 'sunset-drive' },
-        { text: 'Vapor blue', value: 'vapor-blue' }
+        { text: 'Vapor blue', value: 'vapor-blue' },
+        { text: 'Plain', value: 'plain' }
       ],
       backdrop: null,
       nodeBlur: 0,
@@ -331,6 +332,6 @@ $setting-line: 33px;
   color: var(--js-sun);
   font-family: var(--js-font-display);
   font-size: 1.15rem;
-  text-transform: uppercase;
+  text-transform: var(--js-caps, uppercase);
 }
 </style>
