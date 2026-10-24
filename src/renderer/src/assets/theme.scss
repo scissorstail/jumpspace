@@ -75,9 +75,6 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-sky-2: #4a1552;
   --js-city: #10032a;
   --js-grid: #ff8a3d;
-  // 주색(분홍)은 터미널의 빨강과, 보조색(주황)은 노랑과 겹쳐서 터미널에는 따로 정한다.
-  --js-ansi-magenta: #d86bff;
-  --js-ansi-cyan: #4ff0ff;
 }
 
 :root[data-theme='vapor-blue'] {
@@ -101,8 +98,8 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-grid: #6ff7e8;
 }
 
-// Plain: 밝은 회색 바탕, 흰 패널, 차분한 파랑(주색)과 청회색(선과 데이터). 초록, 노랑, 빨강은 흰 바탕에서 읽히도록 어둡다:
-// 터미널이 이 색으로 글자를 쓰고, 대비 4.5를 넘어야 한다 (utils/terminal-view.test.js).
+// Plain: 밝은 회색 바탕, 흰 패널, 차분한 파랑(주색)과 청회색(선과 데이터). 초록, 노랑, 빨강은 흰 바탕의 캔버스에서 보이도록
+// 어둡다 (세션의 경로와 점). 터미널은 색 묶음의 색을 쓰지 않는다: 어디서나 xterm의 기본 색이다 (utils/terminal-view.js, #289).
 :root[data-theme='plain'] {
   --js-bg: #f5f7fa;
   --js-bg-raised: #fafbfc;
@@ -124,9 +121,6 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   --js-grid: #c9d3e2;
   --js-live: #13703a;
   --js-connecting: #a85200;
-  --js-ansi-blue: #2459c9;
-  --js-ansi-magenta: #a23bb0;
-  --js-ansi-cyan: #0b7a85;
 }
 
 :root {
@@ -137,11 +131,6 @@ $vt323: '../../../../node_modules/@fontsource/vt323/files';
   // (--js-sun은 색 묶음마다 해의 색이라 Vapor Blue에서는 보라였다) Plain만 같은 색상의 어두운 색을 쓴다: 네온 초록과 노랑은
   // 흰 바탕에서 거의 보이지 않는다.
   --js-connecting: #ffd319;
-  // 터미널의 ANSI magenta / cyan. 보통은 주색과 보조색이고, 다른 ANSI 색과 겹치는 색 묶음만 따로 정한다.
-  --js-ansi-magenta: var(--js-primary);
-  --js-ansi-cyan: var(--js-secondary);
-  // 파랑은 색 묶음의 색이 아니다. 밝은 바탕(Plain)에서는 이 하늘색이 읽히지 않아서 그 블록이 따로 정한다.
-  --js-ansi-blue: #5aa9ff;
   --js-hover: rgba(255, 255, 255, 0.08);
   --js-primary-soft: color-mix(in srgb, var(--js-primary) 22%, transparent);
   --js-secondary-soft: color-mix(in srgb, var(--js-secondary) 16%, transparent);

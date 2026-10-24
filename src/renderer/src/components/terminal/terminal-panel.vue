@@ -99,12 +99,6 @@ import TerminalTabs from './terminal-tabs'
 const FONT = '"JetBrains Mono"'
 const FONT_FAMILY = `${FONT}, Consolas, "Cascadia Mono", "DejaVu Sans Mono", monospace`
 
-// 터미널 색은 지금 고른 테마(assets/theme.scss의 CSS 변수)에서 읽고, 설정의 단계(terminalColors)만큼 낮춘다.
-function currentTerminalTheme(level) {
-  const style = getComputedStyle(document.documentElement)
-  return terminalTheme(name => style.getPropertyValue(name).trim(), level)
-}
-
 // 하단의 터미널 패널. 탭마다 xterm.js 화면을 하나씩 두고, main의 pty와 키 입력/출력을 주고받는다.
 // 터미널은 그것을 연 다이어그램(item)의 것이다. sessions는 지금 열린 item의 세션(탭 줄), allSessions는 전부이다.
 // 다른 item의 세션은 보이지 않을 뿐 계속 돌고, 그 item을 다시 열면 나타난다.
@@ -126,11 +120,9 @@ export default {
     shownHeight() {
       return panelHeight(this.height, this.available)
     },
-    // 터미널 색을 정하는 두 설정: 색 묶음과, 그 색을 얼마나 낮추는지
+    // 터미널 색을 정하는 설정: xterm의 기본 색을 얼마나 낮추는지. 색 묶음(theme)은 터미널 색을 바꾸지 않는다 (#289).
     colorSetting() {
-      const { theme, terminalColors } = this.$store.getters.setting
-
-      return `${theme} ${terminalColors}`
+      return this.$store.getters.setting.terminalColors
     },
     // 터미널 글꼴 크기 (설정). 터미널에서 Ctrl +/-/0으로 바꾼다.
     fontSize() {
@@ -147,7 +139,7 @@ export default {
     ...mapGetters({ sessions: 'terminalSessions', allSessions: 'allTerminalSessions', activeKey: 'activeTerminalKey', panes: 'terminalPanes', sideKey: 'terminalSideKey', rightKeys: 'terminalRightKeys', isOpen: 'isTerminalPanelOpen', isMaximized: 'isTerminalPanelMaximized' })
   },
   watch: {
-    // 색 묶음이나 색의 단계를 바꾸면 열린 터미널의 색도 바꾼다. (색 묶음의 CSS 변수는 다음 그리기에 바뀐다)
+    // 색의 단계를 바꾸면 열린 터미널의 색도 바꾼다.
     colorSetting() {
       this.$nextTick(() => {
         for (const [, entry] of this.terms) entry.term.options.theme = this.colors()
@@ -220,9 +212,9 @@ export default {
       }
       for (const [, entry] of this.terms) entry.webgl?.clearTextureAtlas()
     },
-    // 지금의 색 묶음과 설정의 단계로 만든 터미널 색
+    // xterm의 기본 색을 설정의 단계만큼 낮춘 터미널 색 (utils/terminal-view.js)
     colors() {
-      return currentTerminalTheme(this.$store.getters.setting.terminalColors)
+      return terminalTheme(this.$store.getters.setting.terminalColors)
     },
     // 탭을 연다: 화면을 만들고(openScreen) main에 세션을 청해서 그 화면에 잇는다(attach).
     async start(session) {
@@ -623,10 +615,13 @@ export default {
   z-index: 1;
 }
 
+// 화면의 둘레도 터미널의 바탕색이다: xterm의 기본 바탕 (XTERM_COLORS.background, utils/terminal-view.js). 어느 색 묶음에서나
+// 같고, 밝은 Plain에서도 글자 화면만 어둡다 (#289; 탭 줄과 찾는 칸은 색 묶음의 것).
 .terminal-body {
   position: relative;
   flex: 1;
   min-height: 0;
+  background: #000000;
 }
 
 .terminal-screen {

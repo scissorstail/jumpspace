@@ -1,5 +1,5 @@
 // 터미널 패널이 화면에 쓰는 글과 색 (순수 함수). xterm에 쓰는 줄은 ANSI 색을 붙인다.
-import { tone, toOklch } from './color.js'
+import { tone } from './color.js'
 import { DEFAULT_SETTING, TERMINAL_FONT_SIZE_MAX, TERMINAL_FONT_SIZE_MIN } from '../../../shared/setting.js'
 
 const GRAY = '\x1b[90m'
@@ -74,84 +74,71 @@ export function errorLine(error) {
   return `${RED}${String(error).replace(/\r?\n/g, '\r\n')}${RESET}\r\n`
 }
 
-// 터미널 색: 지금 고른 테마의 CSS 변수에서 읽는다. color(name)은 그 변수의 값을 돌려준다.
-// 초록과 노랑은 밤의 색 묶음에서 같은 --js-live / --js-connecting이다 (Plain은 같은 색상의 어두운 색). (--js-sun은 Vapor Blue에서
-// 보라라서 magenta와 구별되지 않았다) 파랑은 --js-ansi-blue: 보통은 하늘색 하나이고, 흰 바탕의 Plain만 어두운 파랑이다.
-// magenta와 cyan은 --js-ansi-*: 보통 주색과 보조색이고, Sunset Drive에서는 빨강·노랑과 겹치지 않게 따로 정한다.
-// 커서는 터미널이 보통 그러듯 글자색이고, 그 아래의 글자는 바탕색이다 (owner, 2026-10-11: 색 묶음의 주색으로 칠한
-// 커서는 화면을 다시 그리는 프로그램에서 번쩍이는 색 덩어리로 보였다).
-//
-// 색 묶음의 색은 네온이라, 점이나 선에는 맞지만 터미널 프로그램이 넓게 칠하면(tmux의 상태 줄은 초록 바탕이다) 눈이
-// 부시다 (owner, 2026-10-11: "너무 쨍한 것 같은데"). 그래서 여섯 색을 얼마나 낮출지 고른다 (설정 > Terminal colors,
-// src/shared/setting.js의 TERMINAL_COLORS). 낮춘 색은 여기서 계산한다 (utils/color.js의 tone): 같은 색상으로
-// 밝기와 선명함의 위만 자르므로 색 묶음의 색을 바꾸면 따라 바뀌고, 캔버스가 쓰는 --js-live 등은 그대로다.
-//   vivid: 색 묶음의 색 그대로. 이 선택이 생기기 전의 모습 그대로라서, 굵은 글자가 쓰는 밝은 색은 xterm의 기본값이다.
-//   soft, muted: 낮춘 색. 밝은 색(굵은 글자)은 그보다 조금 밝고 선명한 같은 색이고, 검정은 바탕색이다
-//   (색 위에 검정으로 쓰는 글자가 색 묶음의 어두운 색이 된다).
+// 터미널 색은 xterm.js의 기본값이다, 어느 색 묶음에서나 (owner, 2026-10-24, #289: "터미널은 항상 기본 값을 쓰게 해주세요",
+// 그 기본값은 xterm 자체의 것이라고 골랐다): 검정 바탕에 흰 글자와 흰 커서, ANSI 열여섯 색은 xterm의 표(Tango)이다. 전에는
+// 색 묶음의 CSS 변수에서 읽었고, 밝은 Plain에서는 터미널도 밝았다 (#288). 패널에서 화면의 둘레(.terminal-body)도 같은 바탕이다.
+// XTERM_COLORS는 @xterm/xterm에 들어 있는 값의 사본이다 (xterm은 그 표를 내보내지 않는다): terminal-view.test.js가
+// node_modules의 xterm 소스와 비교한다. xterm의 기본 빨강, 파랑, 보라는 검정 바탕에서 대비가 4.5에 못 미치지만(3.2 ~ 3.6)
+// owner가 고른 기본값이라 그대로 둔다.
+export const XTERM_COLORS = Object.freeze({
+  background: '#000000',
+  foreground: '#ffffff',
+  black: '#2e3436',
+  red: '#cc0000',
+  green: '#4e9a06',
+  yellow: '#c4a000',
+  blue: '#3465a4',
+  magenta: '#75507b',
+  cyan: '#06989a',
+  white: '#d3d7cf',
+  brightBlack: '#555753',
+  brightRed: '#ef2929',
+  brightGreen: '#8ae234',
+  brightYellow: '#fce94f',
+  brightBlue: '#729fcf',
+  brightMagenta: '#ad7fa8',
+  brightCyan: '#34e2e2',
+  brightWhite: '#eeeeec'
+})
+
+// 터미널 프로그램이 넓게 칠하는 색은(tmux의 상태 줄은 초록 바탕이다) 눈이 부실 수 있다 (owner, 2026-10-11: "너무 쨍한 것
+// 같은데", 그때는 색 묶음의 네온 색이었다). 그래서 여섯 색을 얼마나 낮출지 고른다 (설정 > Terminal colors,
+// src/shared/setting.js의 TERMINAL_COLORS). 낮춘 색은 여기서 계산한다 (utils/color.js의 tone): 같은 색상으로 밝기와
+// 선명함의 위만 자른다.
+//   vivid: xterm의 기본값 그대로라서 아무 색도 정하지 않는다 ({}). xterm은 정하지 않은 색마다 제 기본값을 쓰므로, 다른
+//   단계에서 바꾼 색도 그리로 돌아간다.
+//   soft, muted: 여섯 색과 그 밝은 색(굵은 글자)을 낮춘다. 밝은 색은 xterm의 밝은 색을 보통 색보다 조금 위에서 자른다.
+//   검정과 흰색, 바탕, 글자, 커서, 고른 글의 색은 기본값 그대로다.
+// xterm의 표는 네온보다 이미 차분해서, 보통 색 중에 soft가 낮추는 것은 선명한 빨강과 초록 정도이고 나머지는 밝은 색이다.
 const TONES = {
   soft: { lightness: 0.76, chroma: 0.15 },
   muted: { lightness: 0.68, chroma: 0.11 }
 }
 // 밝은 색은 보통 색보다 이만큼 더 밝고 선명해도 된다
 const BRIGHTER = { lightness: 0.06, chroma: 0.02 }
-// 노랑은 이보다 어둡거나 흐리면 올리브색이 된다: 어느 단계에서나 여기까지만 낮춘다
+// 노랑은 이보다 어둡거나 흐리게 자르면 올리브색이 된다: 어느 단계에서나 여기까지만 낮춘다
 const YELLOW_FLOOR = { lightness: 0.76, chroma: 0.13 }
-
-// 밝은 바탕(Plain)의 단계. 그 색 묶음의 색은 흰 바탕에서 읽히도록 이미 어둡다: 더 밝게 하면 읽히지 않고, 더 어둡게 하면
-// 검정과 구별되지 않는다. 그래서 밝기는 자르지 않고(1) 선명함만 낮춘다. 굵은 글자의 색(BRIGHTER)도 그래서 밝기는 그대로이고
-// 조금 더 선명할 뿐이다: tone()은 위를 자르기만 한다. 노랑은 흰 바탕에서 어두운 금색일 수밖에 없고, 선명함만 지킨다.
-// vivid도 여기서는 열여섯 색을 다 정한다 (색 묶음의 색 그대로): xterm의 기본 밝은 색과 검정은 어두운 바탕의 것이라, 흰 바탕에서
-// 밝은 노랑과 초록은 읽히지 않았고, tmux의 상태 줄(초록 바탕의 검정 글자)도 어두운 초록 위의 검정이었다.
-const LIGHT_TONES = {
-  vivid: { lightness: 1, chroma: 1 },
-  soft: { lightness: 1, chroma: 0.1 },
-  muted: { lightness: 1, chroma: 0.07 }
-}
-const LIGHT_YELLOW_FLOOR = { lightness: 0, chroma: 0.1 }
-// 바탕의 밝기(OKLCH)가 이보다 높으면 밝은 바탕이다
-const LIGHT_BACKGROUND = 0.6
-
-export const isLightBackground = hex => (toOklch(hex)?.l ?? 0) > LIGHT_BACKGROUND
 
 const ANSI = ['red', 'green', 'yellow', 'blue', 'magenta', 'cyan']
 const brightName = name => `bright${name[0].toUpperCase()}${name.slice(1)}`
 
-export function terminalTheme(color, level = 'vivid') {
-  const palette = {
-    red: color('--js-danger'),
-    green: color('--js-live'),
-    yellow: color('--js-connecting'),
-    blue: color('--js-ansi-blue'),
-    magenta: color('--js-ansi-magenta'),
-    cyan: color('--js-ansi-cyan')
-  }
-  const theme = {
-    background: color('--js-bg'),
-    foreground: color('--js-text'),
-    cursor: color('--js-text'),
-    cursorAccent: color('--js-bg'),
-    selectionBackground: color('--js-line'),
-    ...palette,
-    white: color('--js-text'),
-    brightBlack: color('--js-text-muted')
-  }
+export function terminalTheme(level = 'vivid') {
   // 모르는 단계는 vivid다 ('toString' 같은 이름도)
-  const known = Object.hasOwn(TONES, level) ? level : 'vivid'
-  const light = isLightBackground(theme.background)
-  if (known === 'vivid' && !light) return theme
+  if (!Object.hasOwn(TONES, level)) return {}
 
-  const limit = (light ? LIGHT_TONES : TONES)[known]
+  const limit = TONES[level]
+  const theme = {}
 
   for (const name of ANSI) {
-    const floor = name === 'yellow' ? (light ? LIGHT_YELLOW_FLOOR : YELLOW_FLOOR) : { lightness: 0, chroma: 0 }
+    const floor = name === 'yellow' ? YELLOW_FLOOR : { lightness: 0, chroma: 0 }
     const lightness = Math.max(limit.lightness, floor.lightness)
     const chroma = Math.max(limit.chroma, floor.chroma)
 
-    theme[name] = tone(palette[name], lightness, chroma)
-    theme[brightName(name)] = tone(palette[name], lightness + BRIGHTER.lightness, chroma + BRIGHTER.chroma)
+    theme[name] = tone(XTERM_COLORS[name], lightness, chroma)
+    theme[brightName(name)] = tone(XTERM_COLORS[brightName(name)], lightness + BRIGHTER.lightness, chroma + BRIGHTER.chroma)
   }
 
-  return { ...theme, black: theme.background, brightWhite: theme.foreground }
+  return theme
 }
 
 // 터미널 패널의 높이. 캔버스에 MIN_CANVAS_HEIGHT는 남기고, 패널은 MIN_PANEL_HEIGHT보다 낮아지지 않는다.
