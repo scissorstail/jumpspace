@@ -703,7 +703,10 @@ export default {
             border: 1px solid var(--js-secondary);
           }
 
-          &.btn:hover:not(.editing):not(.selected):not(.active) {
+          // 메뉴가 열린 항목은 마우스가 어디에 있든 마우스를 올린 바탕이다. 메뉴는 항목 안의 요소라 메뉴 위의 마우스도 항목의
+          // :hover여서, 메뉴에 들어갈 때마다 항목이 밝아지고 나올 때마다 어두워졌다 (#291)
+          &.btn:hover:not(.editing):not(.selected):not(.active),
+          &.dropdown-shown:not(.editing):not(.selected):not(.active) {
             background-color: var(--js-hover);
           }
 
@@ -772,11 +775,15 @@ export default {
             color: var(--js-text);
           }
 
+          // 메뉴는 높이를 갖지 않고 줄 가운데에 걸린다: 단추가 이름 줄보다 높아도, 마우스를 올려 메뉴가 보일 때 줄이 커지지 않는다.
+          // 전에는 단추(24px)를 이름 줄(픽셀 글꼴로 25.5px)보다 낮게 두어 막았는데, 줄이 22px인 Plain의 보통 글꼴에서는 단추가
+          // 더 높아서 마우스를 올릴 때마다 항목이 2px 커지고 아래 항목들이 밀렸다 (#291).
           &-dropdown {
+            align-items: center;
             width: 2em;
+            height: 0;
             display: none;
             ::v-deep {
-              // 이름 줄(25.5px)보다 낮게: 높으면 마우스를 올릴 때마다 항목이 2px 커지고 아래 항목들이 밀렸다.
               button {
                 height: 24px;
                 padding: 0px;

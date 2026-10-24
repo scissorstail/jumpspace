@@ -61,8 +61,8 @@ describe('the Plain palette', () => {
     }
   })
 
-  // 캔버스 위에 뜨는 판은 흰 반투명 유리이고 뒤를 흐린다
-  it.each(['.dropdown-menu', '.modal-content', '.b-toast .toast', '#diagram-switcher', 'div.context-menu', '.vt-popover-inner', '.terminal-search'])('draws %s as frosted glass', selector => {
+  // 캔버스 위에 뜨는 판은 흰 반투명 유리이고 뒤를 흐린다 (목록 판은 그 ::before가, 아래 테스트)
+  it.each(['.dropdown-menu', '.modal-content', '.b-toast .toast', '#diagram-switcher::before', 'div.context-menu', '.vt-popover-inner', '.terminal-search'])('draws %s as frosted glass', selector => {
     const rule = rules.find(r => r.selectors.includes(`:root[data-theme=plain] ${selector}`) && value(r.body, 'backdrop-filter'))
 
     expect(rule, selector).toBeDefined()
@@ -78,6 +78,45 @@ describe('the Plain palette', () => {
 
     expect(node.length).toBeGreaterThan(0)
     for (const rule of node) expect(value(rule.body, 'backdrop-filter'), rule.selectors.join(', ')).toBeUndefined()
+  })
+
+  // backdrop-filter는 메뉴나 다른 유리를 담지 않은 판에만 둔다 (#291). 그 필터를 가진 요소는 그 안의 position: fixed 요소의 기준
+  // 상자가 되고(목록 판 안의 메뉴가 판의 자리만큼 밀려 열렸다), 그 안의 유리가 흐리는 범위도 된다(그 메뉴는 캔버스를 흐리지
+  // 못했다). 새 유리판은 여기에 넣기 전에 그 안에 무엇이 뜨는지 본다. (headless의 hover-shift-check가 페이지에서도 본다)
+  it('puts a backdrop filter only on panels that hold no menu and no other glass', () => {
+    const glass = rules.filter(r => value(r.body, 'backdrop-filter')).flatMap(r => r.selectors.map(x => x.replace(':root[data-theme=plain] ', '')))
+    const leaves = ['.dropdown-menu', '.modal-content', '.card', '.modal-backdrop', '.b-overlay > div:first-child', '.b-toast .toast', '.b-toast.b-toast-solid .toast', '#diagram-switcher::before', '.terminal-search', 'div.context-menu', '.menu-button', '.vt-popover-inner']
+
+    expect(glass.sort()).toEqual([...leaves].sort())
+  })
+
+  // 목록 판의 유리와 테두리는 ::before에 있고, 판은 메뉴를 품되 흐리지 않는다
+  it('draws the glass of the space list behind it, not on it', () => {
+    const own = rules.filter(r => r.selectors.includes(':root[data-theme=plain] #diagram-switcher'))
+    const behind = rules.find(r => r.selectors.includes(':root[data-theme=plain] #diagram-switcher::before'))?.body || ''
+
+    expect(own.length).toBeGreaterThan(0)
+    for (const rule of own) {
+      expect(value(rule.body, 'backdrop-filter'), rule.selectors.join(', ')).toBeUndefined()
+      expect(value(rule.body, 'filter'), rule.selectors.join(', ')).toBeUndefined()
+    }
+    expect(own.map(r => value(r.body, 'background')).filter(Boolean)).toEqual(['transparent'])
+    expect(own.map(r => value(r.body, 'border')).filter(Boolean)).toEqual(['1px solid transparent'])
+    expect(value(behind, 'position')).toBe('absolute')
+    expect(value(behind, 'inset')).toBe('-1px')
+    expect(value(behind, 'z-index')).toBe('-1')
+    expect(value(behind, 'pointer-events')).toBe('none')
+    expect(value(behind, 'border')).toBe('1px solid rgba(29, 36, 48, 0.12)')
+  })
+
+  // Node glass를 켜면 글자 묶음은 유리판 하나 위에 있다: 이름과 줄마다의 칸은 없다 (켜지 않았을 때는 흰 칸이 글자를 받친다)
+  it('leaves the text under a node without boxes of its own on Node glass', () => {
+    const box = selector => rules.filter(r => r.selectors.includes(`:root[data-theme=plain] ${selector}`)).map(r => value(r.body, 'background')).filter(Boolean)
+
+    expect(box('.info-name')).toEqual(['rgba(255, 255, 255, 0.72)'])
+    expect(box('.info-text')).toEqual(['rgba(255, 255, 255, 0.6)'])
+    expect(box('.node-glass #rete .info-name')).toEqual(['transparent'])
+    expect(box('.node-glass #rete .info-text')).toEqual(['transparent'])
   })
 
   // 설정의 스위치 (owner, 2026-10-17, #256: 손잡이가 옮겨 가는 것이 보여야 한다). 손잡이는 어느 쪽에서나 그림자 진 흰 칸이고,

@@ -279,6 +279,29 @@ describe('the focus ring of a row of the list', () => {
   })
 })
 
+// 줄의 ... 메뉴는 마우스를 올렸을 때만 보이고 높이를 갖지 않는다 (#291): 메뉴가 보여도 줄의 높이가 그대로다. 단추(24px)를 픽셀
+// 글꼴의 이름 줄(25.5px)보다 낮게 둔 것만으로는, 줄이 22px인 Plain의 보통 글꼴에서 마우스를 올린 줄이 2px 커지며 아래 줄들이 흔들렸다.
+describe('the menu of a row of the list', () => {
+  const style = source.slice(source.indexOf('<style'))
+
+  it('takes no height and hangs in the middle of the row', () => {
+    const menu = style.match(/\n {10}&-dropdown \{\n([\s\S]*?)\n {10}\}/)?.[1] ?? ''
+
+    expect(menu).toMatch(/^ {12}height: 0;$/m)
+    expect(menu).toMatch(/^ {12}align-items: center;$/m)
+    expect(menu).toMatch(/^ {12}display: none;$/m)
+    expect(style).toMatch(/&:hover:not\(\.editing\),\n {10}&\.dropdown-shown \{\n {12}\.list-item-dropdown \{\n {14}display: flex;/)
+  })
+
+  // 메뉴는 줄 안의 요소라 메뉴 위의 마우스도 줄의 :hover다. 메뉴가 열린 줄은 마우스가 메뉴 밖에 있어도 그 바탕이어야, 메뉴에
+  // 들어가고 나올 때 줄이 밝아졌다 어두워졌다 하지 않는다.
+  it('keeps the row of an open menu in the look of the mouse on it', () => {
+    const hover = [...style.matchAll(/\n {10}(&[^\n{]*(?:,\n {10}&[^\n{]*)*) \{\n {12}background-color: var\(--js-hover\);/g)].map(([, selectors]) => selectors.split(/,\n {10}/))
+
+    expect(hover).toEqual([['&.btn:hover:not(.editing):not(.selected):not(.active)', '&.dropdown-shown:not(.editing):not(.selected):not(.active)']])
+  })
+})
+
 // 마지막에 연 다이어그램 몇 개가 목록 위에 따로 보인다 (owner, 2026-10-17, #255). 연 차례(opened)는 저장된다.
 describe('the spaces opened last', () => {
   const opened = vm => vm.items.map(x => x.opened ?? null)

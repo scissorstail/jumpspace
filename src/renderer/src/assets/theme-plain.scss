@@ -2,7 +2,8 @@
 // 회사에서도 쓴다). 색은 theme.scss의 :root[data-theme='plain'] 블록에 있고, 여기는 네온 밤의 모양을 바꾸는 규칙만 둔다:
 //   - 픽셀 글꼴과 대문자와 넓은 자간 대신 보통 글꼴 (--js-font-display, --js-caps, --js-tracking)
 //   - 세 가지 색 띠와 흐리지 않은 단색 그림자 대신 얇은 테두리와 흐린 그림자, 둥근 모서리
-//   - 캔버스 위에 뜨는 판(메뉴, 노드의 창, 목록, 확인창, 토스트)은 흰 반투명 유리에 뒤를 흐리는 backdrop-filter
+//   - 캔버스 위에 뜨는 판(메뉴, 노드의 창, 목록, 확인창, 토스트)은 흰 반투명 유리에 뒤를 흐리는 backdrop-filter. 메뉴나 다른
+//     유리를 담은 판에는 그 필터를 두지 않는다 (목록 판은 ::before에 그린다, #291 그 규칙의 설명)
 //   - 배경 풍경 대신 옅은 색 번짐 (설정 > Background는 그 세기만 정하고, Off는 끈다)
 // 모든 규칙은 :root[data-theme='plain'] 안이라서 다른 색 묶음에는 아무 일도 하지 않는다. 컴포넌트의 scoped 규칙을 이기도록
 // 원래 선택자에 이 접두사를 붙인 것이다 (id가 든 선택자는 id도 같이 적는다). 움직이는 것은 여기에도 없다 (motion.test.js).
@@ -317,11 +318,27 @@ $tint: color-mix(in srgb, var(--js-primary) 10%, transparent);
     color: var(--js-primary);
   }
 
+  // 목록 판의 유리는 판이 아니라 그 ::before에 그린다 (#291). backdrop-filter를 가진 요소는 그 안의 position: fixed 요소의
+  // 기준 상자(containing block)가 되고, 그 안의 유리가 뒤를 흐리는 범위(backdrop root)도 된다. 판에 두었을 때 판 안의 메뉴
+  // (More actions와 줄의 ..., 판 밖으로 나오도록 fixed로 띄운다: utils/navigator-items.js의 SWITCHER_MENU_POPPER)가 판의
+  // 자리만큼 오른쪽 아래로 밀려 열렸고, 그 메뉴의 유리는 판 밖의 캔버스를 흐리지 못해 뒤의 소켓이 회색 원으로 또렷이 비쳤다.
+  // 테두리도 ::before가 그린다: 판 안에서 z-index -1로 그리는 ::before는 판 자신의 테두리 위에 그려진다.
   #diagram-switcher {
-    border: 1px solid $edge;
+    border: 1px solid transparent;
     border-radius: $radius-panel;
+    background: transparent;
     box-shadow: $shadow-high;
-    @include glass(0.82);
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      z-index: -1;
+      border: 1px solid $edge;
+      border-radius: $radius-panel;
+      pointer-events: none;
+      @include glass(0.82);
+    }
   }
 
   .layout-empty-title {
@@ -567,6 +584,12 @@ $tint: color-mix(in srgb, var(--js-primary) 10%, transparent);
   .info-text {
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.6);
+  }
+
+  // Node glass를 켜면 글자 묶음은 유리판 하나 위에 있다: 이름과 줄마다의 흰 칸까지 두면 판 안에 칸이 또 겹쳐 보였다 (#291)
+  .node-glass #rete .info-name,
+  .node-glass #rete .info-text {
+    background: transparent;
   }
 
   // 아이콘 파일은 검은 선 그림이라 밝은 바탕에서는 그대로 쓴다
